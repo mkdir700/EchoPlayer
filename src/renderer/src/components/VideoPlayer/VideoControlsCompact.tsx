@@ -47,7 +47,7 @@ export function VideoControlsCompact({
   autoPause,
   autoSkipSilence,
   subtitlePosition,
-  displayMode,
+  displayModeRef,
   onSeek,
   onStepBackward,
   onPlayPause,
@@ -95,8 +95,8 @@ export function VideoControlsCompact({
   }, [showSubtitleModeSelector])
 
   // 获取当前模式的配置
-  const validDisplayMode = Object.keys(DISPLAY_MODE_CONFIG).includes(displayMode)
-    ? displayMode
+  const validDisplayMode = Object.keys(DISPLAY_MODE_CONFIG).includes(displayModeRef.current)
+    ? displayModeRef.current
     : 'bilingual'
   const currentModeConfig = DISPLAY_MODE_CONFIG[validDisplayMode]
 
@@ -185,7 +185,7 @@ export function VideoControlsCompact({
                 {Object.entries(DISPLAY_MODE_CONFIG).map(([mode, config]) => (
                   <Button
                     key={mode}
-                    type={displayMode === mode ? 'primary' : 'text'}
+                    type={displayModeRef.current === mode ? 'primary' : 'text'}
                     size="small"
                     onClick={() => {
                       onDisplayModeChange(mode as DisplayMode)
@@ -194,7 +194,7 @@ export function VideoControlsCompact({
                     style={{
                       width: '100%',
                       textAlign: 'left',
-                      color: displayMode === mode ? '#fff' : config.color,
+                      color: displayModeRef.current === mode ? '#fff' : config.color,
                       marginBottom: '4px'
                     }}
                   >

@@ -2,23 +2,18 @@ import React, { useState } from 'react'
 import { Typography } from 'antd'
 import { formatTime } from '@renderer/utils/helpers'
 import styles from './VideoProgressBar.module.css'
+import { useVideoStateRefs, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 
 const { Text } = Typography
 
-interface VideoProgressBarProps {
-  duration: number
-  currentTime: number
-  isVideoLoaded: boolean
-  onSeek: (value: number) => void
-}
-
-export function VideoProgressBar({
-  duration,
-  currentTime,
-  isVideoLoaded,
-  onSeek
-}: VideoProgressBarProps): React.JSX.Element {
+export function VideoProgressBar(): React.JSX.Element {
   const [isHovered, setIsHovered] = useState(false)
+  const { durationRef, currentTimeRef, isVideoLoadedRef } = useVideoStateRefs()
+
+  const duration = durationRef.current
+  const currentTime = currentTimeRef.current
+  const isVideoLoaded = isVideoLoadedRef.current
+  const { seekTo } = useVideoControls()
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
@@ -31,7 +26,7 @@ export function VideoProgressBar({
     const percentage = clickX / rect.width
     const newTime = percentage * duration
 
-    onSeek(Math.max(0, Math.min(duration, newTime)))
+    seekTo(Math.max(0, Math.min(duration, newTime)))
   }
 
   return (

@@ -5,13 +5,18 @@ import { PlayPageHeader } from '@renderer/components/PlayPageHeader'
 import { SubtitleLoadModal } from '@renderer/components/SubtitleLoadModal'
 
 // 导入所需的 hooks
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useSubtitleDisplayMode } from '@renderer/hooks/useSubtitleDisplayMode'
 import { useShortcutCommand, useCommandShortcuts } from '@renderer/hooks/useCommandShortcuts'
 import { usePlayStateSaver } from '@renderer/hooks/usePlayStateSaver'
 import { usePlayStateInitializer } from '@renderer/hooks/usePlayStateInitializer'
+import {
+  useVideoDuration,
+  useVideoTimeRef,
+  useVideoStateRefs,
+  useVideoControls
+} from '@renderer/hooks/useVideoPlayerHooks'
 import { VOLUME_SETTINGS } from '@renderer/constants'
 
 import type { SubtitleItem } from '@types_/shared'
@@ -24,22 +29,24 @@ interface PlayPageProps {
 
 export const PlayPage = React.memo<PlayPageProps>(function PlayPage({ onBack }) {
   message.info('11111111111111111111111')
-  // 使用 hooks 获取所需的状态和方法
-  // 视频播放器
-  const videoPlayerContext = useVideoPlayerContext()
-  // 字幕列表
+
+  // 使用新的优化 hooks
+  const duration = useVideoDuration()
+  const currentTimeRef = useVideoTimeRef()
+  const { volumeRef } = useVideoStateRefs()
+  const { toggle, stepBackward, stepForward, setVolume, restoreVideoState } = useVideoControls()
+
+  // 其他 hooks
   const subtitleListContext = useSubtitleListContext()
-  // 播放视频上下文
   const playingVideoContext = usePlayingVideoContext()
-  // 字幕显示模式
   const subtitleDisplayMode = useSubtitleDisplayMode()
 
   // 视频进度保存
   const { savePlayStateRef } = usePlayStateSaver({
     originalFilePath: playingVideoContext.originalFilePath || null,
     videoFile: playingVideoContext.videoFile || null,
-    currentTime: videoPlayerContext.currentTime,
-    duration: videoPlayerContext.duration,
+    currentTimeRef: currentTimeRef,
+    duration: duration,
     subtitleListContext
   })
 
@@ -47,9 +54,9 @@ export const PlayPage = React.memo<PlayPageProps>(function PlayPage({ onBack }) 
   const { pendingVideoInfo, setPendingVideoInfo, showSubtitleModal, setShowSubtitleModal } =
     usePlayStateInitializer({
       playingVideoContext: playingVideoContext,
-      subtitles: subtitleListContext.subtitles,
+      subtitles: subtitleListContext.subtitleItemsRef.current,
       showSubtitleModal: false, // 初始值
-      restoreVideoState: videoPlayerContext.restoreVideoState,
+      restoreVideoState: restoreVideoState,
       restoreSubtitles: subtitleListContext.restoreSubtitles,
       savePlayStateRef
     })
@@ -58,22 +65,26 @@ export const PlayPage = React.memo<PlayPageProps>(function PlayPage({ onBack }) 
   useCommandShortcuts()
 
   // 注册核心快捷键命令
-  useShortcutCommand('playPause', videoPlayerContext.handlePlayPause)
-  useShortcutCommand('stepBackward', videoPlayerContext.handleStepBackward)
-  useShortcutCommand('stepForward', videoPlayerContext.handleStepForward)
+  useShortcutCommand('playPause', toggle)
+  useShortcutCommand('stepBackward', stepBackward)
+  useShortcutCommand('stepForward', stepForward)
   useShortcutCommand('toggleSubtitleMode', subtitleDisplayMode.toggleDisplayMode)
 
   // 音量控制命令
   useShortcutCommand('volumeUp', () => {
-    videoPlayerContext.handleVolumeChange(
-      Math.min(VOLUME_SETTINGS.MAX, videoPlayerContext.volume + VOLUME_SETTINGS.KEYBOARD_STEP)
+    const newVolume = Math.min(
+      VOLUME_SETTINGS.MAX,
+      volumeRef.current + VOLUME_SETTINGS.KEYBOARD_STEP
     )
+    setVolume(newVolume)
   })
 
   useShortcutCommand('volumeDown', () => {
-    videoPlayerContext.handleVolumeChange(
-      Math.max(VOLUME_SETTINGS.MIN, videoPlayerContext.volume - VOLUME_SETTINGS.KEYBOARD_STEP)
+    const newVolume = Math.max(
+      VOLUME_SETTINGS.MIN,
+      volumeRef.current - VOLUME_SETTINGS.KEYBOARD_STEP
     )
+    setVolume(newVolume)
   })
 
   // 全屏状态管理
@@ -134,7 +145,7 @@ export const PlayPage = React.memo<PlayPageProps>(function PlayPage({ onBack }) 
               {/* 视频播放区域 - 占据主要空间 */}
               <div className={styles.videoPlayerSection}>
                 <VideoSection
-                  displayMode={subtitleDisplayMode.displayMode}
+                  displayModeRef={subtitleDisplayMode.displayModeRef}
                   isFullscreen={isFullscreen}
                   onFullscreenChange={setIsFullscreen}
                   onFullscreenToggleReady={() => {}}

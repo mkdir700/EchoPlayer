@@ -4,8 +4,6 @@ import type { PlaybackSettings } from '@types_/shared'
 export interface UsePlaybackSettingsReturn {
   // 播放设置状态
   playbackSettings: PlaybackSettings
-  loading: boolean
-  error: string | null
 
   // 操作方法
   updatePlaybackSettings: (settings: Partial<PlaybackSettings>) => Promise<boolean>
@@ -29,22 +27,14 @@ export function usePlaybackSettings(): UsePlaybackSettingsReturn {
     isSingleLoop: false,
     isAutoPause: false
   })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   // 刷新播放设置
   const refreshPlaybackSettings = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
       const settings = await window.api.store.getSettings()
       setPlaybackSettings(settings.playback)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取播放设置失败'
-      setError(errorMessage)
       console.error('获取播放设置失败:', err)
-    } finally {
-      setLoading(false)
     }
   }, [])
 
@@ -57,8 +47,6 @@ export function usePlaybackSettings(): UsePlaybackSettingsReturn {
   const updatePlaybackSettings = useCallback(
     async (newSettings: Partial<PlaybackSettings>): Promise<boolean> => {
       try {
-        setError(null)
-
         // 先更新本地状态，提供即时反馈
         const updatedSettings = { ...playbackSettings, ...newSettings }
         setPlaybackSettings(updatedSettings)
@@ -73,14 +61,11 @@ export function usePlaybackSettings(): UsePlaybackSettingsReturn {
         } else {
           // 如果保存失败，回滚本地状态
           setPlaybackSettings(playbackSettings)
-          setError(result.error || '更新播放设置失败')
           return false
         }
       } catch (err) {
         // 如果保存失败，回滚本地状态
         setPlaybackSettings(playbackSettings)
-        const errorMessage = err instanceof Error ? err.message : '更新播放设置失败'
-        setError(errorMessage)
         console.error('更新播放设置失败:', err)
         return false
       }
@@ -120,10 +105,7 @@ export function usePlaybackSettings(): UsePlaybackSettingsReturn {
   )
 
   return {
-    // 状态
     playbackSettings,
-    loading,
-    error,
 
     // 操作方法
     updatePlaybackSettings,

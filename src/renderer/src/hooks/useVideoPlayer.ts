@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, RefObject } from 'react'
 import { message } from 'antd'
 import ReactPlayer from 'react-player'
 import { SEEK_STEP, PLAYBACK_RATES, VOLUME_SETTINGS } from '../constants'
@@ -7,16 +7,16 @@ import { ReactCallback } from '@renderer/types/shared'
 
 interface VideoPlayerState {
   isPlaying: boolean
-  currentTime: number
+  currentTimeRef: RefObject<number>
   duration: number
-  playbackRate: number
-  volume: number
+  playbackRateRef: RefObject<number>
+  volumeRef: RefObject<number>
   isVideoLoaded: boolean
   videoError: string | null
 }
 
 export interface UseVideoPlayerReturn extends VideoPlayerState {
-  playerRef: React.RefObject<ReactPlayer | null>
+  playerRef: RefObject<ReactPlayer | null>
   handlePlayPause: ReactCallback<() => void>
   handleProgress: ReactCallback<(progress: { played: number; playedSeconds: number }) => void>
   handleSeek: ReactCallback<(value: number) => void>
@@ -39,10 +39,10 @@ export interface UseVideoPlayerReturn extends VideoPlayerState {
 export function useVideoPlayer(): UseVideoPlayerReturn {
   const [state, setState] = useState<VideoPlayerState>({
     isPlaying: false,
-    currentTime: 0,
+    currentTimeRef: useRef(0),
     duration: 0,
-    playbackRate: PLAYBACK_RATES.DEFAULT,
-    volume: VOLUME_SETTINGS.DEFAULT,
+    playbackRateRef: useRef(PLAYBACK_RATES.DEFAULT),
+    volumeRef: useRef(VOLUME_SETTINGS.DEFAULT),
     isVideoLoaded: false,
     videoError: null
   })
@@ -85,29 +85,29 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
 
   // 播放速度调整
   const handlePlaybackRateChange = useCallback((value: number): void => {
-    setState((prev) => ({ ...prev, playbackRate: value }))
+    setState((prev) => ({ ...prev, playbackRateRef: { current: value } }))
   }, [])
 
   // 音量调整
   const handleVolumeChange = useCallback((value: number): void => {
-    setState((prev) => ({ ...prev, volume: value }))
+    setState((prev) => ({ ...prev, volumeRef: { current: value } }))
   }, [])
 
   // 快退
   const handleStepBackward = useCallback((): void => {
     if (state.isVideoLoaded) {
-      const newTime = Math.max(0, state.currentTime - SEEK_STEP)
+      const newTime = Math.max(0, state.currentTimeRef.current - SEEK_STEP)
       handleSeek(newTime)
     }
-  }, [state.currentTime, state.isVideoLoaded, handleSeek])
+  }, [state.currentTimeRef, state.isVideoLoaded, handleSeek])
 
   // 快进
   const handleStepForward = useCallback((): void => {
     if (state.isVideoLoaded) {
-      const newTime = Math.min(state.duration, state.currentTime + SEEK_STEP)
+      const newTime = Math.min(state.duration, state.currentTimeRef.current + SEEK_STEP)
       handleSeek(newTime)
     }
-  }, [state.currentTime, state.duration, state.isVideoLoaded, handleSeek])
+  }, [state.currentTimeRef, state.duration, state.isVideoLoaded, handleSeek])
 
   // 重新开始
   const handleRestart = useCallback((): void => {
@@ -251,10 +251,10 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
   const resetVideoState = useCallback((): void => {
     setState({
       isPlaying: false,
-      currentTime: 0,
+      currentTimeRef: { current: 0 },
       duration: 0,
-      playbackRate: PLAYBACK_RATES.DEFAULT,
-      volume: VOLUME_SETTINGS.DEFAULT,
+      playbackRateRef: { current: PLAYBACK_RATES.DEFAULT },
+      volumeRef: { current: VOLUME_SETTINGS.DEFAULT },
       isVideoLoaded: false,
       videoError: null
     })
@@ -275,9 +275,9 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
 
       setState((prev) => ({
         ...prev,
-        currentTime,
-        playbackRate,
-        volume
+        currentTimeRef: { current: currentTime },
+        playbackRateRef: { current: playbackRate },
+        volumeRef: { current: volume }
       }))
 
       // 如果视频已加载，立即跳转

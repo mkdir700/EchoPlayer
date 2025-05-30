@@ -16,7 +16,7 @@ export interface SubtitleListItemProps {
   item: SubtitleItem
   index: number
   isActive: boolean
-  onSeek: (time: number) => void
+  onClick: (time: number) => void
   formatTime: (time: number) => string
 }
 
@@ -34,7 +34,7 @@ export interface VideoControlsProps {
   autoPause: boolean
   autoSkipSilence: boolean
   subtitlePosition: 'top' | 'bottom'
-  displayMode: DisplayMode
+  displayModeRef: React.RefObject<DisplayMode>
   onSeek: (value: number) => void
   onStepBackward: () => void
   onPlayPause: () => void

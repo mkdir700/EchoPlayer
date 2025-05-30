@@ -34,7 +34,7 @@ export function useSubtitleControl({
   onSeek,
   onPause
 }: UseSubtitleControlParams): UseSubtitleControlReturn {
-  const { subtitles } = useSubtitleListContext()
+  const { subtitleItemsRef } = useSubtitleListContext()
 
   const [state, setState] = useState<SubtitleControlState>({
     isSingleLoop: false,
@@ -42,9 +42,12 @@ export function useSubtitleControl({
   })
 
   // 从 context 获取字幕数据
-  const subtitlesLength = subtitles.length
-  const getSubtitle = useCallback((index: number) => subtitles[index], [subtitles])
-  const getAllSubtitles = useCallback(() => subtitles, [subtitles])
+  const subtitlesLength = subtitleItemsRef.current.length
+  const getSubtitle = useCallback(
+    (index: number) => subtitleItemsRef.current[index],
+    [subtitleItemsRef]
+  )
+  const getAllSubtitles = useCallback(() => subtitleItemsRef.current, [subtitleItemsRef])
 
   // 用于单句循环的固定字幕索引和字幕对象
   const singleLoopSubtitleRef = useRef<SubtitleItem | null>(null)

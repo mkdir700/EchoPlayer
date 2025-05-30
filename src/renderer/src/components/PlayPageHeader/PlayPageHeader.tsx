@@ -3,7 +3,7 @@ import { Button, Typography, Tooltip } from 'antd'
 import { ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons'
 import { performanceMonitor } from '@renderer/utils/performance'
 import styles from './PlayPageHeader.module.css'
-import { usePlayingVideoContext } from '@renderer/contexts/usePlayingVideoContext'
+import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 
 const { Text } = Typography
 

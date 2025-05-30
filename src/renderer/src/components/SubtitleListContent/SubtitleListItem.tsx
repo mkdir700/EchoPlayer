@@ -1,22 +1,30 @@
 import React, { useCallback } from 'react'
-import { List, Typography } from 'antd'
+import { Typography } from 'antd'
 import { SubtitleListItemProps } from '@renderer/types'
 import styles from './SubtitleListItem.module.css'
 
 const { Text } = Typography
 
-// 字幕项组件 - 使用React.memo避免不必要的重渲染
+// 字幕项组件 - 适配 react-virtualized，使用React.memo避免不必要的重渲染
 export const SubtitleListItem = React.memo<SubtitleListItemProps>(
-  ({ item, index, isActive, onSeek, formatTime }) => {
+  ({ item, index, isActive, onClick, formatTime }) => {
     const handleClick = useCallback((): void => {
-      onSeek(item.startTime)
-    }, [item.startTime, onSeek])
+      onClick(item.startTime)
+    }, [item.startTime, onClick])
 
     return (
-      <List.Item
+      <div
         key={index}
         className={`${styles.subtitleItem} ${isActive ? styles.subtitleItemActive : ''}`}
         onClick={handleClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleClick()
+          }
+        }}
         style={{
           cursor: 'pointer'
         }}
@@ -49,16 +57,15 @@ export const SubtitleListItem = React.memo<SubtitleListItemProps>(
               {formatTime(item.endTime)}
             </Text>
           </div>
-          <Text
+          <div
+            className={styles.subtitleText}
             style={{
-              fontSize: 14,
               color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontWeight: isActive ? 'bold' : 'normal',
-              lineHeight: '1.4'
+              fontWeight: isActive ? 'bold' : 'normal'
             }}
           >
             {item.text}
-          </Text>
+          </div>
           {/* NOTE: 仅展示要学习的语言，不展示母语 */}
           {/* 显示中文字幕（如果有双语字幕） */}
           {/* {item.chineseText && item.englishText && (
@@ -76,7 +83,7 @@ export const SubtitleListItem = React.memo<SubtitleListItemProps>(
             </Text>
           )} */}
         </div>
-      </List.Item>
+      </div>
     )
   }
 )

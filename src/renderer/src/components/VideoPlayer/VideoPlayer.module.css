@@ -90,7 +90,6 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .videoSection {
-    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-sm) var(--spacing-lg);
     flex: 2; /* 移动端视频区域占2份 */
     min-height: 150px;
   }

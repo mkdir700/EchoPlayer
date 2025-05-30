@@ -58,13 +58,11 @@ function App(): React.JSX.Element {
 
         {/* 播放页面  */}
         {currentPage === 'play' && (
-          <VideoPlayerProvider>
-            <SubtitleListProvider>
-              <div className={styles.pageContainer}>
-                <PlayPage onBack={handleBackToHome} />
-              </div>
-            </SubtitleListProvider>
-          </VideoPlayerProvider>
+          <SubtitleListProvider>
+            <div className={styles.pageContainer}>
+              <PlayPage onBack={handleBackToHome} />
+            </div>
+          </SubtitleListProvider>
         )}
 
         {/* 其他页面 - 条件渲染，覆盖在播放页面之上 */}
@@ -91,16 +89,18 @@ function App(): React.JSX.Element {
     <PlaybackSettingsProvider>
       <ShortcutProvider>
         <PlayingVideoProvider>
-          <Layout className={styles.appLayout}>
-            {currentPage !== 'play' ? (
-              <>
-                <AppHeader currentPage={currentPage} onPageChange={setCurrentPage} />
-                <Content className={styles.appContent}>{renderPageContent}</Content>
-              </>
-            ) : (
-              <div className={styles.playPageFullscreen}>{renderPageContent}</div>
-            )}
-          </Layout>
+          <VideoPlayerProvider>
+            <Layout className={styles.appLayout}>
+              {currentPage !== 'play' ? (
+                <>
+                  <AppHeader currentPage={currentPage} onPageChange={setCurrentPage} />
+                  <Content className={styles.appContent}>{renderPageContent}</Content>
+                </>
+              ) : (
+                <div className={styles.playPageFullscreen}>{renderPageContent}</div>
+              )}
+            </Layout>
+          </VideoPlayerProvider>
         </PlayingVideoProvider>
       </ShortcutProvider>
     </PlaybackSettingsProvider>

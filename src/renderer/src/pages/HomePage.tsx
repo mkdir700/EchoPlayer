@@ -8,12 +8,12 @@ import {
   PlusOutlined,
   DeleteOutlined
 } from '@ant-design/icons'
-import { useVideoPlayer } from '@renderer/hooks/useVideoPlayer'
 import { useRecentPlayList } from '@renderer/hooks/useRecentPlayList'
+import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
+import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { formatTime } from '@renderer/utils/helpers'
 import type { RecentPlayItem } from '@renderer/types'
 import styles from './HomePage.module.css'
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 
 const { Title, Text } = Typography
 
@@ -55,13 +55,13 @@ const recommendedVideos = [
 
 export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element {
   // 使用自定义 Hooks
-  const videoPlayer = useVideoPlayer()
+  const videoControls = useVideoControls()
   const { recentPlays, removeRecentPlay, clearRecentPlays, addRecentPlay } = useRecentPlayList()
   const playingVideoContext = usePlayingVideoContext()
 
   // 处理视频文件选择(首次打开)
   const handleVideoFileSelect = useCallback(async (): Promise<boolean> => {
-    const result = await playingVideoContext.handleVideoFileSelect(videoPlayer.resetVideoState)
+    const result = await playingVideoContext.handleVideoFileSelect(videoControls.resetVideoState)
     if (!result.success) {
       console.error('❌ 无法选择视频文件')
       return false
@@ -93,7 +93,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
 
     onNavigateToPlay()
     return result.success
-  }, [playingVideoContext, videoPlayer.resetVideoState, addRecentPlay, onNavigateToPlay])
+  }, [playingVideoContext, videoControls.resetVideoState, addRecentPlay, onNavigateToPlay])
 
   // 处理打开项目
   const handleOpenResouce = useCallback(
@@ -139,7 +139,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
         // 如果有保存的播放时间，恢复播放位置
         if (item.currentTime && item.currentTime > 0) {
           console.log('⏰ HomePage 恢复播放进度:', item.currentTime)
-          videoPlayer.restoreVideoState(item.currentTime, 1, 0.8)
+          videoControls.restoreVideoState(item.currentTime, 1, 0.8)
         }
 
         // 更新最近播放记录的最后打开时间，但保持原有的播放进度和字幕数据
@@ -160,7 +160,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
         return false
       }
     },
-    [playingVideoContext, addRecentPlay, onNavigateToPlay, removeRecentPlay, videoPlayer]
+    [playingVideoContext, addRecentPlay, onNavigateToPlay, removeRecentPlay, videoControls]
   )
 
   // 处理移除最近文件

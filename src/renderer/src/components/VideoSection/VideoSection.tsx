@@ -1,16 +1,25 @@
 import React from 'react'
 import { VideoPlayer } from '../VideoPlayer/VideoPlayer'
 import { VideoControlsCompact } from '../VideoPlayer/VideoControlsCompact'
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
 import { useShortcutGroup } from '@renderer/hooks/useComponentShortcuts'
+import {
+  useVideoTime,
+  useVideoPlayState,
+  useVideoDuration,
+  useVideoLoadState,
+  useVideoError,
+  useVideoPlayerRef,
+  useVideoStateRefs,
+  useVideoControls
+} from '@renderer/hooks/useVideoPlayerHooks'
 import type { DisplayMode } from '@renderer/types'
 import styles from './VideoSection.module.css'
 
 interface VideoSectionProps {
-  displayMode: DisplayMode
+  displayModeRef: React.RefObject<DisplayMode>
   isFullscreen: boolean
   onFullscreenChange: (isFullscreen: boolean) => void
   onFullscreenToggleReady: (toggleFn: () => void) => void
@@ -18,29 +27,47 @@ interface VideoSectionProps {
 }
 
 export function VideoSection({
-  displayMode,
+  displayModeRef,
   isFullscreen,
   onFullscreenChange,
   onFullscreenToggleReady,
   onDisplayModeChange
 }: VideoSectionProps): React.JSX.Element {
-  const videoPlayerContext = useVideoPlayerContext()
+  // 使用新的优化 hooks
+  const currentTime = useVideoTime()
+  const isPlaying = useVideoPlayState()
+  const duration = useVideoDuration()
+  const isVideoLoaded = useVideoLoadState()
+  const videoError = useVideoError()
+  const playerRef = useVideoPlayerRef()
+  const { playbackRateRef, volumeRef } = useVideoStateRefs()
+  const {
+    updateTime,
+    setDuration,
+    setVideoLoaded,
+    setVideoError,
+    setPlaybackRate,
+    setVolume,
+    toggle,
+    seekTo,
+    stepBackward,
+    stepForward
+  } = useVideoControls()
+
   const subtitleListContext = useSubtitleListContext()
   const playingVideoContext = usePlayingVideoContext()
 
   // 计算当前字幕索引（在这个组件中计算，避免PlayPage重新渲染）
-  const currentSubtitleIndex = subtitleListContext.getCurrentSubtitleIndex(
-    videoPlayerContext.currentTime
-  )
+  const currentSubtitleIndex = subtitleListContext.getCurrentSubtitleIndex(currentTime)
 
   // 字幕控制 Hook
   const subtitleControl = useSubtitleControl({
     currentSubtitleIndex,
-    currentTime: videoPlayerContext.currentTime,
-    isPlaying: videoPlayerContext.isPlaying,
-    isVideoLoaded: videoPlayerContext.isVideoLoaded,
-    onSeek: videoPlayerContext.handleSeek,
-    onPause: videoPlayerContext.handlePlayPause
+    currentTime,
+    isPlaying,
+    isVideoLoaded,
+    onSeek: seekTo,
+    onPause: toggle
   })
 
   // 注册组件特定的快捷键
@@ -53,9 +80,54 @@ export function VideoSection({
       nextSubtitle: subtitleControl.goToNextSubtitle
     },
     {
-      enabled: videoPlayerContext.isVideoLoaded && !!playingVideoContext.videoFile,
+      enabled: isVideoLoaded && !!playingVideoContext.videoFile,
       priority: 10 // 高优先级，确保在视频播放时优先处理
     }
+  )
+
+  // 适配旧的事件处理器接口
+  const handleProgress = React.useCallback(
+    (progress: { played: number; playedSeconds: number }) => {
+      updateTime(progress.playedSeconds)
+    },
+    [updateTime]
+  )
+
+  const handleVideoDuration = React.useCallback(
+    (dur: number) => {
+      setDuration(dur)
+    },
+    [setDuration]
+  )
+
+  const handleVideoReady = React.useCallback(() => {
+    console.log('🎬 视频就绪回调触发')
+    setVideoLoaded(true)
+    setVideoError(null)
+  }, [setVideoLoaded, setVideoError])
+
+  const handleVideoError = React.useCallback(
+    (error: Error | string) => {
+      console.error('Video player error:', error)
+      const errorMessage = typeof error === 'string' ? error : error.message
+      setVideoError(errorMessage)
+      setVideoLoaded(false)
+    },
+    [setVideoError, setVideoLoaded]
+  )
+
+  const handlePlaybackRateChange = React.useCallback(
+    (rate: number) => {
+      setPlaybackRate(rate)
+    },
+    [setPlaybackRate]
+  )
+
+  const handleVolumeChange = React.useCallback(
+    (volume: number) => {
+      setVolume(volume)
+    },
+    [setVolume]
   )
 
   return (
@@ -64,26 +136,26 @@ export function VideoSection({
       <div className={styles.videoPlayerSection}>
         <VideoPlayer
           videoFile={playingVideoContext.videoFile}
-          playerRef={videoPlayerContext.playerRef}
-          isPlaying={videoPlayerContext.isPlaying}
-          volume={videoPlayerContext.volume}
-          playbackRate={videoPlayerContext.playbackRate}
-          currentTime={videoPlayerContext.currentTime}
-          duration={videoPlayerContext.duration}
-          isVideoLoaded={videoPlayerContext.isVideoLoaded}
-          videoError={videoPlayerContext.videoError}
-          currentSubtitle={subtitleListContext.getCurrentSubtitle(videoPlayerContext.currentTime)}
-          displayMode={displayMode}
-          onProgress={videoPlayerContext.handleProgress}
-          onDuration={videoPlayerContext.handleVideoDuration}
-          onReady={videoPlayerContext.handleVideoReady}
-          onError={videoPlayerContext.handleVideoError}
-          onSeek={videoPlayerContext.handleSeek}
-          onStepBackward={videoPlayerContext.handleStepBackward}
-          onPlayPause={videoPlayerContext.handlePlayPause}
-          onStepForward={videoPlayerContext.handleStepForward}
-          onPlaybackRateChange={videoPlayerContext.handlePlaybackRateChange}
-          onVolumeChange={videoPlayerContext.handleVolumeChange}
+          playerRef={playerRef}
+          isPlaying={isPlaying}
+          volume={volumeRef.current}
+          playbackRate={playbackRateRef.current}
+          currentTime={currentTime}
+          duration={duration}
+          isVideoLoaded={isVideoLoaded}
+          videoError={videoError}
+          currentSubtitle={subtitleListContext.getCurrentSubtitle(currentTime)}
+          displayModeRef={displayModeRef}
+          onProgress={handleProgress}
+          onDuration={handleVideoDuration}
+          onReady={handleVideoReady}
+          onError={handleVideoError}
+          onSeek={seekTo}
+          onStepBackward={stepBackward}
+          onPlayPause={toggle}
+          onStepForward={stepForward}
+          onPlaybackRateChange={handlePlaybackRateChange}
+          onVolumeChange={handleVolumeChange}
           onFullscreenChange={onFullscreenChange}
           onFullscreenToggleReady={onFullscreenToggleReady}
         />
@@ -93,24 +165,24 @@ export function VideoSection({
       {playingVideoContext.videoFile && !isFullscreen && (
         <div className={styles.videoControlsSection}>
           <VideoControlsCompact
-            duration={videoPlayerContext.duration}
-            currentTime={videoPlayerContext.currentTime}
-            isVideoLoaded={videoPlayerContext.isVideoLoaded}
-            isPlaying={videoPlayerContext.isPlaying}
-            videoError={videoPlayerContext.videoError}
-            playbackRate={videoPlayerContext.playbackRate}
-            volume={videoPlayerContext.volume}
+            duration={duration}
+            currentTime={currentTime}
+            isVideoLoaded={isVideoLoaded}
+            isPlaying={isPlaying}
+            videoError={videoError}
+            playbackRate={playbackRateRef.current}
+            volume={volumeRef.current}
             isLooping={subtitleControl.isSingleLoop}
             autoPause={subtitleControl.isAutoPause}
             autoSkipSilence={false}
             subtitlePosition="bottom"
-            displayMode={displayMode}
-            onSeek={videoPlayerContext.handleSeek}
-            onStepBackward={videoPlayerContext.handleStepBackward}
-            onPlayPause={videoPlayerContext.handlePlayPause}
-            onStepForward={videoPlayerContext.handleStepForward}
-            onPlaybackRateChange={videoPlayerContext.handlePlaybackRateChange}
-            onVolumeChange={videoPlayerContext.handleVolumeChange}
+            displayModeRef={displayModeRef}
+            onSeek={seekTo}
+            onStepBackward={stepBackward}
+            onPlayPause={toggle}
+            onStepForward={stepForward}
+            onPlaybackRateChange={handlePlaybackRateChange}
+            onVolumeChange={handleVolumeChange}
             onLoopToggle={subtitleControl.toggleSingleLoop}
             onAutoSkipToggle={subtitleControl.toggleAutoPause}
             onSubtitlePositionToggle={() => {}}

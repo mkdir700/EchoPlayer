@@ -23,7 +23,7 @@ interface VideoPlayerProps {
   isVideoLoaded: boolean
   videoError: string | null
   currentSubtitle: SubtitleItem | null
-  displayMode: DisplayMode
+  displayModeRef: React.RefObject<DisplayMode>
   onProgress: (state: {
     played: number
     playedSeconds: number
@@ -56,7 +56,7 @@ export function VideoPlayer({
   isVideoLoaded,
   videoError,
   currentSubtitle,
-  displayMode,
+  displayModeRef,
   onProgress,
   onDuration,
   onReady,
@@ -229,7 +229,7 @@ export function VideoPlayer({
               <Subtitle
                 currentSubtitle={currentSubtitle}
                 isPlaying={isPlaying}
-                displayMode={displayMode}
+                displayMode={displayModeRef.current}
                 onWordHover={(isHovering) => {
                   if (isHovering) {
                     setShowControls(true)
@@ -264,7 +264,7 @@ export function VideoPlayer({
                   autoPause={false}
                   autoSkipSilence={false}
                   subtitlePosition="bottom"
-                  displayMode={displayMode}
+                  displayModeRef={displayModeRef}
                   isFullscreen={isFullscreen}
                   onSeek={onSeek}
                   onStepBackward={onStepBackward}
