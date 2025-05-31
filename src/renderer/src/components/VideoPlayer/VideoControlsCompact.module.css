@@ -357,14 +357,35 @@
   }
 
   .mainControls {
-    flex-direction: column;
+    /* 使用 CSS Grid 实现两行布局 */
+    display: grid;
+    grid-template-areas:
+      "center center"
+      "left right";
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md) var(--spacing-lg);
+    align-items: center;
+  }
+
+  /* 第一行：中央播放控制区域 */
+  .centerControls {
+    grid-area: center;
+    justify-self: center;
     gap: var(--spacing-md);
   }
 
-  .leftControls,
-  .centerControls,
+  /* 第二行左侧：功能控制 */
+  .leftControls {
+    grid-area: left;
+    justify-self: start;
+    gap: var(--spacing-xs);
+  }
+
+  /* 第二行右侧：系统控制 */
   .rightControls {
-    gap: var(--spacing-sm);
+    grid-area: right;
+    justify-self: end;
+    gap: var(--spacing-xs);
   }
 
   .controlBtn {
@@ -468,4 +489,4 @@
     height: 28px !important;
     padding: 0 8px !important;
   }
-} 
+}
