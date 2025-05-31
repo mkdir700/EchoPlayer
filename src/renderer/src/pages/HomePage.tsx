@@ -80,7 +80,6 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
         duration: 0,
         currentTime: 0,
         subtitleFile: '',
-        subtitleIndex: 0,
         subtitleItems: []
       })
     }
@@ -149,7 +148,6 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           duration: item.duration,
           currentTime: item.currentTime, // 保持原有的播放进度
           subtitleFile: item.subtitleFile,
-          subtitleIndex: item.subtitleIndex,
           subtitleItems: item.subtitleItems // 保持原有的字幕数据
         })
 
@@ -277,7 +275,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           ) : (
             <Row gutter={[24, 24]} className={styles.videoGrid}>
               {recentPlays.slice(0, 8).map((item) => (
-                <Col xs={12} sm={8} md={6} lg={4} xl={3} key={item.id}>
+                <Col xs={12} sm={8} md={6} lg={4} xl={4} key={item.id}>
                   <div
                     onClick={() => {
                       console.log('卡片被点击了！', item.fileName)
@@ -348,7 +346,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
 
           <Row gutter={[24, 24]} className={styles.videoGrid}>
             {recommendedVideos.map((video) => (
-              <Col xs={12} sm={8} md={6} lg={4} xl={3} key={video.id}>
+              <Col xs={12} sm={8} md={6} lg={4} xl={4} key={video.id}>
                 <Card
                   className={styles.videoCard}
                   hoverable
