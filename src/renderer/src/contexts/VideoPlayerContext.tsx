@@ -155,10 +155,29 @@ export function VideoPlayerProvider({
 
   const setPlaybackRate = useCallback((rate: number) => {
     playbackRateRef.current = rate
+
+    // 直接控制播放器的播放速度
+    if (playerRef.current && isVideoLoadedRef.current) {
+      console.log('设置播放速度:', rate)
+      const internalPlayer = playerRef.current.getInternalPlayer()
+      if (internalPlayer && 'playbackRate' in internalPlayer) {
+        (internalPlayer as any).playbackRate = rate
+      }
+    }
   }, [])
 
   const setVolume = useCallback((volume: number) => {
     volumeRef.current = volume
+
+    // 直接控制播放器的音量
+    if (playerRef.current) {
+      console.log('设置音量:', volume)
+      // ReactPlayer 的音量属性是只读的，但我们可以通过内部播放器来设置
+      const internalPlayer = playerRef.current.getInternalPlayer()
+      if (internalPlayer && 'volume' in internalPlayer) {
+        (internalPlayer as any).volume = volume
+      }
+    }
   }, [])
 
   // 播放控制方法

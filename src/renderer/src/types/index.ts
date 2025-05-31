@@ -28,8 +28,6 @@ export interface VideoControlsProps {
   isVideoLoaded: boolean
   isPlaying: boolean
   videoError: string | null
-  playbackRate: number
-  volume: number
   isLooping: boolean
   autoPause: boolean
   autoSkipSilence: boolean

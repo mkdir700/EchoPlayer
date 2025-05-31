@@ -112,12 +112,10 @@
   color: var(--accent-color) !important;
 }
 
-/* .controlBtn:focus {
-  background: var(--hover-bg) !important;
-  color: var(--accent-color) !important;
+.controlBtn:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
-} */
+  box-shadow: none;
+}
 
 .controlBtn:active {
   background: var(--active-bg) !important;
@@ -235,10 +233,10 @@
   align-items: center;
   gap: var(--spacing-sm);
   min-height: 120px;
-  animation: fadeInUp 0.2s ease;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--card-border);
   backdrop-filter: blur(20px);
+  z-index: 1000;
 }
 
 @keyframes fadeInUp {
@@ -409,7 +407,22 @@
     height: 28px !important;
   }
 
-  .volumeSliderPopup,
+  /* 移动端音量滑块适配 */
+  .volumeSliderPopup {
+    bottom: 35px;
+    min-height: 100px;
+    padding: var(--spacing-md) var(--spacing-sm);
+  }
+
+  .volumeSliderVertical {
+    height: 60px !important;
+  }
+
+  .volumeText {
+    font-size: 11px;
+  }
+
+  /* 保持设置弹窗在移动端隐藏 */
   .settingsPopup {
     display: none;
   }

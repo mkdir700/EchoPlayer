@@ -12,7 +12,6 @@ import {
   useVideoLoadState,
   useVideoError,
   useVideoPlayerRef,
-  useVideoStateRefs,
   useVideoControls
 } from '@renderer/hooks/useVideoPlayerHooks'
 import type { DisplayMode } from '@renderer/types'
@@ -40,7 +39,6 @@ export function VideoSection({
   const isVideoLoaded = useVideoLoadState()
   const videoError = useVideoError()
   const playerRef = useVideoPlayerRef()
-  const { playbackRateRef, volumeRef } = useVideoStateRefs()
   const {
     updateTime,
     setDuration,
@@ -138,8 +136,6 @@ export function VideoSection({
           videoFile={playingVideoContext.videoFile}
           playerRef={playerRef}
           isPlaying={isPlaying}
-          volume={volumeRef.current}
-          playbackRate={playbackRateRef.current}
           currentTime={currentTime}
           duration={duration}
           isVideoLoaded={isVideoLoaded}
@@ -170,8 +166,6 @@ export function VideoSection({
             isVideoLoaded={isVideoLoaded}
             isPlaying={isPlaying}
             videoError={videoError}
-            playbackRate={playbackRateRef.current}
-            volume={volumeRef.current}
             isLooping={subtitleControl.isSingleLoop}
             autoPause={subtitleControl.isAutoPause}
             autoSkipSilence={false}
