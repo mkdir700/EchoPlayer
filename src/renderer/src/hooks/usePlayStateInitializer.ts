@@ -2,20 +2,13 @@ import { useEffect, useState, useRef } from 'react'
 import { useRecentPlayList } from './useRecentPlayList'
 import { FileSystemHelper } from '@renderer/utils/fileSystemHelper'
 import { parseSubtitles } from '@renderer/utils/subtitleParser'
-import type { SubtitleItem } from '@types_/shared'
-import type { IPlayingVideoContextType } from '@renderer/contexts/playing-video-context'
+import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
+import { usePlayingVideoContext } from './usePlayingVideoContext'
+import { useVideoControls } from './useVideoPlayerHooks'
 
 interface UsePlayStateInitializerProps {
-  /** 播放视频上下文 */
-  playingVideoContext: IPlayingVideoContextType
-  /** 字幕数据 */
-  subtitles: SubtitleItem[]
   /** 是否显示提示导入字幕的模态框 */
   showSubtitleModal: boolean
-  /** 视频播放器恢复状态函数 */
-  restoreVideoState: (currentTime: number, playbackRate: number, volume: number) => void
-  /** 字幕恢复函数 */
-  restoreSubtitles: (subtitles: SubtitleItem[], index: number) => void
   /** 保存播放状态的函数引用 */
   savePlayStateRef: React.RefObject<((force?: boolean) => Promise<void>) | null>
 }
@@ -34,21 +27,15 @@ interface UsePlayStateInitializerReturn {
 /**
  * 播放状态初始化 Hook
  * @description 负责恢复保存的播放进度、字幕数据，以及自动检测字幕文件
- * @param props 参数
- * @param props.playingVideoContext 播放视频上下文
- * @param props.subtitles 字幕数据
- * @param props.restoreVideoState 恢复视频状态
- * @param props.restoreSubtitles 恢复字幕数据
  * @param props.savePlayStateRef 保存播放状态的函数引用
  */
 export function usePlayStateInitializer({
-  playingVideoContext,
-  subtitles,
-  restoreVideoState,
-  restoreSubtitles,
   savePlayStateRef
 }: UsePlayStateInitializerProps): UsePlayStateInitializerReturn {
   const { getRecentPlayByPath, addRecentPlay } = useRecentPlayList()
+  const subtitleListContext = useSubtitleListContext()
+  const playingVideoContext = usePlayingVideoContext()
+  const { restoreVideoState } = useVideoControls()
 
   const [pendingVideoInfo, setPendingVideoInfo] = useState<{
     filePath: string
@@ -58,14 +45,10 @@ export function usePlayStateInitializer({
   const [showSubtitleModal, setShowSubtitleModal] = useState(false)
 
   // 使用 ref 来存储函数引用，避免作为依赖
-  const restoreVideoStateRef = useRef(restoreVideoState)
-  const restoreSubtitlesRef = useRef(restoreSubtitles)
   const getRecentPlayByPathRef = useRef(getRecentPlayByPath)
   const addRecentPlayRef = useRef(addRecentPlay)
 
   // 更新 ref 的值
-  restoreVideoStateRef.current = restoreVideoState
-  restoreSubtitlesRef.current = restoreSubtitles
   getRecentPlayByPathRef.current = getRecentPlayByPath
   addRecentPlayRef.current = addRecentPlay
 
@@ -75,7 +58,7 @@ export function usePlayStateInitializer({
       originalFilePath: playingVideoContext.originalFilePath,
       videoFile: playingVideoContext.videoFile,
       videoFileName: playingVideoContext.videoFileName,
-      subtitlesLength: subtitles.length
+      subtitlesLength: subtitleListContext.subtitleItemsRef.current.length
     })
 
     // region 检测并加载同名字幕文件
@@ -96,7 +79,7 @@ export function usePlayStateInitializer({
             const parsed = parseSubtitles(content, `${videoBaseName}.${ext}`)
             if (parsed.length > 0) {
               console.log('📁 自动加载同名字幕文件:', subtitlePath)
-              restoreSubtitlesRef.current(parsed, 0)
+              subtitleListContext.restoreSubtitles(parsed, 0)
 
               // 立即保存字幕数据
               setTimeout(async () => {
@@ -135,27 +118,30 @@ export function usePlayStateInitializer({
         if (recent) {
           console.log('🔄 恢复保存的数据:', recent)
           console.log('🔍 检查字幕数据:', {
-            hasSubtitles: !!recent.subtitles,
-            subtitlesLength: recent.subtitles?.length || 0,
-            subtitleIndex: recent.subtitleIndex,
-            firstSubtitle: recent.subtitles?.[0]
+            hasSubtitles: !!recent.subtitleItems,
+            subtitlesLength: recent.subtitleItems?.length || 0,
+            firstSubtitle: recent.subtitleItems?.[0]
           })
 
           // 恢复播放进度
           if (recent.currentTime && recent.currentTime > 0) {
             console.log('⏰ 恢复播放进度:', recent.currentTime)
-            restoreVideoStateRef.current(
+            restoreVideoState(
               recent.currentTime,
               1, // 使用默认播放速度
-              0.8 // 使用默认音量
+              1 // 使用默认音量
             )
           }
 
           // 恢复字幕数据
           let hasRestoredSubtitles = false
-          if (recent.subtitles && recent.subtitles.length > 0) {
-            console.log('📝 恢复字幕数据:', recent.subtitles.length, '条字幕')
-            restoreSubtitlesRef.current(recent.subtitles, recent.subtitleIndex || 0)
+          if (recent.subtitleItems && recent.subtitleItems.length > 0) {
+            console.log('📝 恢复字幕数据:', recent.subtitleItems.length, '条字幕')
+            // 根据时间计算字幕索引
+            const subtitleIndex = subtitleListContext.getSubtitleIndexForTime(
+              recent.currentTime || 0
+            )
+            subtitleListContext.restoreSubtitles(recent.subtitleItems, subtitleIndex)
             hasRestoredSubtitles = true
           }
 
@@ -175,8 +161,7 @@ export function usePlayStateInitializer({
             fileName: playingVideoContext.videoFileName || '',
             duration: 0,
             currentTime: 0,
-            subtitleFile: undefined,
-            subtitleIndex: 0
+            subtitleFile: undefined
           })
         }
       } catch (error) {
@@ -184,7 +169,7 @@ export function usePlayStateInitializer({
       }
 
       // 如果没有保存的字幕数据，则自动检测并导入同名字幕文件
-      if (subtitles.length === 0) {
+      if (subtitleListContext.subtitleItemsRef.current.length === 0) {
         const found = await detectAndLoadSubtitles(playingVideoContext.originalFilePath)
 
         if (!found) {
@@ -199,12 +184,12 @@ export function usePlayStateInitializer({
     // endregion
 
     loadPlayState()
-  }, [playingVideoContext, subtitles.length, savePlayStateRef])
+  }, [playingVideoContext, subtitleListContext, savePlayStateRef, restoreVideoState])
 
   return {
     pendingVideoInfo,
-    setPendingVideoInfo,
     showSubtitleModal,
+    setPendingVideoInfo,
     setShowSubtitleModal
   }
 }

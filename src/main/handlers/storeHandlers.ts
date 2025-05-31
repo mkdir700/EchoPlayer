@@ -61,9 +61,8 @@ export function setupStoreHandlers(): void {
 
         console.log('📝 添加/更新最近播放项:', {
           filePath: item.filePath,
-          hasSubtitles: !!item.subtitles,
-          subtitlesLength: item.subtitles?.length || 0,
-          subtitleIndex: item.subtitleIndex
+          hasSubtitles: !!item.subtitleItems,
+          subtitlesLength: item.subtitleItems?.length || 0
         })
 
         // 检查是否已存在相同文件路径的项
@@ -112,9 +111,9 @@ export function setupStoreHandlers(): void {
         console.log('🔄 更新最近播放项:', {
           id,
           updates,
-          hasSubtitles: updates.subtitles ? updates.subtitles.length : 'undefined',
-          originalSubtitles: recentPlays[index].subtitles
-            ? recentPlays[index].subtitles.length
+          hasSubtitles: updates.subtitleItems ? updates.subtitleItems.length : 'undefined',
+          originalSubtitles: recentPlays[index].subtitleItems
+            ? recentPlays[index].subtitleItems.length
             : 'undefined'
         })
 
@@ -127,7 +126,7 @@ export function setupStoreHandlers(): void {
 
         console.log(
           '✅ 更新完成，最终字幕数量:',
-          recentPlays[index].subtitles ? recentPlays[index].subtitles.length : 'undefined'
+          recentPlays[index].subtitleItems ? recentPlays[index].subtitleItems.length : 'undefined'
         )
         return { success: true }
       } catch (error) {

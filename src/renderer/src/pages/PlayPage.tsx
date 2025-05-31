@@ -6,7 +6,6 @@ import { SubtitleLoadModal } from '@renderer/components/SubtitleLoadModal'
 
 // 导入所需的 hooks
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useSubtitleDisplayMode } from '@renderer/hooks/useSubtitleDisplayMode'
 import { useShortcutCommand, useCommandShortcuts } from '@renderer/hooks/useCommandShortcuts'
 import { usePlayStateSaver } from '@renderer/hooks/usePlayStateSaver'
@@ -21,43 +20,33 @@ import { VOLUME_SETTINGS } from '@renderer/constants'
 
 import type { SubtitleItem } from '@types_/shared'
 import styles from './PlayPage.module.css'
-import { message, Splitter } from 'antd'
+import { Splitter } from 'antd'
 
 interface PlayPageProps {
   onBack: () => void
 }
 
 export const PlayPage = React.memo<PlayPageProps>(function PlayPage({ onBack }) {
-  message.info('11111111111111111111111')
-
   // 使用新的优化 hooks
   const duration = useVideoDuration()
   const currentTimeRef = useVideoTimeRef()
   const { volumeRef } = useVideoStateRefs()
-  const { toggle, stepBackward, stepForward, setVolume, restoreVideoState } = useVideoControls()
+  const { toggle, stepBackward, stepForward, setVolume } = useVideoControls()
 
   // 其他 hooks
   const subtitleListContext = useSubtitleListContext()
-  const playingVideoContext = usePlayingVideoContext()
   const subtitleDisplayMode = useSubtitleDisplayMode()
 
   // 视频进度保存
   const { savePlayStateRef } = usePlayStateSaver({
-    originalFilePath: playingVideoContext.originalFilePath || null,
-    videoFile: playingVideoContext.videoFile || null,
     currentTimeRef: currentTimeRef,
-    duration: duration,
-    subtitleListContext
+    duration: duration
   })
 
   // 使用播放状态初始化 hook
   const { pendingVideoInfo, setPendingVideoInfo, showSubtitleModal, setShowSubtitleModal } =
     usePlayStateInitializer({
-      playingVideoContext: playingVideoContext,
-      subtitles: subtitleListContext.subtitleItemsRef.current,
       showSubtitleModal: false, // 初始值
-      restoreVideoState: restoreVideoState,
-      restoreSubtitles: subtitleListContext.restoreSubtitles,
       savePlayStateRef
     })
 

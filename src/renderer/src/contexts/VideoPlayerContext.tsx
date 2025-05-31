@@ -123,8 +123,26 @@ export function VideoPlayerProvider({
     (loaded: boolean) => {
       isVideoLoadedRef.current = loaded
       notifyLoadStateSubscribers(loaded)
+
+      // 当视频加载完成时，检查是否有待恢复的时间点
+      if (loaded && pendingRestoreTimeRef.current !== null && playerRef.current) {
+        const restoreTime = pendingRestoreTimeRef.current
+        console.log('🎯 视频加载完成，恢复待跳转时间点:', restoreTime)
+
+        // 使用延迟确保视频播放器完全准备好
+        setTimeout(() => {
+          if (playerRef.current && pendingRestoreTimeRef.current !== null) {
+            console.log('⏰ 执行时间跳转到:', restoreTime)
+            playerRef.current.seekTo(restoreTime, 'seconds')
+            currentTimeRef.current = restoreTime
+            notifyTimeSubscribers(restoreTime)
+            pendingRestoreTimeRef.current = null // 清除待恢复状态
+            console.log('✅ 成功恢复到时间点:', restoreTime)
+          }
+        }, 200) // 给更多时间确保视频播放器准备就绪
+      }
     },
-    [notifyLoadStateSubscribers]
+    [notifyLoadStateSubscribers, notifyTimeSubscribers]
   )
 
   const setVideoError = useCallback(
@@ -225,16 +243,26 @@ export function VideoPlayerProvider({
   // 状态恢复
   const restoreVideoState = useCallback(
     (currentTime: number, playbackRate: number, volume: number) => {
+      console.log('🔄 恢复视频状态 - VideoPlayerContext:', {
+        currentTime,
+        playbackRate,
+        volume,
+        isVideoLoaded: isVideoLoadedRef.current,
+        hasPlayer: !!playerRef.current
+      })
+
       currentTimeRef.current = currentTime
       playbackRateRef.current = playbackRate
       volumeRef.current = volume
 
       // 如果视频已加载，立即跳转
       if (isVideoLoadedRef.current && playerRef.current) {
+        console.log('🎯 视频已加载，立即跳转到时间点:', currentTime)
         playerRef.current.seekTo(currentTime, 'seconds')
         notifyTimeSubscribers(currentTime)
       } else {
         // 保存待恢复时间
+        console.log('⏳ 视频未加载，保存待恢复时间点:', currentTime)
         pendingRestoreTimeRef.current = currentTime
       }
     },

@@ -18,8 +18,7 @@ export interface RecentPlayItem {
   duration?: number // 视频时长
   currentTime?: number // 当前播放时间
   subtitleFile?: string // 字幕文件路径
-  subtitleIndex?: number // 字幕索引
-  subtitles?: SubtitleItem[] // 字幕数据
+  subtitleItems?: SubtitleItem[] // 字幕数据
 }
 
 // 播放设置接口

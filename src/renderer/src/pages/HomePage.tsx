@@ -81,7 +81,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
         currentTime: 0,
         subtitleFile: '',
         subtitleIndex: 0,
-        subtitles: []
+        subtitleItems: []
       })
     }
 
@@ -150,7 +150,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           currentTime: item.currentTime, // 保持原有的播放进度
           subtitleFile: item.subtitleFile,
           subtitleIndex: item.subtitleIndex,
-          subtitles: item.subtitles // 保持原有的字幕数据
+          subtitleItems: item.subtitleItems // 保持原有的字幕数据
         })
 
         onNavigateToPlay()
