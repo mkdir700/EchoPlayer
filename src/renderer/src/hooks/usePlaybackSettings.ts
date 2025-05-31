@@ -10,7 +10,6 @@ export interface UsePlaybackSettingsReturn {
   refreshPlaybackSettings: () => Promise<void>
 
   // 便捷方法
-  setAutoScrollEnabled: (enabled: boolean) => Promise<boolean>
   setDisplayMode: (mode: PlaybackSettings['displayMode']) => Promise<boolean>
   setVolume: (volume: number) => Promise<boolean>
   setPlaybackRate: (rate: number) => Promise<boolean>
@@ -20,7 +19,6 @@ export interface UsePlaybackSettingsReturn {
 
 export function usePlaybackSettings(): UsePlaybackSettingsReturn {
   const [playbackSettings, setPlaybackSettings] = useState<PlaybackSettings>({
-    isAutoScrollEnabled: true,
     displayMode: 'bilingual',
     volume: 0.8,
     playbackRate: 1.0,
@@ -73,12 +71,6 @@ export function usePlaybackSettings(): UsePlaybackSettingsReturn {
     [playbackSettings]
   )
 
-  // 便捷方法
-  const setAutoScrollEnabled = useCallback(
-    (enabled: boolean) => updatePlaybackSettings({ isAutoScrollEnabled: enabled }),
-    [updatePlaybackSettings]
-  )
-
   const setDisplayMode = useCallback(
     (mode: PlaybackSettings['displayMode']) => updatePlaybackSettings({ displayMode: mode }),
     [updatePlaybackSettings]
@@ -112,7 +104,6 @@ export function usePlaybackSettings(): UsePlaybackSettingsReturn {
     refreshPlaybackSettings,
 
     // 便捷方法
-    setAutoScrollEnabled,
     setDisplayMode,
     setVolume,
     setPlaybackRate,

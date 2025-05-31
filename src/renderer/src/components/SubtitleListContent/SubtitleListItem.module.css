@@ -110,11 +110,10 @@
   box-shadow: 0 0 8px rgba(102, 126, 234, 0.4);
 }
 
-/* 焦点状态样式 */
+/* 焦点状态样式已禁用 */
 .subtitleItem:focus {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
-  background-color: rgba(102, 126, 234, 0.08) !important;
+  outline: none;
+  background-color: transparent !important;
 }
 
 /* 响应式优化 */

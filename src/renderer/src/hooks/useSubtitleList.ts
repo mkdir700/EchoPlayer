@@ -14,14 +14,15 @@ export interface UseSubtitleListReturn extends SubtitleListState {
   getCurrentSubtitleIndex: (currentTime: number) => number
   getSubtitleIndexForTime: (currentTime: number) => number
   getCurrentSubtitle: (currentTime: number) => SubtitleItem | null
-  setAutoScrollEnabled: (enabled: boolean) => void
+  enableAutoScroll: () => void
+  disableAutoScroll: () => void
   setCurrentSubtitleIndex: (index: number) => void
   restoreSubtitles: (subtitles: SubtitleItem[], currentSubtitleIndex: number) => void
 }
 
 export function useSubtitleList(): UseSubtitleListReturn {
   const stateRef = useRef<SubtitleListState>({
-    isAutoScrollEnabledRef: useRef(false),
+    isAutoScrollEnabledRef: useRef(true),
     subtitleItemsRef: useRef([]),
     currentSubtitleIndexRef: useRef(-1)
   })
@@ -88,8 +89,12 @@ export function useSubtitleList(): UseSubtitleListReturn {
   }, [])
 
   // 设置自动滚动状态
-  const setAutoScrollEnabled = useCallback((enabled: boolean): void => {
-    stateRef.current.isAutoScrollEnabledRef.current = enabled
+  const enableAutoScroll = useCallback(() => {
+    stateRef.current.isAutoScrollEnabledRef.current = true
+  }, [])
+
+  const disableAutoScroll = useCallback(() => {
+    stateRef.current.isAutoScrollEnabledRef.current = false
   }, [])
 
   // 设置当前字幕索引
@@ -122,7 +127,8 @@ export function useSubtitleList(): UseSubtitleListReturn {
     getCurrentSubtitleIndex,
     getSubtitleIndexForTime,
     getCurrentSubtitle,
-    setAutoScrollEnabled,
+    enableAutoScroll,
+    disableAutoScroll,
     setCurrentSubtitleIndex,
     restoreSubtitles
   }

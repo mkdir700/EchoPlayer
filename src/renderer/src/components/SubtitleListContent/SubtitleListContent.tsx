@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react'
-import { Button, Space, Typography } from 'antd'
+import { Space, Typography } from 'antd'
 import { MessageOutlined } from '@ant-design/icons'
 import { List as VirtualizedList, AutoSizer, ListRowProps } from 'react-virtualized'
 import 'react-virtualized/styles.css'
@@ -7,9 +7,9 @@ import { SubtitleListItem } from './SubtitleListItem'
 import { formatTime } from '@renderer/utils/helpers'
 import styles from './SubtitleListContent.module.css'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { usePlaybackSettingsContext } from '@renderer/hooks/usePlaybackSettingsContext'
 import { useVideoStateRefs, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
+import { AimButton } from './AimButton'
 
 const { Text } = Typography
 
@@ -36,18 +36,21 @@ export function SubtitleListContent(): React.JSX.Element {
     subtitleItemsRef,
     isAutoScrollEnabledRef,
     currentSubtitleIndexRef,
+    enableAutoScroll,
+    disableAutoScroll,
     getSubtitleIndexForTime,
     setCurrentSubtitleIndex
   } = subtitleListContext
-  const playbackSettingsContext = usePlaybackSettingsContext()
   const virtualListRef = useRef<VirtualizedList>(null)
 
   // 滚动状态引用
   const lastSubtitleIndexRef = useRef(-1)
   const isInitializedRef = useRef(false)
-  const isAutoScrollingRef = useRef(false)
+  const isScrollingByUser = useRef(false)
   const userScrollTimerRef = useRef<NodeJS.Timeout | null>(null)
   const hasScrolledOnceRef = useRef(false)
+  // 新增：标记程序是否正在执行自动滚动
+  const isProgrammaticScrollingRef = useRef(false)
 
   // 点击字幕项时，恢复视频状态
   const handleClickSubtitleItem = (time: number): void => {
@@ -62,18 +65,22 @@ export function SubtitleListContent(): React.JSX.Element {
       }
 
       try {
-        isAutoScrollingRef.current = true
+        // 标记为程序滚动
+        isProgrammaticScrollingRef.current = true
+
         // 使用 center 对齐方式，让字幕显示在列表中间
         virtualListRef.current.scrollToRow(index)
+
+        // 延迟清除标记，确保滚动事件处理完成
+        setTimeout(() => {
+          isProgrammaticScrollingRef.current = false
+        }, 50)
+
         return true
       } catch (error) {
         console.warn('立即滚动失败:', error)
+        isProgrammaticScrollingRef.current = false
         return false
-      } finally {
-        // 短暂延迟后重置标志
-        setTimeout(() => {
-          isAutoScrollingRef.current = false
-        }, 100)
       }
     },
     [subtitleItemsRef]
@@ -87,25 +94,27 @@ export function SubtitleListContent(): React.JSX.Element {
       }
 
       try {
-        isAutoScrollingRef.current = true
+        // 标记为程序滚动
+        isProgrammaticScrollingRef.current = true
 
         // 使用 requestAnimationFrame 确保平滑效果
         requestAnimationFrame(() => {
           if (virtualListRef.current) {
             // 使用 center 对齐方式，让字幕显示在列表中间
             virtualListRef.current.scrollToRow(index)
+
+            // 延迟清除标记，确保滚动事件处理完成
+            setTimeout(() => {
+              isProgrammaticScrollingRef.current = false
+            }, 100)
           }
         })
 
         return true
       } catch (error) {
         console.warn('平滑滚动失败:', error)
+        isProgrammaticScrollingRef.current = false
         return false
-      } finally {
-        // 延迟重置标志，给平滑动画留时间
-        setTimeout(() => {
-          isAutoScrollingRef.current = false
-        }, 300)
       }
     },
     [subtitleItemsRef]
@@ -138,33 +147,37 @@ export function SubtitleListContent(): React.JSX.Element {
       const newSubtitleIndex = getSubtitleIndexForTime(time)
       const lastIndex = lastSubtitleIndexRef.current
 
-      console.log('🎯 时间变化:', {
-        time,
-        newSubtitleIndex,
-        lastSubtitleIndex: lastIndex
-      })
-
       // 更新字幕索引
       setCurrentSubtitleIndex(newSubtitleIndex)
 
+      // 如果用户正在手动滚动，跳过自动滚动
+      if (isScrollingByUser.current) {
+        return
+      }
+
+      // 如果自动滚动被禁用，也跳过
+      if (!isAutoScrollEnabledRef.current) {
+        return
+      }
+
       // 如果启用了自动滚动且有有效的字幕索引，执行滚动逻辑
-      if (
-        newSubtitleIndex >= 0 &&
-        isAutoScrollEnabledRef.current &&
-        subtitleItemsRef.current.length > 0
-      ) {
+      if (newSubtitleIndex >= 0 && subtitleItemsRef.current.length > 0) {
         const indexDifference = lastIndex >= 0 ? Math.abs(newSubtitleIndex - lastIndex) : 0
 
         // 判断滚动类型
         const isFirstTime = !hasScrolledOnceRef.current && newSubtitleIndex >= 0
-        const isLargeJump = lastIndex >= 0 && indexDifference > 15
-        const isSequentialChange = lastIndex >= 0 && indexDifference <= 2
 
         if (isFirstTime) {
           // 首次渲染：立即定位，无动画
           console.log('🎯 首次定位到字幕:', newSubtitleIndex)
 
           const scrollWithDelay = (): void => {
+            // 再次检查用户是否开始滚动
+            if (isScrollingByUser.current) {
+              console.log('🚫 用户开始滚动，取消首次定位')
+              return
+            }
+
             if (scrollToIndexInstantly(newSubtitleIndex)) {
               hasScrolledOnceRef.current = true
               lastSubtitleIndexRef.current = newSubtitleIndex
@@ -175,10 +188,9 @@ export function SubtitleListContent(): React.JSX.Element {
             }
           }
 
-          // 稍微延迟，确保虚拟列表已渲染
-          setTimeout(scrollWithDelay, 50)
-        } else if (isLargeJump) {
-          // 大幅度跳转：立即定位，无动画
+          setTimeout(scrollWithDelay, 10)
+        } else if (indexDifference > 10) {
+          // 大幅度跳转：立即定位
           console.log('🚀 大幅度跳转:', {
             from: lastIndex,
             to: newSubtitleIndex,
@@ -188,25 +200,13 @@ export function SubtitleListContent(): React.JSX.Element {
           if (scrollToIndexInstantly(newSubtitleIndex)) {
             lastSubtitleIndexRef.current = newSubtitleIndex
           }
-        } else if (isSequentialChange) {
-          // 连续播放：平滑滚动，有动画
-          console.log('📱 平滑滚动:', { from: lastIndex, to: newSubtitleIndex })
-
-          setTimeout(() => {
-            if (scrollToIndexSmoothly(newSubtitleIndex)) {
-              lastSubtitleIndexRef.current = newSubtitleIndex
-            }
-          }, 100)
         } else {
-          console.log('🎯 中等幅度跳转:', newSubtitleIndex)
-          // 更新索引但不滚动（中等幅度跳转）
+          // 小幅度变化：平滑滚动
           scrollToIndexSmoothly(newSubtitleIndex)
           lastSubtitleIndexRef.current = newSubtitleIndex
         }
-      } else {
-        // 更新索引
-        console.log('🎯 中等幅度跳转:', newSubtitleIndex)
-        scrollToIndexSmoothly(newSubtitleIndex)
+      } else if (newSubtitleIndex >= 0) {
+        // 只更新索引，不滚动
         lastSubtitleIndexRef.current = newSubtitleIndex
       }
     })
@@ -218,19 +218,30 @@ export function SubtitleListContent(): React.JSX.Element {
     setCurrentSubtitleIndex,
     scrollToIndexInstantly,
     scrollToIndexSmoothly,
-    isAutoScrollEnabledRef,
-    subtitleItemsRef
+    subtitleItemsRef,
+    isAutoScrollEnabledRef
   ])
 
-  // 处理用户手动滚动
-  const handleUserScroll = useCallback(() => {
-    if (isAutoScrollingRef.current) {
+  // 处理滚动事件（区分用户手动滚动和程序自动滚动）
+  const handleScroll = useCallback(() => {
+    // 如果是程序触发的滚动，忽略
+    if (isProgrammaticScrollingRef.current) {
+      if (!isAutoScrollEnabledRef.current) {
+        enableAutoScroll()
+      }
       return
     }
 
+    if (isAutoScrollEnabledRef.current) {
+      disableAutoScroll()
+      return
+    }
+
+    isScrollingByUser.current = true
+
     // 禁用自动滚动
     if (isAutoScrollEnabledRef.current) {
-      playbackSettingsContext.setAutoScrollEnabled(false)
+      disableAutoScroll()
     }
 
     // 清除现有定时器
@@ -240,27 +251,11 @@ export function SubtitleListContent(): React.JSX.Element {
 
     // 设置新的定时器，在一段时间后重新启用自动滚动
     userScrollTimerRef.current = setTimeout(() => {
-      playbackSettingsContext.setAutoScrollEnabled(true)
+      console.log('⏰ 自动恢复自动滚动')
+      enableAutoScroll()
+      isScrollingByUser.current = false
     }, AUTO_SCROLL_TIMEOUT)
-  }, [isAutoScrollEnabledRef, playbackSettingsContext])
-
-  // 手动定位到当前字幕并启用自动滚动
-  const handleCenterCurrentSubtitle = useCallback(() => {
-    if (currentSubtitleIndexRef.current >= 0 && virtualListRef.current) {
-      // 启用自动滚动
-      playbackSettingsContext.setAutoScrollEnabled(true)
-
-      // 清除用户滚动定时器
-      if (userScrollTimerRef.current) {
-        clearTimeout(userScrollTimerRef.current)
-        userScrollTimerRef.current = null
-      }
-
-      // 立即定位到当前字幕
-      scrollToIndexInstantly(currentSubtitleIndexRef.current)
-      lastSubtitleIndexRef.current = currentSubtitleIndexRef.current
-    }
-  }, [currentSubtitleIndexRef, playbackSettingsContext, scrollToIndexInstantly])
+  }, [isAutoScrollEnabledRef, enableAutoScroll, disableAutoScroll])
 
   // 重置状态当字幕数据变化时
   useEffect(() => {
@@ -296,39 +291,7 @@ export function SubtitleListContent(): React.JSX.Element {
           <Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
             字幕列表 ({subtitleItemsRef.current.length})
           </Text>
-          <Space>
-            {/* 滚动模式状态指示器 */}
-            <Text
-              style={{
-                fontSize: 11,
-                color: isAutoScrollEnabledRef.current ? '#52c41a' : '#ff7a00',
-                background: isAutoScrollEnabledRef.current ? '#f6ffed' : '#fff7e6',
-                padding: '1px 6px',
-                borderRadius: '4px',
-                border: isAutoScrollEnabledRef.current ? '1px solid #b7eb8f' : '1px solid #ffd591'
-              }}
-            >
-              {isAutoScrollEnabledRef.current ? '🤖 自动跟随' : '👆 手动浏览'}
-            </Text>
-
-            {currentSubtitleIndexRef.current >= 0 && (
-              <Button
-                size="small"
-                type="text"
-                onClick={handleCenterCurrentSubtitle}
-                title={
-                  isAutoScrollEnabledRef.current ? '定位当前字幕' : '定位当前字幕并启用自动跟随'
-                }
-                style={{
-                  fontSize: 11,
-                  padding: '2px 6px',
-                  color: isAutoScrollEnabledRef.current ? '#52c41a' : '#ff7a00'
-                }}
-              >
-                {isAutoScrollEnabledRef.current ? '🎯 定位' : '🔓 定位'}
-              </Button>
-            )}
-          </Space>
+          <Space>{currentSubtitleIndexRef.current >= 0 && <AimButton />}</Space>
         </div>
       )}
       <div className={styles.subtitleListContent}>
@@ -342,7 +305,7 @@ export function SubtitleListContent(): React.JSX.Element {
                 rowCount={subtitleItemsRef.current.length}
                 rowHeight={getItemHeight()}
                 rowRenderer={rowRenderer}
-                onScroll={handleUserScroll}
+                onScroll={handleScroll}
                 overscanRowCount={10} // 预渲染额外的行以提高滚动体验
                 scrollToAlignment="center" // 改为居中对齐，让当前字幕显示在列表中间
               />

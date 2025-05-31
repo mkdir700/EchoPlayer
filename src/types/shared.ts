@@ -24,7 +24,6 @@ export interface RecentPlayItem {
 
 // 播放设置接口
 export interface PlaybackSettings {
-  isAutoScrollEnabled: boolean // 自动滚动是否启用
   displayMode: 'none' | 'original' | 'chinese' | 'english' | 'bilingual' // 字幕显示模式
   volume: number // 音量
   playbackRate: number // 播放速度
