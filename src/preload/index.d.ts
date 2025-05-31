@@ -86,6 +86,11 @@ declare global {
       fileSystem: FileSystemAPI
       dictionary: DictionaryAPI
       store: StoreAPI
+      log: (
+        level: 'debug' | 'info' | 'warn' | 'error',
+        message: string,
+        data?: unknown
+      ) => Promise<void>
     }
   }
 }

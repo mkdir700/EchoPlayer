@@ -32,6 +32,7 @@
     "@types/react-virtualized": "^9.22.2",
     "antd": "^5.25.2",
     "cheerio": "^1.0.0",
+    "electron-log": "^5.4.0",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.3.9",
     "react-player": "^2.16.0",

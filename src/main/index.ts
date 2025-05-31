@@ -2,6 +2,8 @@ import { app, BrowserWindow } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { createWindow } from './window/windowManager'
 import { setupFileSystemHandlers, setupDictionaryHandlers, setupStoreHandlers } from './handlers'
+import { setupLogHandlers } from './handlers/logHandlers'
+import { Logger } from './utils/logger'
 
 // 🔥 关键修复：命令行参数必须在 app.whenReady() 之前设置！
 // 启用 H.265/HEVC 支持的关键配置
@@ -41,6 +43,9 @@ if (process.platform === 'darwin') {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // 初始化日志系统
+  Logger.appStart()
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -60,6 +65,9 @@ app.whenReady().then(() => {
   // 设置存储相关的 IPC 处理器
   setupStoreHandlers()
 
+  // 设置日志相关的 IPC 处理器
+  setupLogHandlers()
+
   createWindow()
 
   app.on('activate', function () {
@@ -73,9 +81,15 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  Logger.appShutdown()
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+// 应用即将退出时的清理
+app.on('before-quit', () => {
+  Logger.appShutdown()
 })
 
 // In this file you can include the rest of your app's specific main process

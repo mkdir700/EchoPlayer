@@ -137,7 +137,10 @@ const storeAPI = {
 const api = {
   fileSystem: fileSystemAPI,
   dictionary: dictionaryAPI,
-  store: storeAPI
+  store: storeAPI,
+  // 日志API
+  log: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) =>
+    ipcRenderer.invoke('log', level, message, data)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
