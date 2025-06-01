@@ -183,6 +183,32 @@ export const useSubtitleState = (
   // 计算默认定位框
   const calculateDefaultMaskFrame = useCallback(
     (displayAspectRatio: number, containerWidth: number, containerHeight: number) => {
+      // 参数验证，防止 NaN
+      if (
+        !containerWidth ||
+        !containerHeight ||
+        !displayAspectRatio ||
+        containerWidth <= 0 ||
+        containerHeight <= 0 ||
+        displayAspectRatio <= 0 ||
+        !isFinite(containerWidth) ||
+        !isFinite(containerHeight) ||
+        !isFinite(displayAspectRatio)
+      ) {
+        console.warn('🔧 calculateDefaultMaskFrame 参数无效，使用默认值:', {
+          containerWidth,
+          containerHeight,
+          displayAspectRatio
+        })
+        // 返回安全的默认值
+        return {
+          left: 0,
+          top: 25,
+          width: 100,
+          height: 50
+        }
+      }
+
       const containerAspectRatio = containerWidth / containerHeight
 
       let videoDisplayWidth: number, videoDisplayHeight: number, videoLeft: number, videoTop: number
@@ -204,12 +230,15 @@ export const useSubtitleState = (
       const videoWidthPercent = (videoDisplayWidth / containerWidth) * 100
       const videoHeightPercent = (videoDisplayHeight / containerHeight) * 100
 
-      return {
-        left: Math.max(0, Math.min(100, videoLeftPercent)),
-        top: Math.max(0, Math.min(100, videoTopPercent)),
-        width: Math.max(10, Math.min(100, videoWidthPercent)),
-        height: Math.max(10, Math.min(100, videoHeightPercent))
+      // 确保所有计算结果都是有效数字
+      const result = {
+        left: Math.max(0, Math.min(100, isFinite(videoLeftPercent) ? videoLeftPercent : 0)),
+        top: Math.max(0, Math.min(100, isFinite(videoTopPercent) ? videoTopPercent : 25)),
+        width: Math.max(10, Math.min(100, isFinite(videoWidthPercent) ? videoWidthPercent : 100)),
+        height: Math.max(10, Math.min(100, isFinite(videoHeightPercent) ? videoHeightPercent : 50))
       }
+
+      return result
     },
     []
   )
@@ -221,6 +250,12 @@ export const useSubtitleState = (
       containerWidth,
       containerHeight
     )
+    console.log('🔄 toggleMaskMode', {
+      displayAspectRatio,
+      containerWidth,
+      containerHeight,
+      defaultMaskFrame
+    })
     setSubtitleState((prev) => {
       const newState = {
         ...prev,

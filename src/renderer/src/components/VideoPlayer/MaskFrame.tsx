@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback, memo } from 'react'
 import type { SubtitleMarginsState } from '@renderer/hooks/useSubtitleState'
 import { useMaskFrame } from '@renderer/hooks/useMaskFrame'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
@@ -10,13 +10,19 @@ interface MaskFrameProps {
   updateMaskFrame: (maskFrame: SubtitleMarginsState['maskFrame']) => void
   containerRef: React.RefObject<HTMLDivElement | null>
   onResetToVideo?: () => void
+  isMaskFrameActive?: boolean
+  onMaskFrameMouseEnter?: () => void
+  onMaskFrameMouseLeave?: () => void
 }
 
-export function MaskFrame({
+function MaskFrame({
   maskFrame,
   updateMaskFrame,
   containerRef,
-  onResetToVideo
+  onResetToVideo,
+  isMaskFrameActive = false,
+  onMaskFrameMouseEnter,
+  onMaskFrameMouseLeave
 }: MaskFrameProps): React.JSX.Element {
   const { displayAspectRatio } = usePlayingVideoContext()
   const maskFrameController = useMaskFrame(maskFrame, updateMaskFrame, containerRef)
@@ -40,7 +46,7 @@ export function MaskFrame({
   ])
 
   // 重置定位框到视频区域
-  const handleResetToVideo = (): void => {
+  const handleResetToVideo = useCallback((): void => {
     const parent = containerRef.current?.parentElement
     if (!parent) return
 
@@ -86,6 +92,25 @@ export function MaskFrame({
     if (onResetToVideo) {
       onResetToVideo()
     }
+  }, [displayAspectRatio, updateMaskFrame, maskFrameController, onResetToVideo, containerRef])
+
+  // 计算最终的边框显示状态：内部hover状态 或 外部激活状态
+  const shouldShowBorder =
+    maskFrameController.isHovering ||
+    maskFrameController.isDragging ||
+    maskFrameController.isResizing ||
+    isMaskFrameActive
+
+  // 处理鼠标进入事件
+  const handleMouseEnter = (): void => {
+    maskFrameController.handleMouseEnter()
+    onMaskFrameMouseEnter?.()
+  }
+
+  // 处理鼠标离开事件
+  const handleMouseLeave = (): void => {
+    maskFrameController.handleMouseLeave()
+    onMaskFrameMouseLeave?.()
   }
 
   RendererLogger.componentRender({
@@ -107,12 +132,7 @@ export function MaskFrame({
         top: `${maskFrame.top}%`,
         width: `${maskFrame.width}%`,
         height: `${maskFrame.height}%`,
-        border:
-          maskFrameController.isHovering ||
-          maskFrameController.isDragging ||
-          maskFrameController.isResizing
-            ? '2px dashed rgba(102, 126, 234, 0.8)'
-            : 'none',
+        border: shouldShowBorder ? '2px dashed rgba(102, 126, 234, 0.8)' : 'none',
         backgroundColor: 'transparent',
         zIndex: 6,
         pointerEvents: 'auto', // 允许鼠标事件
@@ -129,11 +149,11 @@ export function MaskFrame({
         maxHeight: '100%'
       }}
       onMouseDown={maskFrameController.handleMouseDown}
-      onMouseEnter={maskFrameController.handleMouseEnter}
-      onMouseLeave={maskFrameController.handleMouseLeave}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* 提示文字 - 只在悬停时显示 */}
-      {maskFrameController.isHovering && (
+      {(maskFrameController.isHovering || shouldShowBorder) && (
         <div
           style={{
             position: 'absolute',
@@ -154,7 +174,7 @@ export function MaskFrame({
       )}
 
       {/* 重置按钮 */}
-      {maskFrameController.isHovering && (
+      {(maskFrameController.isHovering || shouldShowBorder) && (
         <button
           onClick={handleResetToVideo}
           style={{
@@ -188,7 +208,7 @@ export function MaskFrame({
       )}
 
       {/* 调整大小控制点 - 四个角 */}
-      {maskFrameController.isHovering && (
+      {(maskFrameController.isHovering || shouldShowBorder) && (
         <>
           {/* 右下角 */}
           <div
@@ -247,3 +267,23 @@ export function MaskFrame({
     </div>
   )
 }
+
+// 自定义比较函数，避免不必要的重渲染
+const arePropsEqual = (prevProps: MaskFrameProps, nextProps: MaskFrameProps): boolean => {
+  // 比较maskFrame对象
+  if (prevProps.maskFrame.left !== nextProps.maskFrame.left) return false
+  if (prevProps.maskFrame.top !== nextProps.maskFrame.top) return false
+  if (prevProps.maskFrame.width !== nextProps.maskFrame.width) return false
+  if (prevProps.maskFrame.height !== nextProps.maskFrame.height) return false
+
+  // 比较新增的 isMaskFrameActive 属性
+  if (prevProps.isMaskFrameActive !== nextProps.isMaskFrameActive) return false
+
+  // 回调函数通常不会改变，跳过比较
+  return true
+}
+
+// 导出带有自定义比较函数的组件
+const MemoizedMaskFrame = memo(MaskFrame, arePropsEqual)
+
+export { MemoizedMaskFrame as MaskFrame }

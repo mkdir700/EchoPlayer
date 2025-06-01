@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import { Button, Slider, Typography, Select, Tooltip } from 'antd'
 import {
   PlayCircleOutlined,
@@ -17,22 +17,36 @@ import {
   RightOutlined
 } from '@ant-design/icons'
 import { VideoProgressBar } from './VideoProgressBar'
-import type { VideoControlsProps as VideoControlsPropsType } from '@renderer/types'
 
 // 导入样式
 import styles from './VideoControlsFullScreen.module.css'
 
 const { Text } = Typography
 
-interface VideoControlsProps extends VideoControlsPropsType {
+interface VideoControlsFullScreenProps {
   showControls: boolean
+  isVideoLoaded: boolean
+  isPlaying: boolean
+  videoError: string | null
+  isLooping: boolean
+  autoSkipSilence: boolean
   isFullscreen: boolean
+  playbackRate: number
+  volume: number
+  onStepBackward: () => void
+  onPlayPause: () => void
+  onStepForward: () => void
+  onPlaybackRateChange: (value: number) => void
+  onVolumeChange: (value: number) => void
+  onLoopToggle: () => void
+  onAutoSkipToggle: () => void
+  onFullscreenToggle: () => void
+  onPreviousSubtitle: () => void
+  onNextSubtitle: () => void
 }
 
-export function VideoControlsFullScreen({
+function VideoControlsFullScreen({
   showControls,
-  duration,
-  currentTime,
   isVideoLoaded,
   isPlaying,
   videoError,
@@ -41,7 +55,6 @@ export function VideoControlsFullScreen({
   isLooping,
   autoSkipSilence,
   isFullscreen,
-  onSeek,
   onStepBackward,
   onPlayPause,
   onStepForward,
@@ -52,7 +65,7 @@ export function VideoControlsFullScreen({
   onFullscreenToggle,
   onPreviousSubtitle,
   onNextSubtitle
-}: VideoControlsProps): React.JSX.Element {
+}: VideoControlsFullScreenProps): React.JSX.Element {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
@@ -67,12 +80,7 @@ export function VideoControlsFullScreen({
   return (
     <>
       {/* 顶部进度条 - 独立组件 */}
-      <VideoProgressBar
-        duration={duration}
-        currentTime={currentTime}
-        isVideoLoaded={isVideoLoaded}
-        onSeek={onSeek}
-      />
+      <VideoProgressBar />
 
       {/* 中央播放按钮 - 仅在暂停时显示 */}
       {!isPlaying && showControls && (
@@ -272,3 +280,31 @@ export function VideoControlsFullScreen({
     </>
   )
 }
+
+// 自定义比较函数，只在必要时重新渲染
+const arePropsEqual = (
+  prevProps: VideoControlsFullScreenProps,
+  nextProps: VideoControlsFullScreenProps
+): boolean => {
+  // 比较控制状态
+  if (prevProps.showControls !== nextProps.showControls) return false
+  if (prevProps.isPlaying !== nextProps.isPlaying) return false
+  if (prevProps.isVideoLoaded !== nextProps.isVideoLoaded) return false
+  if (prevProps.videoError !== nextProps.videoError) return false
+  if (prevProps.isFullscreen !== nextProps.isFullscreen) return false
+
+  // 比较其他控制属性
+  if (prevProps.isLooping !== nextProps.isLooping) return false
+  if (prevProps.autoSkipSilence !== nextProps.autoSkipSilence) return false
+
+  // 🚫 不比较 currentTime 和 duration
+  // 这些属性会频繁变化，但 VideoProgressBar 组件会单独处理
+  // 其他UI元素不需要因为时间变化而重新渲染
+
+  return true
+}
+
+// 导出 memo 包装的组件
+const MemoizedVideoControlsFullScreen = memo(VideoControlsFullScreen, arePropsEqual)
+
+export { MemoizedVideoControlsFullScreen as VideoControlsFullScreen }

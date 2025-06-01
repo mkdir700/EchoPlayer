@@ -27,7 +27,7 @@
   border: 2px dashed transparent;
 }
 
-/* 悬停时显示边框 */
+/* 悬停时显示边框和拖拽提示 */
 .subtitleContainer:hover {
   border: 2px dashed rgba(102, 126, 234, 0.6);
   box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.3);
@@ -59,6 +59,8 @@
   box-sizing: border-box;
   overflow: hidden; /* 隐藏溢出的字幕内容 */
 }
+
+
 
 /* 透明背景样式 */
 .subtitleContent.transparentBackground {
@@ -361,13 +363,14 @@
 
 /* 字幕单词交互效果 */
 .subtitleWord {
-  cursor: pointer;
+  cursor: default; /* 默认光标，让可点击单词自己设置 */
   padding: 2px 4px;
   border-radius: 4px;
   transition: all var(--transition-fast);
   position: relative;
   display: inline-block;
   pointer-events: auto; /* 单词可以接收点击事件 */
+  z-index: 2; /* 确保单词在拖拽区域之上 */
 }
 
 .subtitleWord:hover {
@@ -460,37 +463,17 @@
 @media (min-width: 2560px) {
   .subtitleContainer {
     /* 4K屏幕下保持更合理的字幕尺寸 */
-    max-width: 60%; /* 4K下进一步限制最大宽度，避免字幕过宽 */
+    /* 移除max-width限制，让一键铺满功能能够正常工作 */
     max-height: 30%; /* 4K下减少最大高度比例 */
   }
 
-  .subtitleText {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-    line-height: 1.8 !important;
-  }
-  
-  .subtitleText.english {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
-  
-  .subtitleText.chinese {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
-
-  .controlButton {
-    /* 按钮大小由动态计算控制，不再使用固定值 */
-  }
-
-  .resizeHandle {
-    /* 调整大小控制点尺寸由动态计算控制 */
-  }
 }
 
 /* 大屏幕优化 (2K 及以上) */
 @media (min-width: 1440px) and (max-width: 2559px) {
   .subtitleContainer {
     /* 大屏幕下保持合理的字幕尺寸 */
-    max-width: 70%; /* 大屏幕下适当增加最大宽度 */
+    /* 移除max-width限制，让一键铺满功能能够正常工作 */
     max-height: 35%; /* 大屏幕下适当减少最大高度比例 */
   }
 
@@ -499,77 +482,31 @@
     line-height: 1.7 !important;
   }
   
-  .subtitleText.english {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
-  
-  .subtitleText.chinese {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
 
-  .controlButton {
-    /* 按钮大小由动态计算控制，不再使用固定值 */
-  }
-
-  .resizeHandle {
-    /* 调整大小控制点尺寸由动态计算控制 */
-  }
 }
 
 /* 中等屏幕 (1024px - 1440px) */
 @media (min-width: 1024px) and (max-width: 1439px) {
   .subtitleContainer {
-    max-width: 80%; /* 中等屏幕下的最大宽度 */
+    /* 移除max-width限制，让一键铺满功能能够正常工作 */
     max-height: 40%; /* 中等屏幕下的最大高度 */
   }
 
-  .subtitleText {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
-  
-  .subtitleText.english {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
-  
-  .subtitleText.chinese {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
 
-  .controlButton {
-    /* 按钮大小由动态计算控制，不再使用固定值 */
-  }
 }
 
 /* 小屏幕 (768px - 1024px，应用最小分辨率范围) */
 @media (min-width: 768px) and (max-width: 1023px) {
   .subtitleContainer {
-    max-width: 90%; /* 小屏幕下限制最大宽度 */
+    /* 移除max-width限制，让一键铺满功能能够正常工作 */
     max-height: 45%; /* 小屏幕下稍微增加最大高度 */
     min-width: 35%; /* 确保最小可读宽度 */
     min-height: 10%; /* 确保最小可读高度 */
   }
 
-  .subtitleText {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
-  
-  .subtitleText.english {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
-  
-  .subtitleText.chinese {
-    /* 字体大小由动态计算控制，不再使用固定值 */
-  }
+
 
   .subtitleControlsExternal {
     transform: translate(-100%, -100%) scale(0.95); /* 小屏幕下稍微缩小控制按钮 */
   }
-
-  .controlButton {
-    /* 按钮大小由动态计算控制，不再使用固定值 */
-  }
-
-      .resizeHandle {
-      /* 调整大小控制点尺寸由动态计算控制 */
-    }
-  } 
+}

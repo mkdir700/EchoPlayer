@@ -25,7 +25,15 @@ export const splitChineseText = (
         className={`${styles.subtitleWord} ${isClickableChar ? styles.clickableWord : ''}`}
         onMouseEnter={() => onWordHover(true)}
         onMouseLeave={() => onWordHover(false)}
-        onClick={isClickableChar ? (e: React.MouseEvent) => onWordClick(char, e) : undefined}
+        onClick={
+          isClickableChar
+            ? (e: React.MouseEvent) => {
+                e.stopPropagation()
+                e.preventDefault()
+                onWordClick(char, e)
+              }
+            : undefined
+        }
         style={{ cursor: isClickableChar ? 'pointer' : 'default' }}
       >
         {char}
@@ -55,7 +63,15 @@ export const splitEnglishText = (
         className={`${styles.subtitleWord} ${isClickableWord ? styles.clickableWord : ''}`}
         onMouseEnter={() => onWordHover(true)}
         onMouseLeave={() => onWordHover(false)}
-        onClick={isClickableWord ? (e: React.MouseEvent) => onWordClick(trimWord, e) : undefined}
+        onClick={
+          isClickableWord
+            ? (e: React.MouseEvent) => {
+                e.stopPropagation()
+                e.preventDefault()
+                onWordClick(trimWord, e)
+              }
+            : undefined
+        }
         style={{ cursor: isClickableWord ? 'pointer' : 'default' }}
       >
         {word}
