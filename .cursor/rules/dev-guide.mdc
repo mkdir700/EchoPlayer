@@ -5,6 +5,346 @@ alwaysApply: false
 ---
 # EchoLab 开发指南
 
+## 📋 项目概述
+EchoLab 是一个基于 Electron + React + TypeScript 的视频学习工具，支持字幕显示、单词查询等功能。
+
+## 🎯 性能优化最佳实践
+
+### 1. 组件渲染优化策略
+
+#### 问题识别
+- **症状**: 组件在视频播放时频繁渲染（每300ms一次）
+- **原因**: 直接在父组件中使用响应时间变化的 hooks（如 `useVideoTime()`）
+- **影响**: 导致整个组件树不必要的重新渲染，影响性能
+
+#### 解决方案：时间敏感组件分离模式
+```typescript
+// ❌ 错误做法：在主组件中直接使用时间hook
+function VideoPlayer() {
+  const currentTime = useVideoTime() // 导致频繁渲染
+  const currentSubtitle = getCurrentSubtitle(currentTime)
+  
+  return (
+    <div>
+      <ReactPlayer />
+      <SubtitleDisplay subtitle={currentSubtitle} />
+    </div>
+  )
+}
+
+// ✅ 正确做法：将时间敏感逻辑分离到独立组件
+function VideoPlayer() {
+  // 不直接使用时间hook，避免频繁渲染
+  return (
+    <div>
+      <ReactPlayer />
+      <SubtitleOverlay /> {/* 独立处理时间变化 */}
+    </div>
+  )
+}
+
+function SubtitleOverlay() {
+  const currentTime = useVideoTime() // 在这里处理时间变化
+  const currentSubtitle = getCurrentSubtitle(currentTime)
+  
+  return <SubtitleDisplay subtitle={currentSubtitle} />
+}
+```
+
+#### 核心原则
+1. **单一职责**: 每个组件只负责一种类型的状态变化
+2. **响应式分离**: 将频繁变化的状态从稳定的UI组件中分离
+3. **渲染边界**: 在需要响应变化的最小范围内使用响应式hooks
+
+### 2. Context 和 Hook 架构设计
+
+#### 状态管理层次
+```typescript
+// 1. Context层 - 集中状态管理，基于Ref避免渲染
+const VideoPlayerContext = {
+  currentTimeRef: useRef(0),
+  isPlayingRef: useRef(false),
+  // 订阅机制用于精确控制渲染
+  subscribeToTime: (callback) => void,
+  subscribeToPlayState: (callback) => void
+}
+
+// 2. Hook层 - 根据需求选择不同的访问方式
+// 需要响应变化的组件使用：
+const currentTime = useVideoTime() // 会重新渲染
+
+// 不需要响应变化的组件使用：
+const { currentTimeRef } = useVideoStateRefs() // 不会重新渲染
+```
+
+#### Hook 设计模式
+1. **响应式Hook**: 适用于需要实时更新UI的组件
+2. **Ref Hook**: 适用于只需要读取最新值但不需要重新渲染的场景
+3. **控制Hook**: 提供状态修改方法，通常是稳定的函数引用
+
+### 3. React.memo 优化策略
+
+#### 比较函数设计原则
+```typescript
+// ✅ 精简的比较函数
+const arePropsEqual = (prev: Props, next: Props): boolean => {
+  // 只比较真正影响渲染的属性
+  if (prev.displayMode !== next.displayMode) return false
+  
+  // 跳过回调函数比较（通常是稳定的）
+  // 跳过频繁变化但不影响UI的属性
+  return true
+}
+
+// ❌ 过度复杂的比较函数
+const arePropsEqual = (prev: Props, next: Props): boolean => {
+  // 比较所有属性，包括频繁变化的时间值
+  if (prev.currentTime !== next.currentTime) return false // 导致频繁渲染
+  // ... 过多的比较逻辑
+}
+```
+
+### 4. 组件架构模式
+
+#### 推荐的组件分层
+```
+VideoSection (容器组件)
+├── VideoPlayer (稳定的播放器外壳)
+│   ├── ReactPlayer (第三方播放器)
+│   ├── SubtitleOverlay (时间敏感的字幕层)
+│   └── VideoControls (控制界面)
+└── VideoControlsCompact (外部控制栏)
+```
+
+#### 关键设计决策
+1. **VideoPlayer**: 不直接处理时间变化，保持渲染稳定
+2. **SubtitleOverlay**: 专门处理字幕相关的时间响应
+3. **控制组件**: 使用Context直接获取状态，减少props传递
+
+### 5. 性能监控和调试
+
+#### 组件渲染日志
+```typescript
+// 在关键组件中添加渲染日志
+RendererLogger.componentRender({
+  component: 'ComponentName',
+  props: {
+    // 只记录关键属性，避免记录频繁变化的值
+    isPlaying,
+    isVideoLoaded,
+    // 不记录 currentTime 等频繁变化的属性
+  }
+})
+```
+
+#### 性能分析指标
+- **目标**: 播放时VideoPlayer组件不应频繁渲染
+- **监控**: 通过控制台日志观察组件渲染频率
+- **优化**: 确保时间敏感的渲染只发生在必要的组件中
+
+### 6. 开发建议
+
+#### 新功能开发流程
+1. **分析状态依赖**: 确定组件需要响应哪些状态变化
+2. **选择合适的Hook**: 根据是否需要重新渲染选择hook类型
+3. **设计组件边界**: 将频繁变化的逻辑隔离到独立组件
+4. **添加性能监控**: 在关键组件中添加渲染日志
+5. **测试渲染性能**: 确保组件不会过度渲染
+
+#### 常见陷阱避免
+- ❌ 在容器组件中直接使用 `useVideoTime()`
+- ❌ 在memo比较函数中比较所有props
+- ❌ 传递频繁变化的props给稳定组件
+- ❌ 忽略组件渲染日志的警告信息
+
+## 📚 相关资源
+
+### 核心文件位置
+- Context实现: `src/renderer/src/contexts/VideoPlayerContext.tsx`
+- Hook实现: `src/renderer/src/hooks/useVideoPlayerHooks.ts`
+- 主要组件: `src/renderer/src/components/VideoPlayer/`
+
+### 性能优化相关
+- 组件渲染监控: `src/renderer/src/utils/logger.ts`
+- Context订阅机制: 用于精确控制重新渲染的范围
+
+---
+
+*最后更新: 2025-06-01*
+*优化成果: VideoPlayer组件播放时渲染频率从300ms一次优化到仅在必要状态变化时渲染*
+
+## React 性能优化指南
+
+### 1. 组件重新渲染优化
+
+#### 问题识别：频繁重新渲染
+在开发过程中，发现了以下导致组件频繁重新渲染的常见问题：
+
+**SubtitleV3 组件拖拽时频繁渲染问题**：
+- **原因**：拖拽过程中每次鼠标移动都直接调用 `updateSubtitleState`
+- **症状**：拖拽时控制台大量渲染日志，影响性能和用户体验
+- **解决方案**：实施节流机制和优化依赖项
+
+**VideoPlayer 组件鼠标移动时频繁渲染问题**：
+- **原因**：`onMouseMove` 事件处理器每次都调用 `setShowControls(true)`
+- **症状**：鼠标在播放器区域移动时触发大量重新渲染
+- **解决方案**：添加状态检查和节流机制
+
+#### 优化策略
+
+##### 1. 节流机制（Throttling）
+```typescript
+// 节流更新函数示例
+const throttledUpdate = useCallback((newState: SubtitleMarginsState) => {
+  const now = Date.now()
+  const timeSinceLastUpdate = now - lastUpdateTimeRef.current
+  
+  // 限制更新频率为60fps（16ms间隔）
+  if (timeSinceLastUpdate < 16) {
+    pendingUpdateRef.current = newState
+    
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current)
+    }
+    
+    updateTimeoutRef.current = setTimeout(() => {
+      if (pendingUpdateRef.current) {
+        updateSubtitleState(pendingUpdateRef.current)
+        lastUpdateTimeRef.current = Date.now()
+        pendingUpdateRef.current = null
+      }
+    }, 16 - timeSinceLastUpdate)
+  } else {
+    // 立即更新
+    updateSubtitleState(newState)
+    lastUpdateTimeRef.current = now
+  }
+}, [updateSubtitleState])
+```
+
+##### 2. 状态检查优化
+```typescript
+// 鼠标移动处理优化
+const handleMouseMove = useCallback((): void => {
+  const now = Date.now()
+  const timeSinceLastMove = now - lastMouseMoveTimeRef.current
+  
+  // 如果已经显示控制栏且时间间隔小于阈值，则跳过更新
+  if (showControls && timeSinceLastMove < 100) {
+    return
+  }
+  
+  // 只有在控制栏未显示时才更新状态
+  if (!showControls) {
+    setShowControls(true)
+  }
+}, [showControls, isUserInteracting])
+```
+
+##### 3. useMemo 依赖项优化
+```typescript
+// 避免动态依赖项导致的频繁重计算
+const parentDimensions = useMemo(() => {
+  const parent = containerRef.current?.parentElement
+  const dimensions = {
+    width: parent?.clientWidth || 0,
+    height: parent?.clientHeight || 0
+  }
+  parentDimensionsRef.current = dimensions
+  return dimensions
+}, []) // 移除动态依赖项，使用 ref 存储最新值
+```
+
+##### 4. useEffect 依赖项优化
+```typescript
+// 使用更稳定的依赖项
+useEffect(() => {
+  const isDragging = dragAndResizeProps.isDragging
+  const isResizing = dragAndResizeProps.isResizing
+  
+  if (isDragging || isResizing) {
+    // 事件处理逻辑
+  }
+}, [
+  dragAndResizeProps.isDragging, 
+  dragAndResizeProps.isResizing,
+  dragAndResizeProps.handleMouseMove,
+  dragAndResizeProps.handleMouseUp
+]) // 只依赖具体需要的属性，而不是整个对象
+```
+
+##### 5. memo 组件优化
+```typescript
+// 自定义比较函数，只比较真正影响渲染的属性
+const arePropsEqual = (prevProps: Props, nextProps: Props): boolean => {
+  // 只比较关键属性，忽略回调函数等稳定属性
+  if (prevProps.currentSubtitle?.startTime !== nextProps.currentSubtitle?.startTime) return false
+  if (prevProps.currentSubtitle?.text !== nextProps.currentSubtitle?.text) return false
+  if (prevProps.isPlaying !== nextProps.isPlaying) return false
+  if (prevProps.displayMode !== nextProps.displayMode) return false
+  
+  return true
+}
+
+const MemoizedComponent = memo(Component, arePropsEqual)
+```
+
+#### 开发检查清单
+
+在开发新功能或修改现有组件时，请检查以下项目：
+
+1. **事件处理器优化**：
+   - [ ] 高频事件（如 `onMouseMove`、`onScroll`）是否添加了节流机制
+   - [ ] 状态更新前是否检查了当前状态，避免无效更新
+   - [ ] 是否合理使用了 `useCallback` 来稳定回调函数
+
+2. **状态管理优化**：
+   - [ ] 避免在拖拽/动画过程中频繁调用状态更新函数
+   - [ ] 使用 `useRef` 存储不需要触发重新渲染的值
+   - [ ] 在操作结束时批量更新状态
+
+3. **依赖项优化**：
+   - [ ] `useMemo` 和 `useCallback` 的依赖项是否最小化
+   - [ ] 避免将整个对象作为依赖项，只依赖具体属性
+   - [ ] 使用 `useRef` 避免动态计算的依赖项
+
+4. **组件 memo 优化**：
+   - [ ] 对于复杂组件使用 `memo` 包装
+   - [ ] 提供自定义比较函数，只比较影响渲染的属性
+   - [ ] 避免在 props 中传递匿名函数或对象
+
+#### 性能监控
+
+使用以下方法监控组件性能：
+
+1. **开发环境日志**：
+   ```typescript
+   // 在组件开头添加渲染日志
+   RendererLogger.componentRender({
+     component: 'ComponentName',
+     props: { /* 关键 props */ }
+   })
+   ```
+
+2. **React DevTools Profiler**：
+   - 使用 Profiler 标识性能瓶颈
+   - 重点关注频繁重新渲染的组件
+
+3. **性能指标**：
+   - 拖拽操作应保持 60fps 流畅度
+   - 鼠标交互响应时间应小于 100ms
+   - 避免在 1 秒内重新渲染超过 10 次
+
+#### 最佳实践总结
+
+1. **谨慎使用高频事件**：始终为高频事件添加节流或防抖机制
+2. **状态更新前检查**：避免设置相同的状态值
+3. **使用 ref 存储临时数据**：不需要触发重新渲染的数据使用 `useRef`
+4. **优化依赖项**：保持依赖数组最小化和稳定
+5. **合理使用 memo**：对复杂组件使用 memo 并提供优化的比较函数
+
+这些优化策略帮助我们在保持功能完整性的同时，显著提升了应用的性能和用户体验。
+
 ## 类型定义管理规则
 
 ### 核心原则：统一类型定义
@@ -827,3 +1167,989 @@ useEffect(() => {
 4. **性能监控** - 及时发现和解决性能问题
 
 这套解决方案确保了 EchoLab 应用在播放视频时的高性能运行，为用户提供流畅的使用体验。
+
+## 字幕显示问题修复方案
+
+### 问题背景
+在版本迭代过程中，字幕组件由于localStorage中保存的旧版本配置数据导致显示异常或完全不可见。
+
+### 解决方案
+
+#### 1. 配置验证和自动修复
+在字幕组件初始化时添加配置验证逻辑：
+- 验证位置参数范围（0-100%）
+- 验证尺寸参数范围（200-1200px宽，60-400px高）  
+- 验证背景类型有效性
+- 自动清理无效配置并重置为默认值
+
+```typescript
+// src/renderer/src/components/VideoPlayer/Subtitle.tsx
+const [subtitleState, setSubtitleState] = useState<SubtitleState>(() => {
+  try {
+    const saved = localStorage.getItem(SUBTITLE_STATE_KEY)
+    if (saved) {
+      const parsedState = JSON.parse(saved)
+      
+      // 验证配置有效性
+      const isValidPosition = /* 验证逻辑 */
+      const isValidSize = /* 验证逻辑 */
+      const isValidBackgroundType = /* 验证逻辑 */
+      
+      if (!isValidPosition || !isValidSize || !isValidBackgroundType) {
+        console.warn('检测到无效的字幕配置，已重置为默认配置')
+        localStorage.removeItem(SUBTITLE_STATE_KEY)
+        return DEFAULT_SUBTITLE_STATE
+      }
+      
+      return { ...DEFAULT_SUBTITLE_STATE, ...parsedState }
+    }
+    return DEFAULT_SUBTITLE_STATE
+  } catch (error) {
+    localStorage.removeItem(SUBTITLE_STATE_KEY)
+    return DEFAULT_SUBTITLE_STATE
+  }
+})
+```
+
+#### 2. 设置界面重置选项
+在外观设置中提供用户友好的重置界面：
+- 位置：`src/renderer/src/components/Settings/AppearanceSection.tsx`
+- 功能：检测自定义设置、一键重置、操作指导
+- 用户体验：清晰的状态提示和操作反馈
+
+#### 3. 全局快捷键支持
+添加快捷键 `Ctrl+Shift+R` 用于快速重置字幕设置：
+- Hook：`src/renderer/src/hooks/useSubtitleReset.ts`
+- 快捷键注册：使用全局快捷键管理器
+- 智能启用：仅在有自定义设置时生效
+
+#### 4. 多层防护机制
+- **第一层**：组件初始化时的配置验证和自动修复
+- **第二层**：设置界面的手动重置选项
+- **第三层**：全局快捷键的快速重置
+- **第四层**：快捷键配置的持久化管理
+
+### 最佳实践
+
+#### 数据持久化
+1. **验证优先**：加载配置前先验证数据有效性
+2. **容错处理**：解析失败时自动清理并使用默认配置
+3. **版本兼容**：考虑配置结构变更时的向下兼容
+
+#### 用户体验
+1. **自动修复**：无需用户干预，自动处理无效配置
+2. **多重选择**：提供设置界面和快捷键两种重置方式
+3. **状态提示**：清晰地告知用户当前配置状态
+
+#### 代码组织
+1. **Hook复用**：将重置逻辑封装为可复用的Hook
+2. **全局管理**：通过Context Provider启用全局功能
+3. **类型安全**：使用TypeScript确保配置类型正确性
+
+### 相关文件
+- `src/renderer/src/components/VideoPlayer/Subtitle.tsx` - 字幕组件主文件
+- `src/renderer/src/components/Settings/AppearanceSection.tsx` - 外观设置界面
+- `src/renderer/src/hooks/useSubtitleReset.ts` - 字幕重置Hook
+- `src/renderer/src/hooks/useShortcutManager.ts` - 快捷键配置
+- `src/renderer/src/contexts/ShortcutContext.tsx` - 快捷键上下文
+
+### 调试技巧
+1. 查看控制台警告信息了解配置验证结果
+2. 检查localStorage中的`echolab_subtitle_state`键
+3. 使用快捷键测试重置功能是否正常工作
+4. 验证设置界面的状态检测和重置按钮
+
+### 未来改进
+1. 添加配置版本号，支持平滑升级
+2. 提供配置导入/导出功能
+3. 增加更多字幕外观自定义选项
+4. 考虑云端配置同步功能
+
+# EchoLab 字幕系统响应式设计指南
+
+## 概述
+
+本指南总结了 EchoLab 项目中字幕系统的响应式设计实现，解决了在不同窗口尺寸下字幕显示问题。
+
+## 主要改进
+
+### 1. 字幕尺寸系统重构
+
+**问题描述：**
+- 原始实现使用固定像素值（600px × 120px）
+- 在不同窗口尺寸下无法自适应
+- 导致字幕显示不全或无法正确遮挡原视频字幕
+
+**解决方案：**
+- 将字幕尺寸从固定像素值改为相对百分比
+- 默认尺寸：宽度60%，高度15%
+- 支持范围：宽度20%-100%，高度5%-50%
+
+### 2. 响应式布局优化
+
+**CSS 改进：**
+```css
+.subtitleContainer {
+  width: 60%; /* 默认宽度60% */
+  height: 15%; /* 默认高度15% */
+  min-width: 20%;
+  min-height: 5%;
+  max-width: 100%;
+  max-height: 50%;
+}
+```
+
+**媒体查询适配：**
+- 超大屏幕（≥2560px，4K+）：优化超高分辨率显示，避免字幕过大
+- 大屏幕（1440px-2559px，2K）：针对高分辨率显示器优化
+- 中等屏幕（1024px-1439px）：标准桌面显示器适配
+- 小屏幕（768px-1023px）：应用最小分辨率范围优化
+
+### 3. 窗口大小变化处理
+
+**自动调整机制：**
+- 监听 `window.resize` 事件
+- 自动检查字幕位置边界
+- 必要时重新定位到有效范围内
+
+**手动重置功能：**
+- 新增重置按钮（↺图标）
+- 一键恢复默认位置和大小
+- 配合背景切换按钮，提供完整控制体验
+
+## 技术实现要点
+
+### 1. 百分比坐标系统
+
+```typescript
+interface SubtitleState {
+  position: {
+    x: number // 相对于容器的百分比位置 (0-100)
+    y: number // 相对于容器的百分比位置 (0-100)
+  }
+  size: {
+    width: number // 字幕区域宽度（相对于容器的百分比 0-100）
+    height: number // 字幕区域高度（相对于容器的百分比 0-100）
+  }
+  backgroundType: BackgroundType
+}
+```
+
+### 2. 边界检查算法
+
+```typescript
+const halfWidthPercent = prev.size.width / 2
+const halfHeightPercent = prev.size.height / 2
+
+const minX = halfWidthPercent
+const maxX = 100 - halfWidthPercent
+const minY = halfHeightPercent
+const maxY = 100 - halfHeightPercent
+
+const adjustedX = Math.max(minX, Math.min(maxX, prev.position.x))
+const adjustedY = Math.max(minY, Math.min(maxY, prev.position.y))
+```
+
+### 3. 拖拽和调整大小的响应式处理
+
+- 拖拽：基于百分比计算新位置
+- 调整大小：转换像素变化为百分比变化
+- 实时边界限制：确保字幕不会超出视频区域
+
+## 最佳实践
+
+### 1. 状态管理
+- 使用 localStorage 持久化字幕配置
+- 包含完整的验证机制
+- 自动清理无效配置
+
+### 2. 用户体验
+- 提供可视化边框指示
+- 悬停时显示控制按钮
+- 拖拽和调整大小时的视觉反馈
+
+### 3. 响应式设计原则
+- 优先使用相对单位（百分比）
+- 设置合理的最小/最大尺寸限制
+- 不同设备类型的差异化处理
+
+## 文件结构
+
+```
+src/renderer/src/components/VideoPlayer/
+├── Subtitle.tsx              # 主组件逻辑
+├── Subtitle.module.css       # 响应式样式
+├── VideoPlayer.tsx           # 视频播放器容器
+└── VideoPlayer.module.css    # 容器样式（字幕覆盖层）
+```
+
+## 分辨率支持策略
+
+### 设计原则
+1. **以768px为最小分辨率基准**
+2. **采用渐进式增强策略**：从小屏幕向大屏幕逐步优化
+3. **保持字幕可读性**：避免在大屏幕上字幕过小或过大
+
+### 响应式断点
+```css
+/* 应用最小分辨率 */
+768px - 1023px   → 小屏幕适配
+1024px - 1439px  → 中等屏幕适配  
+1440px - 2559px  → 大屏幕适配（2K）
+2560px+          → 超大屏幕适配（4K+）
+```
+
+### 字体缩放策略
+- **基础字体**：1.5rem → 1.8rem → 2.2rem
+- **英文字幕**：1.75rem → 2rem → 2.5rem  
+- **中文字幕**：1.4rem → 1.6rem → 2rem
+
+## 后续优化建议
+
+1. **性能优化**
+   - 考虑使用 `ResizeObserver` 替代 `window.resize`
+   - 添加防抖机制减少频繁计算
+   - 优化大屏幕下的渲染性能
+
+2. **功能扩展**
+   - 添加字幕大小预设（小、中、大）
+   - 支持字幕透明度调节
+   - 记忆不同视频文件的字幕配置
+   - 支持超宽屏（21:9）比例适配
+
+3. **可访问性**
+   - 添加键盘快捷键支持
+   - 高对比度模式适配
+   - 字幕字体大小的系统级响应
+   - 支持缩放级别检测
+
+## 注意事项
+
+- 字幕容器的父元素（`.subtitleOverlay`）必须正确设置定位
+- 百分比计算依赖于准确的父容器尺寸获取
+- 在全屏切换时需要重新验证字幕位置边界
+
+---
+
+*此指南记录了 EchoLab 字幕系统响应式设计的核心实现，为后续开发和维护提供参考。*
+
+# 字幕组件重构开发指南
+
+## 概述
+
+本文档总结了 SubtitleV2 组件的重构过程，将一个1742行的复杂组件拆分成多个专注、可维护的小组件和 hooks，提供了组件解耦的最佳实践。
+
+## 重构原则
+
+### 1. 单一职责原则
+每个组件和 hook 都应该只负责一个特定的功能领域：
+- **状态管理**：独立的 hook 管理特定状态
+- **业务逻辑**：将复杂逻辑封装到专用的 hook 中
+- **UI 展示**：组件只负责渲染，不包含复杂逻辑
+
+### 2. 关注点分离
+将不同的功能关注点分离到独立的模块中：
+- **状态管理**：`useSubtitleState` - 管理字幕状态和本地存储
+- **交互逻辑**：`useSubtitleDragAndResize` - 处理拖拽和调整大小
+- **样式计算**：`useSubtitleStyles` - 动态样式和响应式计算
+- **文本处理**：`subtitleTextUtils` - 文本分割和语言检测
+- **UI 组件**：`SubtitleControls`、`SubtitleContent` - 专用UI组件
+
+## 重构架构
+
+### Hook 层
+```typescript
+// 状态管理
+useSubtitleState() - 字幕状态、本地存储、切换操作
+
+// 交互逻辑  
+useSubtitleDragAndResize() - 拖拽、调整大小、验证边距
+
+// 样式计算
+useSubtitleStyles() - 动态字体大小、控制按钮尺寸、响应式布局
+```
+
+### 组件层
+```typescript
+// 主容器组件
+SubtitleV3 - 整合所有 hooks，处理生命周期
+
+// 功能子组件
+SubtitleControls - 控制按钮（遮罩、背景、重置）
+SubtitleContent - 内容渲染（多语言、多模式）
+```
+
+### 工具层
+```typescript
+// 文本处理工具
+subtitleTextUtils - 中英文分割、可点击单词生成
+```
+
+## 最佳实践
+
+### 1. Hook 设计模式
+
+#### 状态管理 Hook
+```typescript
+export const useSubtitleState = (): {
+  subtitleState: SubtitleMarginsState
+  setSubtitleState: React.Dispatch<React.SetStateAction<SubtitleMarginsState>>
+  updateSubtitleState: (newState: SubtitleMarginsState) => void
+  toggleBackgroundType: () => void
+  toggleMaskMode: () => void
+  saveSubtitleState: (state: SubtitleMarginsState) => void
+} => {
+  // 实现细节...
+}
+```
+
+**优势**：
+- 明确的类型定义
+- 封装的状态逻辑
+- 自动本地存储
+- 配置验证
+
+#### 交互逻辑 Hook
+```typescript
+export const useSubtitleDragAndResize = (
+  subtitleState: SubtitleMarginsState,
+  updateSubtitleState: (state: SubtitleMarginsState) => void,
+  getParentBounds: () => { width: number; height: number },
+  currentLayout: { left: number; top: number; width: number; height: number }
+) => {
+  // 返回拖拽相关的状态和处理函数
+}
+```
+
+**优势**：
+- 依赖注入，易于测试
+- 复杂交互逻辑的封装
+- 可复用的交互模式
+
+### 2. 组件拆分策略
+
+#### 功能性组件
+```typescript
+interface SubtitleControlsProps {
+  isMaskMode: boolean
+  backgroundType: BackgroundType
+  buttonSize: number
+  iconSize: number
+  onToggleMaskMode: () => void
+  onToggleBackgroundType: () => void
+  onReset: () => void
+}
+
+export const SubtitleControls: React.FC<SubtitleControlsProps> = ({...}) => {
+  // 只负责渲染控制按钮，不包含业务逻辑
+}
+```
+
+**优势**：
+- 清晰的 props 接口
+- 易于测试和调试
+- 可独立开发和维护
+
+#### 内容渲染组件
+```typescript
+interface SubtitleContentProps {
+  currentSubtitle: SubtitleItem | null
+  displayMode: DisplayMode
+  dynamicTextStyle: React.CSSProperties
+  dynamicEnglishTextStyle: React.CSSProperties
+  dynamicChineseTextStyle: React.CSSProperties
+  onWordHover: (isHovering: boolean) => void
+  onWordClick: (word: string, event: React.MouseEvent) => void
+}
+```
+
+**优势**：
+- 专注于内容渲染
+- 支持多种显示模式
+- 样式外部注入，便于响应式
+
+### 3. 工具函数设计
+
+#### 文本处理工具
+```typescript
+// 语言检测
+export const isChinese = (text: string): boolean => { ... }
+
+// 智能分割
+export const splitTextIntoWords = (
+  text: string,
+  onWordHover: (isHovering: boolean) => void,
+  onWordClick: (word: string, event: React.MouseEvent) => void
+): React.ReactNode[] => { ... }
+```
+
+**优势**：
+- 纯函数，易于测试
+- 可复用的文本处理逻辑
+- 支持事件回调注入
+
+### 4. TypeScript 类型设计
+
+#### 完整的类型定义
+```typescript
+// 背景类型
+export type BackgroundType = 'transparent' | 'blur' | 'solid-black' | 'solid-gray'
+
+// 状态接口
+export interface SubtitleMarginsState {
+  margins: {
+    left: number
+    top: number
+    right: number
+    bottom: number
+  }
+  backgroundType: BackgroundType
+  isMaskMode: boolean
+  maskFrame: {
+    left: number
+    top: number
+    width: number
+    height: number
+  }
+}
+```
+
+**优势**：
+- 类型安全
+- 清晰的数据结构
+- IDE 智能提示
+
+## 代码质量改进
+
+### 重构前问题
+1. **单一组件过大**：1742行代码，难以维护
+2. **职责混乱**：状态管理、UI渲染、交互逻辑混在一起
+3. **可测试性差**：复杂的组件难以进行单元测试
+4. **可复用性低**：功能耦合，无法独立复用
+
+### 重构后优势
+1. **代码模块化**：每个文件专注单一职责
+2. **易于维护**：修改某个功能不影响其他部分
+3. **便于测试**：可独立测试每个 hook 和组件
+4. **高可复用性**：hooks 和组件可在其他场景复用
+
+## 性能优化
+
+### 1. memoization 策略
+- 使用 `useMemo` 缓存计算结果
+- 使用 `useCallback` 避免函数重新创建
+- 合理使用 `React.memo` 包装子组件
+
+### 2. 状态更新优化
+- 避免不必要的状态更新
+- 使用函数式更新避免闭包陷阱
+- 批量更新状态以减少重渲染
+
+### 3. 事件处理优化
+- 事件委托减少事件监听器数量
+- 及时清理事件监听器
+- 使用 passive 监听器提升性能
+
+## 维护指南
+
+### 1. 添加新功能
+1. 评估功能应该放在哪个层次（Hook/组件/工具）
+2. 如果是新的状态，考虑扩展现有 Hook 或创建新 Hook
+3. 如果是新的 UI，创建独立的功能组件
+4. 保持单一职责原则
+
+### 2. 修复问题
+1. 定位问题所在的模块
+2. 在对应的 Hook 或组件中修复
+3. 确保修改不影响其他模块
+4. 添加相应的类型和错误处理
+
+### 3. 性能调优
+1. 使用 React DevTools 分析性能瓶颈
+2. 针对具体的 Hook 或组件进行优化
+3. 考虑懒加载和代码分割
+
+## 总结
+
+通过将庞大的 SubtitleV2 组件拆分成多个专注的 hooks 和组件，我们实现了：
+
+1. **更好的代码组织**：每个文件都有明确的职责
+2. **更高的可维护性**：修改和扩展功能变得更容易
+3. **更强的可测试性**：可以独立测试每个部分
+4. **更好的可复用性**：hooks 和组件可在其他地方复用
+5. **更清晰的依赖关系**：组件间的依赖关系变得明确
+
+这种重构方法可以作为处理其他复杂组件的参考模式。
+
+## 定位框自动调整功能
+
+### 功能概述
+定位框（MaskFrame）现在具备智能自动调整功能，能够根据视频的显示宽高比（DAR）和窗口大小变化，始终保持对视频区域的准确框选。
+
+### 核心实现
+
+#### 1. 视频显示区域计算
+定位框会根据以下因素自动计算视频在容器中的实际显示区域：
+- 视频的原始宽高比（DAR）
+- 容器的实际尺寸
+- `object-fit: contain` 的布局规则
+
+#### 2. 自动调整机制
+- **窗口调整监听**：使用 `resize` 事件监听窗口大小变化
+- **智能判断**：只有在用户未手动操作过定位框时才自动调整
+- **防抖处理**：100ms 防抖避免频繁计算
+- **阈值检查**：只有当差异超过 2% 时才进行调整
+
+#### 3. 交互状态管理
+```typescript
+const [hasUserInteracted, setHasUserInteracted] = useState(false)
+```
+- 用户拖拽或调整大小时，标记为已交互状态
+- 已交互状态下不会自动调整，保持用户的自定义设置
+- 提供重置功能，可恢复自动调整
+
+#### 4. 重置功能
+- **重置按钮**：鼠标悬停时显示"重置到视频"按钮
+- **功能**：
+  - 重新计算基于当前视频DAR的定位框位置
+  - 重置交互状态，重新启用自动调整
+  - 确保定位框始终框选视频区域
+
+### 技术细节
+
+#### 计算逻辑
+```typescript
+const calculateVideoDisplayArea = (
+  displayAspectRatio: number,
+  containerWidth: number,
+  containerHeight: number
+) => {
+  const containerAspectRatio = containerWidth / containerHeight
+  
+  if (displayAspectRatio > containerAspectRatio) {
+    // 视频更宽：以容器宽度为准
+    videoDisplayWidth = containerWidth
+    videoDisplayHeight = containerWidth / displayAspectRatio
+  } else {
+    // 视频更高：以容器高度为准
+    videoDisplayHeight = containerHeight
+    videoDisplayWidth = containerHeight * displayAspectRatio
+  }
+  
+  // 转换为百分比返回
+}
+```
+
+#### 防抖实现
+```typescript
+let timeoutId: NodeJS.Timeout
+const debouncedHandleResize = (): void => {
+  clearTimeout(timeoutId)
+  timeoutId = setTimeout(handleResize, 100)
+}
+```
+
+### 用户体验改进
+
+#### 预期行为
+1. **初次加载**：定位框自动适配视频区域
+2. **窗口调整**：定位框自动跟随视频位置变化
+3. **用户操作**：用户拖拽或调整后，保持用户设置不变
+4. **重置需求**：用户可随时点击重置按钮恢复自动模式
+
+#### 交互反馈
+- 悬停时显示边框高亮
+- 拖拽时改变鼠标样式
+- 重置按钮有悬停效果
+- 控制台提供详细日志用于调试
+
+### 兼容性说明
+- 兼容不同视频宽高比（16:9、4:3、21:9等）
+- 支持窗口大小实时调整
+- 保持与现有字幕系统的完全兼容
+- 向后兼容旧版配置数据
+
+### 调试功能
+开发模式下提供详细日志：
+```typescript
+console.log('🔧 窗口大小变化，自动调整定位框以框选视频...')
+console.log('📐 计算的视频区域:', videoArea)
+console.log('📐 当前定位框:', maskFrame)
+```
+
+### 性能优化
+- 使用防抖减少计算频率
+- 只在必要时更新状态
+- 避免不必要的重渲染
+- 高效的百分比计算避免像素级精确度带来的性能损耗
+
+## 性能优化最佳实践
+
+### 1. 问题识别模式
+
+#### 1.1 频繁重新渲染识别
+```typescript
+// 在组件中添加渲染日志来诊断问题
+RendererLogger.componentRender({
+  component: 'ComponentName',
+  props: {
+    // 只记录关键props，避免记录频繁变化的值
+    staticProp: someValue,
+    // ❌ 不要记录: currentTime, callbacks, 大对象
+    // ✅ 记录: 状态变化、关键配置
+  }
+})
+```
+
+#### 1.2 性能问题信号
+- 控制台日志显示每秒多次组件渲染
+- 用户交互时出现卡顿
+- 拖拽或鼠标移动时CPU使用率过高
+- React DevTools Profiler显示异常的render频率
+
+### 2. 时间相关组件优化策略
+
+#### 2.1 避免时间属性传递
+```typescript
+// ❌ 错误做法：通过props传递频繁变化的时间
+interface ComponentProps {
+  currentTime: number  // 每秒变化多次
+  duration: number    // 可能变化
+}
+
+// ✅ 正确做法：组件内部使用hooks获取时间
+function Component() {
+  const { currentTimeRef, durationRef } = useVideoStateRefs()
+  // 直接从refs获取最新值，不触发重新渲染
+}
+```
+
+#### 2.2 memo比较函数优化
+```typescript
+// VideoPlayer组件的优化示例
+const arePropsEqual = (prevProps: Props, nextProps: Props): boolean => {
+  // 1. 只比较影响UI的属性
+  if (prevProps.isPlaying !== nextProps.isPlaying) return false
+  if (prevProps.volume !== nextProps.volume) return false
+  
+  // 2. 字幕内容变化比较（只比较关键属性）
+  if (prevProps.currentSubtitle?.startTime !== nextProps.currentSubtitle?.startTime) return false
+  
+  // 🚫 不比较频繁变化的时间属性
+  // currentTime 和 duration 在播放过程中会频繁变化
+  // 但不影响 VideoPlayer 组件的 UI 渲染
+  
+  return true
+}
+```
+
+### 3. 节流机制实现
+
+#### 3.1 60fps节流更新
+```typescript
+const useThrottledUpdate = () => {
+  const lastUpdateTimeRef = useRef(0)
+  const pendingUpdateRef = useRef(false)
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const throttledUpdate = useCallback((updateFn: () => void) => {
+    const now = Date.now()
+    const timeSinceLastUpdate = now - lastUpdateTimeRef.current
+
+    if (timeSinceLastUpdate >= 16) { // 60fps = 16ms间隔
+      updateFn()
+      lastUpdateTimeRef.current = now
+      pendingUpdateRef.current = false
+    } else {
+      if (!pendingUpdateRef.current) {
+        pendingUpdateRef.current = true
+        updateTimeoutRef.current = setTimeout(() => {
+          updateFn()
+          lastUpdateTimeRef.current = Date.now()
+          pendingUpdateRef.current = false
+        }, 16 - timeSinceLastUpdate)
+      }
+    }
+  }, [])
+
+  return { throttledUpdate }
+}
+```
+
+#### 3.2 鼠标移动节流
+```typescript
+const handleMouseMove = useCallback((): void => {
+  const now = Date.now()
+  const timeSinceLastMove = now - lastMouseMoveTimeRef.current
+
+  // 状态检查 + 时间节流
+  if (showControls && timeSinceLastMove < 100) {
+    return // 已显示且时间间隔太短，跳过
+  }
+
+  lastMouseMoveTimeRef.current = now
+
+  // 只有在控制栏未显示时才更新状态
+  if (!showControls) {
+    setShowControls(true)
+  }
+}, [showControls])
+```
+
+### 4. 组件架构优化
+
+#### 4.1 Props分离策略
+```typescript
+// ❌ 错误：将所有数据都通过props传递
+<VideoControls 
+  currentTime={currentTime}  // 频繁变化
+  duration={duration}        // 可能变化
+  onSeek={onSeek}           // 函数引用
+  // ... 其他props
+/>
+
+// ✅ 正确：分离静态配置和动态数据
+<VideoControls 
+  isPlaying={isPlaying}     // 只在需要时变化
+  volume={volume}           // 只在需要时变化
+  // currentTime 通过内部hooks获取
+/>
+```
+
+#### 4.2 条件渲染优化
+```typescript
+// ✅ 组合渲染条件，减少不必要的组件创建
+{isFullscreen && showControls && (
+  <VideoControlsFullScreen {...props} />
+)}
+
+// 而不是在组件内部判断显示状态
+```
+
+### 5. 状态检查优化
+
+#### 5.1 避免无效状态更新
+```typescript
+// ✅ 在状态更新前检查当前状态
+const updateState = useCallback((newValue: boolean) => {
+  if (currentState !== newValue) {  // 只在值真正改变时更新
+    setCurrentState(newValue)
+  }
+}, [currentState])
+```
+
+#### 5.2 合并相关状态更新
+```typescript
+// ✅ 使用单一状态对象管理相关状态
+const [controlsState, setControlsState] = useState({
+  showControls: false,
+  isUserInteracting: false,
+  isPausedByHover: false
+})
+
+// 批量更新
+setControlsState(prev => ({
+  ...prev,
+  showControls: true,
+  isUserInteracting: true
+}))
+```
+
+### 6. 开发检查清单
+
+#### 6.1 组件渲染优化检查
+- [ ] **时间依赖检查**: 组件是否依赖频繁变化的时间属性?
+- [ ] **memo比较函数**: 是否只比较影响UI的关键属性?
+- [ ] **条件渲染**: 是否避免了创建不必要的组件实例?
+- [ ] **hooks使用**: 是否合理使用refs避免不必要的重新渲染?
+
+#### 6.2 交互性能检查
+- [ ] **鼠标事件节流**: 是否对高频鼠标事件进行了节流处理?
+- [ ] **状态更新检查**: 是否在更新前检查状态值是否真正改变?
+- [ ] **批量更新**: 是否将相关的状态更新进行了批量处理?
+- [ ] **清理机制**: 是否正确清理了定时器和事件监听器?
+
+#### 6.3 拖拽性能检查
+- [ ] **60fps节流**: 拖拽更新是否限制在60fps以内?
+- [ ] **refs使用**: 是否使用refs存储不影响渲染的数据?
+- [ ] **立即应用**: 拖拽结束时是否立即应用待处理的更新?
+- [ ] **边界检查**: 是否正确处理了拖拽边界和异常情况?
+
+#### 6.4 memo组件检查
+- [ ] **比较函数粒度**: 比较函数是否足够精细和准确?
+- [ ] **属性分组**: 是否将相关属性分组进行比较?
+- [ ] **跳过昂贵比较**: 是否跳过了函数引用和大对象的比较?
+- [ ] **文档注释**: 比较逻辑是否有清晰的注释说明?
+
+### 7. 性能监控
+
+#### 7.1 开发时监控
+```typescript
+// 使用React DevTools Profiler
+// 设置performance.mark()标记关键操作
+performance.mark('drag-start')
+// ... 拖拽操作
+performance.mark('drag-end')
+performance.measure('drag-duration', 'drag-start', 'drag-end')
+```
+
+#### 7.2 渲染计数监控
+```typescript
+// 开发环境下的渲染计数器
+const renderCountRef = useRef(0)
+renderCountRef.current++
+
+if (process.env.NODE_ENV === 'development') {
+  console.log(`${componentName} rendered ${renderCountRef.current} times`)
+}
+```
+
+### 8. 最新优化案例：VideoPlayer组件完全优化
+
+#### 8.1 问题描述
+VideoPlayer组件在视频播放期间频繁重新渲染，因为memo比较函数对currentTime和duration变化敏感。
+
+#### 8.2 解决方案
+```typescript
+// 1. 完全移除时间属性依赖
+const arePropsEqual = (prevProps: Props, nextProps: Props): boolean => {
+  // 只比较真正影响UI的属性
+  if (prevProps.videoFile !== nextProps.videoFile) return false
+  if (prevProps.isPlaying !== nextProps.isPlaying) return false
+  
+  // 🚫 完全移除对 currentTime 和 duration 的比较
+  // ReactPlayer 内部会处理播放进度
+  // VideoProgressBar 通过hooks独立获取时间数据
+  
+  return true
+}
+
+// 2. 子组件内部使用hooks获取时间数据
+function VideoProgressBar() {
+  const { currentTimeRef, durationRef } = useVideoStateRefs()
+  // 不再通过props接收时间数据
+}
+
+// 3. 条件渲染优化
+{isFullscreen && showControls && (
+  <VideoControlsFullScreen {...staticProps} />
+)}
+```
+
+#### 8.3 优化效果
+- **播放期间零重新渲染**: currentTime变化不再触发VideoPlayer重新渲染
+- **性能大幅提升**: CPU使用率显著降低
+- **功能完全保留**: 所有播放控制功能正常工作
+
+### 9. 性能优化原则总结
+
+1. **数据流设计**: 频繁变化的数据通过refs而非props传递
+2. **组件职责分离**: 让每个组件只关心自己需要的数据
+3. **渲染条件优化**: 在组件外层进行条件判断，避免内部无效渲染
+4. **memo比较精准**: 只比较真正影响UI的关键属性
+5. **hooks合理使用**: 用useRef存储不触发渲染的数据，用useState管理UI状态
+
+通过这些优化策略，可以实现理想的性能目标：
+- **拖拽操作**: 稳定60fps
+- **鼠标交互**: <100ms响应时间  
+- **组件渲染**: 播放期间<10次/秒，理想情况下接近0次/秒
+- **内存使用**: 无内存泄漏，及时清理资源
+
+## 性能优化指南
+
+### 字幕组件渲染优化
+
+#### 优化策略
+为了提升 VideoPlayer 组件的渲染性能，我们采用了以下策略：
+
+1. **组件拆分**: 将字幕显示逻辑拆分为独立的细粒度组件
+2. **精确渲染控制**: 使用 React.memo 和自定义比较函数
+3. **渲染范围控制**: 确保只有字幕内容变化时才重新渲染
+
+#### 已实现的优化组件
+
+##### 1. 字幕文本组件
+- `OriginalSubtitleText`: 原始字幕文本组件
+- `ChineseSubtitleText`: 中文字幕文本组件  
+- `EnglishSubtitleText`: 英文字幕文本组件
+- `BilingualSubtitleLine`: 双语字幕行组件
+- `SubtitlePlaceholder`: 占位符组件
+
+##### 2. 性能优化特性
+- **React.memo**: 所有组件都使用 React.memo 包装
+- **自定义比较函数**: 只比较关键属性（text、style、className）
+- **渲染日志**: 集成 RendererLogger 监控组件渲染频率
+
+##### 3. 优化效果
+通过组件拆分和精确渲染控制，实现了：
+- 字幕文本只在内容变化时渲染
+- 减少 VideoPlayer 主组件的重新渲染
+- 提升播放过程中的性能表现
+
+##### 4. 时间检查优化
+为避免频繁重新渲染，采用了智能的时间检查机制：
+- **使用 `useVideoTimeRef`**: 获取时间引用而不触发重新渲染
+- **字幕范围检查**: 只有当时间超出当前字幕范围时才检查是否需要切换
+- **定时检查机制**: 每 100ms 检查一次，平衡性能和响应速度
+- **精确比较**: 使用 `startTime` 和 `text` 来判断是否是同一条字幕
+
+```tsx
+// 智能字幕更新检查
+const checkSubtitleUpdate = useCallback((): void => {
+  const currentTime = currentTimeRef.current
+  
+  // 只有超出当前字幕时间范围才检查更新
+  const needsUpdate = !currentSubtitle || 
+    currentTime < currentSubtitle.startTime || 
+    currentTime > currentSubtitle.endTime
+    
+  if (needsUpdate) {
+    // 检查新字幕是否真的不同
+    const newSubtitle = subtitleListContext.getCurrentSubtitle(currentTime)
+    const isSameSubtitle = currentSubtitle && newSubtitle &&
+      currentSubtitle.startTime === newSubtitle.startTime &&
+      currentSubtitle.text === newSubtitle.text
+      
+    if (!isSameSubtitle) {
+      setCurrentSubtitle(newSubtitle) // 只有真正变化时才更新
+    }
+  }
+}, [currentSubtitle, subtitleListContext, displayMode])
+```
+
+#### 使用示例
+
+```tsx
+// 在 SubtitleContent 中使用优化组件
+switch (displayMode) {
+  case 'chinese':
+    return (
+      <ChineseSubtitleText
+        text={chineseText}
+        style={dynamicChineseTextStyle}
+        onWordHover={onWordHover}
+        onWordClick={onWordClick}
+      />
+    )
+}
+```
+
+#### 性能监控
+通过控制台查看组件渲染日志，监控优化效果：
+- 观察字幕组件的渲染频率
+- 确认只在文本内容变化时才重新渲染
+- 验证播放过程中的性能改进
+
+#### 最佳实践
+1. **细粒度组件**: 优先创建职责单一的小组件
+2. **合理使用 memo**: 为经常重新渲染的组件添加 memo 优化
+3. **自定义比较**: 为复杂组件编写精确的比较函数
+4. **渲染监控**: 使用日志监控组件渲染性能
+
+## 代码规范
+
+### 组件性能优化规范
+- 对于频繁重新渲染的组件，必须使用 React.memo
+- 自定义比较函数应该只比较影响渲染的关键属性
+- 所有优化组件都应该添加 displayName 以便调试
+- 重要组件应该添加渲染日志进行性能监控
