@@ -43,7 +43,44 @@ export const useSubtitleDragAndResize = (
     resizeStartState: null
   })
 
-  // 验证并修正边距值
+  // 简单验证边距值（用于拖拽，不强制调整宽高）
+  const validateMarginsForDrag = useCallback(
+    (margins: SubtitleMarginsState['margins']): SubtitleMarginsState['margins'] => {
+      let { left, top, right, bottom } = margins
+
+      // 确保所有边距都不为负数，并进行精度舍入
+      left = Math.max(0, Math.round(left * 1000) / 1000)
+      top = Math.max(0, Math.round(top * 1000) / 1000)
+      right = Math.max(0, Math.round(right * 1000) / 1000)
+      bottom = Math.max(0, Math.round(bottom * 1000) / 1000)
+
+      // 确保单个边距不超过最大限制
+      left = Math.round(Math.min(MARGIN_LIMITS.MAX_SINGLE_MARGIN, left) * 1000) / 1000
+      top = Math.round(Math.min(MARGIN_LIMITS.MAX_SINGLE_MARGIN, top) * 1000) / 1000
+      right = Math.round(Math.min(MARGIN_LIMITS.MAX_SINGLE_MARGIN, right) * 1000) / 1000
+      bottom = Math.round(Math.min(MARGIN_LIMITS.MAX_SINGLE_MARGIN, bottom) * 1000) / 1000
+
+      // 确保不会超出边界（保持当前宽高不变）
+      if (left + right >= 100) {
+        const totalMargin = left + right
+        const scale = 99 / totalMargin
+        left = Math.round(left * scale * 1000) / 1000
+        right = Math.round(right * scale * 1000) / 1000
+      }
+
+      if (top + bottom >= 100) {
+        const totalMargin = top + bottom
+        const scale = 99 / totalMargin
+        top = Math.round(top * scale * 1000) / 1000
+        bottom = Math.round(bottom * scale * 1000) / 1000
+      }
+
+      return { left, top, right, bottom }
+    },
+    []
+  )
+
+  // 完整验证并修正边距值（用于调整大小）
   const validateMargins = useCallback(
     (margins: SubtitleMarginsState['margins']): SubtitleMarginsState['margins'] => {
       let { left, top, right, bottom } = margins
@@ -192,8 +229,15 @@ export const useSubtitleDragAndResize = (
           newTopPercent = Math.round((newTopPx / parentBounds.height) * 100 * 1000) / 1000
         }
 
+        // 限制拖拽边界，确保字幕区域不会超出容器
+        const maxLeft = 100 - currentLayout.width
+        const maxTop = 100 - currentLayout.height
+
+        newLeftPercent = Math.max(0, Math.min(maxLeft, newLeftPercent))
+        newTopPercent = Math.max(0, Math.min(maxTop, newTopPercent))
+
         // 计算新的边距值
-        const newMargins = validateMargins({
+        const newMargins = validateMarginsForDrag({
           left: newLeftPercent,
           top: newTopPercent,
           right: 100 - newLeftPercent - currentLayout.width,
@@ -259,6 +303,7 @@ export const useSubtitleDragAndResize = (
       subtitleState,
       currentLayout.width,
       currentLayout.height,
+      validateMarginsForDrag,
       validateMargins,
       updateSubtitleState
     ]
