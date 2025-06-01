@@ -67,7 +67,7 @@ export function SubtitleLoadModal({
       const videoBaseName = FileSystemHelper.getFileName(videoFilePath).replace(/\.[^/.]+$/, '')
 
       // 支持的字幕文件扩展名
-      const subtitleExtensions = ['srt', 'vtt', 'json']
+      const subtitleExtensions = ['srt', 'vtt', 'json', 'ass', 'ssa']
       const possibleFiles: SubtitleFileInfo[] = []
 
       for (const ext of subtitleExtensions) {
@@ -162,7 +162,7 @@ export function SubtitleLoadModal({
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.srt,.vtt,.json'
+    input.accept = '.srt,.vtt,.json,.ass,.ssa'
 
     input.onchange = async (event) => {
       const file = (event.target as HTMLInputElement).files?.[0]
@@ -346,7 +346,7 @@ export function SubtitleLoadModal({
               <div className={styles.notFoundSection}>
                 <Alert
                   message="未找到字幕文件"
-                  description="在视频文件同目录下未找到匹配的字幕文件（.srt, .vtt, .json）"
+                  description="在视频文件同目录下未找到匹配的字幕文件（.srt, .vtt, .json, .ass, .ssa）"
                   type="warning"
                   icon={<ExclamationCircleOutlined />}
                   className={styles.alert}

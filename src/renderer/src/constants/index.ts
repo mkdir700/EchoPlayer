@@ -9,7 +9,7 @@ export const VIDEO_FORMATS = [
 
 export const VIDEO_EXTENSIONS = /\.(mp4|avi|mov|mkv|webm|ogg)$/i
 
-export const SUBTITLE_EXTENSIONS = '.json,.srt,.vtt'
+export const SUBTITLE_EXTENSIONS = '.json,.srt,.vtt,.ass,.ssa'
 
 export const KEYBOARD_SHORTCUTS = {
   SPACE: 'Space',

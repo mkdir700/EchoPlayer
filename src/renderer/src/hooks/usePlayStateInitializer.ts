@@ -81,7 +81,7 @@ export function usePlayStateInitializer({
     const detectAndLoadSubtitles = async (videoPath: string): Promise<boolean> => {
       const videoDir = FileSystemHelper.getDirectoryPath(videoPath)
       const videoBaseName = FileSystemHelper.getFileName(videoPath).replace(/\.[^/.]+$/, '')
-      const subtitleExtensions = ['srt', 'vtt', 'json']
+      const subtitleExtensions = ['srt', 'vtt', 'json', 'ass', 'ssa']
 
       for (const ext of subtitleExtensions) {
         const isWindows = navigator.platform.toLowerCase().includes('win')

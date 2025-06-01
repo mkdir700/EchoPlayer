@@ -1,7 +1,7 @@
 // SubtitleItem 已移动到 src/types/shared.ts 中统一定义
 import type { SubtitleItem } from '@types_/shared'
 
-// 将时间字符串转换为秒数
+// 将时间字符串转换为秒数（SRT格式：HH:MM:SS,mmm）
 function parseTimeToSeconds(timeStr: string): number {
   const match = timeStr.match(/(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/)
   if (!match) return 0
@@ -12,6 +12,19 @@ function parseTimeToSeconds(timeStr: string): number {
   const milliseconds = parseInt(match[4], 10)
 
   return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000
+}
+
+// 将ASS/SSA时间字符串转换为秒数（格式：H:MM:SS.cc）
+function parseASSTimeToSeconds(timeStr: string): number {
+  const match = timeStr.match(/(\d{1,2}):(\d{2}):(\d{2})\.(\d{2})/)
+  if (!match) return 0
+
+  const hours = parseInt(match[1], 10)
+  const minutes = parseInt(match[2], 10)
+  const seconds = parseInt(match[3], 10)
+  const centiseconds = parseInt(match[4], 10)
+
+  return hours * 3600 + minutes * 60 + seconds + centiseconds / 100
 }
 
 // 解析 SRT 格式字幕
@@ -125,6 +138,103 @@ function parseJSON(content: string): SubtitleItem[] {
   return []
 }
 
+// 移除ASS字幕中的样式标签
+function removeASSStyles(text: string): string {
+  // 移除 ASS 样式标签，如 {\b1}、{\i1}、{\c&H...&} 等
+  return text
+    .replace(/\{[^}]*\}/g, '') // 移除所有 {} 包围的样式标签
+    .replace(/\\N/g, '\n') // 替换 ASS 换行符
+    .replace(/\\n/g, '\n') // 替换另一种换行符格式
+    .replace(/\\h/g, ' ') // 替换硬空格
+    .trim()
+}
+
+// 解析 ASS/SSA 格式字幕
+function parseASS(content: string): SubtitleItem[] {
+  const subtitles: SubtitleItem[] = []
+  const lines = content.split('\n')
+
+  let isDialogueSection = false
+  let formatLine = ''
+  const formatIndices: { [key: string]: number } = {}
+
+  for (const line of lines) {
+    const trimmedLine = line.trim()
+
+    // 检查是否进入Events段落
+    if (trimmedLine === '[Events]') {
+      isDialogueSection = true
+      continue
+    }
+
+    // 检查是否离开Events段落
+    if (trimmedLine.startsWith('[') && trimmedLine.endsWith(']') && trimmedLine !== '[Events]') {
+      isDialogueSection = false
+      continue
+    }
+
+    if (!isDialogueSection) continue
+
+    // 解析Format行，确定字段顺序
+    if (trimmedLine.startsWith('Format:')) {
+      formatLine = trimmedLine.substring(7).trim()
+      const fields = formatLine.split(',').map((field) => field.trim())
+
+      // 记录各字段的索引位置
+      fields.forEach((field, index) => {
+        formatIndices[field.toLowerCase()] = index
+      })
+      continue
+    }
+
+    // 解析Dialogue行
+    if (trimmedLine.startsWith('Dialogue:')) {
+      try {
+        const dialogueLine = trimmedLine.substring(9).trim()
+        const fields = dialogueLine.split(',')
+
+        // 获取时间字段的索引
+        const startTimeIndex = formatIndices['start'] ?? 1
+        const endTimeIndex = formatIndices['end'] ?? 2
+        const textIndex = formatIndices['text'] ?? 9
+
+        if (fields.length > Math.max(startTimeIndex, endTimeIndex, textIndex)) {
+          const startTimeStr = fields[startTimeIndex]?.trim()
+          const endTimeStr = fields[endTimeIndex]?.trim()
+
+          // ASS格式的文本字段可能包含逗号，需要重新组合
+          const textFields = fields.slice(textIndex)
+          const rawText = textFields.join(',').trim()
+
+          if (startTimeStr && endTimeStr && rawText) {
+            const startTime = parseASSTimeToSeconds(startTimeStr)
+            const endTime = parseASSTimeToSeconds(endTimeStr)
+
+            // 清理文本，移除样式标签
+            const cleanText = removeASSStyles(rawText)
+
+            if (cleanText && startTime >= 0 && endTime > startTime) {
+              const processedText = processBilingualText(cleanText)
+              subtitles.push({
+                startTime,
+                endTime,
+                text: processedText.text,
+                englishText: processedText.englishText,
+                chineseText: processedText.chineseText
+              })
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('跳过无效的ASS对话行:', trimmedLine, error)
+      }
+    }
+  }
+
+  // 按开始时间排序
+  return subtitles.sort((a, b) => a.startTime - b.startTime)
+}
+
 // 提取英文字幕的函数
 function extractEnglishText(text: string): string {
   // 英文字幕通常在前面，或者用换行符分隔
@@ -210,10 +320,19 @@ export function parseSubtitles(content: string, filename: string): SubtitleItem[
       return parseVTT(content)
     case 'json':
       return parseJSON(content)
+    case 'ass':
+    case 'ssa':
+      return parseASS(content)
     default:
       // 尝试自动检测格式
       if (content.includes('WEBVTT')) {
         return parseVTT(content)
+      } else if (
+        content.includes('[Script Info]') ||
+        content.includes('[V4+ Styles]') ||
+        content.includes('[Events]')
+      ) {
+        return parseASS(content)
       } else if (content.includes('-->') && /\d{2}:\d{2}:\d{2}/.test(content)) {
         return parseSRT(content)
       } else {
