@@ -31,14 +31,82 @@ export class RendererLogger {
   private static isElectron = typeof window !== 'undefined' && window.api
 
   /**
+   * 清理数据，移除不可序列化的属性
+   */
+  private static sanitizeData(data: unknown): unknown {
+    if (data === null || data === undefined) {
+      return data
+    }
+
+    if (typeof data === 'function') {
+      return '[Function]'
+    }
+
+    if (data instanceof Error) {
+      return {
+        name: data.name,
+        message: data.message,
+        stack: data.stack
+      }
+    }
+
+    if (typeof data === 'object') {
+      if (data instanceof Date) {
+        return data.toISOString()
+      }
+
+      if (Array.isArray(data)) {
+        return data.map((item) => this.sanitizeData(item))
+      }
+
+      // 检查是否是React Ref对象
+      if ('current' in data && Object.keys(data).length === 1) {
+        return '[React.RefObject]'
+      }
+
+      // 普通对象
+      const sanitized: Record<string, unknown> = {}
+      for (const [key, value] of Object.entries(data)) {
+        // 跳过函数属性
+        if (typeof value === 'function') {
+          sanitized[key] = '[Function]'
+        } else if (
+          key.toLowerCase().includes('ref') &&
+          typeof value === 'object' &&
+          value !== null
+        ) {
+          // 跳过包含ref的属性
+          sanitized[key] = '[React.RefObject]'
+        } else {
+          try {
+            sanitized[key] = this.sanitizeData(value)
+          } catch {
+            sanitized[key] = '[Non-serializable]'
+          }
+        }
+      }
+      return sanitized
+    }
+
+    return data
+  }
+
+  /**
    * 通过主进程记录日志
    */
   private static async logToMain(level: LogLevel, message: string, data?: unknown): Promise<void> {
     if (this.isElectron && window.api?.log) {
       try {
-        await window.api.log(level, message, data)
+        const sanitizedData = this.sanitizeData(data)
+        await window.api.log(level, message, sanitizedData)
       } catch (error) {
         console.error('记录日志到主进程失败:', error)
+        // 作为备选方案，只记录消息，不传递数据
+        try {
+          await window.api.log(level, `${message} [数据序列化失败]`)
+        } catch {
+          // 如果连基本消息都无法发送，则静默失败
+        }
       }
     }
   }
