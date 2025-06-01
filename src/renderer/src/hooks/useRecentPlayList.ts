@@ -12,6 +12,10 @@ export interface UseRecentPlayListReturn {
   refreshRecentPlays: () => Promise<void>
   addRecentPlay: (item: Omit<RecentPlayItem, 'id' | 'lastOpenedAt'>) => Promise<boolean>
   updateRecentPlay: (id: string, updates: Partial<Omit<RecentPlayItem, 'id'>>) => Promise<boolean>
+  updateRecentPlaySilent: (
+    id: string,
+    updates: Partial<Omit<RecentPlayItem, 'id'>>
+  ) => Promise<boolean>
   removeRecentPlay: (id: string) => Promise<boolean>
   clearRecentPlays: () => Promise<boolean>
   getRecentPlayByPath: (filePath: string) => Promise<RecentPlayItem | null>
@@ -104,6 +108,29 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
       }
     },
     [refreshRecentPlays]
+  )
+
+  // 更新最近播放项（静默模式，不刷新状态）
+  const updateRecentPlaySilent = useCallback(
+    async (id: string, updates: Partial<Omit<RecentPlayItem, 'id'>>): Promise<boolean> => {
+      try {
+        setError(null)
+        const result = await window.api.store.updateRecentPlay(id, updates)
+        if (result.success) {
+          // 🚀 静默模式：不调用 refreshRecentPlays()，避免重新渲染
+          return true
+        } else {
+          setError(result.error || '更新失败')
+          return false
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '更新最近播放项失败'
+        setError(errorMessage)
+        console.error('更新最近播放项失败:', err)
+        return false
+      }
+    },
+    [] // 🚀 没有依赖，避免重新创建函数
   )
 
   // 删除最近播放项
@@ -236,6 +263,7 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
     refreshRecentPlays,
     addRecentPlay,
     updateRecentPlay,
+    updateRecentPlaySilent,
     removeRecentPlay,
     clearRecentPlays,
     getRecentPlayByPath,

@@ -27,7 +27,7 @@ interface UsePlayStateInitializerReturn {
 /**
  * 播放状态初始化 Hook
  * @description 负责恢复保存的播放进度、字幕数据，以及自动检测字幕文件
- * @param props.savePlayStateRef 保存播放状态的函数引用
+ * 🚀 优化版本：减少重新渲染，使用稳定的依赖
  */
 export function usePlayStateInitializer({
   savePlayStateRef
@@ -44,21 +44,37 @@ export function usePlayStateInitializer({
 
   const [showSubtitleModal, setShowSubtitleModal] = useState(false)
 
-  // 使用 ref 来存储函数引用，避免作为依赖
+  // 🔧 使用 ref 来存储函数引用和状态，避免作为依赖
   const getRecentPlayByPathRef = useRef(getRecentPlayByPath)
   const addRecentPlayRef = useRef(addRecentPlay)
+  const subtitleListContextRef = useRef(subtitleListContext)
+  const restoreVideoStateRef = useRef(restoreVideoState)
+  const savePlayStateRefStable = useRef(savePlayStateRef)
+  const isInitializedRef = useRef(false)
 
   // 更新 ref 的值
   getRecentPlayByPathRef.current = getRecentPlayByPath
   addRecentPlayRef.current = addRecentPlay
+  subtitleListContextRef.current = subtitleListContext
+  restoreVideoStateRef.current = restoreVideoState
+  savePlayStateRefStable.current = savePlayStateRef
 
-  // 初始化播放状态
+  // 🚀 优化：只在视频文件实际变化时才初始化
   useEffect(() => {
-    console.log('🔍 usePlayStateInitializer useEffect 触发:', {
-      originalFilePath: playingVideoContext.originalFilePath,
-      videoFile: playingVideoContext.videoFile,
-      videoFileName: playingVideoContext.videoFileName,
-      subtitlesLength: subtitleListContext.subtitleItemsRef.current.length
+    // 检查视频文件是否有效
+    if (!playingVideoContext.originalFilePath || !playingVideoContext.videoFile) {
+      console.log('❌ usePlayStateInitializer: 缺少必要的文件信息，跳过初始化')
+      return
+    }
+
+    // 避免重复初始化同一个文件
+    const currentFilePath = playingVideoContext.originalFilePath
+    const currentFileName = playingVideoContext.videoFileName
+
+    console.log('🔍 usePlayStateInitializer 开始初始化:', {
+      originalFilePath: currentFilePath,
+      videoFileName: currentFileName,
+      isInitialized: isInitializedRef.current
     })
 
     // region 检测并加载同名字幕文件
@@ -79,15 +95,15 @@ export function usePlayStateInitializer({
             const parsed = parseSubtitles(content, `${videoBaseName}.${ext}`)
             if (parsed.length > 0) {
               console.log('📁 自动加载同名字幕文件:', subtitlePath)
-              subtitleListContext.restoreSubtitles(parsed, 0)
+              subtitleListContextRef.current.restoreSubtitles(parsed, 0)
 
               // 立即保存字幕数据
               setTimeout(async () => {
-                if (savePlayStateRef.current) {
+                if (savePlayStateRefStable.current.current) {
                   console.log('📝 自动检测字幕完成，立即保存字幕数据')
-                  await savePlayStateRef.current(true)
+                  await savePlayStateRefStable.current.current(true)
                 }
-              }, 100) // 稍微延迟以确保字幕状态已更新
+              }, 100)
 
               return true
             }
@@ -100,33 +116,16 @@ export function usePlayStateInitializer({
 
     // region 初始化播放状态
     const loadPlayState = async (): Promise<void> => {
-      console.log('🚀 loadPlayState 开始执行:', {
-        originalFilePath: playingVideoContext.originalFilePath,
-        videoFile: playingVideoContext.videoFile,
-        hasOriginalFilePath: !!playingVideoContext.originalFilePath,
-        hasVideoFile: !!playingVideoContext.videoFile
-      })
-
-      if (!playingVideoContext.originalFilePath || !playingVideoContext.videoFile) {
-        console.log('❌ loadPlayState 提前返回: 缺少必要的文件信息')
-        return
-      }
-
       try {
         // 获取保存的播放记录
-        const recent = await getRecentPlayByPathRef.current(playingVideoContext.originalFilePath)
+        const recent = await getRecentPlayByPathRef.current(currentFilePath)
         if (recent) {
           console.log('🔄 恢复保存的数据:', recent)
-          console.log('🔍 检查字幕数据:', {
-            hasSubtitles: !!recent.subtitleItems,
-            subtitlesLength: recent.subtitleItems?.length || 0,
-            firstSubtitle: recent.subtitleItems?.[0]
-          })
 
           // 恢复播放进度
           if (recent.currentTime && recent.currentTime > 0) {
             console.log('⏰ 恢复播放进度:', recent.currentTime)
-            restoreVideoState(
+            restoreVideoStateRef.current(
               recent.currentTime,
               1, // 使用默认播放速度
               1 // 使用默认音量
@@ -137,11 +136,10 @@ export function usePlayStateInitializer({
           let hasRestoredSubtitles = false
           if (recent.subtitleItems && recent.subtitleItems.length > 0) {
             console.log('📝 恢复字幕数据:', recent.subtitleItems.length, '条字幕')
-            // 根据时间计算字幕索引
-            const subtitleIndex = subtitleListContext.getSubtitleIndexForTime(
+            const subtitleIndex = subtitleListContextRef.current.getSubtitleIndexForTime(
               recent.currentTime || 0
             )
-            subtitleListContext.restoreSubtitles(recent.subtitleItems, subtitleIndex)
+            subtitleListContextRef.current.restoreSubtitles(recent.subtitleItems, subtitleIndex)
             hasRestoredSubtitles = true
           }
 
@@ -150,15 +148,15 @@ export function usePlayStateInitializer({
             return
           }
         } else {
-          // 如果没有找到保存的记录，说明这是一个新选择的视频文件，添加到最近播放列表
+          // 新视频文件，添加到最近播放列表
           console.log('📹 检测到新视频文件，添加到最近播放:', {
-            originalFilePath: playingVideoContext.originalFilePath,
-            videoFileName: playingVideoContext.videoFileName
+            originalFilePath: currentFilePath,
+            videoFileName: currentFileName
           })
 
           await addRecentPlayRef.current({
-            filePath: playingVideoContext.originalFilePath,
-            fileName: playingVideoContext.videoFileName || '',
+            filePath: currentFilePath,
+            fileName: currentFileName || '',
             duration: 0,
             currentTime: 0,
             subtitleFile: undefined
@@ -169,13 +167,13 @@ export function usePlayStateInitializer({
       }
 
       // 如果没有保存的字幕数据，则自动检测并导入同名字幕文件
-      if (subtitleListContext.subtitleItemsRef.current.length === 0) {
-        const found = await detectAndLoadSubtitles(playingVideoContext.originalFilePath)
+      if (subtitleListContextRef.current.subtitleItemsRef.current.length === 0) {
+        const found = await detectAndLoadSubtitles(currentFilePath)
 
         if (!found) {
           setPendingVideoInfo({
-            filePath: playingVideoContext.originalFilePath,
-            fileName: playingVideoContext.videoFileName || ''
+            filePath: currentFilePath,
+            fileName: currentFileName || ''
           })
           setShowSubtitleModal(true)
         }
@@ -183,8 +181,14 @@ export function usePlayStateInitializer({
     }
     // endregion
 
+    // 执行初始化
     loadPlayState()
-  }, [playingVideoContext, subtitleListContext, savePlayStateRef, restoreVideoState])
+    isInitializedRef.current = true
+  }, [
+    // 🚀 只监听真正需要的依赖
+    playingVideoContext.originalFilePath,
+    playingVideoContext.videoFile
+  ])
 
   return {
     pendingVideoInfo,
