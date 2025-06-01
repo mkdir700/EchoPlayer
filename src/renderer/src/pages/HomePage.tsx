@@ -1,10 +1,9 @@
 import React, { useCallback, useState } from 'react'
-import { Button, Typography, Card, Tooltip, Tag, Row, Col, Empty, Modal, message } from 'antd'
+import { Button, Typography, Card, Tooltip, Row, Col, Empty, Modal, message } from 'antd'
 import {
   VideoCameraOutlined,
   PlayCircleOutlined,
   ClockCircleOutlined,
-  StarOutlined,
   PlusOutlined,
   DeleteOutlined
 } from '@ant-design/icons'
@@ -21,38 +20,6 @@ const { Title, Text } = Typography
 interface HomePageProps {
   onNavigateToPlay: () => void
 }
-
-// 推荐视频假数据
-const recommendedVideos = [
-  {
-    id: '1',
-    title: 'English Conversation Practice',
-    duration: 1800,
-    poster: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=400&fit=crop',
-    category: '英语学习'
-  },
-  {
-    id: '2',
-    title: 'JavaScript Advanced Concepts',
-    duration: 2400,
-    poster: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=300&h=400&fit=crop',
-    category: '编程教程'
-  },
-  {
-    id: '3',
-    title: 'French Pronunciation Guide',
-    duration: 1200,
-    poster: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
-    category: '法语学习'
-  },
-  {
-    id: '4',
-    title: 'React Hooks Tutorial',
-    duration: 3600,
-    poster: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=400&fit=crop',
-    category: '前端开发'
-  }
-]
 
 export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element {
   // 使用自定义 Hooks
@@ -245,7 +212,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           <Title level={1} className={styles.welcomeTitle}>
             我的视频库
           </Title>
-          <Text className={styles.welcomeSubtitle}>发现、学习、成长 - 您的个人视频学习中心</Text>
+          <Text className={styles.welcomeSubtitle}>逐句精听，逐步精进！</Text>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <Button
@@ -355,7 +322,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
         </div>
 
         {/* 推荐视频区域 */}
-        <div className={styles.section}>
+        {/* <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <Title level={2} className={styles.sectionTitle}>
               <StarOutlined className={styles.titleIcon} />
@@ -417,7 +384,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
               </Col>
             ))}
           </Row>
-        </div>
+        </div> */}
       </div>
 
       <Modal
