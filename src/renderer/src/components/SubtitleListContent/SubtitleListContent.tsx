@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { Space, Typography } from 'antd'
 import { MessageOutlined } from '@ant-design/icons'
 import { List as VirtualizedList, AutoSizer, ListRowProps } from 'react-virtualized'
@@ -10,6 +10,7 @@ import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useVideoStateRefs, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { AimButton } from './AimButton'
+import { RendererLogger } from '@renderer/utils/logger'
 
 const { Text } = Typography
 
@@ -51,6 +52,9 @@ export function SubtitleListContent(): React.JSX.Element {
   const hasScrolledOnceRef = useRef(false)
   // 新增：标记程序是否正在执行自动滚动
   const isProgrammaticScrollingRef = useRef(false)
+
+  // 添加状态来跟踪当前激活的字幕索引，确保重新渲染
+  const [activeSubtitleIndex, setActiveSubtitleIndex] = useState(-1)
 
   // 点击字幕项时，恢复视频状态
   const handleClickSubtitleItem = (time: number): void => {
@@ -121,25 +125,28 @@ export function SubtitleListContent(): React.JSX.Element {
   )
 
   // 渲染单个字幕项
-  const rowRenderer = ({ index, key, style }: ListRowProps): React.ReactNode => {
-    const item = subtitleItemsRef.current[index]
-    if (!item) return null
+  const rowRenderer = useCallback(
+    ({ index, key, style }: ListRowProps): React.ReactNode => {
+      const item = subtitleItemsRef.current[index]
+      if (!item) return null
 
-    const isActive =
-      currentTimeRef.current >= item.startTime && currentTimeRef.current <= item.endTime
+      // 使用激活索引状态来计算 isActive，确保组件会重新渲染
+      const isActive = index === activeSubtitleIndex
 
-    return (
-      <div key={key} style={style}>
-        <SubtitleListItem
-          item={item}
-          index={index}
-          isActive={isActive}
-          onClick={handleClickSubtitleItem}
-          formatTime={formatTime}
-        />
-      </div>
-    )
-  }
+      return (
+        <div key={key} style={style}>
+          <SubtitleListItem
+            item={item}
+            index={index}
+            isActive={isActive}
+            onClick={handleClickSubtitleItem}
+            formatTime={formatTime}
+          />
+        </div>
+      )
+    },
+    [activeSubtitleIndex, subtitleItemsRef, handleClickSubtitleItem]
+  )
 
   // 订阅时间变化，如果时间变化则更新当前字幕索引
   useEffect(() => {
@@ -147,16 +154,23 @@ export function SubtitleListContent(): React.JSX.Element {
       const newSubtitleIndex = getSubtitleIndexForTime(time)
       const lastIndex = lastSubtitleIndexRef.current
 
-      // 更新字幕索引
+      // 更新字幕索引和激活状态
       setCurrentSubtitleIndex(newSubtitleIndex)
+      setActiveSubtitleIndex(newSubtitleIndex)
 
       // 如果用户正在手动滚动，跳过自动滚动
       if (isScrollingByUser.current) {
+        RendererLogger.debug('🚫 用户开始滚动，取消自动滚动')
         return
       }
 
       // 如果自动滚动被禁用，也跳过
       if (!isAutoScrollEnabledRef.current) {
+        RendererLogger.debug('🚫 自动滚动被禁用，跳过自动滚动', {
+          currentTime: time,
+          newSubtitleIndex,
+          isAutoScrollEnabled: isAutoScrollEnabledRef.current
+        })
         return
       }
 
@@ -191,11 +205,7 @@ export function SubtitleListContent(): React.JSX.Element {
           setTimeout(scrollWithDelay, 10)
         } else if (indexDifference > 10) {
           // 大幅度跳转：立即定位
-          console.log('🚀 大幅度跳转:', {
-            from: lastIndex,
-            to: newSubtitleIndex,
-            difference: indexDifference
-          })
+          RendererLogger.debug(`🚀 大幅度跳转: ${lastIndex} -> ${newSubtitleIndex}`)
 
           if (scrollToIndexInstantly(newSubtitleIndex)) {
             lastSubtitleIndexRef.current = newSubtitleIndex
@@ -226,21 +236,20 @@ export function SubtitleListContent(): React.JSX.Element {
   const handleScroll = useCallback(() => {
     // 如果是程序触发的滚动，忽略
     if (isProgrammaticScrollingRef.current) {
+      // 程序滚动时，确保自动滚动是启用的
       if (!isAutoScrollEnabledRef.current) {
         enableAutoScroll()
       }
       return
     }
 
-    if (isAutoScrollEnabledRef.current) {
-      disableAutoScroll()
-      return
-    }
-
+    // 用户手动滚动时的处理
+    console.log('👤 检测到用户手动滚动')
     isScrollingByUser.current = true
 
     // 禁用自动滚动
     if (isAutoScrollEnabledRef.current) {
+      console.log('🚫 禁用自动滚动，用户正在手动滚动')
       disableAutoScroll()
     }
 
@@ -263,8 +272,13 @@ export function SubtitleListContent(): React.JSX.Element {
       hasScrolledOnceRef.current = false
       isInitializedRef.current = false
       lastSubtitleIndexRef.current = -1
+      setActiveSubtitleIndex(-1)
+    } else {
+      // 初始化时设置正确的激活索引
+      const currentIndex = getSubtitleIndexForTime(currentTimeRef.current)
+      setActiveSubtitleIndex(currentIndex)
     }
-  }, [subtitleItemsRef])
+  }, [subtitleItemsRef, getSubtitleIndexForTime, currentTimeRef])
 
   // 清理定时器
   useEffect(() => {

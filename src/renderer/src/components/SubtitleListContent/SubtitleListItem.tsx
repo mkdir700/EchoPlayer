@@ -5,6 +5,20 @@ import styles from './SubtitleListItem.module.css'
 
 const { Text } = Typography
 
+// 自定义比较函数，确保 isActive 变化时重新渲染
+const arePropsEqual = (
+  prevProps: SubtitleListItemProps,
+  nextProps: SubtitleListItemProps
+): boolean => {
+  return (
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.item.startTime === nextProps.item.startTime &&
+    prevProps.item.endTime === nextProps.item.endTime &&
+    prevProps.item.text === nextProps.item.text &&
+    prevProps.index === nextProps.index
+  )
+}
+
 // 字幕项组件 - 适配 react-virtualized，使用React.memo避免不必要的重渲染
 export const SubtitleListItem = React.memo<SubtitleListItemProps>(
   ({ item, index, isActive, onClick, formatTime }) => {
@@ -85,7 +99,8 @@ export const SubtitleListItem = React.memo<SubtitleListItemProps>(
         </div>
       </div>
     )
-  }
+  },
+  arePropsEqual // 使用自定义比较函数
 )
 
 SubtitleListItem.displayName = 'SubtitleListItem'
