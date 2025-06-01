@@ -9,6 +9,7 @@ import styles from './SubtitleListContent.module.css'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useVideoStateRefs, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
+import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubtitleDisplayContext'
 import { AimButton } from './AimButton'
 import { RendererLogger } from '@renderer/utils/logger'
 
@@ -32,6 +33,7 @@ export function SubtitleListContent(): React.JSX.Element {
   const { volumeRef, playbackRateRef } = useVideoStateRefs()
   const { restoreVideoState } = useVideoControls()
   const { currentTimeRef, subscribeToTime } = useVideoPlayerContext()
+  const { setSubtitleByIndex } = useCurrentSubtitleDisplayContext()
 
   const {
     subtitleItemsRef,
@@ -56,10 +58,16 @@ export function SubtitleListContent(): React.JSX.Element {
   // 添加状态来跟踪当前激活的字幕索引，确保重新渲染
   const [activeSubtitleIndex, setActiveSubtitleIndex] = useState(-1)
 
-  // 点击字幕项时，恢复视频状态
-  const handleClickSubtitleItem = (time: number): void => {
-    restoreVideoState(time, playbackRateRef.current, volumeRef.current)
-  }
+  // 点击字幕项时，恢复视频状态并立即显示对应字幕
+  const handleClickSubtitleItem = useCallback(
+    (time: number, index: number): void => {
+      // 立即显示点击的字幕
+      setSubtitleByIndex(index)
+      // 恢复视频状态
+      restoreVideoState(time, playbackRateRef.current, volumeRef.current)
+    },
+    [setSubtitleByIndex, restoreVideoState, playbackRateRef, volumeRef]
+  )
 
   // 立即滚动到指定位置（无动画）
   const scrollToIndexInstantly = useCallback(

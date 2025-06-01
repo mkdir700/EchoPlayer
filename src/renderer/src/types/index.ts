@@ -17,7 +17,7 @@ export interface SubtitleListItemProps {
   item: SubtitleItem
   index: number
   isActive: boolean
-  onClick: (time: number) => void
+  onClick: (time: number, index: number) => void
   formatTime: (time: number) => string
 }
 

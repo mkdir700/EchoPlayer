@@ -23,8 +23,8 @@ const arePropsEqual = (
 export const SubtitleListItem = React.memo<SubtitleListItemProps>(
   ({ item, index, isActive, onClick, formatTime }) => {
     const handleClick = useCallback((): void => {
-      onClick(item.startTime)
-    }, [item.startTime, onClick])
+      onClick(item.startTime, index)
+    }, [item.startTime, index, onClick])
 
     return (
       <div
