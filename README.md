@@ -11,7 +11,7 @@
 [![React](https://img.shields.io/badge/React-19+-blue?style=flat-square)](https://reactjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue?style=flat-square)](https://typescriptlang.org)
 
-[下载应用](#安装) • [使用指南](#使用指南) • [功能特性](#功能特性) • [开发](#开发)
+[下载应用](#-安装) • [使用指南](#-使用指南) • [功能特性](#-功能特性) • [开发](#-开发)
 
 </div>
 
