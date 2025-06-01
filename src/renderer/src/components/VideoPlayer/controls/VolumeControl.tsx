@@ -30,9 +30,13 @@ export function VolumeControl({
   const [displayVolume, setDisplayVolume] = useState(volumeRef.current)
 
   // 点击音量按钮切换滑块显示状态
-  const handleVolumeButtonClick = useCallback(() => {
-    setShowVolumeSlider(!showVolumeSlider)
-  }, [showVolumeSlider])
+  const handleVolumeButtonClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      setShowVolumeSlider(!showVolumeSlider)
+      e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
+    },
+    [showVolumeSlider]
+  )
 
   const handleVolumeChange = useCallback(
     (value: number) => {

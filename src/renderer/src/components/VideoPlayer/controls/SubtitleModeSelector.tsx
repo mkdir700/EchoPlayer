@@ -1,32 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Button, Tooltip } from 'antd'
 import { TranslationOutlined } from '@ant-design/icons'
 import type { DisplayMode } from '@renderer/types'
+import styles from '../VideoControlsCompact.module.css'
 
 // 显示模式配置
 const DISPLAY_MODE_CONFIG = {
-  none: { label: '隐藏', color: '#ff4d4f' },
-  original: { label: '原始', color: '#1890ff' },
-  chinese: { label: '中文', color: '#52c41a' },
-  english: { label: 'English', color: '#722ed1' },
-  bilingual: { label: '双语', color: '#fa8c16' }
+  none: { label: '隐藏' },
+  original: { label: '原始' },
+  chinese: { label: '中文' },
+  english: { label: 'English' },
+  bilingual: { label: '双语' }
 }
 
 interface SubtitleModeSelectorProps {
   displayModeRef: { current: DisplayMode }
   onDisplayModeChange: (mode: DisplayMode) => void
-  className?: string
-  selectorClassName?: string
 }
 
 export function SubtitleModeSelector({
   displayModeRef,
-  onDisplayModeChange,
-  className = '',
-  selectorClassName = ''
+  onDisplayModeChange
 }: SubtitleModeSelectorProps): React.JSX.Element {
   const [showSubtitleModeSelector, setShowSubtitleModeSelector] = useState(false)
   const subtitleModeSelectorRef = useRef<HTMLDivElement>(null)
+
+  const handleSubtitleModeSelectorClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      setShowSubtitleModeSelector(!showSubtitleModeSelector)
+      e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
+    },
+    [showSubtitleModeSelector]
+  )
 
   // 点击外部关闭字幕模式选择器
   useEffect(() => {
@@ -55,25 +60,24 @@ export function SubtitleModeSelector({
   const currentModeConfig = DISPLAY_MODE_CONFIG[validDisplayMode]
 
   return (
-    <div className={className}>
+    <div className={styles.subtitleModeControl}>
       {/* 字幕模式切换按钮 */}
-      <Tooltip title={`字幕模式: ${currentModeConfig.label} (点击切换)`}>
+      <Tooltip
+        title={`字幕模式: ${currentModeConfig.label}`}
+        open={showSubtitleModeSelector ? false : undefined}
+      >
         <Button
           type="text"
           size="small"
           icon={<TranslationOutlined />}
-          onClick={(e) => {
-            setShowSubtitleModeSelector(!showSubtitleModeSelector)
-            e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
-          }}
-          style={{ color: currentModeConfig.color }}
-          className={`${showSubtitleModeSelector ? 'active' : ''}`}
+          onClick={handleSubtitleModeSelectorClick}
+          className={`${styles.controlBtn} ${showSubtitleModeSelector ? styles.activeBtn : ''}`}
         />
       </Tooltip>
 
       {/* 展开的模式选择器 */}
       {showSubtitleModeSelector && (
-        <div className={selectorClassName} ref={subtitleModeSelectorRef}>
+        <div className={styles.controlPopup} ref={subtitleModeSelectorRef}>
           {Object.entries(DISPLAY_MODE_CONFIG).map(([mode, config]) => (
             <Button
               key={mode}
@@ -86,7 +90,7 @@ export function SubtitleModeSelector({
               style={{
                 width: '100%',
                 textAlign: 'left',
-                color: displayModeRef.current === mode ? '#fff' : config.color,
+                color: 'var(--text-primary)',
                 marginBottom: '4px'
               }}
             >

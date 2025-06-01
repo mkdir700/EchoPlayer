@@ -95,15 +95,12 @@ export function VideoControlsCompact({
           <SubtitlePositionButton
             subtitlePosition={subtitlePosition}
             onSubtitlePositionToggle={onSubtitlePositionToggle}
-            className={styles.controlBtn}
           />
 
           {/* 字幕显示模式控制 */}
           <SubtitleModeSelector
             displayModeRef={displayModeRef}
             onDisplayModeChange={onDisplayModeChange}
-            className={styles.subtitleModeControl}
-            selectorClassName={styles.subtitleModeSelector}
           />
         </div>
 
