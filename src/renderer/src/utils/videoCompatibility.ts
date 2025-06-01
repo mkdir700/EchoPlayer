@@ -10,12 +10,20 @@ export interface VideoCodecSupport {
   supportLevel: 'probably' | 'maybe' | 'not-supported'
 }
 
+export interface AudioCodecSupport {
+  name: string
+  mimeType: string
+  supported: boolean
+  supportLevel: 'probably' | 'maybe' | 'not-supported'
+}
+
 export interface VideoCompatibilityReport {
   userAgent: string
   platform: string
   isElectron: boolean
   basicFormats: VideoCodecSupport[]
   advancedCodecs: VideoCodecSupport[]
+  audioCodecs: AudioCodecSupport[]
   recommendations: string[]
 }
 
@@ -26,6 +34,33 @@ export interface VideoCompatibilityReport {
 export function checkCodecSupport(mimeType: string): VideoCodecSupport {
   const video = document.createElement('video')
   const canPlay = video.canPlayType(mimeType)
+
+  let supported = false
+  let supportLevel: 'probably' | 'maybe' | 'not-supported' = 'not-supported'
+
+  if (canPlay === 'probably') {
+    supported = true
+    supportLevel = 'probably'
+  } else if (canPlay === 'maybe') {
+    supported = true
+    supportLevel = 'maybe'
+  }
+
+  return {
+    name: mimeType,
+    mimeType,
+    supported,
+    supportLevel
+  }
+}
+
+/**
+ * Check if a specific audio codec is supported
+ * 检查特定音频编解码器是否支持
+ */
+export function checkAudioCodecSupport(mimeType: string): AudioCodecSupport {
+  const audio = document.createElement('audio')
+  const canPlay = audio.canPlayType(mimeType)
 
   let supported = false
   let supportLevel: 'probably' | 'maybe' | 'not-supported' = 'not-supported'
@@ -72,7 +107,26 @@ export function generateCompatibilityReport(): VideoCompatibilityReport {
     'video/mp4; codecs="dvh1.05.06"' // Dolby Vision
   ].map(checkCodecSupport)
 
-  const recommendations = generateRecommendations(basicFormats, advancedCodecs)
+  // 添加音频编解码器检测
+  const audioCodecs = [
+    'audio/mp4; codecs="mp4a.40.2"', // AAC-LC
+    'audio/mp4; codecs="mp4a.40.5"', // AAC-HE
+    'audio/mp4; codecs="mp4a.40.29"', // AAC-HE v2
+    'audio/mp4; codecs="ac-3"', // AC3/Dolby Digital
+    'audio/mp4; codecs="ec-3"', // EAC3/Dolby Digital Plus
+    'audio/mp4; codecs="dtsc"', // DTS
+    'audio/mp4; codecs="dtsh"', // DTS-HD
+    'audio/mp4; codecs="dtsl"', // DTS-Lossless
+    'audio/webm; codecs="vorbis"', // Vorbis
+    'audio/webm; codecs="opus"', // Opus
+    'audio/ogg; codecs="vorbis"', // Ogg Vorbis
+    'audio/ogg; codecs="flac"', // FLAC
+    'audio/mpeg', // MP3
+    'audio/wav', // PCM/WAV
+    'audio/x-m4a; codecs="alac"' // Apple Lossless
+  ].map(checkAudioCodecSupport)
+
+  const recommendations = generateRecommendations(basicFormats, advancedCodecs, audioCodecs)
 
   return {
     userAgent: navigator.userAgent,
@@ -80,6 +134,7 @@ export function generateCompatibilityReport(): VideoCompatibilityReport {
     isElectron: typeof window.process !== 'undefined',
     basicFormats,
     advancedCodecs,
+    audioCodecs,
     recommendations
   }
 }
@@ -90,7 +145,8 @@ export function generateCompatibilityReport(): VideoCompatibilityReport {
  */
 function generateRecommendations(
   basicFormats: VideoCodecSupport[],
-  advancedCodecs: VideoCodecSupport[]
+  advancedCodecs: VideoCodecSupport[],
+  audioCodecs: AudioCodecSupport[]
 ): string[] {
   const recommendations: string[] = []
 
@@ -113,6 +169,45 @@ function generateRecommendations(
 
   if (!h264Support?.supported) {
     recommendations.push('当前环境对 H.264 支持有限。建议检查系统编解码器安装情况。')
+  }
+
+  // Check audio codec support
+  const aacSupport = audioCodecs.find((codec) => codec.mimeType.includes('mp4a.40.2'))
+  const ac3Support = audioCodecs.find((codec) => codec.mimeType.includes('ac-3'))
+  const dtsSupport = audioCodecs.find((codec) => codec.mimeType.includes('dtsc'))
+
+  if (!aacSupport?.supported) {
+    recommendations.push('当前环境不支持 AAC 音频编解码器，这可能导致大部分视频没有声音。')
+  }
+
+  if (!ac3Support?.supported) {
+    recommendations.push(
+      '当前环境不支持 AC3/Dolby Digital 音频编解码器。MKV 视频中的 AC3 音轨将无法播放。'
+    )
+    recommendations.push(
+      '针对 MKV + AC3 音频问题，建议转换音频格式: ffmpeg -i input.mkv -c:v copy -c:a aac output.mp4'
+    )
+  }
+
+  if (!dtsSupport?.supported) {
+    recommendations.push('当前环境不支持 DTS 音频编解码器。MKV 视频中的 DTS 音轨将无法播放。')
+    recommendations.push(
+      '针对 MKV + DTS 音频问题，建议转换音频格式: ffmpeg -i input.mkv -c:v copy -c:a aac output.mp4'
+    )
+  }
+
+  // Special recommendations for H.265 MKV with audio issues
+  if (h265Support?.supported) {
+    recommendations.push(
+      '检测到 H.265 视频支持。如果 MKV 视频有画面无声音，通常是音频编解码器问题：'
+    )
+    recommendations.push('1. 检查视频的音频编码格式 (通常是 AC3、DTS 或其他非标准编码)')
+    recommendations.push(
+      '2. 建议重新编码音频为 AAC: ffmpeg -i input.mkv -c:v copy -c:a aac -b:a 128k output.mp4'
+    )
+    recommendations.push(
+      '3. 或者保留 H.265 但转换容器: ffmpeg -i input.mkv -c:v copy -c:a aac output.mp4'
+    )
   }
 
   // Check WebM support
@@ -146,8 +241,15 @@ export function printCompatibilityReport(): void {
     console.log(`- ${format.mimeType}: ${status}${level}`)
   })
 
-  console.log('\n视频编解码器支持:')
+  console.log('\n高级视频编解码器支持:')
   report.advancedCodecs.forEach((codec) => {
+    const status = codec.supported ? '✓' : '✗'
+    const level = codec.supportLevel !== 'not-supported' ? ` (${codec.supportLevel})` : ''
+    console.log(`- ${codec.mimeType}: ${status}${level}`)
+  })
+
+  console.log('\n音频编解码器支持:')
+  report.audioCodecs.forEach((codec) => {
     const status = codec.supported ? '✓' : '✗'
     const level = codec.supportLevel !== 'not-supported' ? ` (${codec.supportLevel})` : ''
     console.log(`- ${codec.mimeType}: ${status}${level}`)
@@ -182,6 +284,42 @@ export function printCompatibilityReport(): void {
 }
 
 /**
+ * Diagnose specific video file audio issues
+ * 诊断特定视频文件的音频问题
+ */
+export function diagnoseAudioIssues(fileName: string): string[] {
+  const issues: string[] = []
+  const report = generateCompatibilityReport()
+
+  const fileExt = fileName.toLowerCase().split('.').pop()
+
+  if (fileExt === 'mkv') {
+    issues.push('🎯 MKV 容器格式检测到')
+
+    // Check common audio codecs in MKV
+    const aacSupport = report.audioCodecs.find((codec) => codec.mimeType.includes('mp4a.40.2'))
+    const ac3Support = report.audioCodecs.find((codec) => codec.mimeType.includes('ac-3'))
+    const dtsSupport = report.audioCodecs.find((codec) => codec.mimeType.includes('dtsc'))
+
+    if (!ac3Support?.supported) {
+      issues.push('❌ AC3 音频编解码器不支持 - MKV 中常见的音频格式')
+      issues.push('💡 建议转换音频: ffmpeg -i input.mkv -c:v copy -c:a aac output.mp4')
+    }
+
+    if (!dtsSupport?.supported) {
+      issues.push('❌ DTS 音频编解码器不支持 - MKV 中常见的音频格式')
+      issues.push('💡 建议转换音频: ffmpeg -i input.mkv -c:v copy -c:a aac output.mp4')
+    }
+
+    if (aacSupport?.supported) {
+      issues.push('✅ AAC 音频编解码器支持良好')
+    }
+  }
+
+  return issues
+}
+
+/**
  * Check if current environment supports H.265/HEVC
  * 检查当前环境是否支持 H.265/HEVC
  */
@@ -195,6 +333,30 @@ export function supportsH265(): boolean {
 }
 
 /**
+ * Check audio codec support for common formats
+ * 检查常见音频格式的编解码器支持
+ */
+export function getAudioCodecSupport(): {
+  aac: boolean
+  ac3: boolean
+  dts: boolean
+  opus: boolean
+  vorbis: boolean
+} {
+  const report = generateCompatibilityReport()
+
+  return {
+    aac:
+      report.audioCodecs.find((codec) => codec.mimeType.includes('mp4a.40.2'))?.supported || false,
+    ac3: report.audioCodecs.find((codec) => codec.mimeType.includes('ac-3'))?.supported || false,
+    dts: report.audioCodecs.find((codec) => codec.mimeType.includes('dtsc'))?.supported || false,
+    opus: report.audioCodecs.find((codec) => codec.mimeType.includes('opus'))?.supported || false,
+    vorbis:
+      report.audioCodecs.find((codec) => codec.mimeType.includes('vorbis'))?.supported || false
+  }
+}
+
+/**
  * Get recommended video settings for current environment
  * 获取当前环境推荐的视频设置
  */
@@ -204,17 +366,18 @@ export function getRecommendedVideoSettings(): {
   conversionCommand?: string
 } {
   const h265Supported = supportsH265()
+  const audioSupport = getAudioCodecSupport()
 
-  if (h265Supported) {
+  if (h265Supported && audioSupport.aac) {
     return {
-      preferredFormat: 'H.265/HEVC (MP4)',
-      fallbackFormats: ['H.264 (MP4)', 'VP9 (WebM)', 'VP8 (WebM)']
+      preferredFormat: 'H.265/HEVC + AAC (MP4)',
+      fallbackFormats: ['H.264 + AAC (MP4)', 'VP9 + Opus (WebM)', 'VP8 + Vorbis (WebM)']
     }
   }
 
   return {
-    preferredFormat: 'H.264 (MP4)',
-    fallbackFormats: ['VP9 (WebM)', 'VP8 (WebM)'],
-    conversionCommand: 'ffmpeg -i input.mp4 -c:v libx264 -crf 23 -c:a aac output.mp4'
+    preferredFormat: 'H.264 + AAC (MP4)',
+    fallbackFormats: ['VP9 + Opus (WebM)', 'VP8 + Vorbis (WebM)'],
+    conversionCommand: 'ffmpeg -i input.mkv -c:v libx264 -crf 23 -c:a aac output.mp4'
   }
 }

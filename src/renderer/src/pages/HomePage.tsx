@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import { Button, Typography, Card, Tooltip, Tag, Row, Col, Empty, Modal } from 'antd'
+import { Button, Typography, Card, Tooltip, Tag, Row, Col, Empty, Modal, message } from 'antd'
 import {
   VideoCameraOutlined,
   PlayCircleOutlined,
@@ -12,6 +12,7 @@ import { useRecentPlayList } from '@renderer/hooks/useRecentPlayList'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { formatTime } from '@renderer/utils/helpers'
+import { diagnoseAudioIssues } from '@renderer/utils/videoCompatibility'
 import type { RecentPlayItem } from '@renderer/types'
 import styles from './HomePage.module.css'
 
@@ -98,6 +99,22 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
   const handleOpenResouce = useCallback(
     async (item: RecentPlayItem) => {
       console.log('🎬 开始处理视频:', item)
+
+      // 诊断音频兼容性问题
+      const audioIssues = diagnoseAudioIssues(item.fileName)
+      if (audioIssues.length > 0) {
+        console.warn('🔍 检测到潜在的音频兼容性问题:')
+        audioIssues.forEach((issue) => console.warn(issue))
+
+        // 如果是MKV文件且可能有音频问题，显示警告
+        if (item.fileName.toLowerCase().endsWith('.mkv')) {
+          message.warning({
+            content: 'MKV 文件可能存在音频兼容性问题，如果没有声音请查看控制台建议',
+            duration: 5
+          })
+        }
+      }
+
       try {
         // 检查文件是否存在
         console.log('🔍 检查文件是否存在:', item.filePath)
@@ -230,15 +247,17 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           </Title>
           <Text className={styles.welcomeSubtitle}>发现、学习、成长 - 您的个人视频学习中心</Text>
         </div>
-        <Button
-          type="primary"
-          size="large"
-          icon={<PlusOutlined />}
-          onClick={handleVideoFileSelect}
-          className={styles.addVideoButton}
-        >
-          <span>添加视频</span>
-        </Button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlusOutlined />}
+            onClick={handleVideoFileSelect}
+            className={styles.addVideoButton}
+          >
+            <span>添加视频</span>
+          </Button>
+        </div>
       </div>
 
       <div className={styles.mainContent}>

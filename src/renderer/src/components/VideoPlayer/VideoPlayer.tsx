@@ -258,8 +258,6 @@ export function VideoPlayer({
                   isVideoLoaded={isVideoLoaded}
                   isPlaying={isPlaying}
                   videoError={videoError}
-                  playbackRate={playbackRate}
-                  volume={volume}
                   isLooping={false}
                   autoPause={false}
                   autoSkipSilence={false}
