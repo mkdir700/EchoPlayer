@@ -61,11 +61,9 @@ export function useFileUpload(): UseFileUploadReturn {
           ...prevState,
           displayAspectRatio: aspectRatio
         }))
-
-        message.success(`视频DAR: ${aspectRatioName} (${aspectRatio.toFixed(3)})`)
+        RendererLogger.info(`视频DAR: ${aspectRatioName} (${aspectRatio.toFixed(3)})`)
       } catch (error) {
-        console.warn('⚠️ 获取视频DAR失败，使用默认值:', error)
-        // 保持默认的16:9宽高比
+        RendererLogger.warn('⚠️ 获取视频DAR失败，使用默认值:', error)
       }
     },
     [state]
