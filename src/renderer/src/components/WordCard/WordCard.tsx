@@ -7,6 +7,7 @@ import type { ThirdPartyServicesSettings } from '@renderer/types'
 
 // 导入样式
 import styles from './WordCard.module.css'
+import RendererLogger from '@renderer/utils/logger'
 
 const { Text, Title } = Typography
 
@@ -20,6 +21,10 @@ export function WordCard({ word, targetElement, onClose }: WordCardProps): React
   const [dictionaryResult, setDictionaryResult] = useState<DictionaryResult | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  RendererLogger.componentRender({
+    component: 'WordCard',
+    props: { word, targetElement, onClose, dictionaryResult, isLoading, isPlayingAudio }
+  })
   const cardRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 

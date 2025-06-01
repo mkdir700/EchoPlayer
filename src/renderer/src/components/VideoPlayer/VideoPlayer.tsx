@@ -4,13 +4,14 @@ import { VideoPlaceholder } from './VideoPlaceholder'
 import { LoadingIndicator } from '../LoadingIndicator'
 import { ErrorIndicator } from '../ErrorIndicator'
 import { VideoControlsFullScreen } from './VideoControlsFullScreen'
-import { Subtitle } from './Subtitle'
 import { useFullscreen } from '@renderer/hooks/useFullscreen'
 
 // 导入样式
 import styles from './VideoPlayer.module.css'
 import { SubtitleItem } from '@types_/shared'
 import { DisplayMode } from '@renderer/types'
+import RendererLogger from '@renderer/utils/logger'
+import { SubtitleV3 } from './SubtitleV3'
 
 interface VideoPlayerProps {
   videoFile: string | null
@@ -70,6 +71,34 @@ export function VideoPlayer({
   onFullscreenChange,
   onFullscreenToggleReady
 }: VideoPlayerProps): React.JSX.Element {
+  RendererLogger.componentRender({
+    component: 'VideoPlayer',
+    props: {
+      videoFile,
+      playerRef,
+      isPlaying,
+      volume,
+      playbackRate,
+      currentTime,
+      duration,
+      isVideoLoaded,
+      videoError,
+      currentSubtitle,
+      displayModeRef,
+      onProgress,
+      onDuration,
+      onReady,
+      onError,
+      onSeek,
+      onStepBackward,
+      onPlayPause,
+      onStepForward,
+      onPlaybackRateChange,
+      onVolumeChange,
+      onFullscreenChange,
+      onFullscreenToggleReady
+    }
+  })
   const [showControls, setShowControls] = useState(false)
   const [isUserInteracting, setIsUserInteracting] = useState(false)
   const [isPausedByHover, setIsPausedByHover] = useState(false)
@@ -226,7 +255,7 @@ export function VideoPlayer({
 
             {/* 字幕显示组件 - 嵌入在视频内部，距离底部10% */}
             <div className={styles.subtitleOverlay}>
-              <Subtitle
+              <SubtitleV3
                 currentSubtitle={currentSubtitle}
                 isPlaying={isPlaying}
                 displayMode={displayModeRef.current}

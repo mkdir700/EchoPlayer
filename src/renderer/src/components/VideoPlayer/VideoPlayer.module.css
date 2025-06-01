@@ -59,19 +59,18 @@
   transform: translateY(-2px);
 }
 
-/* 字幕覆盖层样式 - 嵌入在视频内部，YouTube 风格 */
+/* 字幕覆盖层样式 - 支持自由定位的字幕容器 */
 .subtitleOverlay {
   position: absolute;
-  bottom: 0%;
+  top: 0;
   left: 0;
   right: 0;
+  bottom: 0;
   z-index: 10; /* 在视频上方，但在控制器下方 */
   width: 100%;
-  pointer-events: none; /* 容器本身不接收点击事件 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 var(--spacing-lg);
+  height: 100%;
+  pointer-events: none; /* 容器本身不接收点击事件，但允许子元素接收 */
+  /* 移除flex布局，让字幕组件自由定位 */
 }
 
 /* 控制组件覆盖层样式 - 覆盖在视频上，但允许字幕点击 */

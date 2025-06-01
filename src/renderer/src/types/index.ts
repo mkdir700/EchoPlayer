@@ -4,6 +4,7 @@ import type { SubtitleItem } from '@types_/shared'
 export interface VideoFileState {
   videoFile: string | null
   videoFileName: string
+  displayAspectRatio: number
 }
 
 export interface UIState {

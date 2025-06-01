@@ -7,7 +7,7 @@ export interface ShortcutConfig {
   name: string
   description: string
   defaultKey: string
-  category: 'playback' | 'subtitle'
+  category: 'playback' | 'subtitle' | 'appearance'
 }
 
 // 默认快捷键配置
@@ -81,6 +81,13 @@ export const DEFAULT_SHORTCUTS: Record<string, ShortcutConfig> = {
     description: '跳转到下一句字幕',
     defaultKey: 'L',
     category: 'subtitle'
+  },
+  resetSubtitleSettings: {
+    key: 'resetSubtitleSettings',
+    name: '重置字幕设置',
+    description: '重置字幕位置、大小和背景为默认配置',
+    defaultKey: 'Ctrl+Shift+R',
+    category: 'appearance'
   }
 }
 

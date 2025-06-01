@@ -14,6 +14,7 @@ import { PlaybackSettingsProvider } from '@renderer/contexts/PlaybackSettingsCon
 import { PlayingVideoProvider } from '@renderer/contexts/PlayingVideoContext'
 import { SubtitleListProvider } from '@renderer/contexts/SubtitleListContext'
 import { VideoPlayerProvider } from '@renderer/contexts/VideoPlayerContext'
+import { useSubtitleReset } from '@renderer/hooks/useSubtitleReset'
 
 // 导入类型
 import { PageType } from '@renderer/types'
@@ -26,7 +27,10 @@ import { performanceMonitor } from '@renderer/utils/performance'
 
 const { Content } = Layout
 
-function App(): React.JSX.Element {
+// 内部组件，用于在Provider内部启用全局功能
+function AppContent(): React.JSX.Element {
+  // 启用字幕重置功能和全局快捷键
+  useSubtitleReset()
   // 页面状态管理
   const [currentPage, setCurrentPage] = useState<PageType>('home')
 
@@ -86,22 +90,28 @@ function App(): React.JSX.Element {
   }, [currentPage, handleNavigateToPlay, handleBackToHome])
 
   return (
+    <PlayingVideoProvider>
+      <VideoPlayerProvider>
+        <Layout className={styles.appLayout}>
+          {currentPage !== 'play' ? (
+            <>
+              <AppHeader currentPage={currentPage} onPageChange={setCurrentPage} />
+              <Content className={styles.appContent}>{renderPageContent}</Content>
+            </>
+          ) : (
+            <div className={styles.playPageFullscreen}>{renderPageContent}</div>
+          )}
+        </Layout>
+      </VideoPlayerProvider>
+    </PlayingVideoProvider>
+  )
+}
+
+function App(): React.JSX.Element {
+  return (
     <PlaybackSettingsProvider>
       <ShortcutProvider>
-        <PlayingVideoProvider>
-          <VideoPlayerProvider>
-            <Layout className={styles.appLayout}>
-              {currentPage !== 'play' ? (
-                <>
-                  <AppHeader currentPage={currentPage} onPageChange={setCurrentPage} />
-                  <Content className={styles.appContent}>{renderPageContent}</Content>
-                </>
-              ) : (
-                <div className={styles.playPageFullscreen}>{renderPageContent}</div>
-              )}
-            </Layout>
-          </VideoPlayerProvider>
-        </PlayingVideoProvider>
+        <AppContent />
       </ShortcutProvider>
     </PlaybackSettingsProvider>
   )

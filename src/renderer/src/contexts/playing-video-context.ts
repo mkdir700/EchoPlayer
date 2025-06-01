@@ -6,6 +6,7 @@ import { createContext } from 'react'
 export interface IPlayingVideoContextType extends VideoFileState {
   isLocalFile: boolean
   originalFilePath?: string
+  displayAspectRatio: number
   clearVideoFile: () => void
   setVideoFile: (url: string, fileName: string, filePath?: string) => void
   handleVideoFileSelect: (

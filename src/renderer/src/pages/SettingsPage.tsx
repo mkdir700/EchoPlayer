@@ -5,6 +5,7 @@ import { ShortcutsSection } from '@renderer/components/Settings/ShortcutsSection
 import { DataManagementSection } from '@renderer/components/Settings/DataManagementSection'
 import { SettingsNavigation } from '@renderer/components/Settings/SettingsNavigation'
 import { PlaceholderSection } from '@renderer/components/Settings/PlaceholderSection'
+import { AppearanceSection } from '@renderer/components/Settings/AppearanceSection'
 import { ThirdPartyServicesSection } from '@renderer/components/Settings/ThirdPartyServicesSection'
 import { VideoConversionSection } from '@renderer/components/Settings/VideoConversionSection'
 
@@ -20,7 +21,7 @@ export function SettingsPage(): React.JSX.Element {
       case 'storage':
         return <DataManagementSection />
       case 'appearance':
-        return <PlaceholderSection title="外观设置" description="主题、字体大小等外观相关设置" />
+        return <AppearanceSection />
       case 'video':
         return <VideoConversionSection />
       case 'dictionary':
