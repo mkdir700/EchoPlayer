@@ -9,7 +9,6 @@ import styles from './VideoControlsCompact.module.css'
 import {
   LoopToggleButton,
   AutoPauseButton,
-  SubtitlePositionButton,
   SubtitleModeSelector,
   PlaybackControlButtons,
   PlaybackRateSelector,
@@ -28,7 +27,6 @@ export function VideoControlsCompact({
   videoError,
   isLooping,
   autoPause,
-  subtitlePosition,
   displayModeRef,
   onSeek,
   onStepBackward,
@@ -38,7 +36,6 @@ export function VideoControlsCompact({
   onVolumeChange,
   onLoopToggle,
   onAutoSkipToggle,
-  onSubtitlePositionToggle,
   onFullscreenToggle,
   onPreviousSubtitle,
   onNextSubtitle,
@@ -89,12 +86,6 @@ export function VideoControlsCompact({
             isVideoLoaded={isVideoLoaded}
             onAutoSkipToggle={onAutoSkipToggle}
             className={`${styles.controlBtn} ${autoPause ? styles.activeBtn : ''}`}
-          />
-
-          {/* 字幕位置 */}
-          <SubtitlePositionButton
-            subtitlePosition={subtitlePosition}
-            onSubtitlePositionToggle={onSubtitlePositionToggle}
           />
 
           {/* 字幕显示模式控制 */}

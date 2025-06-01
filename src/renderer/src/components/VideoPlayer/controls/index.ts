@@ -1,6 +1,5 @@
 export { LoopToggleButton } from './LoopToggleButton'
 export { AutoPauseButton } from './AutoPauseButton'
-export { SubtitlePositionButton } from './SubtitlePositionButton'
 export { SubtitleModeSelector } from './SubtitleModeSelector'
 export { PlaybackControlButtons } from './PlaybackControlButtons'
 export { PlaybackRateSelector } from './PlaybackRateSelector'

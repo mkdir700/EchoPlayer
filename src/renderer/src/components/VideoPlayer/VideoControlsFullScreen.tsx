@@ -11,8 +11,6 @@ import {
   SettingOutlined,
   ReloadOutlined,
   FastForwardOutlined,
-  VerticalAlignTopOutlined,
-  VerticalAlignBottomOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
   LeftOutlined,
@@ -42,7 +40,6 @@ export function VideoControlsFullScreen({
   volume,
   isLooping,
   autoSkipSilence,
-  subtitlePosition,
   isFullscreen,
   onSeek,
   onStepBackward,
@@ -52,7 +49,6 @@ export function VideoControlsFullScreen({
   onVolumeChange,
   onLoopToggle,
   onAutoSkipToggle,
-  onSubtitlePositionToggle,
   onFullscreenToggle,
   onPreviousSubtitle,
   onNextSubtitle
@@ -116,22 +112,6 @@ export function VideoControlsFullScreen({
                 type="text"
                 className={`${styles.controlBtn} ${autoSkipSilence ? styles.activeBtn : ''}`}
                 disabled={!isVideoLoaded}
-              />
-            </Tooltip>
-
-            {/* 字幕位置 */}
-            <Tooltip title={`字幕显示在${subtitlePosition === 'top' ? '上方' : '下方'}`}>
-              <Button
-                icon={
-                  subtitlePosition === 'top' ? (
-                    <VerticalAlignTopOutlined />
-                  ) : (
-                    <VerticalAlignBottomOutlined />
-                  )
-                }
-                onClick={onSubtitlePositionToggle}
-                type="text"
-                className={styles.controlBtn}
               />
             </Tooltip>
 

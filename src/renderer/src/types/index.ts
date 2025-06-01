@@ -32,7 +32,6 @@ export interface VideoControlsProps {
   isLooping: boolean
   autoPause: boolean
   autoSkipSilence: boolean
-  subtitlePosition: 'top' | 'bottom'
   displayModeRef: React.RefObject<DisplayMode>
   onSeek: (value: number) => void
   onStepBackward: () => void
@@ -42,7 +41,6 @@ export interface VideoControlsProps {
   onVolumeChange: (value: number) => void
   onLoopToggle: () => void
   onAutoSkipToggle: () => void
-  onSubtitlePositionToggle: () => void
   onFullscreenToggle: () => void
   onPreviousSubtitle: () => void
   onNextSubtitle: () => void
