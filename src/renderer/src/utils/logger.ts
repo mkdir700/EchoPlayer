@@ -30,10 +30,19 @@ interface PerformanceDetails {
 export class RendererLogger {
   private static isElectron = typeof window !== 'undefined' && window.api
 
+  // 组件渲染日志节流缓存
+  private static componentRenderCache = new Map<string, number>()
+  private static readonly COMPONENT_RENDER_THROTTLE_MS = 100 // 100ms内同一组件只记录一次
+
   /**
-   * 清理数据，移除不可序列化的属性
+   * 清理数据，移除不可序列化的属性 - 优化版本，避免深度递归阻塞
    */
-  private static sanitizeData(data: unknown): unknown {
+  private static sanitizeData(data: unknown, depth = 0, maxDepth = 3): unknown {
+    // 限制递归深度，防止深度递归导致阻塞
+    if (depth > maxDepth) {
+      return '[Max depth exceeded]'
+    }
+
     if (data === null || data === undefined) {
       return data
     }
@@ -56,7 +65,14 @@ export class RendererLogger {
       }
 
       if (Array.isArray(data)) {
-        return data.map((item) => this.sanitizeData(item))
+        // 限制数组长度，避免处理过大的数组
+        const maxArrayLength = 10
+        const slicedArray = data.slice(0, maxArrayLength)
+        const sanitized = slicedArray.map((item) => this.sanitizeData(item, depth + 1, maxDepth))
+        if (data.length > maxArrayLength) {
+          sanitized.push(`[... ${data.length - maxArrayLength} more items]`)
+        }
+        return sanitized
       }
 
       // 检查是否是React Ref对象
@@ -64,9 +80,25 @@ export class RendererLogger {
         return '[React.RefObject]'
       }
 
-      // 普通对象
+      // DOM元素处理
+      if (data instanceof HTMLElement) {
+        return `[HTMLElement: ${data.tagName}]`
+      }
+
+      // React组件或复杂对象的简化处理
+      if ('$$typeof' in data || '_owner' in data || 'type' in data) {
+        return '[React.Element]'
+      }
+
+      // 普通对象 - 限制属性数量
       const sanitized: Record<string, unknown> = {}
-      for (const [key, value] of Object.entries(data)) {
+      const keys = Object.keys(data)
+      const maxKeys = 20 // 限制属性数量
+
+      for (let i = 0; i < Math.min(keys.length, maxKeys); i++) {
+        const key = keys[i]
+        const value = (data as Record<string, unknown>)[key]
+
         // 跳过函数属性
         if (typeof value === 'function') {
           sanitized[key] = '[Function]'
@@ -79,12 +111,17 @@ export class RendererLogger {
           sanitized[key] = '[React.RefObject]'
         } else {
           try {
-            sanitized[key] = this.sanitizeData(value)
+            sanitized[key] = this.sanitizeData(value, depth + 1, maxDepth)
           } catch {
             sanitized[key] = '[Non-serializable]'
           }
         }
       }
+
+      if (keys.length > maxKeys) {
+        sanitized['...'] = `[${keys.length - maxKeys} more properties]`
+      }
+
       return sanitized
     }
 
@@ -92,22 +129,25 @@ export class RendererLogger {
   }
 
   /**
-   * 通过主进程记录日志
+   * 通过主进程记录日志 - 非阻塞版本
    */
-  private static async logToMain(level: LogLevel, message: string, data?: unknown): Promise<void> {
+  private static logToMain(level: LogLevel, message: string, data?: unknown): void {
     if (this.isElectron && window.api?.log) {
-      try {
-        const sanitizedData = this.sanitizeData(data)
-        await window.api.log(level, message, sanitizedData)
-      } catch (error) {
-        console.error('记录日志到主进程失败:', error)
-        // 作为备选方案，只记录消息，不传递数据
+      // 使用setTimeout将日志操作推迟到下一个事件循环，避免阻塞当前执行
+      setTimeout(async () => {
         try {
-          await window.api.log(level, `${message} [数据序列化失败]`)
-        } catch {
-          // 如果连基本消息都无法发送，则静默失败
+          const sanitizedData = this.sanitizeData(data)
+          await window.api.log(level, message, sanitizedData)
+        } catch (error) {
+          console.error('记录日志到主进程失败:', error)
+          // 作为备选方案，只记录消息，不传递数据
+          try {
+            await window.api.log(level, `${message} [数据序列化失败]`)
+          } catch {
+            // 如果连基本消息都无法发送，则静默失败
+          }
         }
-      }
+      }, 0)
     }
   }
 
@@ -175,17 +215,65 @@ export class RendererLogger {
   }
 
   /**
-   * 记录组件渲染信息
+   * 记录组件渲染信息 - 优化版本，带节流和简化数据
    */
   static componentRender(details: RenderDetails): void {
+    const componentKey = details.component
+    const now = Date.now()
+
+    // 检查节流
+    const lastLogTime = this.componentRenderCache.get(componentKey)
+    if (lastLogTime && now - lastLogTime < this.COMPONENT_RENDER_THROTTLE_MS) {
+      return // 跳过这次日志记录
+    }
+
+    // 更新缓存
+    this.componentRenderCache.set(componentKey, now)
+
+    // 简化日志数据，只包含必要信息
     const logData = {
-      ...details,
-      timestamp: new Date().toISOString(),
-      url: window.location.href
+      component: details.component,
+      // 简化props，只记录基本类型和字符串的前50个字符
+      props: details.props ? this.simplifyProps(details.props) : undefined,
+      timestamp: new Date().toISOString()
     }
 
     console.debug(`[组件渲染] ${details.component}`, logData)
     this.logToMain('debug', `[组件渲染] ${details.component}`, logData)
+  }
+
+  /**
+   * 简化props，只保留基本信息，避免复杂对象处理
+   */
+  private static simplifyProps(props: Record<string, unknown>): Record<string, unknown> {
+    const simplified: Record<string, unknown> = {}
+    let propCount = 0
+    const maxProps = 5 // 最多记录5个属性
+
+    for (const [key, value] of Object.entries(props)) {
+      if (propCount >= maxProps) {
+        simplified['...'] = `[${Object.keys(props).length - maxProps} more props]`
+        break
+      }
+
+      if (typeof value === 'string') {
+        simplified[key] = value.length > 50 ? value.substring(0, 50) + '...' : value
+      } else if (typeof value === 'number' || typeof value === 'boolean') {
+        simplified[key] = value
+      } else if (value === null || value === undefined) {
+        simplified[key] = value
+      } else if (typeof value === 'function') {
+        simplified[key] = '[Function]'
+      } else if (value instanceof HTMLElement) {
+        simplified[key] = `[HTMLElement: ${value.tagName}]`
+      } else {
+        simplified[key] = '[Object]'
+      }
+
+      propCount++
+    }
+
+    return simplified
   }
 
   /**
