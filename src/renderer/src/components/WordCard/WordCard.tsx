@@ -21,12 +21,16 @@ export function WordCard({ word, targetElement, onClose }: WordCardProps): React
   const [dictionaryResult, setDictionaryResult] = useState<DictionaryResult | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+
   RendererLogger.componentRender({
     component: 'WordCard',
     props: { word, targetElement, onClose, dictionaryResult, isLoading, isPlayingAudio }
   })
+
   const cardRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const lookupTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // 从本地存储获取设置
   const getSettings = (): ThirdPartyServicesSettings => {
@@ -55,10 +59,53 @@ export function WordCard({ word, targetElement, onClose }: WordCardProps): React
       }
     }
   }
-
-  // 查询单词含义
+  // 查询单词含义 - 优化版本，避免阻塞UI
   useEffect(() => {
-    const lookupWord = async (): Promise<void> => {
+    // 立即更新loading状态，确保UI响应
+    setIsLoading(true)
+    setDictionaryResult(null)
+
+    // 清理之前的查询
+    if (lookupTimeoutRef.current) {
+      clearTimeout(lookupTimeoutRef.current)
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // 使用setTimeout将查词操作推迟到下一个事件循环，避免阻塞UI渲染
+    lookupTimeoutRef.current = setTimeout(() => {
+      lookupWord()
+    }, 0)
+
+    return () => {
+      if (lookupTimeoutRef.current) {
+        clearTimeout(lookupTimeoutRef.current)
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [word])
+
+  const lookupWord = async (): Promise<void> => {
+    // 创建新的 AbortController 用于取消请求
+    abortControllerRef.current = new AbortController()
+    const { signal } = abortControllerRef.current
+
+    try {
+      // 使用 requestIdleCallback 或 setTimeout 确保不阻塞主线程
+      await new Promise((resolve) => {
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(resolve)
+        } else {
+          setTimeout(resolve, 0)
+        }
+      })
+
+      // 检查是否已被取消
+      if (signal.aborted) return
+
       const settings = getSettings()
 
       if (!settings.dictionary.selectedEngine) {
@@ -72,49 +119,70 @@ export function WordCard({ word, targetElement, onClose }: WordCardProps): React
         return
       }
 
-      try {
-        const service = DictionaryServiceFactory.createService(
-          settings.dictionary.selectedEngine,
-          settings.dictionary
-        )
+      // 检查是否已被取消
+      if (signal.aborted) return
 
-        if (!service) {
-          setDictionaryResult({
-            word,
-            definitions: [],
-            success: false,
-            error: '词典服务配置不完整'
-          })
-          setIsLoading(false)
-          return
-        }
+      const service = DictionaryServiceFactory.createService(
+        settings.dictionary.selectedEngine,
+        settings.dictionary
+      )
 
-        const result = await service.lookupWord(word.toLowerCase().trim())
-        // 如果查询结果为空，则认为查询失败
-        if (!result.success) {
-          setDictionaryResult({
-            word,
-            definitions: [],
-            success: false,
-            error: '未找到该单词'
-          })
-          return
-        }
-        setDictionaryResult(result)
-      } catch (error) {
+      if (!service) {
         setDictionaryResult({
           word,
           definitions: [],
           success: false,
-          error: error instanceof Error ? error.message : '查询失败'
+          error: '词典服务配置不完整'
         })
-      } finally {
+        setIsLoading(false)
+        return
+      }
+
+      // 检查是否已被取消
+      if (signal.aborted) return
+
+      // 添加超时处理
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('查询超时')), 10000)
+      })
+
+      const lookupPromise = service.lookupWord(word.toLowerCase().trim())
+
+      // 使用Promise.race来处理超时
+      const result = await Promise.race([lookupPromise, timeoutPromise])
+
+      // 检查是否已被取消
+      if (signal.aborted) return
+
+      // 如果查询结果为空，则认为查询失败
+      if (!result.success) {
+        setDictionaryResult({
+          word,
+          definitions: [],
+          success: false,
+          error: result.error || '未找到该单词'
+        })
+      } else {
+        setDictionaryResult(result)
+      }
+    } catch (error) {
+      // 检查是否是主动取消的
+      if (signal.aborted) return
+
+      const errorMessage = error instanceof Error ? error.message : '查询失败'
+      setDictionaryResult({
+        word,
+        definitions: [],
+        success: false,
+        error: errorMessage
+      })
+    } finally {
+      // 只有在没被取消的情况下才更新loading状态
+      if (!signal.aborted) {
         setIsLoading(false)
       }
     }
-
-    lookupWord()
-  }, [word])
+  }
 
   // 播放单词发音
   const playPronunciation = async (): Promise<void> => {
