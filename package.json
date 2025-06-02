@@ -54,6 +54,7 @@
     "autoprefixer": "^10.4.21",
     "electron": "^35.1.5",
     "electron-builder": "^25.1.8",
+    "electron-icon-maker": "^0.0.5",
     "electron-vite": "^3.1.0",
     "eslint": "^9.24.0",
     "eslint-plugin-react": "^7.37.5",
