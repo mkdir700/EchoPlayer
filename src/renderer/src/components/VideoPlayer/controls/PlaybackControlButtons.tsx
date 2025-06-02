@@ -8,9 +8,9 @@ import {
   LeftOutlined,
   RightOutlined
 } from '@ant-design/icons'
+import { useVideoPlayState } from '@renderer/hooks/useVideoPlayerHooks'
 
 interface PlaybackControlButtonsProps {
-  isPlaying: boolean
   isVideoLoaded: boolean
   videoError: string | null
   onPreviousSubtitle: () => void
@@ -24,7 +24,6 @@ interface PlaybackControlButtonsProps {
 }
 
 export function PlaybackControlButtons({
-  isPlaying,
   isVideoLoaded,
   videoError,
   onPreviousSubtitle,
@@ -36,6 +35,8 @@ export function PlaybackControlButtons({
   buttonClassName = '',
   playPauseClassName = ''
 }: PlaybackControlButtonsProps): React.JSX.Element {
+  const isPlaying = useVideoPlayState()
+
   return (
     <div className={className}>
       {/* 上一句字幕 */}

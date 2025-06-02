@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import ReactPlayer from 'react-player'
 import { VideoPlaceholder } from './VideoPlaceholder'
 import { LoadingIndicator } from '../LoadingIndicator'
@@ -8,7 +8,6 @@ import { useFullscreen } from '@renderer/hooks/useFullscreen'
 import {
   useVideoPlayerRef,
   useVideoPlayState,
-  useVideoLoadState,
   useVideoError,
   useVideoStateRefs,
   useVideoControls
@@ -17,28 +16,24 @@ import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 
 // 导入样式
 import styles from './VideoPlayer.module.css'
-import { DisplayMode } from '@renderer/types'
 import RendererLogger from '@renderer/utils/logger'
 import { SubtitleOverlay } from '@renderer/components/VideoPlayer/SubtitleOverlay'
 
 interface VideoPlayerProps {
-  displayModeRef: React.RefObject<DisplayMode>
-  // 全屏状态回调
-  onFullscreenChange?: (isFullscreen: boolean) => void
-  // 获取全屏切换函数的回调
-  onFullscreenToggleReady?: (toggleFullscreen: () => void) => void
+  isVideoLoaded: boolean
+  onFullscreenToggle?: (isFullscreen: boolean) => void
+  onVideoReady?: () => void
 }
 
 function VideoPlayer({
-  displayModeRef,
-  onFullscreenChange,
-  onFullscreenToggleReady
+  isVideoLoaded,
+  onFullscreenToggle,
+  onVideoReady
 }: VideoPlayerProps): React.JSX.Element {
   // 使用 Context 获取状态和控制方法，避免 props 传递
   const playingVideoContext = usePlayingVideoContext()
   const playerRef = useVideoPlayerRef()
   const isPlaying = useVideoPlayState()
-  const isVideoLoaded = useVideoLoadState()
   const videoError = useVideoError()
 
   // 获取状态 Refs（用于不需要响应变化的逻辑）
@@ -54,7 +49,8 @@ function VideoPlayer({
     setVolume,
     toggle,
     stepBackward,
-    stepForward
+    stepForward,
+    setPlaying
   } = useVideoControls()
 
   RendererLogger.componentRender({
@@ -62,7 +58,6 @@ function VideoPlayer({
     props: {
       videoFile: playingVideoContext.videoFile,
       isPlaying,
-      isVideoLoaded,
       videoError
       // 不记录频繁变化的状态
     }
@@ -83,13 +78,13 @@ function VideoPlayer({
 
   // 监听全屏状态变化并通知父组件
   useEffect(() => {
-    onFullscreenChange?.(isFullscreen)
-  }, [isFullscreen, onFullscreenChange])
+    onFullscreenToggle?.(isFullscreen)
+  }, [isFullscreen, onFullscreenToggle])
 
-  // 将全屏切换函数传递给父组件
-  useEffect(() => {
-    onFullscreenToggleReady?.(toggleFullscreen)
-  }, [toggleFullscreen, onFullscreenToggleReady])
+  // // 将全屏切换函数传递给父组件
+  // useEffect(() => {
+  //   onFullscreenToggleReady?.(toggleFullscreen)
+  // }, [toggleFullscreen, onFullscreenToggleReady])
 
   // 定义空的回调函数避免每次渲染创建新函数
   const emptyCallback = useCallback(() => {}, [])
@@ -115,9 +110,10 @@ function VideoPlayer({
   // ReactPlayer 的回调函数
   const handleReactPlayerReady = useCallback(() => {
     console.log('🎬 ReactPlayer onReady 触发')
+    onVideoReady?.()
     setVideoLoaded(true)
     setVideoError(null)
-  }, [setVideoLoaded, setVideoError])
+  }, [setVideoLoaded, setVideoError, onVideoReady])
 
   const handleReactPlayerError = useCallback(
     (error: Error | string) => {
@@ -283,6 +279,22 @@ function VideoPlayer({
     }
   }, [isPlaying, isUserInteracting, isPausedByHover])
 
+  // ReactPlayer 播放状态同步回调
+  const handleReactPlayerPlay = useCallback(() => {
+    console.log('🎬 ReactPlayer onPlay 触发 - 同步播放状态')
+    setPlaying(true)
+  }, [setPlaying])
+
+  const handleReactPlayerPause = useCallback(() => {
+    console.log('⏸️ ReactPlayer onPause 触发 - 同步暂停状态')
+    setPlaying(false)
+  }, [setPlaying])
+
+  const handleReactPlayerEnded = useCallback(() => {
+    console.log('🏁 ReactPlayer onEnded 触发 - 视频播放结束')
+    setPlaying(false)
+  }, [setPlaying])
+
   return (
     <div className={styles.videoSection}>
       <div
@@ -324,6 +336,9 @@ function VideoPlayer({
                   forceVideo: true
                 }
               }}
+              onPlay={handleReactPlayerPlay}
+              onPause={handleReactPlayerPause}
+              onEnded={handleReactPlayerEnded}
             />
 
             {/* 加载状态提示 */}
@@ -334,7 +349,6 @@ function VideoPlayer({
 
             {/* 字幕显示组件 - 独立组件，不会导致 VideoPlayer 频繁渲染 */}
             <SubtitleOverlay
-              displayModeRef={displayModeRef}
               onWordHover={handleWordHoverForControls}
               onPauseOnHover={handlePauseOnHover}
             />
@@ -378,18 +392,4 @@ function VideoPlayer({
   )
 }
 
-// 优化的比较函数：现在只需要比较很少的 props
-const arePropsEqual = (prevProps: VideoPlayerProps, nextProps: VideoPlayerProps): boolean => {
-  // 1. 显示模式变化 - 需要重新渲染
-  if (prevProps.displayModeRef.current !== nextProps.displayModeRef.current) return false
-
-  // 2. 回调函数通常不会改变，跳过比较以提高性能
-  // onFullscreenChange 和 onFullscreenToggleReady 通常是稳定的
-
-  return true
-}
-
-// 导出带有自定义比较函数的组件
-const MemoizedVideoPlayer = memo(VideoPlayer, arePropsEqual)
-
-export { MemoizedVideoPlayer as VideoPlayer }
+export { VideoPlayer }

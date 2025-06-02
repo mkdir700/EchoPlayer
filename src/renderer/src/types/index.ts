@@ -24,27 +24,9 @@ export interface SubtitleListItemProps {
 export type DisplayMode = 'none' | 'original' | 'chinese' | 'english' | 'bilingual'
 
 export interface VideoControlsProps {
-  duration: number
-  currentTime: number
   isVideoLoaded: boolean
-  isPlaying: boolean
   videoError: string | null
-  isLooping: boolean
-  autoPause: boolean
-  autoSkipSilence: boolean
-  displayModeRef: React.RefObject<DisplayMode>
-  onSeek: (value: number) => void
-  onStepBackward: () => void
-  onPlayPause: () => void
-  onStepForward: () => void
-  onPlaybackRateChange: (value: number) => void
-  onVolumeChange: (value: number) => void
-  onLoopToggle: () => void
-  onAutoSkipToggle: () => void
   onFullscreenToggle: () => void
-  onPreviousSubtitle: () => void
-  onNextSubtitle: () => void
-  onDisplayModeChange: (mode: DisplayMode) => void
 }
 
 export interface VideoPlayerProps {

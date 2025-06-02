@@ -1,70 +1,37 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
+import type {
+  SubtitleDisplaySettings,
+  BackgroundType,
+  SubtitleMargins,
+  MaskFrame
+} from '@types_/shared'
+import {
+  useVideoPlaybackSettings,
+  BACKGROUND_TYPES,
+  MARGIN_LIMITS,
+  createDefaultSubtitleDisplay
+} from './useVideoPlaybackSettings'
 
-// 背景颜色类型
-export type BackgroundType = 'transparent' | 'blur' | 'solid-black' | 'solid-gray'
+// 重新导出类型和常量以保持向后兼容
+export type { BackgroundType }
+export { BACKGROUND_TYPES, MARGIN_LIMITS, createDefaultSubtitleDisplay }
 
-// 字幕边距状态接口
+// 字幕边距状态接口 - 保持向后兼容
 export interface SubtitleMarginsState {
-  margins: {
-    left: number
-    top: number
-    right: number
-    bottom: number
-  }
+  margins: SubtitleMargins
   backgroundType: BackgroundType
   isMaskMode: boolean
-  maskFrame: {
-    left: number
-    top: number
-    width: number
-    height: number
-  }
+  maskFrame: MaskFrame
 }
 
-// 背景类型配置
-export const BACKGROUND_TYPES: Array<{ type: BackgroundType; label: string; icon: string }> = [
-  { type: 'transparent', label: '完全透明', icon: '○' },
-  { type: 'blur', label: '模糊背景', icon: '◐' },
-  { type: 'solid-black', label: '黑色背景', icon: '●' },
-  { type: 'solid-gray', label: '灰色背景', icon: '◉' }
-]
-
-// 边距限制常量
-export const MARGIN_LIMITS = {
-  MIN_TOTAL_WIDTH: 20,
-  MIN_TOTAL_HEIGHT: 10,
-  MAX_SINGLE_MARGIN: 80
-}
-
-// 本地存储键名
-const SUBTITLE_STATE_KEY = 'echolab_subtitle_state_v3'
-
-// 创建默认状态
-export const createDefaultSubtitleState = (dynamicMaskFrame?: {
-  left: number
-  top: number
-  width: number
-  height: number
-}): SubtitleMarginsState => ({
-  margins: {
-    left: 20,
-    top: 75,
-    right: 20,
-    bottom: 5
-  },
-  backgroundType: 'transparent',
-  isMaskMode: false,
-  maskFrame: dynamicMaskFrame || {
-    left: 0,
-    top: 25,
-    width: 100,
-    height: 50
-  }
-})
-
-// 默认状态
-const DEFAULT_SUBTITLE_STATE: SubtitleMarginsState = createDefaultSubtitleState()
-
+/**
+ * 字幕状态管理 Hook - 兼容性层
+ *
+ * 这个 Hook 现在作为 useVideoPlaybackSettings 的兼容性层，
+ * 将字幕状态管理委托给集成的播放设置管理。
+ *
+ * @deprecated 建议直接使用 useVideoPlaybackSettings 中的字幕相关方法
+ */
 export const useSubtitleState = (
   containerWidth: number,
   containerHeight: number,
@@ -77,201 +44,64 @@ export const useSubtitleState = (
   toggleMaskMode: () => void
   saveSubtitleState: (state: SubtitleMarginsState) => void
 } => {
-  // 初始化状态
-  const [subtitleState, setSubtitleState] = useState<SubtitleMarginsState>(() => {
-    try {
-      const saved = localStorage.getItem(SUBTITLE_STATE_KEY)
-      if (saved) {
-        const parsedState = JSON.parse(saved)
+  const playbackSettings = useVideoPlaybackSettings()
 
-        // 验证配置有效性
-        const isValidMargins =
-          parsedState.margins &&
-          typeof parsedState.margins.left === 'number' &&
-          typeof parsedState.margins.top === 'number' &&
-          typeof parsedState.margins.right === 'number' &&
-          typeof parsedState.margins.bottom === 'number' &&
-          parsedState.margins.left >= 0 &&
-          parsedState.margins.top >= 0 &&
-          parsedState.margins.right >= 0 &&
-          parsedState.margins.bottom >= 0 &&
-          parsedState.margins.left <= MARGIN_LIMITS.MAX_SINGLE_MARGIN &&
-          parsedState.margins.top <= MARGIN_LIMITS.MAX_SINGLE_MARGIN &&
-          parsedState.margins.right <= MARGIN_LIMITS.MAX_SINGLE_MARGIN &&
-          parsedState.margins.bottom <= MARGIN_LIMITS.MAX_SINGLE_MARGIN &&
-          100 - parsedState.margins.left - parsedState.margins.right >=
-            MARGIN_LIMITS.MIN_TOTAL_WIDTH &&
-          100 - parsedState.margins.top - parsedState.margins.bottom >=
-            MARGIN_LIMITS.MIN_TOTAL_HEIGHT
-
-        const isValidBackgroundType =
-          parsedState.backgroundType &&
-          ['transparent', 'blur', 'solid-black', 'solid-gray'].includes(parsedState.backgroundType)
-
-        const isValidMaskMode = typeof parsedState.isMaskMode === 'boolean'
-
-        const isValidMaskFrame =
-          parsedState.maskFrame &&
-          typeof parsedState.maskFrame.left === 'number' &&
-          typeof parsedState.maskFrame.top === 'number' &&
-          typeof parsedState.maskFrame.width === 'number' &&
-          typeof parsedState.maskFrame.height === 'number' &&
-          parsedState.maskFrame.left >= 0 &&
-          parsedState.maskFrame.top >= 0 &&
-          parsedState.maskFrame.width > 0 &&
-          parsedState.maskFrame.height > 0 &&
-          parsedState.maskFrame.left + parsedState.maskFrame.width <= 100 &&
-          parsedState.maskFrame.top + parsedState.maskFrame.height <= 100
-
-        if (!isValidMargins || !isValidBackgroundType) {
-          console.warn('🔧 检测到无效的字幕配置，已重置为默认配置')
-          localStorage.removeItem(SUBTITLE_STATE_KEY)
-          return DEFAULT_SUBTITLE_STATE
-        }
-
-        const maskFrame = isValidMaskFrame
-          ? parsedState.maskFrame
-          : DEFAULT_SUBTITLE_STATE.maskFrame
-
-        return {
-          ...DEFAULT_SUBTITLE_STATE,
-          ...parsedState,
-          isMaskMode: isValidMaskMode ? parsedState.isMaskMode : false,
-          maskFrame: maskFrame
-        }
-      }
-      return DEFAULT_SUBTITLE_STATE
-    } catch (error) {
-      console.warn('🔧 解析字幕配置失败，已重置为默认配置:', error)
-      localStorage.removeItem(SUBTITLE_STATE_KEY)
-      return DEFAULT_SUBTITLE_STATE
+  // 将 SubtitleDisplaySettings 转换为 SubtitleMarginsState 格式
+  const subtitleState = useMemo((): SubtitleMarginsState => {
+    const display = playbackSettings.getSubtitleDisplay()
+    return {
+      margins: display.margins,
+      backgroundType: display.backgroundType,
+      isMaskMode: display.isMaskMode,
+      maskFrame: display.maskFrame
     }
-  })
+  }, [playbackSettings])
 
-  // 保存状态到本地存储
-  const saveSubtitleState = useCallback((state: SubtitleMarginsState) => {
-    try {
-      localStorage.setItem(SUBTITLE_STATE_KEY, JSON.stringify(state))
-    } catch (error) {
-      console.warn('无法保存字幕状态:', error)
-    }
-  }, [])
-
-  // 更新状态并保存
+  // 更新字幕状态
   const updateSubtitleState = useCallback(
     (newState: SubtitleMarginsState) => {
-      setSubtitleState(newState)
-      saveSubtitleState(newState)
+      const subtitleDisplay: SubtitleDisplaySettings = {
+        margins: newState.margins,
+        backgroundType: newState.backgroundType,
+        isMaskMode: newState.isMaskMode,
+        maskFrame: newState.maskFrame
+      }
+      playbackSettings.setSubtitleDisplay(subtitleDisplay)
     },
-    [saveSubtitleState]
+    [playbackSettings]
+  )
+
+  // setSubtitleState - 兼容性方法
+  const setSubtitleState = useCallback(
+    (newState: SubtitleMarginsState | ((prev: SubtitleMarginsState) => SubtitleMarginsState)) => {
+      if (typeof newState === 'function') {
+        const currentState = subtitleState
+        const nextState = newState(currentState)
+        updateSubtitleState(nextState)
+      } else {
+        updateSubtitleState(newState)
+      }
+    },
+    [subtitleState, updateSubtitleState]
   )
 
   // 切换背景类型
   const toggleBackgroundType = useCallback(() => {
-    setSubtitleState((prev) => {
-      const currentIndex = BACKGROUND_TYPES.findIndex((bg) => bg.type === prev.backgroundType)
-      const nextIndex = (currentIndex + 1) % BACKGROUND_TYPES.length
-      const newState = {
-        ...prev,
-        backgroundType: BACKGROUND_TYPES[nextIndex].type
-      }
-      saveSubtitleState(newState)
-      return newState
-    })
-  }, [saveSubtitleState])
-
-  // 计算默认定位框
-  const calculateDefaultMaskFrame = useCallback(
-    (displayAspectRatio: number, containerWidth: number, containerHeight: number) => {
-      // 参数验证，防止 NaN
-      if (
-        !containerWidth ||
-        !containerHeight ||
-        !displayAspectRatio ||
-        containerWidth <= 0 ||
-        containerHeight <= 0 ||
-        displayAspectRatio <= 0 ||
-        !isFinite(containerWidth) ||
-        !isFinite(containerHeight) ||
-        !isFinite(displayAspectRatio)
-      ) {
-        console.warn('🔧 calculateDefaultMaskFrame 参数无效，使用默认值:', {
-          containerWidth,
-          containerHeight,
-          displayAspectRatio
-        })
-        // 返回安全的默认值
-        return {
-          left: 0,
-          top: 25,
-          width: 100,
-          height: 50
-        }
-      }
-
-      const containerAspectRatio = containerWidth / containerHeight
-
-      let videoDisplayWidth: number, videoDisplayHeight: number, videoLeft: number, videoTop: number
-
-      if (displayAspectRatio > containerAspectRatio) {
-        videoDisplayWidth = containerWidth
-        videoDisplayHeight = containerWidth / displayAspectRatio
-        videoLeft = 0
-        videoTop = (containerHeight - videoDisplayHeight) / 2
-      } else {
-        videoDisplayHeight = containerHeight
-        videoDisplayWidth = containerHeight * displayAspectRatio
-        videoTop = 0
-        videoLeft = (containerWidth - videoDisplayWidth) / 2
-      }
-
-      const videoLeftPercent = (videoLeft / containerWidth) * 100
-      const videoTopPercent = (videoTop / containerHeight) * 100
-      const videoWidthPercent = (videoDisplayWidth / containerWidth) * 100
-      const videoHeightPercent = (videoDisplayHeight / containerHeight) * 100
-
-      // 确保所有计算结果都是有效数字
-      const result = {
-        left: Math.max(0, Math.min(100, isFinite(videoLeftPercent) ? videoLeftPercent : 0)),
-        top: Math.max(0, Math.min(100, isFinite(videoTopPercent) ? videoTopPercent : 25)),
-        width: Math.max(10, Math.min(100, isFinite(videoWidthPercent) ? videoWidthPercent : 100)),
-        height: Math.max(10, Math.min(100, isFinite(videoHeightPercent) ? videoHeightPercent : 50))
-      }
-
-      return result
-    },
-    []
-  )
+    playbackSettings.toggleBackgroundType()
+  }, [playbackSettings])
 
   // 切换遮罩模式
   const toggleMaskMode = useCallback(() => {
-    const defaultMaskFrame = calculateDefaultMaskFrame(
-      displayAspectRatio,
-      containerWidth,
-      containerHeight
-    )
-    console.log('🔄 toggleMaskMode', {
-      displayAspectRatio,
-      containerWidth,
-      containerHeight,
-      defaultMaskFrame
-    })
-    setSubtitleState((prev) => {
-      const newState = {
-        ...prev,
-        isMaskMode: !prev.isMaskMode,
-        maskFrame: defaultMaskFrame
-      }
-      saveSubtitleState(newState)
-      return newState
-    })
-  }, [
-    calculateDefaultMaskFrame,
-    displayAspectRatio,
-    containerWidth,
-    containerHeight,
-    saveSubtitleState
-  ])
+    playbackSettings.toggleMaskMode(containerWidth, containerHeight, displayAspectRatio)
+  }, [playbackSettings, containerWidth, containerHeight, displayAspectRatio])
+
+  // 保存字幕状态 - 兼容性方法
+  const saveSubtitleState = useCallback(
+    (state: SubtitleMarginsState) => {
+      updateSubtitleState(state)
+    },
+    [updateSubtitleState]
+  )
 
   return {
     subtitleState,
@@ -280,5 +110,59 @@ export const useSubtitleState = (
     toggleBackgroundType,
     toggleMaskMode,
     saveSubtitleState
+  }
+}
+
+/**
+ * 现代化的字幕状态管理 Hook
+ *
+ * 直接使用 useVideoPlaybackSettings 的字幕功能，
+ * 提供更清晰的 API。
+ */
+export const useSubtitleDisplaySettings = (
+  containerWidth: number,
+  containerHeight: number,
+  displayAspectRatio: number
+): {
+  subtitleDisplay: SubtitleDisplaySettings
+  margins: SubtitleMargins
+  backgroundType: BackgroundType
+  isMaskMode: boolean
+  maskFrame: MaskFrame
+  updateMargins: (margins: SubtitleMargins) => void
+  updateBackgroundType: (backgroundType: BackgroundType) => void
+  updateMaskMode: (isMaskMode: boolean) => void
+  updateMaskFrame: (maskFrame: MaskFrame) => void
+  toggleBackgroundType: () => void
+  toggleMaskMode: () => void
+  setSubtitleDisplay: (settings: SubtitleDisplaySettings) => void
+} => {
+  const playbackSettings = useVideoPlaybackSettings()
+
+  const subtitleDisplay = useMemo(() => {
+    return playbackSettings.getSubtitleDisplay()
+  }, [playbackSettings])
+
+  return {
+    // 状态
+    subtitleDisplay,
+    margins: playbackSettings.getSubtitleMargins(),
+    backgroundType: playbackSettings.getSubtitleBackgroundType(),
+    isMaskMode: playbackSettings.getSubtitleMaskMode(),
+    maskFrame: playbackSettings.getSubtitleMaskFrame(),
+
+    // 更新方法
+    updateMargins: playbackSettings.updateSubtitleMargins,
+    updateBackgroundType: playbackSettings.updateSubtitleBackgroundType,
+    updateMaskMode: playbackSettings.updateSubtitleMaskMode,
+    updateMaskFrame: playbackSettings.updateSubtitleMaskFrame,
+
+    // 便捷方法
+    toggleBackgroundType: playbackSettings.toggleBackgroundType,
+    toggleMaskMode: () =>
+      playbackSettings.toggleMaskMode(containerWidth, containerHeight, displayAspectRatio),
+
+    // 完整设置
+    setSubtitleDisplay: playbackSettings.setSubtitleDisplay
   }
 }

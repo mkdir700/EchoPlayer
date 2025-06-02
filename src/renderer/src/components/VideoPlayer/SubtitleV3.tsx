@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect, memo } from 'react'
-import type { DisplayMode } from '@renderer/types'
 import { WordCard } from '@renderer/components/WordCard/WordCard'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import {
   useSubtitleState,
-  createDefaultSubtitleState,
+  createDefaultSubtitleDisplay,
   type SubtitleMarginsState,
   type BackgroundType
 } from '@renderer/hooks/useSubtitleState'
@@ -17,7 +16,6 @@ import RendererLogger from '@renderer/utils/logger'
 import styles from './Subtitle.module.css'
 
 interface SubtitleV3Props {
-  displayMode: DisplayMode
   onWordHover: (isHovering: boolean) => void
   onPauseOnHover: () => void
 }
@@ -143,14 +141,10 @@ const ResizeHandle = memo(
 )
 ResizeHandle.displayName = 'ResizeHandle'
 
-function SubtitleV3({
-  displayMode,
-  onWordHover,
-  onPauseOnHover
-}: SubtitleV3Props): React.JSX.Element {
+function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleV3',
-    props: { displayMode, onWordHover, onPauseOnHover }
+    props: { onWordHover, onPauseOnHover }
   })
 
   // 获取视频上下文
@@ -317,7 +311,7 @@ function SubtitleV3({
 
       // 重置字幕状态
       resetSubtitleState: (): void => {
-        const cleanState = createDefaultSubtitleState()
+        const cleanState = createDefaultSubtitleDisplay()
         updateSubtitleState(cleanState)
         if (process.env.NODE_ENV === 'development') {
           console.log('🔄 重置字幕状态到:', cleanState)
@@ -669,7 +663,6 @@ function SubtitleV3({
           }`}
         >
           <SubtitleContent
-            displayMode={displayMode}
             dynamicTextStyle={dynamicTextStyle}
             dynamicEnglishTextStyle={dynamicEnglishTextStyle}
             dynamicChineseTextStyle={dynamicChineseTextStyle}
@@ -701,7 +694,6 @@ function SubtitleV3({
 // 使用更严格的比较函数
 const MemoizedSubtitleV3 = memo(SubtitleV3, (prevProps, nextProps) => {
   return (
-    prevProps.displayMode === nextProps.displayMode &&
     prevProps.onWordHover === nextProps.onWordHover &&
     prevProps.onPauseOnHover === nextProps.onPauseOnHover
   )

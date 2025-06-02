@@ -16,47 +16,39 @@ import {
   FullscreenButton,
   SettingsButton
 } from './controls'
+import { useVideoControls, useVideoTime } from '@renderer/hooks/useVideoPlayerHooks'
+import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
+import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 
 const { Text } = Typography
 
-export function VideoControlsCompact({
-  duration,
-  currentTime,
-  isVideoLoaded,
-  isPlaying,
-  videoError,
-  isLooping,
-  autoPause,
-  displayModeRef,
-  onSeek,
-  onStepBackward,
-  onPlayPause,
-  onStepForward,
-  onPlaybackRateChange,
-  onVolumeChange,
-  onLoopToggle,
-  onAutoSkipToggle,
-  onFullscreenToggle,
-  onPreviousSubtitle,
-  onNextSubtitle,
-  onDisplayModeChange
-}: VideoControlsProps): React.JSX.Element {
-  // 格式化时间显示
-  const formatTime = (time: number): string => {
-    const minutes = Math.floor(time / 60)
-    const seconds = Math.floor(time % 60)
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`
-  }
+// 格式化时间显示
+function formatTime(time: number): string {
+  const minutes = Math.floor(time / 60)
+  const seconds = Math.floor(time % 60)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
 
-  return (
-    <div className={styles.compactControlsContainer}>
-      {/* 进度条 */}
+// 独立的进度条组件 - 隔离时间更新的重渲染
+const ProgressSection = React.memo(
+  ({
+    seekTo,
+    isVideoLoaded
+  }: {
+    seekTo: (time: number) => void
+    isVideoLoaded: boolean
+  }): React.JSX.Element => {
+    const currentTime = useVideoTime()
+    const { durationRef } = useVideoPlayerContext()
+    const duration = durationRef.current
+
+    return (
       <div className={styles.progressSection}>
         <Slider
           min={0}
           max={duration}
           value={currentTime}
-          onChange={onSeek}
+          onChange={seekTo}
           className={styles.progressSlider}
           disabled={!isVideoLoaded}
           tooltip={{ formatter: (value) => formatTime(value || 0) }}
@@ -67,44 +59,48 @@ export function VideoControlsCompact({
           </Text>
         </div>
       </div>
+    )
+  }
+)
+ProgressSection.displayName = 'ProgressSection'
+
+export function VideoControlsCompact({
+  isVideoLoaded,
+  videoError,
+  onFullscreenToggle
+}: VideoControlsProps): React.JSX.Element {
+  const { setPlaybackRate, setVolume, toggle, seekTo, stepBackward, stepForward } =
+    useVideoControls()
+  const subtitleControl = useSubtitleControl()
+
+  return (
+    <div className={styles.compactControlsContainer}>
+      {/* 进度条 - 使用独立组件 */}
+      <ProgressSection seekTo={seekTo} isVideoLoaded={isVideoLoaded} />
 
       {/* 主控制区 */}
       <div className={styles.mainControls}>
         {/* 左侧功能按钮 */}
         <div className={styles.leftControls}>
           {/* 循环播放 */}
-          <LoopToggleButton
-            isLooping={isLooping}
-            isVideoLoaded={isVideoLoaded}
-            onLoopToggle={onLoopToggle}
-            className={`${styles.controlBtn} ${isLooping ? styles.activeBtn : ''}`}
-          />
+          <LoopToggleButton isVideoLoaded={isVideoLoaded} />
 
           {/* 自动暂停 */}
-          <AutoPauseButton
-            autoPause={autoPause}
-            isVideoLoaded={isVideoLoaded}
-            onAutoSkipToggle={onAutoSkipToggle}
-            className={`${styles.controlBtn} ${autoPause ? styles.activeBtn : ''}`}
-          />
+          <AutoPauseButton isVideoLoaded={isVideoLoaded} />
 
           {/* 字幕显示模式控制 */}
-          <SubtitleModeSelector
-            displayModeRef={displayModeRef}
-            onDisplayModeChange={onDisplayModeChange}
-          />
+          <SubtitleModeSelector />
         </div>
 
         {/* 中央播放控制 */}
         <PlaybackControlButtons
-          isPlaying={isPlaying}
           isVideoLoaded={isVideoLoaded}
           videoError={videoError}
-          onPreviousSubtitle={onPreviousSubtitle}
-          onStepBackward={onStepBackward}
-          onPlayPause={onPlayPause}
-          onStepForward={onStepForward}
-          onNextSubtitle={onNextSubtitle}
+          onPreviousSubtitle={subtitleControl.goToPreviousSubtitle}
+          onStepBackward={stepBackward}
+          onPlayPause={toggle}
+          onStepForward={stepForward}
+          onNextSubtitle={subtitleControl.goToNextSubtitle}
           className={styles.centerControls}
           buttonClassName={styles.controlBtn}
           playPauseClassName={styles.playPauseBtn}
@@ -115,13 +111,13 @@ export function VideoControlsCompact({
           {/* 播放倍数 */}
           <PlaybackRateSelector
             isVideoLoaded={isVideoLoaded}
-            onPlaybackRateChange={onPlaybackRateChange}
+            onPlaybackRateChange={setPlaybackRate}
             className={styles.playbackRateControl}
           />
 
           {/* 音量控制 */}
           <VolumeControl
-            onVolumeChange={onVolumeChange}
+            onVolumeChange={setVolume}
             className={styles.volumeControl}
             sliderClassName={styles.volumeSliderPopup}
             sliderVerticalClassName={styles.volumeSliderVertical}

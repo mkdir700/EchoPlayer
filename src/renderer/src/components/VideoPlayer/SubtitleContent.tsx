@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react'
-import type { DisplayMode } from '@renderer/types'
 import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubtitleDisplayContext'
 import {
   OriginalSubtitleText,
@@ -9,9 +8,9 @@ import {
   SubtitlePlaceholder
 } from './SubtitleTextComponents'
 import styles from './Subtitle.module.css'
+import { useSubtitleDisplayMode } from '@renderer/hooks/useSubtitleDisplayMode'
 
 interface SubtitleContentProps {
-  displayMode: DisplayMode
   dynamicTextStyle: React.CSSProperties
   dynamicEnglishTextStyle: React.CSSProperties
   dynamicChineseTextStyle: React.CSSProperties
@@ -20,13 +19,13 @@ interface SubtitleContentProps {
 }
 
 export const SubtitleContent: React.FC<SubtitleContentProps> = ({
-  displayMode,
   dynamicTextStyle,
   dynamicEnglishTextStyle,
   dynamicChineseTextStyle,
   onWordHover,
   onWordClick
 }) => {
+  const displayMode = useSubtitleDisplayMode()
   // 使用新的当前字幕显示hook
   const { currentDisplaySubtitle: currentSubtitle } = useCurrentSubtitleDisplayContext()
 

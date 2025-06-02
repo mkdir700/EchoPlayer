@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { VideoSection } from '@renderer/components/VideoSection/VideoSection'
 import { SidebarSectionContainer } from '@renderer/components/SidebarSection/SidebarSectionContainer'
 import { PlayPageHeader } from '@renderer/components/PlayPageHeader'
@@ -6,14 +6,12 @@ import { SubtitleLoadModal } from '@renderer/components/SubtitleLoadModal'
 
 // 导入所需的 hooks
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { useSubtitleDisplayMode } from '@renderer/hooks/useSubtitleDisplayMode'
 import { useShortcutCommand, useCommandShortcuts } from '@renderer/hooks/useCommandShortcuts'
 import { usePlayStateSaver } from '@renderer/hooks/usePlayStateSaver'
 import { usePlayStateInitializer } from '@renderer/hooks/usePlayStateInitializer'
 import { useVideoStateRefs, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { CurrentSubtitleDisplayProvider } from '@renderer/contexts/CurrentSubtitleDisplayContext'
 import { VOLUME_SETTINGS } from '@renderer/constants'
-import type { DisplayMode } from '@renderer/types'
 import type { SubtitleItem } from '@types_/shared'
 
 import styles from './PlayPage.module.css'
@@ -37,7 +35,6 @@ const PlayPageMemo = React.memo<PlayPageProps>(
 
     // 📋 字幕相关 hooks - 稳定的引用
     const subtitleListContext = useSubtitleListContext()
-    const subtitleDisplayMode = useSubtitleDisplayMode()
 
     // 💾 播放状态保存 - 🚀 已优化，不会导致重新渲染
     const { savePlayStateRef } = usePlayStateSaver()
@@ -58,7 +55,6 @@ const PlayPageMemo = React.memo<PlayPageProps>(
         playPause: toggle,
         stepBackward: stepBackward,
         stepForward: stepForward,
-        toggleSubtitleMode: subtitleDisplayMode.toggleDisplayMode,
         volumeUp: () => {
           const newVolume = Math.min(
             VOLUME_SETTINGS.MAX,
@@ -74,41 +70,15 @@ const PlayPageMemo = React.memo<PlayPageProps>(
           setVolume(newVolume)
         }
       }),
-      [
-        toggle,
-        stepBackward,
-        stepForward,
-        subtitleDisplayMode.toggleDisplayMode,
-        volumeRef,
-        setVolume
-      ]
+      [toggle, stepBackward, stepForward, volumeRef, setVolume]
     )
 
     // 注册快捷键 - 使用稳定的引用避免重新绑定
     useShortcutCommand('playPause', shortcutCommands.playPause)
     useShortcutCommand('stepBackward', shortcutCommands.stepBackward)
     useShortcutCommand('stepForward', shortcutCommands.stepForward)
-    useShortcutCommand('toggleSubtitleMode', shortcutCommands.toggleSubtitleMode)
     useShortcutCommand('volumeUp', shortcutCommands.volumeUp)
     useShortcutCommand('volumeDown', shortcutCommands.volumeDown)
-
-    // 🖥️ 全屏状态管理 - 使用 useCallback 避免子组件重新渲染
-    const [isFullscreen, setIsFullscreen] = useState(false)
-
-    const handleFullscreenChange = useCallback((fullscreen: boolean) => {
-      setIsFullscreen(fullscreen)
-    }, [])
-
-    const handleFullscreenToggleReady = useCallback(() => {
-      // 全屏切换准备就绪的回调
-    }, [])
-
-    const handleDisplayModeChange = useCallback(
-      (mode: DisplayMode) => {
-        subtitleDisplayMode.setDisplayMode(mode)
-      },
-      [subtitleDisplayMode]
-    )
 
     // 📝 字幕模态框处理函数
     const handleSubtitleModalCancel = useCallback(() => {
@@ -156,24 +126,6 @@ const PlayPageMemo = React.memo<PlayPageProps>(
       onBack()
     }, [onBack, savePlayStateRef])
 
-    // 🏗️ 渲染 VideoSection - 使用稳定的 props 避免重新渲染
-    const videoSectionProps = useMemo(
-      () => ({
-        displayModeRef: subtitleDisplayMode.displayModeRef,
-        isFullscreen,
-        onFullscreenChange: handleFullscreenChange,
-        onFullscreenToggleReady: handleFullscreenToggleReady,
-        onDisplayModeChange: handleDisplayModeChange
-      }),
-      [
-        subtitleDisplayMode.displayModeRef,
-        isFullscreen,
-        handleFullscreenChange,
-        handleFullscreenToggleReady,
-        handleDisplayModeChange
-      ]
-    )
-
     return (
       <CurrentSubtitleDisplayProvider>
         <div className={styles.playPageContainer}>
@@ -187,7 +139,7 @@ const PlayPageMemo = React.memo<PlayPageProps>(
                 <div className={styles.mainContentArea}>
                   {/* 视频播放区域 - 占据主要空间 */}
                   <div className={styles.videoPlayerSection}>
-                    <VideoSection {...videoSectionProps} />
+                    <VideoSection />
                   </div>
                 </div>
               </Splitter.Panel>

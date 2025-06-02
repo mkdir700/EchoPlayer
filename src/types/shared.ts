@@ -9,6 +9,43 @@ export interface SubtitleItem {
   chineseText?: string
 }
 
+// 背景颜色类型
+export type BackgroundType = 'transparent' | 'blur' | 'solid-black' | 'solid-gray'
+
+// 字幕边距配置
+export interface SubtitleMargins {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+// 掩码框配置
+export interface MaskFrame {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+// 字幕显示配置
+export interface SubtitleDisplaySettings {
+  margins: SubtitleMargins
+  backgroundType: BackgroundType
+  isMaskMode: boolean
+  maskFrame: MaskFrame
+}
+
+// 视频级别的播放设置接口
+export interface VideoPlaybackSettings {
+  displayMode: 'none' | 'original' | 'chinese' | 'english' | 'bilingual' // 字幕显示模式
+  volume: number // 音量设置
+  playbackRate: number // 播放速度
+  isSingleLoop: boolean // 单句循环
+  isAutoPause: boolean // 自动暂停
+  subtitleDisplay?: SubtitleDisplaySettings // 字幕显示配置
+}
+
 // 播放项接口
 export interface RecentPlayItem {
   id: string // 唯一ID
@@ -19,9 +56,10 @@ export interface RecentPlayItem {
   currentTime?: number // 当前播放时间
   subtitleFile?: string // 字幕文件路径
   subtitleItems?: SubtitleItem[] // 字幕数据
+  videoPlaybackSettings?: VideoPlaybackSettings // 视频级别的播放设置
 }
 
-// 播放设置接口
+// 全局播放设置接口（保持向后兼容）
 export interface PlaybackSettings {
   displayMode: 'none' | 'original' | 'chinese' | 'english' | 'bilingual' // 字幕显示模式
   volume: number // 音量

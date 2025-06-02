@@ -3,6 +3,11 @@ import { Button, Tooltip } from 'antd'
 import { TranslationOutlined } from '@ant-design/icons'
 import type { DisplayMode } from '@renderer/types'
 import styles from '../VideoControlsCompact.module.css'
+import {
+  useSubtitleDisplayMode,
+  useSubtitleDisplayModeControls
+} from '@renderer/hooks/useSubtitleDisplayMode'
+import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
 
 // 显示模式配置
 const DISPLAY_MODE_CONFIG = {
@@ -13,15 +18,13 @@ const DISPLAY_MODE_CONFIG = {
   bilingual: { label: '双语' }
 }
 
-interface SubtitleModeSelectorProps {
-  displayModeRef: { current: DisplayMode }
-  onDisplayModeChange: (mode: DisplayMode) => void
-}
+export function SubtitleModeSelector(): React.JSX.Element {
+  // 使用新的订阅模式 hooks
+  const currentDisplayMode = useSubtitleDisplayMode()
+  const { setDisplayMode, toggleDisplayMode } = useSubtitleDisplayModeControls()
+  // 注册快捷键 - 使用稳定的引用避免重新绑定
+  useShortcutCommand('toggleSubtitleMode', toggleDisplayMode)
 
-export function SubtitleModeSelector({
-  displayModeRef,
-  onDisplayModeChange
-}: SubtitleModeSelectorProps): React.JSX.Element {
   const [showSubtitleModeSelector, setShowSubtitleModeSelector] = useState(false)
   const subtitleModeSelectorRef = useRef<HTMLDivElement>(null)
 
@@ -54,8 +57,8 @@ export function SubtitleModeSelector({
   }, [showSubtitleModeSelector])
 
   // 获取当前模式的配置
-  const validDisplayMode = Object.keys(DISPLAY_MODE_CONFIG).includes(displayModeRef.current)
-    ? displayModeRef.current
+  const validDisplayMode = Object.keys(DISPLAY_MODE_CONFIG).includes(currentDisplayMode)
+    ? currentDisplayMode
     : 'bilingual'
   const currentModeConfig = DISPLAY_MODE_CONFIG[validDisplayMode]
 
@@ -81,10 +84,10 @@ export function SubtitleModeSelector({
           {Object.entries(DISPLAY_MODE_CONFIG).map(([mode, config]) => (
             <Button
               key={mode}
-              type={displayModeRef.current === mode ? 'primary' : 'text'}
+              type={currentDisplayMode === mode ? 'primary' : 'text'}
               size="small"
-              onClick={() => {
-                onDisplayModeChange(mode as DisplayMode)
+              onClick={async () => {
+                await setDisplayMode(mode as DisplayMode)
                 setShowSubtitleModeSelector(false)
               }}
               style={{
