@@ -4,6 +4,8 @@ import { SoundOutlined, SoundFilled } from '@ant-design/icons'
 import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { usePlaybackVolume } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
+import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
+import { VOLUME_SETTINGS } from '@renderer/constants'
 const { Text } = Typography
 
 interface VolumeControlProps {
@@ -54,6 +56,14 @@ export function VolumeControl({
       }
     },
     [playerRef, updateVolume, volumeRef]
+  )
+
+  // NOTE: 注册快捷键
+  useShortcutCommand('volumeUp', () =>
+    handleVolumeChange(Math.min(VOLUME_SETTINGS.MAX, volumeRef.current + VOLUME_SETTINGS.STEP))
+  )
+  useShortcutCommand('volumeDown', () =>
+    handleVolumeChange(Math.max(VOLUME_SETTINGS.MIN, volumeRef.current - VOLUME_SETTINGS.STEP))
   )
 
   // 点击外部区域关闭音量滑块

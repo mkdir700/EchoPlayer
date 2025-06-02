@@ -9,9 +9,8 @@ import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useShortcutCommand, useCommandShortcuts } from '@renderer/hooks/useCommandShortcuts'
 import { usePlayStateSaver } from '@renderer/hooks/usePlayStateSaver'
 import { usePlayStateInitializer } from '@renderer/hooks/usePlayStateInitializer'
-import { useVideoStateRefs, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { CurrentSubtitleDisplayProvider } from '@renderer/contexts/CurrentSubtitleDisplayContext'
-import { VOLUME_SETTINGS } from '@renderer/constants'
 import type { SubtitleItem } from '@types_/shared'
 
 import styles from './PlayPage.module.css'
@@ -31,8 +30,7 @@ const PlayPageMemo = React.memo<PlayPageProps>(
     }
 
     // 📹 视频播放相关 hooks - 稳定的引用
-    const { volumeRef } = useVideoStateRefs()
-    const { toggle, stepBackward, stepForward, setVolume } = useVideoControls()
+    const { toggle, stepBackward, stepForward } = useVideoControls()
 
     // 📋 字幕相关 hooks - 稳定的引用
     const subtitleListContext = useSubtitleListContext()
@@ -55,31 +53,15 @@ const PlayPageMemo = React.memo<PlayPageProps>(
       () => ({
         playPause: toggle,
         stepBackward: stepBackward,
-        stepForward: stepForward,
-        volumeUp: () => {
-          const newVolume = Math.min(
-            VOLUME_SETTINGS.MAX,
-            volumeRef.current + VOLUME_SETTINGS.KEYBOARD_STEP
-          )
-          setVolume(newVolume)
-        },
-        volumeDown: () => {
-          const newVolume = Math.max(
-            VOLUME_SETTINGS.MIN,
-            volumeRef.current - VOLUME_SETTINGS.KEYBOARD_STEP
-          )
-          setVolume(newVolume)
-        }
+        stepForward: stepForward
       }),
-      [toggle, stepBackward, stepForward, volumeRef, setVolume]
+      [toggle, stepBackward, stepForward]
     )
 
     // 注册快捷键 - 使用稳定的引用避免重新绑定
     useShortcutCommand('playPause', shortcutCommands.playPause)
     useShortcutCommand('stepBackward', shortcutCommands.stepBackward)
     useShortcutCommand('stepForward', shortcutCommands.stepForward)
-    useShortcutCommand('volumeUp', shortcutCommands.volumeUp)
-    useShortcutCommand('volumeDown', shortcutCommands.volumeDown)
 
     // 📝 字幕模态框处理函数
     const handleSubtitleModalCancel = useCallback(() => {

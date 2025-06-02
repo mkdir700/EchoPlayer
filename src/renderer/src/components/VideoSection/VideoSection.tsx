@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { VideoPlayer } from '@renderer/components/VideoPlayer/VideoPlayer'
 import { VideoControlsCompact } from '@renderer/components/VideoPlayer/VideoControlsCompact'
-import { VideoPlaybackSettingsProvider } from '@renderer/contexts/VideoPlaybackSettingsContext'
 import { SubtitleControlProvider } from '@renderer/contexts/subtitle-control-context'
 import { useVideoError } from '@renderer/hooks/useVideoPlayerHooks'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
@@ -19,8 +18,8 @@ function VideoSectionInner(): React.JSX.Element {
 
   // 注册组件特定的快捷键
   useShortcutGroup('VideoSection', {
-    singleLoop: subtitleControl.toggleSingleLoop, // FIXME: 失效
-    autoPause: subtitleControl.toggleAutoPause, // FIXME:  失效
+    singleLoop: subtitleControl.toggleSingleLoop,
+    autoPause: subtitleControl.toggleAutoPause,
     previousSubtitle: subtitleControl.goToPreviousSubtitle,
     nextSubtitle: subtitleControl.goToNextSubtitle
   })
