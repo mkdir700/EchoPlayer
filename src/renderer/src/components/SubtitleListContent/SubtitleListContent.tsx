@@ -7,12 +7,12 @@ import { SubtitleListItem } from './SubtitleListItem'
 import { formatTime } from '@renderer/utils/helpers'
 import styles from './SubtitleListContent.module.css'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { useVideoStateRefs, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubtitleDisplayContext'
 import { AimButton } from './AimButton'
 import { RendererLogger } from '@renderer/utils/logger'
-
+import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 const { Text } = Typography
 
 // 虚拟列表项高度（与CSS中的height保持一致）
@@ -30,7 +30,7 @@ const getItemHeight = (): number => {
 
 export function SubtitleListContent(): React.JSX.Element {
   const subtitleListContext = useSubtitleListContext()
-  const { volumeRef, playbackRateRef } = useVideoStateRefs()
+  const { volumeRef, playbackRateRef } = useVideoPlaybackSettingsContext()
   const { restoreVideoState } = useVideoControls()
   const { currentTimeRef, subscribeToTime } = useVideoPlayerContext()
   const { setSubtitleByIndex } = useCurrentSubtitleDisplayContext()

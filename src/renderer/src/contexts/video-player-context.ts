@@ -5,8 +5,6 @@ export interface VideoPlayerContextType {
   // Refs - 避免频繁重渲染
   currentTimeRef: React.RefObject<number>
   durationRef: React.RefObject<number>
-  playbackRateRef: React.RefObject<number>
-  volumeRef: React.RefObject<number>
   isPlayingRef: React.RefObject<boolean>
   isDraggingRef: React.RefObject<boolean>
   isVideoLoadedRef: React.RefObject<boolean>
@@ -36,8 +34,6 @@ export interface VideoPlayerContextType {
   setDragging: (dragging: boolean) => void
   setVideoLoaded: (loaded: boolean) => void
   setVideoError: (error: string | null) => void
-  setPlaybackRate: (rate: number) => void
-  setVolume: (volume: number) => void
 
   // 播放控制
   play: () => void

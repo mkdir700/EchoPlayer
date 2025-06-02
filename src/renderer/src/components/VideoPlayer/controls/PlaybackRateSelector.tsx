@@ -1,37 +1,44 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { Select, Tooltip } from 'antd'
 import { ThunderboltOutlined } from '@ant-design/icons'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
+import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
+import styles from '../VideoControlsCompact.module.css'
+import { usePlaybackRate } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
 
 interface PlaybackRateSelectorProps {
   isVideoLoaded: boolean
-  onPlaybackRateChange: (value: number) => void
-  className?: string
 }
 
 export function PlaybackRateSelector({
-  isVideoLoaded,
-  onPlaybackRateChange,
-  className = ''
+  isVideoLoaded
 }: PlaybackRateSelectorProps): React.JSX.Element {
-  const { playbackRateRef, setPlaybackRate } = useVideoPlayerContext()
-  const [displayPlaybackRate, setDisplayPlaybackRate] = useState(playbackRateRef.current)
+  const { playerRef, isVideoLoadedRef } = useVideoPlayerContext()
+  const playbackRate = usePlaybackRate()
+  const { updatePlaybackRate } = useVideoPlaybackSettingsContext()
 
   const handlePlaybackRateChange = useCallback(
     (value: number) => {
       console.log('播放速度变化:', value)
-      setPlaybackRate(value)
-      onPlaybackRateChange(value)
-      setDisplayPlaybackRate(value)
+      updatePlaybackRate(value)
+      // 直接控制播放器的播放速度
+      if (playerRef.current && isVideoLoadedRef.current) {
+        console.log('设置播放速度:', value)
+        const internalPlayer = playerRef.current.getInternalPlayer()
+        if (internalPlayer && 'playbackRate' in internalPlayer) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(internalPlayer as any).playbackRate = value
+        }
+      }
     },
-    [onPlaybackRateChange, setPlaybackRate]
+    [updatePlaybackRate, playerRef, isVideoLoadedRef]
   )
 
   return (
-    <div className={className}>
+    <div className={styles.playbackRateControl}>
       <Tooltip title="播放速度">
         <Select
-          value={displayPlaybackRate}
+          value={playbackRate}
           onChange={handlePlaybackRateChange}
           disabled={!isVideoLoaded}
           size="small"

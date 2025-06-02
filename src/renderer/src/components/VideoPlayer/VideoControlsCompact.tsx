@@ -69,8 +69,7 @@ export function VideoControlsCompact({
   videoError,
   onFullscreenToggle
 }: VideoControlsProps): React.JSX.Element {
-  const { setPlaybackRate, setVolume, toggle, seekTo, stepBackward, stepForward } =
-    useVideoControls()
+  const { toggle, seekTo, stepBackward, stepForward } = useVideoControls()
   const subtitleControl = useSubtitleControl()
 
   return (
@@ -109,15 +108,10 @@ export function VideoControlsCompact({
         {/* 右侧系统控制 */}
         <div className={styles.rightControls}>
           {/* 播放倍数 */}
-          <PlaybackRateSelector
-            isVideoLoaded={isVideoLoaded}
-            onPlaybackRateChange={setPlaybackRate}
-            className={styles.playbackRateControl}
-          />
+          <PlaybackRateSelector isVideoLoaded={isVideoLoaded} />
 
           {/* 音量控制 */}
           <VolumeControl
-            onVolumeChange={setVolume}
             className={styles.volumeControl}
             sliderClassName={styles.volumeSliderPopup}
             sliderVerticalClassName={styles.volumeSliderVertical}

@@ -9,7 +9,6 @@ import {
   useVideoPlayerRef,
   useVideoPlayState,
   useVideoError,
-  useVideoStateRefs,
   useVideoControls
 } from '@renderer/hooks/useVideoPlayerHooks'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
@@ -18,6 +17,7 @@ import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import styles from './VideoPlayer.module.css'
 import RendererLogger from '@renderer/utils/logger'
 import { SubtitleOverlay } from '@renderer/components/VideoPlayer/SubtitleOverlay'
+import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 
 interface VideoPlayerProps {
   isVideoLoaded: boolean
@@ -37,7 +37,8 @@ function VideoPlayer({
   const videoError = useVideoError()
 
   // 获取状态 Refs（用于不需要响应变化的逻辑）
-  const { playbackRateRef, volumeRef } = useVideoStateRefs()
+  const { playbackRateRef, volumeRef, updateVolume, updatePlaybackRate } =
+    useVideoPlaybackSettingsContext()
 
   // 获取控制方法
   const {
@@ -45,8 +46,6 @@ function VideoPlayer({
     setDuration,
     setVideoLoaded,
     setVideoError,
-    setPlaybackRate,
-    setVolume,
     toggle,
     stepBackward,
     stepForward,
@@ -156,17 +155,17 @@ function VideoPlayer({
   // 播放速度变化处理
   const handlePlaybackRateChange = useCallback(
     (rate: number) => {
-      setPlaybackRate(rate)
+      updatePlaybackRate(rate)
     },
-    [setPlaybackRate]
+    [updatePlaybackRate]
   )
 
   // 音量变化处理
   const handleVolumeChange = useCallback(
     (volume: number) => {
-      setVolume(volume)
+      updateVolume(volume)
     },
-    [setVolume]
+    [updateVolume]
   )
 
   // 优化：提取控制栏显示逻辑，避免重复代码

@@ -1,8 +1,9 @@
 import React, { useCallback, useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { Button, Slider, Tooltip, Typography } from 'antd'
 import { SoundOutlined, SoundFilled } from '@ant-design/icons'
+import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-
+import { usePlaybackVolume } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
 const { Text } = Typography
 
 interface VolumeControlProps {
@@ -15,19 +16,18 @@ interface VolumeControlProps {
 }
 
 export function VolumeControl({
-  onVolumeChange,
   className = '',
   sliderClassName = '',
   sliderVerticalClassName = '',
   textClassName = '',
   buttonClassName = ''
 }: VolumeControlProps): React.JSX.Element {
+  const { playerRef } = useVideoPlayerContext()
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
   const volumeControlRef = useRef<HTMLDivElement>(null)
   const sliderRef = useRef<HTMLDivElement>(null)
-  const { volumeRef, setVolume } = useVideoPlayerContext()
-  // 添加本地状态来跟踪显示的音量值，确保UI更新
-  const [displayVolume, setDisplayVolume] = useState(volumeRef.current)
+  const { volumeRef, updateVolume } = useVideoPlaybackSettingsContext()
+  const volume = usePlaybackVolume()
 
   // 点击音量按钮切换滑块显示状态
   const handleVolumeButtonClick = useCallback(
@@ -41,10 +41,19 @@ export function VolumeControl({
   const handleVolumeChange = useCallback(
     (value: number) => {
       console.log('音量变化:', value)
-      onVolumeChange(value)
-      setDisplayVolume(value)
+      updateVolume(value)
+      // 直接控制播放器的音量
+      if (playerRef.current) {
+        console.log('设置音量:', volumeRef.current)
+        // ReactPlayer 的音量属性是只读的，但我们可以通过内部播放器来设置
+        const internalPlayer = playerRef.current.getInternalPlayer()
+        if (internalPlayer && 'volume' in internalPlayer) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(internalPlayer as any).volume = volumeRef.current
+        }
+      }
     },
-    [onVolumeChange]
+    [playerRef, updateVolume, volumeRef]
   )
 
   // 点击外部区域关闭音量滑块
@@ -75,21 +84,14 @@ export function VolumeControl({
     }
   }, [showVolumeSlider])
 
-  // 确保displayVolume与volumeRef.current保持同步
-  useEffect(() => {
-    setVolume(volumeRef.current)
-    // 使用volumeRef作为依赖项，而不是volumeRef.current
-    setDisplayVolume(volumeRef.current)
-  }, [setVolume, volumeRef])
-
   return (
     <div className={className} ref={volumeControlRef}>
       <Tooltip
-        title={showVolumeSlider ? '' : `音量: ${Math.round(displayVolume * 100)}%`}
+        title={showVolumeSlider ? '' : `音量: ${Math.round(volumeRef.current * 100)}%`}
         open={showVolumeSlider ? false : undefined}
       >
         <Button
-          icon={displayVolume > 0 ? <SoundFilled /> : <SoundOutlined />}
+          icon={volumeRef.current > 0 ? <SoundFilled /> : <SoundOutlined />}
           type="text"
           size="small"
           className={buttonClassName}
@@ -104,11 +106,11 @@ export function VolumeControl({
             min={0}
             max={1}
             step={0.05}
-            value={displayVolume}
+            value={volume}
             onChange={handleVolumeChange}
             className={sliderVerticalClassName}
           />
-          <Text className={textClassName}>{Math.round(displayVolume * 100)}%</Text>
+          <Text className={textClassName}>{Math.round(volume * 100)}%</Text>
         </div>
       )}
     </div>

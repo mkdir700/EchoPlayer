@@ -63,10 +63,8 @@ function VideoSectionInner(): React.JSX.Element {
 // 外部组件 - 提供所有必要的 Context
 export function VideoSection(): React.JSX.Element {
   return (
-    <VideoPlaybackSettingsProvider>
-      <SubtitleControlProvider>
-        <VideoSectionInner />
-      </SubtitleControlProvider>
-    </VideoPlaybackSettingsProvider>
+    <SubtitleControlProvider>
+      <VideoSectionInner />
+    </SubtitleControlProvider>
   )
 }

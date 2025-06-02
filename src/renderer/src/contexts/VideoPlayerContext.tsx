@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react'
 import { VideoPlayerContext, type VideoPlayerContextType } from './video-player-context'
-import { PLAYBACK_RATES, SEEK_STEP, VOLUME_SETTINGS } from '../constants'
+import { SEEK_STEP } from '../constants'
 import ReactPlayer from 'react-player'
 
 export function VideoPlayerProvider({
@@ -11,8 +11,6 @@ export function VideoPlayerProvider({
   // Refs 存储状态
   const currentTimeRef = useRef(0)
   const durationRef = useRef(0)
-  const playbackRateRef = useRef(PLAYBACK_RATES.DEFAULT)
-  const volumeRef = useRef(VOLUME_SETTINGS.DEFAULT)
   const isPlayingRef = useRef(false)
   const isDraggingRef = useRef(false)
   const isVideoLoadedRef = useRef(false)
@@ -153,35 +151,6 @@ export function VideoPlayerProvider({
     [notifyErrorSubscribers]
   )
 
-  const setPlaybackRate = useCallback((rate: number) => {
-    playbackRateRef.current = rate
-
-    // 直接控制播放器的播放速度
-    if (playerRef.current && isVideoLoadedRef.current) {
-      console.log('设置播放速度:', rate)
-      const internalPlayer = playerRef.current.getInternalPlayer()
-      if (internalPlayer && 'playbackRate' in internalPlayer) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(internalPlayer as any).playbackRate = rate
-      }
-    }
-  }, [])
-
-  const setVolume = useCallback((volume: number) => {
-    volumeRef.current = volume
-
-    // 直接控制播放器的音量
-    if (playerRef.current) {
-      console.log('设置音量:', volume)
-      // ReactPlayer 的音量属性是只读的，但我们可以通过内部播放器来设置
-      const internalPlayer = playerRef.current.getInternalPlayer()
-      if (internalPlayer && 'volume' in internalPlayer) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(internalPlayer as any).volume = volume
-      }
-    }
-  }, [])
-
   // 播放控制方法
   const play = useCallback(() => {
     if (isVideoLoadedRef.current && !videoErrorRef.current) {
@@ -239,8 +208,6 @@ export function VideoPlayerProvider({
   const resetVideoState = useCallback(() => {
     currentTimeRef.current = 0
     durationRef.current = 0
-    playbackRateRef.current = PLAYBACK_RATES.DEFAULT
-    volumeRef.current = VOLUME_SETTINGS.DEFAULT
     isPlayingRef.current = false
     isDraggingRef.current = false
     isVideoLoadedRef.current = false
@@ -263,18 +230,14 @@ export function VideoPlayerProvider({
 
   // 状态恢复
   const restoreVideoState = useCallback(
-    (currentTime: number, playbackRate: number, volume: number) => {
+    (currentTime: number) => {
       console.log('🔄 恢复视频状态 - VideoPlayerContext:', {
         currentTime,
-        playbackRate,
-        volume,
         isVideoLoaded: isVideoLoadedRef.current,
         hasPlayer: !!playerRef.current
       })
 
       currentTimeRef.current = currentTime
-      playbackRateRef.current = playbackRate
-      volumeRef.current = volume
 
       // 如果视频已加载，立即跳转
       if (isVideoLoadedRef.current && playerRef.current) {
@@ -294,8 +257,6 @@ export function VideoPlayerProvider({
     // Refs
     currentTimeRef,
     durationRef,
-    playbackRateRef,
-    volumeRef,
     isPlayingRef,
     isDraggingRef,
     isVideoLoadedRef,
@@ -323,8 +284,6 @@ export function VideoPlayerProvider({
     setDragging,
     setVideoLoaded,
     setVideoError,
-    setPlaybackRate,
-    setVolume,
 
     // 播放控制
     play,

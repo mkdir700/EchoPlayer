@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useVideoPlayerContext } from './useVideoPlayerContext'
 import ReactPlayer from 'react-player'
-import { message } from 'antd'
 
 // 需要响应时间变化的组件使用这个 hook
 export const useVideoTime = (): number => {
@@ -105,8 +104,6 @@ export const useVideoDurationRef = (): React.RefObject<number> => {
 export const useVideoStateRefs = (): {
   currentTimeRef: React.RefObject<number>
   durationRef: React.RefObject<number>
-  playbackRateRef: React.RefObject<number>
-  volumeRef: React.RefObject<number>
   isPlayingRef: React.RefObject<boolean>
   isDraggingRef: React.RefObject<boolean>
   isVideoLoadedRef: React.RefObject<boolean>
@@ -115,8 +112,6 @@ export const useVideoStateRefs = (): {
   const {
     currentTimeRef,
     durationRef,
-    playbackRateRef,
-    volumeRef,
     isPlayingRef,
     isDraggingRef,
     isVideoLoadedRef,
@@ -126,8 +121,6 @@ export const useVideoStateRefs = (): {
   return {
     currentTimeRef,
     durationRef,
-    playbackRateRef,
-    volumeRef,
     isPlayingRef,
     isDraggingRef,
     isVideoLoadedRef,
@@ -154,8 +147,6 @@ export const useVideoStateRefs = (): {
  * @property {Function} setDuration - 设置视频时长。
  * @property {Function} setVideoLoaded - 设置视频加载状态。
  * @property {Function} setVideoError - 设置视频错误信息。
- * @property {Function} setPlaybackRate - 设置播放速度。
- * @property {Function} setVolume - 设置音量。
  * @property {Function} resetVideoState - 重置视频状态。
  * @property {Function} restoreVideoState - 恢复视频状态。
  * @property {React.RefObject<boolean>} isDraggingRef - 拖动状态的引用。
@@ -174,8 +165,6 @@ export const useVideoControls = (): {
   setDuration: (duration: number) => void
   setVideoLoaded: (loaded: boolean) => void
   setVideoError: (error: string | null) => void
-  setPlaybackRate: (rate: number) => void
-  setVolume: (volume: number) => void
   resetVideoState: () => void
   restoreVideoState: (currentTime: number, playbackRate: number, volume: number) => void
   isDraggingRef: React.RefObject<boolean>
@@ -194,8 +183,6 @@ export const useVideoControls = (): {
     setDuration,
     setVideoLoaded,
     setVideoError,
-    setPlaybackRate,
-    setVolume,
     resetVideoState,
     restoreVideoState,
     isDraggingRef
@@ -218,8 +205,6 @@ export const useVideoControls = (): {
     setDuration,
     setVideoLoaded,
     setVideoError,
-    setPlaybackRate,
-    setVolume,
 
     // 状态管理
     resetVideoState,
@@ -299,161 +284,5 @@ export const useVideoSubtitle = (): {
   return {
     currentTime,
     isLoaded
-  }
-}
-
-// 带消息提示的播放控制 hook - 兼容旧的 handlePlayPause 等方法
-export const useVideoControlsWithMessages = (): {
-  handlePlayPause: () => void
-  handleStepBackward: () => void
-  handleStepForward: () => void
-  handleSeek: (value: number) => void
-  handlePlaybackRateChange: (rate: number) => void
-  handleVolumeChange: (volume: number) => void
-  handleRestart: () => void
-  handleVideoReady: () => void
-  handleVideoError: (error: Error | MediaError | string | null) => void
-  handleVideoDuration: (duration: number) => void
-  handleProgress: (progress: { played: number; playedSeconds: number }) => void
-} => {
-  const {
-    toggle,
-    stepBackward,
-    stepForward,
-    seekTo,
-    setPlaybackRate,
-    setVolume,
-    restart,
-    setVideoLoaded,
-    setVideoError,
-    setDuration,
-    updateTime
-  } = useVideoControls()
-
-  const { isVideoLoadedRef, videoErrorRef } = useVideoStateRefs()
-
-  const handlePlayPause = useCallback((): void => {
-    if (isVideoLoadedRef.current && !videoErrorRef.current) {
-      console.log('🎬 播放/暂停回调触发')
-      toggle()
-    } else if (videoErrorRef.current) {
-      message.error('视频加载失败，请重新选择视频文件')
-    } else {
-      message.warning('视频正在加载中，请稍候...')
-    }
-  }, [toggle, isVideoLoadedRef, videoErrorRef])
-
-  const handleStepBackward = useCallback((): void => {
-    if (isVideoLoadedRef.current) {
-      stepBackward()
-    }
-  }, [stepBackward, isVideoLoadedRef])
-
-  const handleStepForward = useCallback((): void => {
-    if (isVideoLoadedRef.current) {
-      stepForward()
-    }
-  }, [stepForward, isVideoLoadedRef])
-
-  const handleSeek = useCallback(
-    (value: number): void => {
-      if (isVideoLoadedRef.current) {
-        seekTo(value)
-      }
-    },
-    [seekTo, isVideoLoadedRef]
-  )
-
-  const handlePlaybackRateChange = useCallback(
-    (rate: number): void => {
-      setPlaybackRate(rate)
-    },
-    [setPlaybackRate]
-  )
-
-  const handleVolumeChange = useCallback(
-    (volume: number): void => {
-      setVolume(volume)
-    },
-    [setVolume]
-  )
-
-  const handleRestart = useCallback((): void => {
-    if (isVideoLoadedRef.current) {
-      restart()
-    }
-  }, [restart, isVideoLoadedRef])
-
-  const handleVideoReady = useCallback((): void => {
-    console.log('🎬 视频就绪回调触发')
-    setVideoLoaded(true)
-    setVideoError(null)
-    message.success('视频加载完成，可以开始播放了！')
-  }, [setVideoLoaded, setVideoError])
-
-  const handleVideoError = useCallback(
-    (error: Error | MediaError | string | null): void => {
-      console.error('Video player error:', error)
-
-      let errorMessage = '视频播放出错'
-      if (typeof error === 'string') {
-        errorMessage = error
-      } else if (error instanceof Error) {
-        errorMessage = error.message
-      } else if (error instanceof MediaError) {
-        switch (error.code) {
-          case MediaError.MEDIA_ERR_ABORTED:
-            errorMessage = '视频播放被中止'
-            break
-          case MediaError.MEDIA_ERR_NETWORK:
-            errorMessage = '网络错误导致视频下载失败'
-            break
-          case MediaError.MEDIA_ERR_DECODE:
-            errorMessage = '视频解码失败，可能是编解码器不支持'
-            break
-          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMessage = '视频格式不支持'
-            break
-          default:
-            errorMessage = '未知的视频播放错误'
-        }
-      }
-
-      setVideoError(errorMessage)
-      setVideoLoaded(false)
-      message.error(`视频加载失败: ${errorMessage}`)
-    },
-    [setVideoError, setVideoLoaded]
-  )
-
-  const handleVideoDuration = useCallback(
-    (duration: number): void => {
-      setDuration(duration)
-      if (duration > 0) {
-        setVideoLoaded(true)
-      }
-    },
-    [setDuration, setVideoLoaded]
-  )
-
-  const handleProgress = useCallback(
-    (progress: { played: number; playedSeconds: number }): void => {
-      updateTime(progress.playedSeconds)
-    },
-    [updateTime]
-  )
-
-  return {
-    handlePlayPause,
-    handleStepBackward,
-    handleStepForward,
-    handleSeek,
-    handlePlaybackRateChange,
-    handleVolumeChange,
-    handleRestart,
-    handleVideoReady,
-    handleVideoError,
-    handleVideoDuration,
-    handleProgress
   }
 }

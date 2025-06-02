@@ -16,6 +16,7 @@ import type { SubtitleItem } from '@types_/shared'
 
 import styles from './PlayPage.module.css'
 import { Splitter } from 'antd'
+import { VideoPlaybackSettingsProvider } from '@renderer/contexts/VideoPlaybackSettingsContext'
 
 interface PlayPageProps {
   onBack: () => void
@@ -128,39 +129,41 @@ const PlayPageMemo = React.memo<PlayPageProps>(
 
     return (
       <CurrentSubtitleDisplayProvider>
-        <div className={styles.playPageContainer}>
-          {/* 播放页面独立Header */}
-          <PlayPageHeader onBack={handleBack} />
+        <VideoPlaybackSettingsProvider>
+          <div className={styles.playPageContainer}>
+            {/* 播放页面独立Header */}
+            <PlayPageHeader onBack={handleBack} />
 
-          <div className={styles.playPageContent}>
-            {/* 分割线 - 更细更现代 */}
-            <Splitter style={{ boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
-              <Splitter.Panel defaultSize="70%" min="50%" max="70%">
-                <div className={styles.mainContentArea}>
-                  {/* 视频播放区域 - 占据主要空间 */}
-                  <div className={styles.videoPlayerSection}>
-                    <VideoSection />
+            <div className={styles.playPageContent}>
+              {/* 分割线 - 更细更现代 */}
+              <Splitter style={{ boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
+                <Splitter.Panel defaultSize="70%" min="50%" max="70%">
+                  <div className={styles.mainContentArea}>
+                    {/* 视频播放区域 - 占据主要空间 */}
+                    <div className={styles.videoPlayerSection}>
+                      <VideoSection />
+                    </div>
                   </div>
-                </div>
-              </Splitter.Panel>
-              <Splitter.Panel>
-                {/* 字幕列表区域 - 无缝集成 */}
-                <div className={styles.sidebarSection}>
-                  <SidebarSectionContainer />
-                </div>
-              </Splitter.Panel>
-            </Splitter>
-          </div>
+                </Splitter.Panel>
+                <Splitter.Panel>
+                  {/* 字幕列表区域 - 无缝集成 */}
+                  <div className={styles.sidebarSection}>
+                    <SidebarSectionContainer />
+                  </div>
+                </Splitter.Panel>
+              </Splitter>
+            </div>
 
-          {/* 字幕检查Modal - 移入PlayPage */}
-          <SubtitleLoadModal
-            visible={showSubtitleModal}
-            videoFilePath={pendingVideoInfo?.filePath || ''}
-            onCancel={handleSubtitleModalCancel}
-            onSkip={handleSubtitleModalSkip}
-            onSubtitlesLoaded={handleSubtitlesLoaded}
-          />
-        </div>
+            {/* 字幕检查Modal - 移入PlayPage */}
+            <SubtitleLoadModal
+              visible={showSubtitleModal}
+              videoFilePath={pendingVideoInfo?.filePath || ''}
+              onCancel={handleSubtitleModalCancel}
+              onSkip={handleSubtitleModalSkip}
+              onSubtitlesLoaded={handleSubtitlesLoaded}
+            />
+          </div>
+        </VideoPlaybackSettingsProvider>
       </CurrentSubtitleDisplayProvider>
     )
   },

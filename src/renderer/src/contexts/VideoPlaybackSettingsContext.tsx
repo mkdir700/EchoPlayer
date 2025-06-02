@@ -7,6 +7,8 @@ import {
 import { VideoPlaybackSettings, SubtitleDisplaySettings } from '@types_/shared'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useRecentPlayList } from '@renderer/hooks/useRecentPlayList'
+import { VOLUME_SETTINGS } from '@renderer/constants'
+import { PLAYBACK_RATES } from '@renderer/constants'
 
 export function VideoPlaybackSettingsProvider({
   children
@@ -19,8 +21,8 @@ export function VideoPlaybackSettingsProvider({
   const fileId = playingVideoContext.fileId
 
   const subtitleDisplayModeRef = useRef<VideoPlaybackSettings['displayMode']>('bilingual')
-  const volumeRef = useRef<VideoPlaybackSettings['volume']>(1)
-  const playbackRateRef = useRef<VideoPlaybackSettings['playbackRate']>(1)
+  const volumeRef = useRef<VideoPlaybackSettings['volume']>(VOLUME_SETTINGS.DEFAULT)
+  const playbackRateRef = useRef<VideoPlaybackSettings['playbackRate']>(PLAYBACK_RATES.DEFAULT)
   const isSingleLoopRef = useRef<VideoPlaybackSettings['isSingleLoop']>(false)
   const isAutoPauseRef = useRef<VideoPlaybackSettings['isAutoPause']>(false)
   const subtitleDisplaySettingsRef = useRef<SubtitleDisplaySettings>({
