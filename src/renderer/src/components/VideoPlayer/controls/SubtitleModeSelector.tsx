@@ -5,6 +5,8 @@ import type { DisplayMode } from '@renderer/types'
 import styles from '../VideoControlsCompact.module.css'
 import { useSubtitleDisplayModeControls } from '@renderer/hooks/useSubtitleDisplayMode'
 import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
+import { useSubtitleDisplayMode } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
+import { RendererLogger } from '@renderer/utils/logger'
 
 // 显示模式配置
 const DISPLAY_MODE_CONFIG = {
@@ -17,7 +19,8 @@ const DISPLAY_MODE_CONFIG = {
 
 export function SubtitleModeSelector(): React.JSX.Element {
   // 使用新的订阅模式 hooks
-  const { displayMode, setDisplayMode, toggleDisplayMode } = useSubtitleDisplayModeControls()
+  const { setDisplayMode, toggleDisplayMode } = useSubtitleDisplayModeControls()
+  const displayMode = useSubtitleDisplayMode()
   // 注册快捷键 - 使用稳定的引用避免重新绑定
   useShortcutCommand('toggleSubtitleMode', toggleDisplayMode)
 
@@ -58,6 +61,7 @@ export function SubtitleModeSelector(): React.JSX.Element {
     : 'bilingual'
   const currentModeConfig = DISPLAY_MODE_CONFIG[validDisplayMode]
 
+  RendererLogger.debug(`SubtitleModeSelector, displayMode: ${displayMode}`)
   return (
     <div className={styles.subtitleModeControl}>
       {/* 字幕模式切换按钮 */}
@@ -82,8 +86,8 @@ export function SubtitleModeSelector(): React.JSX.Element {
               key={mode}
               type={displayMode === mode ? 'primary' : 'text'}
               size="small"
-              onClick={async () => {
-                await setDisplayMode(mode as DisplayMode)
+              onClick={() => {
+                setDisplayMode(mode as DisplayMode)
                 setShowSubtitleModeSelector(false)
               }}
               style={{

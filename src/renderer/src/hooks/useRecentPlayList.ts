@@ -295,7 +295,7 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
           recentPlay.videoPlaybackSettings = {
             ...recentPlay.videoPlaybackSettings,
             ...updates,
-            displayMode: recentPlay.videoPlaybackSettings.displayMode || 'bilingual'
+            displayMode: updates.displayMode || recentPlay.videoPlaybackSettings.displayMode
           }
           await window.api.store.updateRecentPlay(fileId, {
             videoPlaybackSettings: recentPlay.videoPlaybackSettings as VideoPlaybackSettings
