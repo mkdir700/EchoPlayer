@@ -84,7 +84,7 @@ export function ThirdPartyServicesSection({
       temperature: 0.2
     },
     dictionary: {
-      selectedEngine: null,
+      selectedEngine: 'eudic-html',
       eudicApiToken: '',
       youdaoApiKey: '',
       youdaoApiSecret: ''

@@ -52,7 +52,7 @@ export function WordCard({ word, targetElement, onClose }: WordCardProps): React
         temperature: 0.2
       },
       dictionary: {
-        selectedEngine: null,
+        selectedEngine: 'eudic-html',
         eudicApiToken: '',
         youdaoApiKey: '',
         youdaoApiSecret: ''
