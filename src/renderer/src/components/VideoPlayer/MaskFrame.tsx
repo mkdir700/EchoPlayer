@@ -38,6 +38,7 @@ function MaskFrame({
         document.removeEventListener('mouseup', maskFrameController.handleMouseUp)
       }
     }
+    return
   }, [
     maskFrameController.isDragging,
     maskFrameController.isResizing,

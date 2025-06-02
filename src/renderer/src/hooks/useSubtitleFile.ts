@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { message } from 'antd'
 import { parseSubtitles } from '../utils/subtitleParser'
-import type { SubtitleItem } from '../types/shared'
+import { SubtitleItem } from '@types_/shared'
 
 interface SubtitleFileState {
   subtitleFilePath?: string

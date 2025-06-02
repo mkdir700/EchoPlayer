@@ -301,7 +301,7 @@ function parseEudicHtml(
 
         // 跳过太短或包含特殊内容的文本
         if (!text || text.length < 5 || text.includes('style>') || text.includes('script>')) {
-          return
+          return true // 继续循环
         }
 
         // 检查是否看起来像释义（包含中文字符）
@@ -320,8 +320,9 @@ function parseEudicHtml(
           }
 
           // 只取第一个找到的释义，避免重复
-          return false
+          return false // 停止循环
         }
+        return true // 继续循环
       })
     }
 

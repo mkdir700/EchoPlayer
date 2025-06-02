@@ -509,27 +509,30 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
   useEffect(() => {
     const isDraggingOrResizing = dragAndResizeProps.isDragging || dragAndResizeProps.isResizing
 
-    if (isDraggingOrResizing) {
-      const handleMouseMove = (e: MouseEvent): void => {
-        dragAndResizeProps.handleMouseMove(e, containerRef)
-      }
-      const handleMouseUp = (): void => {
-        dragAndResizeProps.handleMouseUp()
-      }
+    if (!isDraggingOrResizing) {
+      return
+    }
 
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
+    const handleMouseMove = (e: MouseEvent): void => {
+      dragAndResizeProps.handleMouseMove(e, containerRef)
+    }
+    const handleMouseUp = (): void => {
+      dragAndResizeProps.handleMouseUp()
+    }
 
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-      }
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
     }
   }, [
     dragAndResizeProps.isDragging,
     dragAndResizeProps.isResizing,
     dragAndResizeProps.handleMouseMove,
-    dragAndResizeProps.handleMouseUp
+    dragAndResizeProps.handleMouseUp,
+    dragAndResizeProps
   ])
 
   // 清理定时器

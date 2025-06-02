@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { message } from 'antd'
-import type { SubtitleItem } from '@renderer/types/shared'
+import { SubtitleItem } from '@types_/shared'
 
 // 应用状态接口
 export interface AppStateData {

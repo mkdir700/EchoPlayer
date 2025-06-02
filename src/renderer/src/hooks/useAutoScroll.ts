@@ -333,7 +333,9 @@ export function useAutoScroll({
 
       // 立即尝试
       if (attemptInitialScroll()) {
-        return
+        return () => {
+          // 无需清理
+        }
       }
 
       // 如果立即尝试失败，使用更短的间隔重试
@@ -352,6 +354,11 @@ export function useAutoScroll({
       return () => {
         clearInterval(retryInterval)
       }
+    }
+
+    // 当条件不满足时，也返回一个空的清理函数
+    return () => {
+      // 无需清理
     }
   }, [subtitlesLength, currentSubtitleIndex, isAutoScrollEnabled, scrollToPositionInstantly])
 

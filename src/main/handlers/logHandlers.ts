@@ -3,7 +3,7 @@ import { Logger } from '../utils/logger'
 
 export function setupLogHandlers(): void {
   // 处理来自渲染进程的日志请求
-  ipcMain.handle('log', async (event, level: string, message: string, data?: unknown) => {
+  ipcMain.handle('log', async (_event, level: string, message: string, data?: unknown) => {
     try {
       switch (level) {
         case 'debug':

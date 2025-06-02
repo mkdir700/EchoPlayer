@@ -36,7 +36,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
 
     // 使用拆分的视频选择hook，并暂存文件信息
     const result = await selectVideoFile(
-      (fileId: string, url: string, fileName: string, filePath: string) => {
+      (_fileId: string, url: string, fileName: string, filePath: string) => {
         // 暂存文件信息，等添加到最近播放记录后再设置
         selectedFileInfo = { url, fileName, filePath }
       },

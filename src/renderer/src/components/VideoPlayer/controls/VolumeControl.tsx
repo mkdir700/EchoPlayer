@@ -9,7 +9,6 @@ import { VOLUME_SETTINGS } from '@renderer/constants'
 const { Text } = Typography
 
 interface VolumeControlProps {
-  onVolumeChange: (value: number) => void
   className?: string
   sliderClassName?: string
   sliderVerticalClassName?: string
