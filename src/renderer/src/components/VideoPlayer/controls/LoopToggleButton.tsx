@@ -1,24 +1,24 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Button, Tooltip } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
 import styles from '../VideoControlsCompact.module.css'
-import { useVideoPlaybackSettings } from '@renderer/hooks/useVideoPlaybackSettings'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import type { SubtitleItem } from '@types_/shared'
 import RendererLogger from '@renderer/utils/logger'
+import { useIsSingleLoop } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
 
 interface LoopToggleButtonProps {
   isVideoLoaded: boolean
 }
 
 export function LoopToggleButton({ isVideoLoaded }: LoopToggleButtonProps): React.JSX.Element {
-  console.log('🔄 LoopToggleButton 渲染')
-  const { settings } = useVideoPlaybackSettings()
+  const isLoopingDisplay = useIsSingleLoop()
+  console.log('🔄 LoopToggleButton 渲染, isLoopingDisplay:', isLoopingDisplay)
   const subtitleControl = useSubtitleControl()
-  const [isLoopingDisplay, setIsLoopingDisplay] = useState(settings.isSingleLoop)
+  // const [isLoopingDisplay, setIsLoopingDisplay] = useState(settings.isSingleLoop)
   // 单句循环相关状态
   const { currentTimeRef, isPlayingRef, isVideoLoadedRef, subscribeToTime } =
     useVideoPlayerContext()
@@ -27,13 +27,7 @@ export function LoopToggleButton({ isVideoLoaded }: LoopToggleButtonProps): Reac
 
   const handleLoopToggle = useCallback(() => {
     subtitleControl.toggleSingleLoop()
-    setIsLoopingDisplay(!isLoopingDisplay)
-  }, [subtitleControl, isLoopingDisplay])
-
-  // 同步本地显示状态与全局状态
-  useEffect(() => {
-    setIsLoopingDisplay(settings.isSingleLoop)
-  }, [settings.isSingleLoop])
+  }, [subtitleControl])
 
   // 内部状态管理
   const singleLoopSubtitleRef = useRef<SubtitleItem | null>(null)

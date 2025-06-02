@@ -10,7 +10,6 @@ import { AboutPage } from '@renderer/pages/AboutPage'
 import { SettingsPage } from '@renderer/pages/SettingsPage'
 
 import { ShortcutProvider } from '@renderer/contexts/ShortcutContext'
-import { PlaybackSettingsProvider } from '@renderer/contexts/PlaybackSettingsContext'
 import { PlayingVideoProvider } from '@renderer/contexts/PlayingVideoContext'
 import { SubtitleListProvider } from '@renderer/contexts/SubtitleListContext'
 import { VideoPlayerProvider } from '@renderer/contexts/VideoPlayerContext'
@@ -109,11 +108,9 @@ function AppContent(): React.JSX.Element {
 
 function App(): React.JSX.Element {
   return (
-    <PlaybackSettingsProvider>
-      <ShortcutProvider>
-        <AppContent />
-      </ShortcutProvider>
-    </PlaybackSettingsProvider>
+    <ShortcutProvider>
+      <AppContent />
+    </ShortcutProvider>
   )
 }
 

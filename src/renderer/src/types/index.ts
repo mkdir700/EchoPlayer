@@ -2,6 +2,7 @@
 import type { SubtitleItem } from '@types_/shared'
 
 export interface VideoFileState {
+  fileId: string
   videoFile: string | null
   videoFileName: string
   displayAspectRatio: number
@@ -115,7 +116,7 @@ export interface Settings {
 export type {
   RecentPlayItem as RecentPlayItem,
   StoreSettings,
-  PlaybackSettings,
+  GlobalPlaybackSettings as PlaybackSettings,
   StoreAPI,
   ApiResponse,
   ApiResponseWithCount

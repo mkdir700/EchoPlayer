@@ -8,7 +8,7 @@ import {
   SubtitlePlaceholder
 } from './SubtitleTextComponents'
 import styles from './Subtitle.module.css'
-import { useSubtitleDisplayMode } from '@renderer/hooks/useSubtitleDisplayMode'
+import { useSubtitleDisplayModeControls } from '@renderer/hooks/useSubtitleDisplayMode'
 
 interface SubtitleContentProps {
   dynamicTextStyle: React.CSSProperties
@@ -25,7 +25,7 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
   onWordHover,
   onWordClick
 }) => {
-  const displayMode = useSubtitleDisplayMode()
+  const { displayMode } = useSubtitleDisplayModeControls()
   // 使用新的当前字幕显示hook
   const { currentDisplaySubtitle: currentSubtitle } = useCurrentSubtitleDisplayContext()
 

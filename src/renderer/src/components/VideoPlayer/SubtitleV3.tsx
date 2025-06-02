@@ -3,7 +3,7 @@ import { WordCard } from '@renderer/components/WordCard/WordCard'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import {
   useSubtitleState,
-  createDefaultSubtitleDisplay,
+  createDefaultSubtitleState,
   type SubtitleMarginsState,
   type BackgroundType
 } from '@renderer/hooks/useSubtitleState'
@@ -311,7 +311,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
 
       // 重置字幕状态
       resetSubtitleState: (): void => {
-        const cleanState = createDefaultSubtitleDisplay()
+        const cleanState = createDefaultSubtitleState()
         updateSubtitleState(cleanState)
         if (process.env.NODE_ENV === 'development') {
           console.log('🔄 重置字幕状态到:', cleanState)

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { RecentPlayItem, StoreSettings } from '@renderer/types'
+import { VideoPlaybackSettings } from '@types_/shared'
+import RendererLogger from '@renderer/utils/logger'
 
 export interface UseRecentPlayListReturn {
   // 状态
@@ -10,23 +12,42 @@ export interface UseRecentPlayListReturn {
 
   // 操作方法
   refreshRecentPlays: () => Promise<void>
-  addRecentPlay: (item: Omit<RecentPlayItem, 'id' | 'lastOpenedAt'>) => Promise<boolean>
-  updateRecentPlay: (id: string, updates: Partial<Omit<RecentPlayItem, 'id'>>) => Promise<boolean>
-  updateRecentPlaySilent: (
-    id: string,
-    updates: Partial<Omit<RecentPlayItem, 'id'>>
+  addRecentPlay: (
+    item: Omit<RecentPlayItem, 'fileId' | 'lastOpenedAt'>
+  ) => Promise<{ success: boolean; fileId: string | undefined }>
+  updateRecentPlay: (
+    fileId: string,
+    updates: Partial<Omit<RecentPlayItem, 'fileId'>>
   ) => Promise<boolean>
-  removeRecentPlay: (id: string) => Promise<boolean>
+  updateRecentPlaySilent: (
+    fileId: string,
+    updates: Partial<Omit<RecentPlayItem, 'fileId'>>
+  ) => Promise<boolean>
+  removeRecentPlay: (fileId: string) => Promise<boolean>
   clearRecentPlays: () => Promise<boolean>
   getRecentPlayByPath: (filePath: string) => Promise<RecentPlayItem | null>
   updateSettings: (settings: Partial<StoreSettings>) => Promise<boolean>
   removeMultipleRecentPlays: (ids: string[]) => Promise<{ success: boolean; removedCount: number }>
   searchRecentPlays: (query: string) => Promise<RecentPlayItem[]>
+  getPlaybackSettingsByFileId: (fileId: string) => Promise<VideoPlaybackSettings | null>
+  updatePlaybackSettingsByFileId: (
+    fileId: string,
+    updates: Partial<VideoPlaybackSettings>
+  ) => Promise<boolean>
 }
 
 export function useRecentPlayList(): UseRecentPlayListReturn {
   const [recentPlays, setRecentPlays] = useState<RecentPlayItem[]>([])
-  const [settings, setSettings] = useState<StoreSettings>({ maxRecentItems: 20 })
+  const [settings, setSettings] = useState<StoreSettings>({
+    maxRecentItems: 20,
+    playback: {
+      displayMode: 'bilingual',
+      volume: 1,
+      playbackRate: 1,
+      isSingleLoop: false,
+      isAutoPause: false
+    }
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,22 +87,24 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
 
   // 添加最近播放项
   const addRecentPlay = useCallback(
-    async (item: Omit<RecentPlayItem, 'id' | 'lastOpenedAt'>): Promise<boolean> => {
+    async (
+      item: Omit<RecentPlayItem, 'fileId' | 'lastOpenedAt'>
+    ): Promise<{ success: boolean; fileId: string | undefined }> => {
       try {
         setError(null)
         const result = await window.api.store.addRecentPlay(item)
         if (result.success) {
           await refreshRecentPlays()
-          return true
+          return { success: true, fileId: result.fileId }
         } else {
           setError(result.error || '添加失败')
-          return false
+          return { success: false, fileId: undefined }
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '添加最近播放项失败'
         setError(errorMessage)
         console.error('添加最近播放项失败:', err)
-        return false
+        return { success: false, fileId: undefined }
       }
     },
     [refreshRecentPlays]
@@ -89,10 +112,10 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
 
   // 更新最近播放项
   const updateRecentPlay = useCallback(
-    async (id: string, updates: Partial<Omit<RecentPlayItem, 'id'>>): Promise<boolean> => {
+    async (fileId: string, updates: Partial<Omit<RecentPlayItem, 'fileId'>>): Promise<boolean> => {
       try {
         setError(null)
-        const result = await window.api.store.updateRecentPlay(id, updates)
+        const result = await window.api.store.updateRecentPlay(fileId, updates)
         if (result.success) {
           await refreshRecentPlays()
           return true
@@ -112,10 +135,10 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
 
   // 更新最近播放项（静默模式，不刷新状态）
   const updateRecentPlaySilent = useCallback(
-    async (id: string, updates: Partial<Omit<RecentPlayItem, 'id'>>): Promise<boolean> => {
+    async (fileId: string, updates: Partial<Omit<RecentPlayItem, 'fileId'>>): Promise<boolean> => {
       try {
         setError(null)
-        const result = await window.api.store.updateRecentPlay(id, updates)
+        const result = await window.api.store.updateRecentPlay(fileId, updates)
         if (result.success) {
           // 🚀 静默模式：不调用 refreshRecentPlays()，避免重新渲染
           return true
@@ -135,10 +158,10 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
 
   // 删除最近播放项
   const removeRecentPlay = useCallback(
-    async (id: string): Promise<boolean> => {
+    async (fileId: string): Promise<boolean> => {
       try {
         setError(null)
-        const result = await window.api.store.removeRecentPlay(id)
+        const result = await window.api.store.removeRecentPlay(fileId)
         if (result.success) {
           await refreshRecentPlays()
           return true
@@ -252,6 +275,46 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
     }
   }, [])
 
+  // 根据文件ID获取一个视频的播放设置
+  const getPlaybackSettingsByFileId = useCallback(
+    async (fileId: string): Promise<VideoPlaybackSettings | null> => {
+      const recentPlay = await window.api.store.getRecentPlayByFileId(fileId)
+      return recentPlay?.videoPlaybackSettings || null
+    },
+    []
+  )
+
+  // 更新一个视频的播放设置
+  // 如果更新失败，则返回false
+  const updatePlaybackSettingsByFileId = useCallback(
+    async (fileId: string, updates: Partial<VideoPlaybackSettings>): Promise<boolean> => {
+      RendererLogger.info(`更新视频的播放设置: ${fileId}`)
+      try {
+        const recentPlay = await window.api.store.getRecentPlayByFileId(fileId)
+        if (recentPlay) {
+          recentPlay.videoPlaybackSettings = {
+            ...recentPlay.videoPlaybackSettings,
+            ...updates,
+            displayMode: recentPlay.videoPlaybackSettings.displayMode || 'bilingual'
+          }
+          await window.api.store.updateRecentPlay(fileId, {
+            videoPlaybackSettings: recentPlay.videoPlaybackSettings as VideoPlaybackSettings
+          })
+          return true
+        } else {
+          RendererLogger.error(`未找到对应的最近播放记录: ${fileId}`)
+          return false
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '更新播放设置失败'
+        setError(errorMessage)
+        console.error('更新播放设置失败:', err)
+        return false
+      }
+    },
+    []
+  )
+
   return {
     // 状态
     recentPlays,
@@ -269,6 +332,8 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
     getRecentPlayByPath,
     updateSettings,
     removeMultipleRecentPlays,
-    searchRecentPlays
+    searchRecentPlays,
+    getPlaybackSettingsByFileId,
+    updatePlaybackSettingsByFileId
   }
 }

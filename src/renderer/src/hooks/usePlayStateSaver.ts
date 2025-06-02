@@ -32,7 +32,7 @@ interface SaveProgressState {
 export function usePlayStateSaver(): UsePlayStateSaverReturn {
   const subtitleListContext = useSubtitleListContext()
   const playingVideoContext = usePlayingVideoContext()
-  const { getRecentPlayByPath, updateRecentPlaySilent } = useRecentPlayList()
+  const { updateRecentPlaySilent } = useRecentPlayList()
 
   const saveProgressRef = useRef<((force?: boolean) => Promise<void>) | null>(null)
   const isInitializingRef = useRef(true)
@@ -42,6 +42,9 @@ export function usePlayStateSaver(): UsePlayStateSaverReturn {
     lastSavedSubtitleIndex: -1,
     lastSavedSubtitlesLength: -1
   })
+  const fileId = playingVideoContext.fileId
+
+  console.log('videoFileState', playingVideoContext)
 
   // 🔧 使用 ref 而不是状态订阅，避免重新渲染
   const currentTimeRef = useVideoTimeRef()
@@ -79,17 +82,16 @@ export function usePlayStateSaver(): UsePlayStateSaverReturn {
     }
 
     try {
-      const recent = await getRecentPlayByPath(playingVideoContext.originalFilePath)
-      if (recent?.id) {
-        saveStateRef.current.recentId = recent.id
-        return recent.id
+      if (fileId) {
+        saveStateRef.current.recentId = fileId
+        return fileId
       }
     } catch (error) {
       console.error('获取最近播放记录失败:', error)
     }
 
     return null
-  }, [playingVideoContext.originalFilePath, getRecentPlayByPath])
+  }, [playingVideoContext.originalFilePath, fileId])
 
   /**
    * 保存播放进度
@@ -124,7 +126,7 @@ export function usePlayStateSaver(): UsePlayStateSaverReturn {
         // 获取 recent play ID
         const recentId = await getRecentPlayId()
         if (!recentId) {
-          console.warn('未找到对应的最近播放记录，跳过保存进度')
+          console.warn('未找到对应的最近播放记录，跳过保存进度', recentId)
           return
         }
 

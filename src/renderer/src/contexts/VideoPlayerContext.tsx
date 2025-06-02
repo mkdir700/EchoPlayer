@@ -161,7 +161,8 @@ export function VideoPlayerProvider({
       console.log('设置播放速度:', rate)
       const internalPlayer = playerRef.current.getInternalPlayer()
       if (internalPlayer && 'playbackRate' in internalPlayer) {
-        (internalPlayer as any).playbackRate = rate
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(internalPlayer as any).playbackRate = rate
       }
     }
   }, [])
@@ -175,7 +176,8 @@ export function VideoPlayerProvider({
       // ReactPlayer 的音量属性是只读的，但我们可以通过内部播放器来设置
       const internalPlayer = playerRef.current.getInternalPlayer()
       if (internalPlayer && 'volume' in internalPlayer) {
-        (internalPlayer as any).volume = volume
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(internalPlayer as any).volume = volume
       }
     }
   }, [])

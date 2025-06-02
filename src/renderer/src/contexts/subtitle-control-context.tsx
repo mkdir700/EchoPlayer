@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react'
 import type { SubtitleItem } from '@types_/shared'
 import { SubtitleControlContext, type SubtitleControlContextType } from './SubtitleControlContext'
-import { useVideoPlaybackSettings } from '@renderer/hooks/useVideoPlaybackSettings'
+import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
@@ -11,14 +11,11 @@ export function SubtitleControlProvider({
 }: {
   children: React.ReactNode
 }): React.JSX.Element {
-  const { settings, setSingleLoop, setAutoPause } = useVideoPlaybackSettings()
+  const { isSingleLoopRef, isAutoPauseRef, updateIsSingleLoop, updateIsAutoPause } =
+    useVideoPlaybackSettingsContext()
   const { currentTimeRef, isVideoLoadedRef } = useVideoPlayerContext()
   const { subtitleItemsRef } = useSubtitleListContext()
   const { seekTo } = useVideoControls()
-
-  // 直接使用 settings 中的状态
-  const singleLoopState = settings.isSingleLoop
-  const autoPauseState = settings.isAutoPause
 
   // 内部状态管理
   const singleLoopSubtitleRef = useRef<SubtitleItem | null>(null)
@@ -41,13 +38,13 @@ export function SubtitleControlProvider({
 
   // 切换单句循环
   const toggleSingleLoop = useCallback((): void => {
-    const newSingleLoop = !settings.isSingleLoop
+    const newSingleLoop = !isSingleLoopRef.current
     const currentIndex = getCurrentSubtitleIndex()
     const currentSubtitle = subtitleItemsRef.current?.[currentIndex]
 
     console.log(
       '🔄 toggleSingleLoop: 当前状态 =',
-      settings.isSingleLoop,
+      isSingleLoopRef.current,
       '=> 新状态 =',
       newSingleLoop
     )
@@ -68,12 +65,12 @@ export function SubtitleControlProvider({
       lastLoopTimeRef.current = 0
       console.log('🔄 关闭单句循环')
     }
-    setSingleLoop(newSingleLoop)
-  }, [setSingleLoop, settings.isSingleLoop, getCurrentSubtitleIndex, subtitleItemsRef])
+    updateIsSingleLoop(newSingleLoop)
+  }, [updateIsSingleLoop, isSingleLoopRef, getCurrentSubtitleIndex, subtitleItemsRef])
 
   // 切换自动暂停
   const toggleAutoPause = useCallback((): void => {
-    const newAutoPause = !settings.isAutoPause
+    const newAutoPause = !isAutoPauseRef.current
     const currentIndex = getCurrentSubtitleIndex()
 
     if (newAutoPause) {
@@ -83,8 +80,8 @@ export function SubtitleControlProvider({
       console.log('⏸️ 关闭自动暂停')
       lastSubtitleIndexRef.current = -1
     }
-    setAutoPause(newAutoPause)
-  }, [setAutoPause, settings.isAutoPause, getCurrentSubtitleIndex])
+    updateIsAutoPause(newAutoPause)
+  }, [updateIsAutoPause, isAutoPauseRef, getCurrentSubtitleIndex])
 
   // 跳转到下一句字幕
   const goToNextSubtitle = useCallback((): void => {
@@ -112,7 +109,7 @@ export function SubtitleControlProvider({
       if (nextSubtitle) {
         seekTo(nextSubtitle.startTime)
 
-        if (settings.isSingleLoop) {
+        if (isSingleLoopRef.current) {
           singleLoopSubtitleRef.current = nextSubtitle
           console.log('🔄 单句循环：切换到下一句字幕', {
             index: nextIndex,
@@ -122,19 +119,19 @@ export function SubtitleControlProvider({
           })
         }
 
-        if (settings.isAutoPause) {
+        if (isAutoPauseRef.current) {
           lastSubtitleIndexRef.current = nextIndex
         }
       }
     }
   }, [
+    subtitleItemsRef,
     getCurrentSubtitleIndex,
-    currentTimeRef,
     isVideoLoadedRef,
+    currentTimeRef,
     seekTo,
-    settings.isSingleLoop,
-    settings.isAutoPause,
-    subtitleItemsRef
+    isSingleLoopRef,
+    isAutoPauseRef
   ])
 
   // 跳转到上一句字幕
@@ -169,7 +166,7 @@ export function SubtitleControlProvider({
       if (prevSubtitle) {
         seekTo(prevSubtitle.startTime)
 
-        if (settings.isSingleLoop) {
+        if (isSingleLoopRef.current) {
           singleLoopSubtitleRef.current = prevSubtitle
           console.log('🔄 单句循环：切换到上一句字幕', {
             index: prevIndex,
@@ -179,36 +176,36 @@ export function SubtitleControlProvider({
           })
         }
 
-        if (settings.isAutoPause) {
+        if (isAutoPauseRef.current) {
           lastSubtitleIndexRef.current = prevIndex
         }
       }
     }
   }, [
+    subtitleItemsRef,
     getCurrentSubtitleIndex,
-    currentTimeRef,
     isVideoLoadedRef,
+    currentTimeRef,
     seekTo,
-    settings.isSingleLoop,
-    settings.isAutoPause,
-    subtitleItemsRef
+    isSingleLoopRef,
+    isAutoPauseRef
   ])
 
   // 重置状态
   const resetState = useCallback((): void => {
-    setSingleLoop(false)
-    setAutoPause(false)
+    updateIsSingleLoop(false)
+    updateIsAutoPause(false)
     singleLoopSubtitleRef.current = null
     lastLoopTimeRef.current = 0
     lastSubtitleIndexRef.current = -1
     console.log('🔄 重置字幕控制状态')
-  }, [setAutoPause, setSingleLoop])
+  }, [updateIsAutoPause, updateIsSingleLoop])
 
   // 恢复状态
   const restoreState = useCallback(
     (isSingleLoop: boolean, isAutoPause: boolean): void => {
-      setSingleLoop(isSingleLoop)
-      setAutoPause(isAutoPause)
+      updateIsSingleLoop(isSingleLoop)
+      updateIsAutoPause(isAutoPause)
 
       singleLoopSubtitleRef.current = null
       lastLoopTimeRef.current = 0
@@ -216,13 +213,13 @@ export function SubtitleControlProvider({
 
       console.log('🔄 恢复字幕控制状态:', { isSingleLoop, isAutoPause })
     },
-    [setAutoPause, setSingleLoop, getCurrentSubtitleIndex]
+    [updateIsAutoPause, updateIsSingleLoop, getCurrentSubtitleIndex]
   )
 
   // 获取当前状态 - 使用订阅机制确保状态同步
   const contextValue: SubtitleControlContextType = {
-    isSingleLoop: singleLoopState,
-    isAutoPause: autoPauseState,
+    isSingleLoop: isSingleLoopRef.current,
+    isAutoPause: isAutoPauseRef.current,
     toggleSingleLoop,
     toggleAutoPause,
     goToNextSubtitle,

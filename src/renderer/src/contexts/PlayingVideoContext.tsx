@@ -1,5 +1,5 @@
 import React from 'react'
-import { useFileUpload } from '../hooks/useVideoUpload'
+import { useVideoFile } from '../hooks/useVideoFile'
 import { PlayingVideoContext, type IPlayingVideoContextType } from './playing-video-context'
 
 export function PlayingVideoProvider({
@@ -7,7 +7,7 @@ export function PlayingVideoProvider({
 }: {
   children: React.ReactNode
 }): React.JSX.Element {
-  const value: IPlayingVideoContextType = useFileUpload()
+  const value: IPlayingVideoContextType = useVideoFile()
 
   return <PlayingVideoContext.Provider value={value}>{children}</PlayingVideoContext.Provider>
 }

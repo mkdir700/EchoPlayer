@@ -3,10 +3,7 @@ import { Button, Tooltip } from 'antd'
 import { TranslationOutlined } from '@ant-design/icons'
 import type { DisplayMode } from '@renderer/types'
 import styles from '../VideoControlsCompact.module.css'
-import {
-  useSubtitleDisplayMode,
-  useSubtitleDisplayModeControls
-} from '@renderer/hooks/useSubtitleDisplayMode'
+import { useSubtitleDisplayModeControls } from '@renderer/hooks/useSubtitleDisplayMode'
 import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
 
 // 显示模式配置
@@ -20,8 +17,7 @@ const DISPLAY_MODE_CONFIG = {
 
 export function SubtitleModeSelector(): React.JSX.Element {
   // 使用新的订阅模式 hooks
-  const currentDisplayMode = useSubtitleDisplayMode()
-  const { setDisplayMode, toggleDisplayMode } = useSubtitleDisplayModeControls()
+  const { displayMode, setDisplayMode, toggleDisplayMode } = useSubtitleDisplayModeControls()
   // 注册快捷键 - 使用稳定的引用避免重新绑定
   useShortcutCommand('toggleSubtitleMode', toggleDisplayMode)
 
@@ -57,8 +53,8 @@ export function SubtitleModeSelector(): React.JSX.Element {
   }, [showSubtitleModeSelector])
 
   // 获取当前模式的配置
-  const validDisplayMode = Object.keys(DISPLAY_MODE_CONFIG).includes(currentDisplayMode)
-    ? currentDisplayMode
+  const validDisplayMode = Object.keys(DISPLAY_MODE_CONFIG).includes(displayMode)
+    ? displayMode
     : 'bilingual'
   const currentModeConfig = DISPLAY_MODE_CONFIG[validDisplayMode]
 
@@ -84,7 +80,7 @@ export function SubtitleModeSelector(): React.JSX.Element {
           {Object.entries(DISPLAY_MODE_CONFIG).map(([mode, config]) => (
             <Button
               key={mode}
-              type={currentDisplayMode === mode ? 'primary' : 'text'}
+              type={displayMode === mode ? 'primary' : 'text'}
               size="small"
               onClick={async () => {
                 await setDisplayMode(mode as DisplayMode)

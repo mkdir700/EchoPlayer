@@ -117,6 +117,10 @@ const storeAPI = {
   getRecentPlayByPath: (filePath: string): Promise<RecentPlayItem | null> =>
     ipcRenderer.invoke('store:get-recent-play-by-path', filePath),
 
+  // 根据文件ID获取最近播放项
+  getRecentPlayByFileId: (fileId: string): Promise<RecentPlayItem | null> =>
+    ipcRenderer.invoke('store:get-recent-play-by-file-id', fileId),
+
   // 获取设置
   getSettings: (): Promise<StoreSettings> => ipcRenderer.invoke('store:get-settings'),
 

@@ -10,6 +10,7 @@ import {
 import { useRecentPlayList } from '@renderer/hooks/useRecentPlayList'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { useVideoFileSelection } from '@renderer/hooks/useVideoFileSelection'
 import { formatTime } from '@renderer/utils/helpers'
 import { diagnoseAudioIssues } from '@renderer/utils/videoCompatibility'
 import type { RecentPlayItem } from '@renderer/types'
@@ -24,32 +25,59 @@ interface HomePageProps {
 export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element {
   // 使用自定义 Hooks
   const videoControls = useVideoControls()
-  const { recentPlays, removeRecentPlay, clearRecentPlays, addRecentPlay } = useRecentPlayList()
+  const { recentPlays, removeRecentPlay, clearRecentPlays, addRecentPlay, updateRecentPlay } =
+    useRecentPlayList()
   const playingVideoContext = usePlayingVideoContext()
+  const { handleVideoFileSelect: selectVideoFile } = useVideoFileSelection()
 
   // 处理视频文件选择(首次打开)
   const handleVideoFileSelect = useCallback(async (): Promise<boolean> => {
-    const result = await playingVideoContext.handleVideoFileSelect(videoControls.resetVideoState)
-    if (!result.success) {
+    let selectedFileInfo: { url: string; fileName: string; filePath: string } | null = null
+
+    // 使用拆分的视频选择hook，并暂存文件信息
+    const result = await selectVideoFile(
+      (fileId: string, url: string, fileName: string, filePath: string) => {
+        // 暂存文件信息，等添加到最近播放记录后再设置
+        selectedFileInfo = { url, fileName, filePath }
+      },
+      videoControls.resetVideoState
+    )
+
+    if (!result.success || !selectedFileInfo) {
       console.error('❌ 无法选择视频文件')
       return false
     }
 
-    // 文件选择成功后，handleVideoFileSelect 已经通过 setVideoFile 设置了视频文件
-    // 现在我们需要添加到最近播放记录
+    // 文件选择成功后，现在我们需要添加到最近播放记录
     const { filePath, fileName } = result
+    const { url } = selectedFileInfo
 
     console.log('🎬 文件选择成功:', { filePath, fileName })
     if (filePath && fileName) {
       // 更新最近播放记录
-      await addRecentPlay({
+      const { success, fileId } = await addRecentPlay({
         filePath: filePath,
         fileName: fileName,
         duration: 0,
         currentTime: 0,
         subtitleFile: '',
-        subtitleItems: []
+        subtitleItems: [],
+        videoPlaybackSettings: {
+          displayMode: 'bilingual',
+          volume: 1,
+          playbackRate: 1,
+          isSingleLoop: false,
+          isAutoPause: false
+        }
       })
+      if (success && fileId) {
+        console.log('🎬 添加最近播放记录成功:', fileId)
+        // 现在用正确的 fileId 设置视频文件
+        playingVideoContext.setVideoFile(fileId, url, fileName, filePath)
+      } else {
+        console.error('❌ 添加最近播放记录失败')
+        return false
+      }
     }
 
     console.log('🎬 导航前检查 playingVideoContext 状态:', {
@@ -60,7 +88,13 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
 
     onNavigateToPlay()
     return result.success
-  }, [playingVideoContext, videoControls.resetVideoState, addRecentPlay, onNavigateToPlay])
+  }, [
+    selectVideoFile,
+    playingVideoContext,
+    videoControls.resetVideoState,
+    addRecentPlay,
+    onNavigateToPlay
+  ])
 
   // 处理打开项目
   const handleOpenResouce = useCallback(
@@ -95,13 +129,14 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
             okText: '移除',
             cancelText: '取消',
             onOk: () => {
-              removeRecentPlay(item.id)
+              removeRecentPlay(item.fileId)
             }
           })
           return false
         }
 
         console.log('🎬 准备设置视频文件:', {
+          fileId: item.fileId,
           filePath: item.filePath,
           fileName: item.fileName,
           currentTime: item.currentTime
@@ -117,7 +152,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
         console.log('🔗 生成的视频文件 URL:', fileUrl)
 
         // 设置视频文件
-        playingVideoContext.setVideoFile(fileUrl, item.fileName, item.filePath)
+        playingVideoContext.setVideoFile(item.fileId, fileUrl, item.fileName, item.filePath)
 
         // 如果有保存的播放时间，恢复播放位置
         if (item.currentTime && item.currentTime > 0) {
@@ -125,14 +160,8 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           videoControls.restoreVideoState(item.currentTime, 1, 0.8)
         }
 
-        // 更新最近播放记录的最后打开时间，但保持原有的播放进度和字幕数据
-        await addRecentPlay({
-          filePath: item.filePath,
-          fileName: item.fileName,
-          duration: item.duration,
-          currentTime: item.currentTime, // 保持原有的播放进度
-          subtitleFile: item.subtitleFile,
-          subtitleItems: item.subtitleItems // 保持原有的字幕数据
+        await updateRecentPlay(item.fileId, {
+          lastOpenedAt: Date.now()
         })
 
         onNavigateToPlay()
@@ -142,7 +171,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
         return false
       }
     },
-    [playingVideoContext, addRecentPlay, onNavigateToPlay, removeRecentPlay, videoControls]
+    [playingVideoContext, onNavigateToPlay, removeRecentPlay, videoControls, updateRecentPlay]
   )
 
   // 处理移除最近文件
@@ -261,7 +290,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           ) : (
             <Row gutter={[24, 24]} className={styles.videoGrid}>
               {recentPlays.slice(0, 8).map((item) => (
-                <Col xs={12} sm={8} md={6} lg={4} xl={4} key={item.id}>
+                <Col xs={12} sm={8} md={6} lg={4} xl={4} key={item.fileId}>
                   <div
                     onClick={() => {
                       console.log('卡片被点击了！', item.fileName)
@@ -291,7 +320,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                                 icon={<DeleteOutlined />}
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  showDeleteConfirm(item.id, item.fileName)
+                                  showDeleteConfirm(item.fileId, item.fileName)
                                 }}
                                 className={styles.deleteIcon}
                               />

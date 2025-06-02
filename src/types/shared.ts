@@ -48,7 +48,7 @@ export interface VideoPlaybackSettings {
 
 // 播放项接口
 export interface RecentPlayItem {
-  id: string // 唯一ID
+  fileId: string // 文件ID
   filePath: string // 文件路径
   fileName: string // 文件名
   lastOpenedAt: number // 最后打开时间
@@ -56,11 +56,12 @@ export interface RecentPlayItem {
   currentTime?: number // 当前播放时间
   subtitleFile?: string // 字幕文件路径
   subtitleItems?: SubtitleItem[] // 字幕数据
-  videoPlaybackSettings?: VideoPlaybackSettings // 视频级别的播放设置
+  videoPlaybackSettings: VideoPlaybackSettings // 视频级别的播放设置
 }
 
-// 全局播放设置接口（保持向后兼容）
-export interface PlaybackSettings {
+// 全局播放设置接口（保持向后兼容）， 和单视频的配置区分开的
+// 如果单视频的配置不存在则使用全局配置
+export interface GlobalPlaybackSettings {
   displayMode: 'none' | 'original' | 'chinese' | 'english' | 'bilingual' // 字幕显示模式
   volume: number // 音量
   playbackRate: number // 播放速度
@@ -71,7 +72,7 @@ export interface PlaybackSettings {
 // 存储设置接口
 export interface StoreSettings {
   maxRecentItems: number
-  playback: PlaybackSettings // 播放设置
+  playback: GlobalPlaybackSettings // 播放设置
 }
 
 // 存储结构接口
@@ -84,6 +85,7 @@ export interface StoreSchema {
 export interface ApiResponse {
   success: boolean
   error?: string
+  fileId?: string
 }
 
 export interface ApiResponseWithCount extends ApiResponse {

@@ -65,17 +65,23 @@ interface DictionaryAPI {
 
 interface StoreAPI {
   getRecentPlays: () => Promise<RecentPlayItem[]>
-  addRecentPlay: (item: Omit<RecentPlayItem, 'id' | 'lastOpenedAt'>) => Promise<ApiResponse>
+  addRecentPlay: (item: Omit<RecentPlayItem, 'fileId' | 'lastOpenedAt'>) => Promise<ApiResponse>
   updateRecentPlay: (
-    id: string,
-    updates: Partial<Omit<RecentPlayItem, 'id'>>
+    fileId: string,
+    updates: Partial<Omit<RecentPlayItem, 'fileId'>>
   ) => Promise<ApiResponse>
-  removeRecentPlay: (id: string) => Promise<ApiResponse>
+  getRecentPlayByFileId: (fileId: string) => Promise<RecentPlayItem | null>
+  getPlaybackSettingsByFileId: (fileId: string) => Promise<VideoPlaybackSettings>
+  updatePlaybackSettingsByFileId: (
+    fileId: string,
+    updates: Partial<VideoPlaybackSettings>
+  ) => Promise<ApiResponse>
+  removeRecentPlay: (fileId: string) => Promise<ApiResponse>
   clearRecentPlays: () => Promise<ApiResponse>
   getRecentPlayByPath: (filePath: string) => Promise<RecentPlayItem | null>
   getSettings: () => Promise<StoreSettings>
   updateSettings: (settings: Partial<StoreSettings>) => Promise<ApiResponse>
-  removeMultipleRecentPlays: (ids: string[]) => Promise<ApiResponseWithCount>
+  removeMultipleRecentPlays: (fileIds: string[]) => Promise<ApiResponseWithCount>
   searchRecentPlays: (query: string) => Promise<RecentPlayItem[]>
 }
 

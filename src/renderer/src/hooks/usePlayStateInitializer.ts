@@ -147,20 +147,6 @@ export function usePlayStateInitializer({
           if (hasRestoredSubtitles) {
             return
           }
-        } else {
-          // 新视频文件，添加到最近播放列表
-          console.log('📹 检测到新视频文件，添加到最近播放:', {
-            originalFilePath: currentFilePath,
-            videoFileName: currentFileName
-          })
-
-          await addRecentPlayRef.current({
-            filePath: currentFilePath,
-            fileName: currentFileName || '',
-            duration: 0,
-            currentTime: 0,
-            subtitleFile: undefined
-          })
         }
       } catch (error) {
         console.error('恢复保存数据失败:', error)
@@ -185,9 +171,9 @@ export function usePlayStateInitializer({
     loadPlayState()
     isInitializedRef.current = true
   }, [
-    // 🚀 只监听真正需要的依赖
     playingVideoContext.originalFilePath,
-    playingVideoContext.videoFile
+    playingVideoContext.videoFile,
+    playingVideoContext.videoFileName
   ])
 
   return {

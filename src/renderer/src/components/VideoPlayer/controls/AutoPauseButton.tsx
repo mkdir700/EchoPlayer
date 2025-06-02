@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Button, Tooltip } from 'antd'
 import { PauseCircleFilled } from '@ant-design/icons'
-import { useVideoPlaybackSettings } from '@renderer/hooks/useVideoPlaybackSettings'
+import { useIsAutoPause } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
 import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
 import styles from '../VideoControlsCompact.module.css'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
@@ -12,9 +12,8 @@ interface AutoPauseButtonProps {
 }
 
 export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.JSX.Element {
-  const { settings } = useVideoPlaybackSettings()
+  const isAutoPause = useIsAutoPause()
   const subtitleControl = useSubtitleControl()
-  const [isAutoPauseDisplay, setIsAutoPauseDisplay] = useState(settings.isAutoPause)
 
   // 自动暂停相关状态
   const {
@@ -29,13 +28,7 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
 
   const handleAutoPauseToggle = useCallback(() => {
     subtitleControl.toggleAutoPause()
-    setIsAutoPauseDisplay(!isAutoPauseDisplay)
-  }, [subtitleControl, isAutoPauseDisplay])
-
-  // 同步本地显示状态与全局状态
-  useEffect(() => {
-    setIsAutoPauseDisplay(settings.isAutoPause)
-  }, [settings.isAutoPause])
+  }, [subtitleControl])
 
   // 内部状态管理
   const lastSubtitleIndexRef = useRef<number>(-1)
@@ -57,7 +50,7 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
 
   // 处理自动暂停逻辑
   useEffect(() => {
-    if (!isAutoPauseDisplay) {
+    if (!isAutoPause) {
       // 清理状态
       lastSubtitleIndexRef.current = -1
       shouldPauseRef.current = false
@@ -65,7 +58,7 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
     }
 
     const handleTimeUpdate = (currentTime: number): void => {
-      if (!isAutoPauseDisplay || !isVideoLoadedRef.current || !isPlayingRef.current) {
+      if (!isAutoPause || !isVideoLoadedRef.current || !isPlayingRef.current) {
         return
       }
 
@@ -97,7 +90,7 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
     const unsubscribe = subscribeToTime(handleTimeUpdate)
     return unsubscribe
   }, [
-    isAutoPauseDisplay,
+    isAutoPause,
     pause,
     subscribeToTime,
     getCurrentSubtitleIndex,
@@ -108,7 +101,7 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
 
   // 监听播放状态变化，重置自动暂停标记
   useEffect(() => {
-    if (!isAutoPauseDisplay) {
+    if (!isAutoPause) {
       return
     }
 
@@ -121,10 +114,10 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
 
     const unsubscribe = subscribeToPlayState(handlePlayStateChange)
     return unsubscribe
-  }, [subscribeToPlayState, isAutoPauseDisplay])
+  }, [subscribeToPlayState, isAutoPause])
 
   return (
-    <Tooltip title={isAutoPauseDisplay ? '关闭自动暂停' : '开启自动暂停'}>
+    <Tooltip title={isAutoPause ? '关闭自动暂停' : '开启自动暂停'}>
       <Button
         icon={<PauseCircleFilled />}
         onClick={(e) => {
@@ -132,7 +125,7 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
           e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
         }}
         type="text"
-        className={`${styles.controlBtn} ${isAutoPauseDisplay ? styles.activeBtn : ''}`}
+        className={`${styles.controlBtn} ${isAutoPause ? styles.activeBtn : ''}`}
         disabled={!isVideoLoaded}
         size="small"
       />
