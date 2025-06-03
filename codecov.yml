@@ -1,0 +1,50 @@
+# MVP阶段的Codecov配置 - 优先开发速度，保持合理的质量基线
+codecov:
+  require_ci_to_pass: no # MVP阶段不阻塞CI，允许快速迭代
+
+coverage:
+  precision: 1
+  round: down
+  range: '50...100' # 降低覆盖率范围期望
+
+  status:
+    project:
+      default:
+        target: 60% # MVP阶段设置较低的项目覆盖率目标
+        threshold: 5% # 允许较大的覆盖率波动
+        base: auto
+        if_ci_failed: ignore # 即使CI失败也不影响覆盖率状态
+    patch:
+      default:
+        target: 50% # 新代码补丁的覆盖率要求较低
+        threshold: 10% # 允许更大的补丁覆盖率波动
+        if_ci_failed: ignore
+
+comment:
+  layout: 'reach,diff' # MVP阶段简化评论布局
+  behavior: default
+  require_changes: yes # 只在有变化时评论，减少噪音
+  require_base: no # 不要求基础分支覆盖率
+  require_head: no # 不要求头部分支覆盖率
+
+ignore:
+  - 'src/test/'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/*.spec.ts'
+  - '**/*.spec.tsx'
+  - '**/*.d.ts'
+  - '**/*.config.*'
+  - 'out/'
+  - 'build/'
+  - 'resources/'
+  - 'node_modules/'
+  - 'scripts/'
+  - 'docs/'
+  - 'icons/' # MVP阶段可能经常变动的资源文件
+  - 'electron.vite.config.ts' # 配置文件
+  - 'vitest.config.ts'
+  - 'eslint.config.mjs'
+  - '**/*.stories.*' # 如果有Storybook文件
+  - '**/demo/**' # 演示代码
+  - '**/examples/**' # 示例代码
