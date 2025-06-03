@@ -38,6 +38,7 @@ export interface UseRecentPlayListReturn {
 
 export function useRecentPlayList(): UseRecentPlayListReturn {
   const [recentPlays, setRecentPlays] = useState<RecentPlayItem[]>([])
+  // TODO: 待优化，在这里使用默认值很奇怪
   const [settings, setSettings] = useState<StoreSettings>({
     maxRecentItems: 20,
     playback: {
@@ -46,6 +47,9 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
       playbackRate: 1,
       isSingleLoop: false,
       isAutoPause: false
+    },
+    update: {
+      autoUpdate: true
     }
   })
   const [loading, setLoading] = useState(true)
