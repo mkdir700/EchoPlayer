@@ -2153,3 +2153,347 @@ switch (displayMode) {
 - 自定义比较函数应该只比较影响渲染的关键属性
 - 所有优化组件都应该添加 displayName 以便调试
 - 重要组件应该添加渲染日志进行性能监控
+
+## 核心架构
+
+### 字幕状态管理 - 最新重构 (v2024.12)
+
+**重构说明**：字幕状态管理已从独立的 `useSubtitleState` 迁移到 `useVideoPlaybackSettings` 中进行统一管理。
+
+#### 新的架构设计
+
+```typescript
+// 统一的播放设置管理 - 包含字幕状态
+const playbackSettings = useVideoPlaybackSettings()
+
+// 字幕相关操作
+playbackSettings.updateSubtitleMargins(margins)
+playbackSettings.updateSubtitleBackgroundType('blur')
+playbackSettings.toggleBackgroundType()
+playbackSettings.toggleMaskMode(width, height, aspectRatio)
+
+// 获取字幕状态
+const subtitleDisplay = playbackSettings.getSubtitleDisplay()
+const margins = playbackSettings.getSubtitleMargins()
+const backgroundType = playbackSettings.getSubtitleBackgroundType()
+```
+
+#### 迁移指南
+
+**旧的用法**：
+```typescript
+// ❌ 旧版本 - 分离的状态管理
+import { useSubtitleState } from '@renderer/hooks/useSubtitleState'
+
+const { subtitleState, updateSubtitleState, toggleBackgroundType } = 
+  useSubtitleState(width, height, aspectRatio)
+```
+
+**新的用法**：
+```typescript
+// ✅ 新版本 - 统一的播放设置管理
+import { useVideoPlaybackSettings } from '@renderer/hooks/useVideoPlaybackSettings'
+
+const playbackSettings = useVideoPlaybackSettings()
+
+// 直接使用字幕相关方法
+playbackSettings.updateSubtitleMargins(newMargins)
+playbackSettings.toggleBackgroundType()
+
+// 或使用兼容性层
+import { useSubtitleDisplaySettings } from '@renderer/hooks/useSubtitleState'
+const subtitleSettings = useSubtitleDisplaySettings(width, height, aspectRatio)
+```
+
+#### 类型定义
+
+```typescript
+// 字幕显示设置 - 存储在播放设置中
+interface SubtitleDisplaySettings {
+  margins: SubtitleMargins
+  backgroundType: BackgroundType
+  isMaskMode: boolean
+  maskFrame: MaskFrame
+}
+
+// 视频播放设置 - 包含字幕设置
+interface VideoPlaybackSettings {
+  displayMode: 'none' | 'original' | 'chinese' | 'english' | 'bilingual'
+  volume: number
+  playbackRate: number
+  isSingleLoop: boolean
+  isAutoPause: boolean
+  subtitleDisplay?: SubtitleDisplaySettings // 字幕显示配置
+}
+```
+
+#### 数据存储
+
+- **全局设置**：存储在 `StoreSettings.playback` 中
+- **视频特定设置**：存储在 `RecentPlayItem.videoPlaybackSettings` 中
+- **字幕设置**：作为 `VideoPlaybackSettings.subtitleDisplay` 的一部分
+
+#### 兼容性
+
+为保持向后兼容，保留了 `useSubtitleState` hook，但它现在作为兼容性层委托给 `useVideoPlaybackSettings`：
+
+```typescript
+// 兼容性层 - 逐步迁移
+export const useSubtitleState = (width, height, aspectRatio) => {
+  const playbackSettings = useVideoPlaybackSettings()
+  // ... 将调用委托给 playbackSettings
+}
+
+// 推荐的新 API
+export const useSubtitleDisplaySettings = (width, height, aspectRatio) => {
+  // 提供更清晰的字幕设置接口
+}
+```
+
+### 技术栈
+
+- **主进程**: Electron + Node.js
+- **渲染进程**: React 18 + TypeScript + Vite
+- **状态管理**: React Context + Hooks
+- **数据持久化**: electron-store
+- **样式**: CSS Modules + CSS 变量
+- **构建**: electron-builder
+
+### 项目结构
+
+```
+src/
+├── main/           # 主进程代码
+├── preload/        # 预加载脚本
+├── renderer/       # 渲染进程代码
+│   ├── src/
+│   │   ├── components/  # React 组件
+│   │   ├── hooks/      # 自定义 Hooks
+│   │   ├── contexts/   # React Context
+│   │   ├── types/      # TypeScript 类型
+│   │   ├── utils/      # 工具函数
+│   │   └── styles/     # 样式文件
+│   └── ...
+└── types/          # 共享类型定义
+```
+
+## 核心功能模块
+
+### 1. 视频播放管理
+
+**主要组件**：
+- `VideoPlayer` - 核心视频播放器
+- `VideoControls` - 播放控制器
+- `VideoSection` - 视频区域容器
+
+**核心 Hooks**：
+- `useVideoPlayerContext` - 视频播放器状态
+- `useVideoPlaybackSettings` - 播放设置管理（包含字幕）
+- `useVideoPlayerHooks` - 播放器操作集合
+
+### 2. 字幕系统
+
+**主要组件**：
+- `SubtitleV3` - 字幕显示组件
+- `SubtitleControls` - 字幕控制器
+- `MaskFrame` - 字幕定位框
+
+**核心 Hooks**：
+- `useVideoPlaybackSettings` - 统一的字幕状态管理
+- `useSubtitleDisplaySettings` - 现代化字幕设置接口
+- `useSubtitleState` - 兼容性层（逐步废弃）
+
+### 3. 播放列表管理
+
+**主要组件**：
+- `RecentPlayList` - 最近播放列表
+- `PlayListItem` - 播放项组件
+
+**核心 Hooks**：
+- `useRecentPlayList` - 播放列表管理
+- `usePlayingVideoContext` - 当前播放视频状态
+
+## 开发规范
+
+### 代码组织
+
+1. **组件命名**：使用 PascalCase，文件名与组件名一致
+2. **Hook 命名**：使用 camelCase，以 `use` 开头
+3. **类型定义**：使用 PascalCase，接口以 `I` 开头或直接使用描述性名称
+4. **文件结构**：每个组件一个文件夹，包含 `.tsx`、`.module.css` 和必要的子组件
+
+### 状态管理模式
+
+```typescript
+// Context Provider 模式
+export function VideoPlaybackSettingsProvider({ children }) {
+  const value = useVideoPlaybackSettings()
+  return (
+    <VideoPlaybackSettingsContext.Provider value={value}>
+      {children}
+    </VideoPlaybackSettingsContext.Provider>
+  )
+}
+
+// Hook 消费模式
+export function useVideoPlaybackSettingsContext() {
+  const context = useContext(VideoPlaybackSettingsContext)
+  if (!context) {
+    throw new Error('useVideoPlaybackSettingsContext must be used within a VideoPlaybackSettingsProvider')
+  }
+  return context
+}
+```
+
+### 性能优化策略
+
+1. **memo 优化**：对于频繁渲染的组件使用 `React.memo`
+2. **回调稳定性**：使用 `useCallback` 和 `useMemo` 避免不必要的重渲染
+3. **状态分离**：将不同关注点的状态分离到不同的 Context 中
+4. **懒加载**：对于非关键路径的组件使用 `React.lazy`
+
+### 错误处理
+
+```typescript
+// 统一错误处理模式
+try {
+  const result = await someAsyncOperation()
+  // 处理成功情况
+} catch (error) {
+  console.error('操作失败:', error)
+  // 用户友好的错误提示
+}
+```
+
+## API 设计原则
+
+### Hook 设计
+
+1. **单一职责**：每个 Hook 只负责一个特定的功能域
+2. **返回值一致性**：返回对象包含状态和操作方法
+3. **类型安全**：完整的 TypeScript 类型定义
+4. **向后兼容**：提供兼容性层支持渐进式迁移
+
+### 组件接口
+
+```typescript
+interface ComponentProps {
+  // 必需属性
+  data: DataType
+  onAction: (item: DataType) => void
+  
+  // 可选属性
+  className?: string
+  style?: React.CSSProperties
+  
+  // 回调函数
+  onError?: (error: Error) => void
+}
+```
+
+## 测试策略
+
+### 单元测试
+
+- 使用 Vitest 进行单元测试
+- 重点测试 Hook 和工具函数
+- 模拟外部依赖
+
+### 集成测试
+
+- 测试组件间的交互
+- 验证数据流的正确性
+- 测试错误边界
+
+## 构建和部署
+
+### 开发环境
+
+```bash
+# 安装依赖
+pnpm install
+
+# 启动开发服务器
+pnpm dev
+
+# 类型检查
+pnpm type-check
+```
+
+### 生产构建
+
+```bash
+# 构建应用
+pnpm build
+
+# 打包分发版本
+pnpm dist
+```
+
+## 常见问题和解决方案
+
+### 字幕状态迁移
+
+**问题**：从旧版 `useSubtitleState` 迁移到新版 `useVideoPlaybackSettings`
+
+**解决方案**：
+1. 使用兼容性层进行渐进式迁移
+2. 新组件直接使用 `useVideoPlaybackSettings` 或 `useSubtitleDisplaySettings`
+3. 旧组件可继续使用 `useSubtitleState`，它会自动委托给新的管理系统
+
+### 性能优化
+
+**问题**：组件频繁重渲染
+
+**解决方案**：
+1. 使用 `React.memo` 包装纯组件
+2. 使用 `useCallback` 稳定函数引用
+3. 使用 `useMemo` 缓存计算结果
+4. 检查依赖数组，避免不必要的依赖
+
+### 类型安全
+
+**问题**：TypeScript 类型错误
+
+**解决方案**：
+1. 定义完整的接口类型
+2. 使用泛型约束
+3. 利用类型守卫进行运行时检查
+4. 使用严格的 tsconfig 配置
+
+## 最佳实践
+
+### 1. 组件设计
+
+- **单一职责原则**：每个组件只负责一个特定功能
+- **组合优于继承**：使用组合模式构建复杂组件
+- **Props 接口设计**：清晰、类型安全的 Props 定义
+
+### 2. 状态管理
+
+- **就近原则**：状态尽可能接近使用它的组件
+- **状态提升**：共享状态提升到最近的公共父组件
+- **Context 使用**：仅用于真正需要跨多层组件传递的状态
+
+### 3. 性能考虑
+
+- **避免在渲染时创建对象**：使用 `useMemo` 和 `useCallback`
+- **条件渲染优化**：使用 `&&` 操作符进行条件渲染
+- **列表渲染优化**：提供稳定的 `key` 属性
+
+## 更新日志
+
+### v2024.12 - 字幕状态管理重构
+
+- ✅ 将字幕状态管理集成到 `useVideoPlaybackSettings`
+- ✅ 提供 `useSubtitleDisplaySettings` 现代化接口
+- ✅ 保持 `useSubtitleState` 兼容性层
+- ✅ 统一数据存储到播放设置中
+- ✅ 更新类型定义和文档
+
+### 未来计划
+
+- [ ] 完全迁移所有组件到新的字幕状态管理
+- [ ] 优化播放设置的数据库存储结构
+- [ ] 增强字幕编辑功能
+- [ ] 添加更多字幕显示选项
