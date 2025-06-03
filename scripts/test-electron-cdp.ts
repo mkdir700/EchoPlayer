@@ -1,8 +1,8 @@
-const { spawn } = require('child_process')
-const { resolve } = require('path')
-const os = require('os')
+import { spawn } from 'child_process'
+import { resolve } from 'path'
+import os from 'os'
 
-async function testElectronCDP() {
+async function testElectronCDP(): Promise<void> {
   console.log('🧪 Testing Electron CDP connection...')
 
   const isWindows = os.platform() === 'win32'
@@ -70,7 +70,7 @@ async function testElectronCDP() {
       console.log('❌ List endpoint failed:', listResponse.status)
     }
   } catch (error) {
-    console.log('❌ CDP connection failed:', error.message)
+    console.log('❌ CDP connection failed:', error instanceof Error ? error.message : String(error))
   }
 
   // Clean up
