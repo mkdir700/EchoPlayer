@@ -12,10 +12,20 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+asar: true
+copyright: Copyright © 2025 EchoLab
 win:
   executableName: echolab
   icon: icons/win/icon.ico
+  artifactName: ${productName}-${version}-${arch}.${ext}
+  target:
+    - target: nsis
+      arch: [x64]
 nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: true
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
@@ -23,6 +33,12 @@ nsis:
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   icon: icons/mac/icon.icns
+  artifactName: ${productName}-${version}-${arch}.${ext}
+  target:
+    - dmg
+    - zip
+  category: public.app-category.education
+  darkModeSupport: true
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
@@ -37,13 +53,15 @@ linux:
     - snap
     - deb
   maintainer: mkdir700
-  category: Utility
+  category: Education
   icon: icons/png
+  artifactName: ${productName}-${version}-${arch}.${ext}
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
   provider: generic
   url: https://echolab.vip/auto-updates
+generateUpdatesFilesForAllChannels: true
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
