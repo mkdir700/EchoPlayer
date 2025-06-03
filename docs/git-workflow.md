@@ -26,10 +26,11 @@
 - 代码格式化
 - 统一代码风格
 
-### 5. Commitlint
+### 5. Commitlint (可选)
 
 - 检查提交消息格式
 - 确保提交消息符合约定式提交规范
+- 注意：在 Windows 环境下可能需要手动配置
 
 ## 工作流程
 
@@ -43,8 +44,9 @@
    - 对暂存的 `.json`, `.md`, `.yml`, `.yaml` 文件执行：
      - Prettier 格式化
 
-2. **commit-msg hook** (提交消息检查)
+2. **commit-msg hook** (提交消息检查，可选)
    - 检查提交消息是否符合约定式提交规范
+   - 注意：在 Windows 环境下可能需要手动配置
 
 ### 约定式提交规范
 
@@ -150,11 +152,11 @@ git commit --no-verify -m "emergency fix"
 ## 配置文件
 
 - `.husky/pre-commit`: pre-commit hook 脚本
-- `.husky/commit-msg`: commit-msg hook 脚本
 - `package.json`: lint-staged 配置
-- `commitlint.config.js`: commitlint 配置
+- `commitlint.config.js`: commitlint 配置（可选）
 - `eslint.config.mjs`: ESLint 配置
 - `.prettierrc.yaml`: Prettier 配置
+- `.prettierignore`: Prettier 忽略文件配置
 
 ## 最佳实践
 
