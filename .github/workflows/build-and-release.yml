@@ -18,6 +18,10 @@ on:
           - 'false'
           - 'true'
 
+permissions:
+  contents: write
+  pull-requests: read
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -118,6 +122,9 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
     # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
@@ -135,7 +142,7 @@ jobs:
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
           generate_release_notes: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Upload to Tencent COS - Release Files
         uses: zkqiang/tencent-cos-action@v0.1.0
