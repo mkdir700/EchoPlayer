@@ -31,8 +31,10 @@ export function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
-    if (is.dev) {
-      mainWindow.webContents.openDevTools()
+    // 只在开发模式且非测试环境下打开 DevTools
+    if (is.dev && process.env.NODE_ENV !== 'test') {
+      // 在单独的窗口中打开 DevTools
+      mainWindow.webContents.openDevTools({ mode: 'detach' })
     }
   })
 

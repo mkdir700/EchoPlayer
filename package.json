@@ -23,6 +23,10 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
     "release:prepare": "chmod +x scripts/prepare-release.sh && scripts/prepare-release.sh",
     "release:publish": "chmod +x scripts/publish-release.sh && scripts/publish-release.sh",
     "release": "pnpm release:prepare && pnpm release:publish"
@@ -72,7 +76,8 @@
     "tailwindcss": "^4.1.7",
     "typescript": "^5.8.3",
     "vite": "^6.2.6",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "@playwright/test": "^1.49.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

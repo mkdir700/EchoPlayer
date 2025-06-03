@@ -5,3 +5,11 @@ out
 .eslintcache
 *.log*
 coverage
+
+# E2E test results
+e2e-results/
+e2e-report/
+e2e-results.json
+e2e-results.xml
+test-results/
+playwright-report/
