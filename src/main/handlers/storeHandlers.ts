@@ -21,6 +21,11 @@ const store = new Conf({
         playbackRate: 1.0,
         isSingleLoop: false,
         isAutoPause: false
+      },
+      update: {
+        autoUpdate: true,
+        lastChecked: 0,
+        updateChannel: 'stable'
       }
     }
   }
@@ -228,16 +233,25 @@ export function setupStoreHandlers(): void {
             playbackRate: 1.0,
             isSingleLoop: false,
             isAutoPause: false
+          },
+          update: {
+            autoUpdate: true,
+            lastChecked: 0,
+            updateChannel: 'stable'
           }
-        })
+        }) as StoreSchema['settings']
 
-        // 深度合并设置，特别处理 playback 对象
+        // 深度合并设置，特别处理 playback 和 update 对象
         const newSettings = {
           ...currentSettings,
           ...settings,
           playback: {
             ...currentSettings.playback,
             ...(settings.playback || {})
+          },
+          update: {
+            ...currentSettings.update,
+            ...(settings.update || {})
           }
         }
 

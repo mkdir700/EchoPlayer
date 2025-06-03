@@ -4,7 +4,8 @@ import type {
   RecentPlayItem,
   StoreSettings,
   ApiResponse,
-  ApiResponseWithCount
+  ApiResponseWithCount,
+  UpdateSettings
 } from '../types/shared'
 
 // 文件系统 API
@@ -137,11 +138,61 @@ const storeAPI = {
     ipcRenderer.invoke('store:search-recent-plays', query)
 }
 
+// 更新API
+// 更新状态类型定义
+interface UpdateStatus {
+  status: 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+  info?: {
+    version: string
+    releaseDate?: string
+    releaseNotes?: string | Record<string, unknown>
+    [key: string]: unknown
+  }
+  error?: string
+  progress?: {
+    percent: number
+    bytesPerSecond: number
+    total: number
+    transferred: number
+  }
+}
+
+const updateAPI = {
+  // 检查更新
+  checkForUpdates: (options?: { silent: boolean }): Promise<UpdateStatus> =>
+    ipcRenderer.invoke('check-for-updates', options),
+
+  // 下载更新
+  downloadUpdate: (): Promise<UpdateStatus> => ipcRenderer.invoke('download-update'),
+
+  // 安装更新
+  installUpdate: (): Promise<void> => ipcRenderer.invoke('install-update'),
+
+  // 启用/禁用自动更新
+  enableAutoUpdate: (enable: boolean): Promise<void> =>
+    ipcRenderer.invoke('enable-auto-update', enable),
+
+  // 获取应用版本
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('get-app-version'),
+
+  // 获取更新设置
+  getUpdateSettings: (): Promise<UpdateSettings> => ipcRenderer.invoke('get-update-settings'),
+
+  // 保存更新设置
+  saveUpdateSettings: (settings: Partial<UpdateSettings>): Promise<UpdateSettings> =>
+    ipcRenderer.invoke('save-update-settings', settings),
+
+  // 设置更新渠道
+  setUpdateChannel: (channel: 'stable' | 'beta' | 'alpha'): Promise<UpdateSettings> =>
+    ipcRenderer.invoke('set-update-channel', channel)
+}
+
 // Custom APIs for renderer
 const api = {
   fileSystem: fileSystemAPI,
   dictionary: dictionaryAPI,
   store: storeAPI,
+  update: updateAPI,
   // 日志API
   log: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) =>
     ipcRenderer.invoke('log', level, message, data)

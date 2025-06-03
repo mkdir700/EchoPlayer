@@ -63,6 +63,26 @@ interface DictionaryAPI {
   }>
 }
 
+interface UpdateAPI {
+  checkForUpdates: (options?: { silent: boolean }) => Promise<UpdateInfoResponse>
+  downloadUpdate: () => Promise<{
+    status: 'downloading' | 'error'
+    progress?: {
+      percent: number
+      bytesPerSecond: number
+      total: number
+      transferred: number
+    }
+    error?: string
+  }>
+  installUpdate: () => Promise<void>
+  enableAutoUpdate: (enable: boolean) => Promise<void>
+  getAppVersion: () => Promise<string>
+  getUpdateSettings: () => Promise<UpdateSettings>
+  saveUpdateSettings: (settings: UpdateSettings) => Promise<void>
+  setUpdateChannel: (channel: 'stable' | 'beta' | 'alpha') => Promise<void>
+}
+
 interface StoreAPI {
   getRecentPlays: () => Promise<RecentPlayItem[]>
   addRecentPlay: (item: Omit<RecentPlayItem, 'fileId' | 'lastOpenedAt'>) => Promise<ApiResponse>
@@ -87,11 +107,18 @@ interface StoreAPI {
 
 declare global {
   interface Window {
-    electron: ElectronAPI
+    electron: ElectronAPI & {
+      ipcRenderer: {
+        invoke: (channel: string, ...args: unknown[]) => Promise<unknown>
+        on: (channel: string, listener: (...args: unknown[]) => void) => void
+        removeAllListeners: (channel: string) => void
+      }
+    }
     api: {
       fileSystem: FileSystemAPI
       dictionary: DictionaryAPI
       store: StoreAPI
+      update: UpdateAPI
       log: (
         level: 'debug' | 'info' | 'warn' | 'error',
         message: string,

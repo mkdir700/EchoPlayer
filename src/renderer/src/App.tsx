@@ -8,6 +8,7 @@ import { PlayPage } from '@renderer/pages/PlayPage'
 import { FavoritesPage } from '@renderer/pages/FavoritesPage'
 import { AboutPage } from '@renderer/pages/AboutPage'
 import { SettingsPage } from '@renderer/pages/SettingsPage'
+import UpdateNotification from '@renderer/components/UpdateNotification'
 
 import { ShortcutProvider } from '@renderer/contexts/ShortcutContext'
 import { PlayingVideoProvider } from '@renderer/contexts/PlayingVideoContext'
@@ -110,6 +111,7 @@ function App(): React.JSX.Element {
   return (
     <ShortcutProvider>
       <AppContent />
+      <UpdateNotification />
     </ShortcutProvider>
   )
 }

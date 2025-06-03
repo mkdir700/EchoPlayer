@@ -1,5 +1,8 @@
 // 共享类型定义文件 - 供主进程和渲染进程共同使用
 
+// 导入electron-updater的UpdateInfo类型
+import { UpdateInfo } from 'electron-updater'
+
 // 字幕项接口
 export interface SubtitleItem {
   startTime: number
@@ -69,10 +72,31 @@ export interface GlobalPlaybackSettings {
   isAutoPause: boolean // 自动暂停
 }
 
+// 更新状态接口
+export interface UpdateStatus {
+  status: 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+  info?: UpdateInfo
+  error?: string
+  progress?: {
+    bytesPerSecond?: number
+    percent?: number
+    total?: number
+    transferred?: number
+  }
+}
+
+// 更新设置接口
+export interface UpdateSettings {
+  autoUpdate: boolean // 是否自动检查更新
+  lastChecked?: number // 上次检查时间
+  updateChannel?: 'stable' | 'beta' | 'alpha' // 更新渠道
+}
+
 // 存储设置接口
 export interface StoreSettings {
   maxRecentItems: number
   playback: GlobalPlaybackSettings // 播放设置
+  update: UpdateSettings // 更新设置
 }
 
 // 存储结构接口
@@ -107,4 +131,10 @@ export interface StoreAPI {
   updateSettings: (settings: Partial<StoreSettings>) => Promise<ApiResponse>
   removeMultipleRecentPlays: (ids: string[]) => Promise<ApiResponseWithCount>
   searchRecentPlays: (query: string) => Promise<RecentPlayItem[]>
+}
+
+export interface UpdateInfoResponse {
+  status: 'available' | 'not-available' | 'error'
+  info?: UpdateInfo
+  error?: string
 }

@@ -4,15 +4,16 @@ import { SettingOutlined } from '@ant-design/icons'
 import { ShortcutsSection } from '@renderer/components/Settings/ShortcutsSection'
 import { DataManagementSection } from '@renderer/components/Settings/DataManagementSection'
 import { SettingsNavigation } from '@renderer/components/Settings/SettingsNavigation'
-import { PlaceholderSection } from '@renderer/components/Settings/PlaceholderSection'
+// 移除未使用的导入
 import { AppearanceSection } from '@renderer/components/Settings/AppearanceSection'
 import { ThirdPartyServicesSection } from '@renderer/components/Settings/ThirdPartyServicesSection'
 import { VideoConversionSection } from '@renderer/components/Settings/VideoConversionSection'
+import { UpdateSection } from '@renderer/components/Settings/UpdateSection'
 
 const { Title } = Typography
 
 export function SettingsPage(): React.JSX.Element {
-  const [activeSection, setActiveSection] = useState('shortcuts')
+  const [activeSection, setActiveSection] = useState('about')
 
   const renderMainContent = (): React.JSX.Element => {
     switch (activeSection) {
@@ -27,7 +28,7 @@ export function SettingsPage(): React.JSX.Element {
       case 'dictionary':
         return <ThirdPartyServicesSection />
       case 'about':
-        return <PlaceholderSection title="关于应用" description="版本信息、更新检查等" />
+        return <UpdateSection />
       default:
         return <ShortcutsSection />
     }

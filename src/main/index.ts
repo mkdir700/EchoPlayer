@@ -3,6 +3,7 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { createWindow } from './window/windowManager'
 import { setupFileSystemHandlers, setupDictionaryHandlers, setupStoreHandlers } from './handlers'
 import { setupLogHandlers } from './handlers/logHandlers'
+import { setupUpdateHandlers } from './handlers/updateHandlers'
 import { Logger } from './utils/logger'
 
 // 🔥 关键修复：命令行参数必须在 app.whenReady() 之前设置！
@@ -68,7 +69,11 @@ app.whenReady().then(() => {
   // 设置日志相关的 IPC 处理器
   setupLogHandlers()
 
-  createWindow()
+  // 创建主窗口
+  const mainWindow = createWindow()
+
+  // 设置更新处理器
+  setupUpdateHandlers(mainWindow)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
