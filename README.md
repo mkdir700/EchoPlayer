@@ -115,13 +115,6 @@ EchoLab 是一款专为语言学习者设计的视频播放器，通过**逐句�
 - **TypeScript** - 类型安全的开发体验
 - **Ant Design** - 专业的 UI 组件库
 
-### 主要依赖
-
-- **react-player** - 强大的视频播放组件
-- **electron-store** - 本地数据持久化
-- **cheerio** - 字幕文件解析
-- **electron-builder** - 应用打包构建
-
 ## 💻 开发
 
 ### 环境要求
