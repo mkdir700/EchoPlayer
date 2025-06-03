@@ -56,6 +56,22 @@ pnpm test:e2e:debug
 pnpm test:e2e smoke-test
 ```
 
+#### Linux 环境设置
+
+在 Linux 环境中运行 E2E 测试需要虚拟显示器：
+
+```bash
+# 安装 xvfb（如果未安装）
+sudo apt-get install -y xvfb
+
+# 启动虚拟显示器
+export DISPLAY=:99
+Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
+# 然后运行测试
+pnpm test:e2e
+```
+
 ### 4. 查看测试报告
 
 ```bash
@@ -134,6 +150,7 @@ test.describe('My Feature', () => {
 3. **CI 环境失败**
    - 确保安装了必要的依赖
    - 使用虚拟显示器（GitHub Actions 已配置）
+   - Linux 环境需要设置 DISPLAY 环境变量
 
 ### 调试技巧
 

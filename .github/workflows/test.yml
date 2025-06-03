@@ -66,8 +66,18 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20'
 
+      - name: Setup virtual display for E2E tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20'
+
       - name: Run E2E tests (Ubuntu only)
-        run: pnpm test:e2e
+        run: |
+          export DISPLAY=:99
+          pnpm test:e2e
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20'
 
       - name: Upload E2E test results

@@ -1,6 +1,7 @@
 import { FullConfig } from '@playwright/test'
 import { spawn, ChildProcess } from 'child_process'
 import { resolve } from 'path'
+import { existsSync } from 'fs'
 import os from 'os'
 
 let electronProcess: ChildProcess | null = null
@@ -12,11 +13,20 @@ async function globalSetup(_config: FullConfig): Promise<void> {
   // Build the application first
   console.log('📦 Building application...')
 
+  // Check if build output exists
+  const buildOutputPath = resolve(__dirname, '../out/main/index.js')
+  if (!existsSync(buildOutputPath)) {
+    throw new Error(
+      `Build output not found at ${buildOutputPath}. Please run 'npm run build' first.`
+    )
+  }
+
   // Start Electron app
   const isWindows = os.platform() === 'win32'
+  const isLinux = os.platform() === 'linux'
   const electronBinary = isWindows ? 'electron.cmd' : 'electron'
   const electronPath = resolve(__dirname, '../node_modules/.bin', electronBinary)
-  const appPath = resolve(__dirname, '../out/main/index.js')
+  const appPath = buildOutputPath
 
   console.log(`Using Electron binary: ${electronPath}`)
   console.log(`App path: ${appPath}`)
@@ -33,17 +43,39 @@ async function globalSetup(_config: FullConfig): Promise<void> {
     '--force-device-scale-factor=1'
   ]
 
+  // Add Linux-specific arguments for headless environment
+  if (isLinux) {
+    electronArgs.push(
+      '--headless',
+      '--disable-gpu',
+      '--disable-software-rasterizer',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-features=TranslateUI',
+      '--disable-ipc-flooding-protection',
+      '--use-gl=swiftshader'
+    )
+  }
+
   console.log(`Electron args: ${electronArgs.join(' ')}`)
+
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    NODE_ENV: 'test',
+    ELECTRON_IS_DEV: '0',
+    ELECTRON_ENABLE_LOGGING: '1'
+  }
+
+  // Set DISPLAY for Linux environments if not already set
+  if (isLinux && !process.env.DISPLAY) {
+    env.DISPLAY = ':99'
+  }
 
   electronProcess = spawn(electronPath, electronArgs, {
     stdio: 'pipe',
     shell: isWindows,
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      ELECTRON_IS_DEV: '0',
-      ELECTRON_ENABLE_LOGGING: '1'
-    }
+    env
   })
 
   // Better error handling and logging
