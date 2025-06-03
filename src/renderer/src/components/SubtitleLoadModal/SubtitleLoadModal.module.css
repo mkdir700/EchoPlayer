@@ -150,49 +150,49 @@
 }
 
 .alert.ant-alert-success {
-  background: linear-gradient(
-    135deg,
-    rgba(82, 196, 26, 0.15) 0%,
-    rgba(82, 196, 26, 0.05) 100%
-  ) !important;
-  border: 1px solid rgba(82, 196, 26, 0.2) !important;
+  /* 继承全局暗色主题样式，仅添加组件特有的微调 */
+  margin-bottom: var(--spacing-lg) !important;
+  transform: translateY(0) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .alert.ant-alert-success::before {
-  background: linear-gradient(90deg, transparent, var(--success-color), transparent);
+  /* 顶部渐变线条保持一致 */
+  background: linear-gradient(90deg, transparent, #22c55e, transparent);
+  opacity: 0.8;
 }
 
 .alert.ant-alert-success .ant-alert-message {
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
+  /* 使用全局样式，仅保留组件特有属性 */
+  text-shadow: 0 0 12px rgba(34, 197, 94, 0.4) !important;
 }
 
 .alert.ant-alert-success .ant-alert-description {
-  color: var(--text-primary) !important;
-  font-weight: 500 !important;
+  /* 使用全局样式，仅保留组件特有属性 */
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.2) !important;
 }
 
 .alert.ant-alert-warning {
-  background: linear-gradient(
-    135deg,
-    rgba(250, 173, 20, 0.15) 0%,
-    rgba(250, 173, 20, 0.05) 100%
-  ) !important;
-  border: 1px solid rgba(250, 173, 20, 0.2) !important;
+  /* 继承全局暗色主题样式，仅添加组件特有的微调 */
+  margin-bottom: var(--spacing-lg) !important;
+  transform: translateY(0) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .alert.ant-alert-warning::before {
-  background: linear-gradient(90deg, transparent, var(--warning-color), transparent);
+  /* 顶部渐变线条保持一致 */
+  background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+  opacity: 0.8;
 }
 
 .alert.ant-alert-warning .ant-alert-message {
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
+  /* 使用全局样式，仅保留组件特有属性 */
+  text-shadow: 0 0 12px rgba(251, 146, 60, 0.4) !important;
 }
 
 .alert.ant-alert-warning .ant-alert-description {
-  color: var(--text-primary) !important;
-  font-weight: 500 !important;
+  /* 使用全局样式，仅保留组件特有属性 */
+  text-shadow: 0 0 8px rgba(251, 146, 60, 0.2) !important;
 }
 
 /* 字幕文件列表 */

@@ -184,31 +184,48 @@
 }
 
 .modernAlert :global(.ant-alert-message) {
-  font-size: 13px !important;
-  line-height: 1.5;
+  font-size: var(--font-size-sm) !important;
+  line-height: var(--line-height-base) !important;
+  font-weight: 600 !important;
+}
+
+.modernAlert :global(.ant-alert-description) {
+  font-size: var(--font-size-sm) !important;
+  line-height: var(--line-height-relaxed) !important;
+  margin-top: var(--spacing-xs) !important;
 }
 
 .alertContent {
   color: var(--text-primary) !important;
+  opacity: 0.95 !important;
 }
 
 .alertLink {
   color: var(--accent-color) !important;
   text-decoration: none !important;
-  font-weight: 500 !important;
-  transition: all 0.2s ease !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: var(--border-radius-sm) !important;
+  padding: 2px 4px !important;
+  margin: 0 2px !important;
 }
 
 .alertLink:hover {
   color: #8b5cf6 !important;
-  text-decoration: underline !important;
+  background: rgba(102, 126, 234, 0.15) !important;
+  text-decoration: none !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2) !important;
 }
 
 .warningAlert {
   /* 全局主题样式会自动应用 */
-  margin-top: 24px;
+  margin-top: var(--spacing-xl) !important;
+  border-radius: var(--border-radius-lg) !important;
 }
 
 .warningAlert :global(.ant-alert-message) {
-  font-size: 14px !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
 }
