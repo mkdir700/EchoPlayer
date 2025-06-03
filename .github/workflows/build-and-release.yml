@@ -119,8 +119,161 @@ jobs:
             dist/latest*.yml
           retention-days: 7
 
-  release:
+  upload-windows:
     needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version variables
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.is_test }}" == "true" ]; then
+            COMMIT_HASH=$(git rev-parse --short HEAD)
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION="${{ github.event.inputs.version }}-${COMMIT_HASH}"
+            else
+              VERSION="${{ github.ref_name }}-${COMMIT_HASH}"
+            fi
+          else
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION="${{ github.event.inputs.version }}"
+            else
+              VERSION="${{ github.ref_name }}"
+            fi
+          fi
+          echo "BUILD_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "IS_TEST=${{ github.event.inputs.is_test }}" >> $GITHUB_ENV
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: echolab-win-${{ env.BUILD_VERSION }}
+          path: artifacts/echolab-win-${{ env.BUILD_VERSION }}
+
+      - name: Upload to Tencent COS - Release Files (Windows)
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload -r ./artifacts/echolab-win-${{ env.BUILD_VERSION }}/ ${{ env.IS_TEST == 'true' && '/test-releases/' || '/releases/' }}${{ env.BUILD_VERSION }}/win/
+          secret_id: ${{ secrets.SECRET_ID }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket: ${{ secrets.BUCKET }}
+          region: ${{ secrets.REGION }}
+
+      - name: Upload to Tencent COS - AutoUpdate Config (Windows)
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload ./artifacts/echolab-win-${{ env.BUILD_VERSION }}/latest.yml ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }}
+          secret_id: ${{ secrets.SECRET_ID }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket: ${{ secrets.BUCKET }}
+          region: ${{ secrets.REGION }}
+
+  upload-mac:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version variables
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.is_test }}" == "true" ]; then
+            COMMIT_HASH=$(git rev-parse --short HEAD)
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION="${{ github.event.inputs.version }}-${COMMIT_HASH}"
+            else
+              VERSION="${{ github.ref_name }}-${COMMIT_HASH}"
+            fi
+          else
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION="${{ github.event.inputs.version }}"
+            else
+              VERSION="${{ github.ref_name }}"
+            fi
+          fi
+          echo "BUILD_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "IS_TEST=${{ github.event.inputs.is_test }}" >> $GITHUB_ENV
+
+      - name: Download Mac artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: echolab-mac-${{ env.BUILD_VERSION }}
+          path: artifacts/echolab-mac-${{ env.BUILD_VERSION }}
+
+      - name: Upload to Tencent COS - Release Files (Mac)
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload -r ./artifacts/echolab-mac-${{ env.BUILD_VERSION }}/ ${{ env.IS_TEST == 'true' && '/test-releases/' || '/releases/' }}${{ env.BUILD_VERSION }}/mac/
+          secret_id: ${{ secrets.SECRET_ID }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket: ${{ secrets.BUCKET }}
+          region: ${{ secrets.REGION }}
+
+      - name: Upload to Tencent COS - AutoUpdate Config (Mac)
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload ./artifacts/echolab-mac-${{ env.BUILD_VERSION }}/latest-mac.yml ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }}
+          secret_id: ${{ secrets.SECRET_ID }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket: ${{ secrets.BUCKET }}
+          region: ${{ secrets.REGION }}
+
+  upload-linux:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version variables
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.is_test }}" == "true" ]; then
+            COMMIT_HASH=$(git rev-parse --short HEAD)
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION="${{ github.event.inputs.version }}-${COMMIT_HASH}"
+            else
+              VERSION="${{ github.ref_name }}-${COMMIT_HASH}"
+            fi
+          else
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION="${{ github.event.inputs.version }}"
+            else
+              VERSION="${{ github.ref_name }}"
+            fi
+          fi
+          echo "BUILD_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "IS_TEST=${{ github.event.inputs.is_test }}" >> $GITHUB_ENV
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: echolab-linux-${{ env.BUILD_VERSION }}
+          path: artifacts/echolab-linux-${{ env.BUILD_VERSION }}
+
+      - name: Upload to Tencent COS - Release Files (Linux)
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload -r ./artifacts/echolab-linux-${{ env.BUILD_VERSION }}/ ${{ env.IS_TEST == 'true' && '/test-releases/' || '/releases/' }}${{ env.BUILD_VERSION }}/linux/
+          secret_id: ${{ secrets.SECRET_ID }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket: ${{ secrets.BUCKET }}
+          region: ${{ secrets.REGION }}
+
+      - name: Upload to Tencent COS - AutoUpdate Config (Linux)
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload ./artifacts/echolab-linux-${{ env.BUILD_VERSION }}/latest-linux.yml ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }}
+          secret_id: ${{ secrets.SECRET_ID }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket: ${{ secrets.BUCKET }}
+          region: ${{ secrets.REGION }}
+
+  release:
+    needs: [upload-windows, upload-mac, upload-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -143,21 +296,3 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-
-      - name: Upload to Tencent COS - Release Files
-        uses: zkqiang/tencent-cos-action@v0.1.0
-        with:
-          args: upload -r ./artifacts/ ${{ env.IS_TEST == 'true' && '/test-releases/' || '/releases/' }}${{ env.BUILD_VERSION }}/
-          secret_id: ${{ secrets.SECRET_ID }}
-          secret_key: ${{ secrets.SECRET_KEY }}
-          bucket: ${{ secrets.BUCKET }}
-          region: ${{ secrets.REGION }}
-
-      - name: Upload to Tencent COS - AutoUpdate Files
-        uses: zkqiang/tencent-cos-action@v0.1.0
-        with:
-          args: upload ./artifacts/*/latest*.yml ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }} && upload ./artifacts/*/*.exe ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }} && upload ./artifacts/*/*.dmg ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }} && upload ./artifacts/*/*.AppImage ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }}
-          secret_id: ${{ secrets.SECRET_ID }}
-          secret_key: ${{ secrets.SECRET_KEY }}
-          bucket: ${{ secrets.BUCKET }}
-          region: ${{ secrets.REGION }}
