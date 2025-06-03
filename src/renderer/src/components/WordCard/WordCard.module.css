@@ -12,7 +12,7 @@
   background: rgba(20, 24, 35, 0.95) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 12px !important;
-  box-shadow: 
+  box-shadow:
     0 16px 40px rgba(0, 0, 0, 0.4),
     0 6px 16px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
@@ -54,7 +54,11 @@
 }
 
 .cardContent :global(.ant-card-head) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  ) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 12px 12px 0 0 !important;
   padding: 12px 16px !important;
@@ -235,40 +239,40 @@
     max-width: 260px;
     min-width: 220px;
   }
-  
+
   .cardContent :global(.ant-card-head) {
     padding: 10px 12px !important;
   }
-  
+
   .cardContent :global(.ant-card-body) {
     padding: 12px !important;
   }
-  
+
   .wordTitle {
     font-size: 16px !important;
   }
-  
+
   .phonetic {
     font-size: 12px !important;
   }
-  
+
   .cardBody {
     max-height: 140px;
   }
-  
+
   .sectionTitle {
     font-size: 12px !important;
   }
-  
+
   .translationText {
     font-size: 13px !important;
   }
-  
+
   .meaning {
     font-size: 12px !important;
   }
-  
+
   .definitionItem {
     padding: 4px 8px;
   }
-} 
+}

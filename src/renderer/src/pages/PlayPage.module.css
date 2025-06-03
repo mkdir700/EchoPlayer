@@ -59,7 +59,6 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-
 /* 侧边栏区域 - 无缝集成 */
 .sidebarSection {
   display: flex;
@@ -100,14 +99,14 @@
   .playPageContainer {
     background: #0a0a0a;
   }
-  
+
   .mainContentArea,
   .videoPlayerSection,
   .videoControlsSection,
   .sidebarSection {
     background: #0a0a0a;
   }
-  
+
   .videoControlsSection {
     border-top-color: rgba(255, 255, 255, 0.02);
   }
@@ -118,11 +117,11 @@
   .resizeHandle {
     background: rgba(255, 255, 255, 0.2);
   }
-  
+
   .resizeHandle:hover {
     background: rgba(102, 126, 234, 0.6);
   }
-  
+
   .videoControlsSection {
     border-top-color: rgba(255, 255, 255, 0.1);
   }
@@ -135,4 +134,4 @@
   .videoControlsSection {
     transition: none;
   }
-} 
+}

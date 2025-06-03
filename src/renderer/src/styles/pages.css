@@ -34,7 +34,7 @@
   background: linear-gradient(145deg, var(--card-bg) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 16px !important;
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -214,14 +214,22 @@
 .shortcut-input-waiting {
   animation: pulse 2s infinite;
   border-color: var(--accent-color) !important;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.1) 0%,
+    rgba(102, 126, 234, 0.05) 100%
+  ) !important;
   color: var(--text-primary) !important;
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
 }
 
 .shortcut-input-error {
   border-color: var(--error-color) !important;
-  background: linear-gradient(135deg, rgba(255, 77, 79, 0.1) 0%, rgba(255, 77, 79, 0.05) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 77, 79, 0.1) 0%,
+    rgba(255, 77, 79, 0.05) 100%
+  ) !important;
   color: var(--text-primary) !important;
   box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2) !important;
 }
@@ -230,5 +238,3 @@
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
 }
-
- 

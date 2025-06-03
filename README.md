@@ -202,6 +202,16 @@ echolab/
 - 编写单元测试覆盖新功能
 - 提交信息遵循 [Conventional Commits](https://conventionalcommits.org/)
 
+### Git 工作流程
+
+项目已配置自动化 Git Hooks，提交时会自动执行：
+
+- **代码检查**: ESLint 自动检查并修复代码问题
+- **代码格式化**: Prettier 统一代码风格
+- **提交消息检查**: 确保符合约定式提交规范
+
+详细说明请查看 [Git 工作流程指南](docs/git-workflow.md)
+
 ## 📝 更新日志
 
 查看 [CHANGELOG.md](CHANGELOG.md) 了解详细的版本更新记录。

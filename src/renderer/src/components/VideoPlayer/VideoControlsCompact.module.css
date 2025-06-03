@@ -13,11 +13,7 @@
   backdrop-filter: none;
   border-radius: 0;
   /* 添加微妙的渐变背景 */
-  background: linear-gradient(
-    to bottom,
-    var(--darker-bg) 0%,
-    rgba(255, 255, 255, 0.01) 100%
-  );
+  background: linear-gradient(to bottom, var(--darker-bg) 0%, rgba(255, 255, 255, 0.01) 100%);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -377,8 +373,8 @@
     /* 使用 CSS Grid 实现两行布局 */
     display: grid;
     grid-template-areas:
-      "center center"
-      "left right";
+      'center center'
+      'left right';
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-md) var(--spacing-lg);
     align-items: center;

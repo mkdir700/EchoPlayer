@@ -84,7 +84,6 @@
   max-width: 480px;
 }
 
-
 .modernSelect :global(.ant-select-selector) {
   height: 48px !important;
   padding: 8px 16px !important;
@@ -183,7 +182,6 @@
   font-weight: 500 !important;
   letter-spacing: -0.01em;
 }
-
 
 .modernAlert :global(.ant-alert-message) {
   font-size: 13px !important;

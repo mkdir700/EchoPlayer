@@ -14,7 +14,7 @@
   margin: 0 0 4px 0;
   box-sizing: border-box;
   background: transparent;
-  
+
   /* 虚拟列表项专用样式 */
   height: 60px; /* 固定高度：64px(ITEM_HEIGHT) - 4px(margin) */
   width: 100%;
@@ -23,7 +23,7 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  
+
   /* 性能优化 */
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -49,7 +49,7 @@
   background-color: rgba(102, 126, 234, 0.12) !important;
   border-color: rgba(102, 126, 234, 0.4) !important;
   transform: translateY(-2px) scale(1.01) translateZ(0);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(102, 126, 234, 0.15),
     0 2px 4px rgba(0, 0, 0, 0.08);
   /* 添加微妙的光晕效果 */
@@ -64,9 +64,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.08) 0%, 
-    rgba(102, 126, 234, 0.04) 100%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(102, 126, 234, 0.04) 100%);
   pointer-events: none;
   z-index: -1;
 }
@@ -74,7 +72,7 @@
 .subtitleItemActive {
   background-color: rgba(102, 126, 234, 0.18) !important;
   border-color: var(--accent-color) !important;
-  box-shadow: 
+  box-shadow:
     0 6px 20px rgba(102, 126, 234, 0.25),
     0 3px 6px rgba(0, 0, 0, 0.12);
   transform: scale(1.02) translateZ(0);
@@ -89,9 +87,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.12) 0%, 
-    rgba(102, 126, 234, 0.06) 100%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(102, 126, 234, 0.06) 100%);
   pointer-events: none;
   z-index: -1;
 }
@@ -104,9 +100,7 @@
   transform: translateY(-50%);
   width: 4px;
   height: 70%;
-  background: linear-gradient(to bottom, 
-    var(--accent-color), 
-    rgba(102, 126, 234, 0.6));
+  background: linear-gradient(to bottom, var(--accent-color), rgba(102, 126, 234, 0.6));
   box-shadow: 0 0 8px rgba(102, 126, 234, 0.4);
 }
 
@@ -122,17 +116,17 @@
     padding: 10px 12px;
     height: 56px; /* 移动端减小高度 */
   }
-  
+
   .subtitleItem .subtitleText {
     font-size: 12px;
     line-height: 1.2;
     max-height: 2.4em;
   }
-  
+
   .subtitleItem:hover {
     transform: translateY(-1px) scale(1.005) translateZ(0);
   }
-  
+
   .subtitleItemActive {
     transform: scale(1.01) translateZ(0);
   }
@@ -141,14 +135,17 @@
 /* 减少动画效果以提升性能（在用户偏好设置中） */
 @media (prefers-reduced-motion: reduce) {
   .subtitleItem {
-    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
-  
+
   .subtitleItem:hover,
   .subtitleItemActive {
     transform: none;
   }
-  
+
   .subtitleItem:hover::before,
   .subtitleItemActive::before {
     display: none;
@@ -161,12 +158,12 @@
     border-width: 2px;
     background-color: rgba(255, 255, 255, 0.02);
   }
-  
+
   .subtitleItem:hover {
     background-color: rgba(102, 126, 234, 0.2) !important;
     border-color: var(--accent-color) !important;
   }
-  
+
   .subtitleItemActive {
     background-color: rgba(102, 126, 234, 0.3) !important;
     border-width: 3px;

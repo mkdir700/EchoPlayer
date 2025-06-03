@@ -1,6 +1,25 @@
-out
-dist
+# Generated files
+dist/
+out/
+build/
+coverage/
+e2e-results/
+e2e-report/
+
+# Test files with special formatting
+src/test/eudic.html
+
+# Dependencies
+node_modules/
 pnpm-lock.yaml
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
 LICENSE.md
 tsconfig.json
 tsconfig.*.json

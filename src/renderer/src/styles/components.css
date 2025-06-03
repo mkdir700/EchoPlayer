@@ -27,7 +27,11 @@
 }
 
 .ant-tag:hover {
-  background: linear-gradient(135deg, var(--accent-color-light) 0%, rgba(102, 126, 234, 0.2) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--accent-color-light) 0%,
+    rgba(102, 126, 234, 0.2) 100%
+  ) !important;
   border-color: var(--accent-color) !important;
   color: var(--accent-color) !important;
   transform: translateY(-1px) !important;
@@ -173,7 +177,11 @@
 }
 
 .tag:hover {
-  background: linear-gradient(135deg, var(--accent-color-light) 0%, rgba(102, 126, 234, 0.25) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--accent-color-light) 0%,
+    rgba(102, 126, 234, 0.25) 100%
+  ) !important;
   border-color: var(--accent-color) !important;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
@@ -194,4 +202,4 @@
   border-radius: var(--border-radius) !important;
   box-shadow: var(--shadow-lg) !important;
   backdrop-filter: blur(20px);
-} 
+}

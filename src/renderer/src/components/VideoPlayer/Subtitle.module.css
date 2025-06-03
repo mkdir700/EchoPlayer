@@ -60,8 +60,6 @@
   overflow: hidden; /* 隐藏溢出的字幕内容 */
 }
 
-
-
 /* 透明背景样式 */
 .subtitleContent.transparentBackground {
   background: transparent;
@@ -75,7 +73,7 @@
   background: rgba(0, 0, 0, 0.6); /* 半透明黑色背景 */
   backdrop-filter: blur(12px) saturate(180%); /* 背景模糊效果 */
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
@@ -84,7 +82,7 @@
 .subtitleContent.solidBlackBackground {
   background: rgba(0, 0, 0, 0.8); /* 半透明黑色背景 */
   border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -93,7 +91,7 @@
 .subtitleContent.solidGrayBackground {
   background: rgba(128, 128, 128, 0.7); /* 半透明灰色背景 */
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
@@ -241,7 +239,7 @@
   border-radius: var(--border-radius-md);
   padding: 4px; /* 多按钮时保持适中的内边距 */
   border: 1px solid rgba(255, 255, 255, 0.2); /* 增强边框可见度 */
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.4),
     0 2px 8px rgba(0, 0, 0, 0.6); /* 增强阴影 */
   animation: fadeInDown 0.2s ease-out;
@@ -285,12 +283,14 @@
 
 /* 字幕文本样式 - 现代化设计 */
 .subtitleText {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 1.5rem; /* 移除 !important，让动态字体大小生效 */
   line-height: 1.6 !important;
   font-weight: 600 !important;
   color: #ffffff !important;
-  text-shadow: 
+  text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.8),
     0 2px 4px rgba(0, 0, 0, 0.6),
     0 0 8px rgba(0, 0, 0, 0.4);
@@ -309,7 +309,7 @@
   font-size: 1.75rem; /* 移除 !important，让动态字体大小生效 */
   font-weight: 700 !important;
   color: #ffffff !important;
-  text-shadow: 
+  text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),
     0 2px 6px rgba(0, 0, 0, 0.7),
     0 0 12px rgba(0, 0, 0, 0.5);
@@ -320,7 +320,7 @@
   font-size: 1.4rem; /* 移除 !important，让动态字体大小生效 */
   font-weight: 500 !important;
   color: #f0f0f0 !important;
-  text-shadow: 
+  text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.8),
     0 2px 4px rgba(0, 0, 0, 0.6);
   opacity: 0.95;
@@ -378,7 +378,7 @@
   color: #ffffff !important;
   transform: scale(1.05);
   font-weight: 700 !important;
-  text-shadow: 
+  text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),
     0 2px 6px rgba(102, 126, 234, 0.6),
     0 0 12px rgba(102, 126, 234, 0.4);
@@ -398,7 +398,7 @@
   color: #ffffff !important;
   transform: scale(1.08) !important;
   font-weight: 700 !important;
-  text-shadow: 
+  text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),
     0 2px 6px rgba(102, 126, 234, 0.8),
     0 0 16px rgba(102, 126, 234, 0.6) !important;
@@ -412,7 +412,7 @@
   font-style: italic;
   font-size: 14px !important;
   font-weight: 500 !important;
-  text-shadow: 
+  text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.8),
     0 2px 6px rgba(0, 0, 0, 0.6); /* 增强文字阴影 */
   background: rgba(0, 0, 0, 0.4); /* 添加半透明背景 */
@@ -466,7 +466,6 @@
     /* 移除max-width限制，让一键铺满功能能够正常工作 */
     max-height: 30%; /* 4K下减少最大高度比例 */
   }
-
 }
 
 /* 大屏幕优化 (2K 及以上) */
@@ -481,8 +480,6 @@
     /* 字体大小由动态计算控制，不再使用固定值 */
     line-height: 1.7 !important;
   }
-  
-
 }
 
 /* 中等屏幕 (1024px - 1440px) */
@@ -491,8 +488,6 @@
     /* 移除max-width限制，让一键铺满功能能够正常工作 */
     max-height: 40%; /* 中等屏幕下的最大高度 */
   }
-
-
 }
 
 /* 小屏幕 (768px - 1024px，应用最小分辨率范围) */
@@ -503,8 +498,6 @@
     min-width: 35%; /* 确保最小可读宽度 */
     min-height: 10%; /* 确保最小可读高度 */
   }
-
-
 
   .subtitleControlsExternal {
     transform: translate(-100%, -100%) scale(0.95); /* 小屏幕下稍微缩小控制按钮 */

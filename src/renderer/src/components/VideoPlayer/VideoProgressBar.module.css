@@ -98,30 +98,30 @@
   .progressContainer {
     height: 6px;
   }
-  
+
   .progressContainer.enhanced {
     height: 10px;
   }
-  
+
   .progressTrack {
     height: 6px;
   }
-  
+
   .progressContainer.enhanced .progressTrack {
     height: 8px;
   }
-  
+
   .progressHandle {
     width: 16px;
     height: 16px;
   }
-  
+
   .timeTooltip {
     padding: 4px 8px;
     font-size: 11px;
   }
-  
+
   .timeText {
     font-size: 11px;
   }
-} 
+}

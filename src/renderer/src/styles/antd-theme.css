@@ -11,11 +11,13 @@
   --antd-text-secondary: var(--text-secondary);
   --antd-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   --antd-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.25);
-  
+
   /* Modal 专用变量 */
   --modal-bg: linear-gradient(145deg, var(--darker-bg) 0%, rgba(26, 26, 26, 0.95) 100%);
   --modal-border: rgba(102, 126, 234, 0.2);
-  --modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(102, 126, 234, 0.1);
+  --modal-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(102, 126, 234, 0.1);
   --modal-header-bg: rgba(102, 126, 234, 0.05);
   --modal-header-border: rgba(102, 126, 234, 0.2);
   --modal-footer-border: rgba(255, 255, 255, 0.08);
@@ -312,7 +314,11 @@
 }
 
 .delete-modal .ant-modal-header {
-  background: linear-gradient(135deg, rgba(255, 77, 79, 0.1) 0%, rgba(255, 77, 79, 0.05) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 77, 79, 0.1) 0%,
+    rgba(255, 77, 79, 0.05) 100%
+  ) !important;
   border-bottom: 1px solid rgba(255, 77, 79, 0.2) !important;
 }
 
@@ -374,7 +380,7 @@
   border-radius: var(--border-radius-lg) !important;
   font-weight: 600 !important;
   height: 44px !important;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(255, 77, 79, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -400,7 +406,7 @@
 .ant-modal .ant-btn-dangerous:hover {
   background: linear-gradient(135deg, #ff7875, #ffa39e) !important;
   transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(255, 77, 79, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
@@ -419,7 +425,11 @@
 .ant-modal .ant-btn-default:hover {
   border-color: var(--accent-color) !important;
   color: var(--accent-color) !important;
-  background: linear-gradient(135deg, var(--accent-color-light) 0%, rgba(102, 126, 234, 0.08) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--accent-color-light) 0%,
+    rgba(102, 126, 234, 0.08) 100%
+  ) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2) !important;
 }
@@ -430,7 +440,7 @@
   border-radius: var(--border-radius-lg) !important;
   font-weight: 600 !important;
   height: 44px !important;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(102, 126, 234, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -456,7 +466,7 @@
 .ant-modal .ant-btn-primary:hover {
   background: linear-gradient(135deg, #7c93f0, #9d6bdc) !important;
   transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(102, 126, 234, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
@@ -468,12 +478,20 @@
 }
 
 .ant-alert-info {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.08) 0%,
+    rgba(59, 130, 246, 0.04) 100%
+  ) !important;
   border: 1px solid rgba(59, 130, 246, 0.2) !important;
 }
 
 .ant-alert-warning {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.04) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.08) 0%,
+    rgba(245, 158, 11, 0.04) 100%
+  ) !important;
   border: 1px solid rgba(245, 158, 11, 0.2) !important;
 }
 

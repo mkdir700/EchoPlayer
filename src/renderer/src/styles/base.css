@@ -6,7 +6,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -54,8 +55,12 @@ body {
 
 /* 通用动画 */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeInUp {
@@ -100,4 +105,4 @@ body {
   border-top: 2px solid #ffffff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-} 
+}

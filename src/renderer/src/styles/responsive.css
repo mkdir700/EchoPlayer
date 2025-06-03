@@ -6,11 +6,11 @@
   .main-content {
     padding: var(--spacing-xl);
   }
-  
+
   .welcome-section {
     padding: var(--spacing-xl);
   }
-  
+
   .welcome-title {
     font-size: 36px !important;
   }
@@ -21,7 +21,7 @@
     gap: 10px;
     padding: 6px 12px;
   }
-  
+
   .control-slider {
     width: 60px !important;
   }
@@ -41,7 +41,7 @@
   .settings-content .ant-col:first-child {
     margin-bottom: var(--spacing-xl);
   }
-  
+
   .settings-page {
     padding: var(--spacing-lg);
   }
@@ -102,7 +102,7 @@
   .main-container {
     flex-direction: column;
   }
-  
+
   .left-section {
     width: 100% !important;
   }
@@ -122,30 +122,30 @@
   .main-content {
     padding: var(--spacing-lg);
   }
-  
+
   .welcome-section {
     padding: var(--spacing-lg);
     flex-direction: column;
     gap: var(--spacing-lg);
     text-align: center;
   }
-  
+
   .welcome-title {
     font-size: 32px !important;
   }
-  
+
   .welcome-subtitle {
     font-size: var(--font-size-base) !important;
   }
-  
+
   .video-poster {
     height: 160px;
   }
-  
+
   .play-icon {
     font-size: 36px !important;
   }
-  
+
   .poster-icon {
     font-size: 36px !important;
   }
@@ -160,34 +160,34 @@
 
   /* ===== 设置相关 ===== */
   /* 设置页面移动端优化 */
-    /* 快捷键项优化 - 确保在780px左右仍保持水平布局 */
-    .shortcut-item {
-      gap: var(--spacing-md);
-    }
-    
-    .shortcut-info {
-      flex: 1;
-      min-width: 0;
-      max-width: 60%;
-    }
-    
-    .shortcut-name {
-      flex-wrap: wrap;
-      gap: var(--spacing-xs);
-    }
-    
-    .shortcut-key {
-      flex-shrink: 0;
-      min-width: 140px;
-    }
-    
-    .shortcut-edit {
-      min-width: 200px;
-    }
-    
-    .shortcut-edit .ant-input {
-      width: 120px !important;
-    }
+  /* 快捷键项优化 - 确保在780px左右仍保持水平布局 */
+  .shortcut-item {
+    gap: var(--spacing-md);
+  }
+
+  .shortcut-info {
+    flex: 1;
+    min-width: 0;
+    max-width: 60%;
+  }
+
+  .shortcut-name {
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+
+  .shortcut-key {
+    flex-shrink: 0;
+    min-width: 140px;
+  }
+
+  .shortcut-edit {
+    min-width: 200px;
+  }
+
+  .shortcut-edit .ant-input {
+    width: 120px !important;
+  }
 
   /* ===== 视频播放器相关 ===== */
   /* 视频控制栏 */
@@ -275,16 +275,16 @@
     min-width: auto;
     font-size: var(--font-size-sm);
   }
-  
+
   .subtitle-controls .ant-btn {
     height: 26px;
     font-size: var(--font-size-xs);
   }
-  
+
   .subtitle-controls-content {
     gap: var(--spacing-sm);
   }
-  
+
   .subtitle-controls .loop-controls .ant-space {
     gap: var(--spacing-md);
   }
@@ -293,11 +293,11 @@
   .subtitle-text {
     font-size: var(--font-size-base) !important;
   }
-  
+
   .subtitle-text.english {
     font-size: var(--font-size-lg) !important;
   }
-  
+
   .subtitle-text.chinese {
     font-size: var(--font-size-base) !important;
   }
@@ -393,7 +393,7 @@
   .ant-select .ant-select-selector {
     border-radius: 6px !important;
   }
-  
+
   .ant-card {
     border-radius: 8px !important;
   }
@@ -405,23 +405,23 @@
   .main-content {
     padding: var(--spacing-md);
   }
-  
+
   .welcome-section {
     padding: var(--spacing-md);
   }
-  
+
   .welcome-title {
     font-size: 28px !important;
   }
-  
+
   .video-poster {
     height: 140px;
   }
-  
+
   .section-title {
     font-size: var(--font-size-xl) !important;
   }
-  
+
   .video-card {
     margin-bottom: var(--spacing-md);
   }
@@ -451,4 +451,4 @@
   .video-player-container {
     margin: var(--spacing-sm);
   }
-} 
+}

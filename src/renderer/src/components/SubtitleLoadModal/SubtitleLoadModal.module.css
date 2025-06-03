@@ -87,7 +87,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0.3;
   }
@@ -149,7 +150,11 @@
 }
 
 .alert.ant-alert-success {
-  background: linear-gradient(135deg, rgba(82, 196, 26, 0.15) 0%, rgba(82, 196, 26, 0.05) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(82, 196, 26, 0.15) 0%,
+    rgba(82, 196, 26, 0.05) 100%
+  ) !important;
   border: 1px solid rgba(82, 196, 26, 0.2) !important;
 }
 
@@ -168,7 +173,11 @@
 }
 
 .alert.ant-alert-warning {
-  background: linear-gradient(135deg, rgba(250, 173, 20, 0.15) 0%, rgba(250, 173, 20, 0.05) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(250, 173, 20, 0.15) 0%,
+    rgba(250, 173, 20, 0.05) 100%
+  ) !important;
   border: 1px solid rgba(250, 173, 20, 0.2) !important;
 }
 
@@ -249,8 +258,12 @@
 
 .subtitleItem.selected {
   border-color: var(--accent-color) !important;
-  background: linear-gradient(135deg, var(--accent-color-light) 0%, rgba(102, 126, 234, 0.1) 100%) !important;
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    var(--accent-color-light) 0%,
+    rgba(102, 126, 234, 0.1) 100%
+  ) !important;
+  box-shadow:
     0 0 0 2px rgba(102, 126, 234, 0.3),
     0 8px 24px rgba(102, 126, 234, 0.2);
   transform: scale(1.02);
@@ -304,7 +317,7 @@
   font-weight: 600 !important;
   min-width: 180px;
   height: 44px !important;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(102, 126, 234, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -329,7 +342,7 @@
 
 .loadButton:hover {
   transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(102, 126, 234, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
   background: linear-gradient(135deg, #7c93f0, #9d6bdc) !important;
@@ -342,7 +355,7 @@
   font-weight: 600 !important;
   min-width: 180px;
   height: 44px !important;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(240, 147, 251, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -367,7 +380,7 @@
 
 .uploadButton:hover {
   transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(240, 147, 251, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
   background: linear-gradient(135deg, #f5a3fc, #f76b7c) !important;
@@ -388,7 +401,11 @@
 .skipButton:hover {
   border-color: var(--accent-color) !important;
   color: var(--accent-color) !important;
-  background: linear-gradient(135deg, var(--accent-color-light) 0%, rgba(102, 126, 234, 0.08) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--accent-color-light) 0%,
+    rgba(102, 126, 234, 0.08) 100%
+  ) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2) !important;
 }
@@ -410,7 +427,11 @@
 }
 
 .uploadDragger {
-  background: linear-gradient(135deg, var(--darker-bg) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--darker-bg) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  ) !important;
   border: 2px dashed rgba(255, 255, 255, 0.15) !important;
   border-radius: var(--border-radius-xl) !important;
   backdrop-filter: blur(10px) !important;
@@ -426,7 +447,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(45deg, transparent 30%, rgba(102, 126, 234, 0.05) 50%, transparent 70%);
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(102, 126, 234, 0.05) 50%,
+    transparent 70%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -437,7 +463,11 @@
 
 .uploadDragger:hover {
   border-color: var(--accent-color) !important;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.05) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  ) !important;
   transform: scale(1.02);
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
 }
@@ -651,4 +681,4 @@
     min-width: 80px;
     font-size: var(--font-size-sm) !important;
   }
-} 
+}

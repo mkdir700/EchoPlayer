@@ -18,7 +18,7 @@
   --success-color: #52c41a;
   --warning-color: #faad14;
   --error-color: #ff4d4f;
-  
+
   /* 交互状态颜色 */
   --hover-bg: rgba(255, 255, 255, 0.08);
   --active-bg: rgba(255, 255, 255, 0.12);
@@ -59,9 +59,11 @@
   --z-index-toast: 1030;
 
   /* 字体系统 */
-  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-family-base:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-family-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-  
+
   /* 字体大小系统 */
   --font-size-xs: 11px;
   --font-size-sm: 12px;
@@ -75,4 +77,4 @@
   --line-height-tight: 1.2;
   --line-height-base: 1.5;
   --line-height-relaxed: 1.6;
-} 
+}
