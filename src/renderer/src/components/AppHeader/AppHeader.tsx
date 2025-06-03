@@ -3,6 +3,7 @@ import { Layout, Menu, Typography } from 'antd'
 import { HomeOutlined, SettingOutlined } from '@ant-design/icons'
 import { AppHeaderProps, PageType, NavigationItem } from '@renderer/types'
 import styles from './AppHeader.module.css'
+import { COMMON_TEST_IDS, withTestId } from '@renderer/utils/test-utils'
 
 const { Header } = Layout
 const { Title } = Typography
@@ -18,7 +19,7 @@ const navigationItems: NavigationItem[] = [
 export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.JSX.Element {
   return (
     <Header className={styles.header}>
-      <div className={styles.headerLeft}>
+      <div className={styles.headerLeft} {...withTestId(COMMON_TEST_IDS.APP_HEADER)}>
         <Title level={4} style={{ color: '#ffffff', margin: 0, flexShrink: 0 }}>
           🎬 EchoLab
         </Title>

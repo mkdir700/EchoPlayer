@@ -1,6 +1,17 @@
 import { test, expect } from '@playwright/test'
 import { ElectronHelper } from './utils/electron-helper'
 
+// 导入测试工具函数和常量
+import { COMMON_TEST_IDS, subtitleItemTestId } from '../src/renderer/src/utils/test-utils'
+
+// 创建测试选择器的工具函数
+function testSelector(testId: string): string {
+  return `[data-testid="${testId}"]`
+}
+
+// 为了保持向后兼容，创建一个别名
+const TEST_IDS = COMMON_TEST_IDS
+
 test.describe('EchoLab Core Workflow', () => {
   let electronApp: ElectronHelper
 
@@ -24,10 +35,10 @@ test.describe('EchoLab Core Workflow', () => {
     // Check if main window is visible
     await expect(page).toHaveTitle(/EchoLab/i)
 
-    // Check main components are present
-    await expect(page.locator('[data-testid="app-header"]')).toBeVisible()
-    await expect(page.locator('[data-testid="video-section"]')).toBeVisible()
-    await expect(page.locator('[data-testid="subtitle-section"]')).toBeVisible()
+    // Check main components are present - 使用统一的测试ID
+    await expect(page.locator(testSelector(TEST_IDS.APP_HEADER))).toBeVisible()
+    await expect(page.locator(testSelector(TEST_IDS.VIDEO_SECTION))).toBeVisible()
+    await expect(page.locator(testSelector(TEST_IDS.SUBTITLE_SECTION))).toBeVisible()
 
     console.log('✅ App startup and UI loading test passed')
   })
@@ -35,8 +46,8 @@ test.describe('EchoLab Core Workflow', () => {
   test('视频文件加载流程', async () => {
     const page = electronApp.getPage()
 
-    // Test video loading workflow
-    await page.click('[data-testid="load-video-button"]')
+    // Test video loading workflow - 使用标准化的测试ID
+    await page.click(testSelector(TEST_IDS.LOAD_VIDEO_BUTTON))
 
     // Wait for file dialog (in real test, you might need to handle actual file selection)
     // For now, we'll simulate video loaded state
@@ -54,11 +65,11 @@ test.describe('EchoLab Core Workflow', () => {
 
     // Verify video player is ready
     await electronApp.waitForVideoPlayer()
-    await expect(page.locator('[data-testid="video-player"]')).toBeVisible()
+    await expect(page.locator(testSelector(TEST_IDS.VIDEO_PLAYER))).toBeVisible()
 
     // Check video controls are available
-    await expect(page.locator('[data-testid="play-pause-button"]')).toBeVisible()
-    await expect(page.locator('[data-testid="progress-bar"]')).toBeVisible()
+    await expect(page.locator(testSelector(TEST_IDS.PLAY_PAUSE_BUTTON))).toBeVisible()
+    await expect(page.locator(testSelector(TEST_IDS.PROGRESS_BAR))).toBeVisible()
 
     console.log('✅ Video loading workflow test passed')
   })
@@ -76,7 +87,7 @@ test.describe('EchoLab Core Workflow', () => {
     })
 
     // Load subtitle file
-    await page.click('[data-testid="load-subtitle-button"]')
+    await page.click(testSelector(TEST_IDS.LOAD_SUBTITLE_BUTTON))
 
     // Simulate subtitle loaded
     await page.evaluate(() => {
@@ -94,13 +105,11 @@ test.describe('EchoLab Core Workflow', () => {
     })
 
     // Wait for subtitle list to appear
-    await expect(page.locator('[data-testid="subtitle-list"]')).toBeVisible()
+    await expect(page.locator(testSelector(TEST_IDS.SUBTITLE_LIST))).toBeVisible()
 
-    // Check subtitle sentences are displayed
-    await expect(page.locator('[data-testid="subtitle-sentence-0"]')).toContainText(
-      'Hello, welcome'
-    )
-    await expect(page.locator('[data-testid="subtitle-sentence-1"]')).toContainText(
+    // Check subtitle sentences are displayed - 使用动态生成的测试ID
+    await expect(page.locator(testSelector(subtitleItemTestId(0)))).toContainText('Hello, welcome')
+    await expect(page.locator(testSelector(subtitleItemTestId(1)))).toContainText(
       'Today we will learn'
     )
 
@@ -129,20 +138,22 @@ test.describe('EchoLab Core Workflow', () => {
       )
     })
 
-    await expect(page.locator('[data-testid="subtitle-list"]')).toBeVisible()
+    await expect(page.locator(testSelector(TEST_IDS.SUBTITLE_LIST))).toBeVisible()
 
     // Click on first subtitle sentence
     await electronApp.navigateToSentence(0)
 
     // Verify video seeks to correct time
     // Note: In real implementation, you'd check actual video time
-    await expect(page.locator('[data-testid="subtitle-sentence-0"]')).toHaveClass(/active/)
+    await expect(page.locator(testSelector(subtitleItemTestId(0)))).toHaveClass(/active/)
 
     // Test play/pause functionality
     await electronApp.togglePlayPause()
 
     // Verify current subtitle is highlighted
-    await expect(page.locator('[data-testid="current-subtitle"]')).toContainText('Hello, welcome')
+    await expect(page.locator(testSelector(TEST_IDS.CURRENT_SUBTITLE))).toContainText(
+      'Hello, welcome'
+    )
 
     console.log('✅ Sentence-by-sentence playback test passed')
   })
@@ -174,10 +185,10 @@ test.describe('EchoLab Core Workflow', () => {
 
     // Test arrow keys for navigation
     await electronApp.testKeyboardShortcut('ArrowDown')
-    await expect(page.locator('[data-testid="subtitle-sentence-1"]')).toHaveClass(/active/)
+    await expect(page.locator(testSelector(subtitleItemTestId(1)))).toHaveClass(/active/)
 
     await electronApp.testKeyboardShortcut('ArrowUp')
-    await expect(page.locator('[data-testid="subtitle-sentence-0"]')).toHaveClass(/active/)
+    await expect(page.locator(testSelector(subtitleItemTestId(0)))).toHaveClass(/active/)
 
     // Test repeat functionality (R key)
     await electronApp.testKeyboardShortcut('KeyR')
@@ -210,16 +221,16 @@ test.describe('EchoLab Core Workflow', () => {
 
     // Simulate learning progress
     await electronApp.navigateToSentence(0)
-    await page.click('[data-testid="mark-learned-button"]')
+    await page.click(testSelector(TEST_IDS.MARK_LEARNED_BUTTON))
 
     // Check progress indicator
-    await expect(page.locator('[data-testid="progress-indicator"]')).toContainText('33%')
+    await expect(page.locator(testSelector(TEST_IDS.PROGRESS_INDICATOR))).toContainText('33%')
 
     // Learn another sentence
     await electronApp.navigateToSentence(1)
-    await page.click('[data-testid="mark-learned-button"]')
+    await page.click(testSelector(TEST_IDS.MARK_LEARNED_BUTTON))
 
-    await expect(page.locator('[data-testid="progress-indicator"]')).toContainText('67%')
+    await expect(page.locator(testSelector(TEST_IDS.PROGRESS_INDICATOR))).toContainText('67%')
 
     console.log('✅ Learning progress tracking test passed')
   })
@@ -228,23 +239,23 @@ test.describe('EchoLab Core Workflow', () => {
     const page = electronApp.getPage()
 
     // Open settings
-    await page.click('[data-testid="settings-button"]')
-    await expect(page.locator('[data-testid="settings-modal"]')).toBeVisible()
+    await page.click(testSelector(TEST_IDS.SETTINGS_BUTTON))
+    await expect(page.locator(testSelector(TEST_IDS.SETTINGS_MODAL))).toBeVisible()
 
     // Test playback speed setting
-    await page.selectOption('[data-testid="playback-speed-select"]', '0.75')
+    await page.selectOption(testSelector(TEST_IDS.PLAYBACK_SPEED_SELECT), '0.75')
 
     // Test repeat mode setting
-    await page.check('[data-testid="repeat-mode-checkbox"]')
+    await page.check(testSelector(TEST_IDS.REPEAT_MODE_CHECKBOX))
 
     // Test subtitle display settings
-    await page.fill('[data-testid="subtitle-font-size"]', '18')
+    await page.fill(testSelector(TEST_IDS.SUBTITLE_FONT_SIZE), '18')
 
     // Save settings
-    await page.click('[data-testid="save-settings-button"]')
+    await page.click(testSelector(TEST_IDS.SAVE_SETTINGS_BUTTON))
 
     // Verify settings are applied
-    await expect(page.locator('[data-testid="settings-modal"]')).not.toBeVisible()
+    await expect(page.locator(testSelector(TEST_IDS.SETTINGS_MODAL))).not.toBeVisible()
 
     console.log('✅ Settings and preferences test passed')
   })
@@ -262,7 +273,9 @@ test.describe('EchoLab Core Workflow', () => {
     })
 
     // Check error message is displayed
-    await expect(page.locator('[data-testid="error-message"]')).toContainText('Unsupported format')
+    await expect(page.locator(testSelector(TEST_IDS.ERROR_MESSAGE))).toContainText(
+      'Unsupported format'
+    )
 
     // Test subtitle loading error
     await page.evaluate(() => {
@@ -273,13 +286,13 @@ test.describe('EchoLab Core Workflow', () => {
       )
     })
 
-    await expect(page.locator('[data-testid="error-message"]')).toContainText(
+    await expect(page.locator(testSelector(TEST_IDS.ERROR_MESSAGE))).toContainText(
       'Invalid subtitle format'
     )
 
     // Test app recovery
-    await page.click('[data-testid="dismiss-error-button"]')
-    await expect(page.locator('[data-testid="error-message"]')).not.toBeVisible()
+    await page.click(testSelector(TEST_IDS.DISMISS_ERROR_BUTTON))
+    await expect(page.locator(testSelector(TEST_IDS.ERROR_MESSAGE))).not.toBeVisible()
 
     console.log('✅ App stability and error handling test passed')
   })
