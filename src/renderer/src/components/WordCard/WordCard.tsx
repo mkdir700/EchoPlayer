@@ -59,6 +59,7 @@ export function WordCard({ word, targetElement, onClose }: WordCardProps): React
       }
     }
   }
+
   // 查询单词含义 - 优化版本，避免阻塞UI
   useEffect(() => {
     // 立即更新loading状态，确保UI响应
@@ -71,6 +72,102 @@ export function WordCard({ word, targetElement, onClose }: WordCardProps): React
     }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
+    }
+
+    const lookupWord = async (): Promise<void> => {
+      // 创建新的 AbortController 用于取消请求
+      abortControllerRef.current = new AbortController()
+      const { signal } = abortControllerRef.current
+
+      try {
+        // 使用 requestIdleCallback 或 setTimeout 确保不阻塞主线程
+        await new Promise((resolve) => {
+          if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(resolve)
+          } else {
+            setTimeout(resolve, 0)
+          }
+        })
+
+        // 检查是否已被取消
+        if (signal.aborted) return
+
+        const settings = getSettings()
+
+        if (!settings.dictionary.selectedEngine) {
+          setDictionaryResult({
+            word,
+            definitions: [],
+            success: false,
+            error: '请先在设置中配置词典服务'
+          })
+          setIsLoading(false)
+          return
+        }
+
+        // 检查是否已被取消
+        if (signal.aborted) return
+
+        const service = DictionaryServiceFactory.createService(
+          settings.dictionary.selectedEngine,
+          settings.dictionary
+        )
+
+        if (!service) {
+          setDictionaryResult({
+            word,
+            definitions: [],
+            success: false,
+            error: '词典服务配置不完整'
+          })
+          setIsLoading(false)
+          return
+        }
+
+        // 检查是否已被取消
+        if (signal.aborted) return
+
+        // 添加超时处理
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('查询超时')), 10000)
+        })
+
+        const lookupPromise = service.lookupWord(word.toLowerCase().trim())
+
+        // 使用Promise.race来处理超时
+        const result = await Promise.race([lookupPromise, timeoutPromise])
+
+        // 检查是否已被取消
+        if (signal.aborted) return
+
+        // 如果查询结果为空，则认为查询失败
+        if (!result.success) {
+          setDictionaryResult({
+            word,
+            definitions: [],
+            success: false,
+            error: result.error || '未找到该单词'
+          })
+        } else {
+          setDictionaryResult(result)
+        }
+      } catch (error) {
+        // 检查是否是主动取消的
+        if (signal.aborted) return
+
+        const errorMessage = error instanceof Error ? error.message : '查询失败'
+        setDictionaryResult({
+          word,
+          definitions: [],
+          success: false,
+          error: errorMessage
+        })
+      } finally {
+        // 只有在没被取消的情况下才更新loading状态
+        if (!signal.aborted) {
+          setIsLoading(false)
+        }
+      }
     }
 
     // 使用setTimeout将查词操作推迟到下一个事件循环，避免阻塞UI渲染
@@ -87,102 +184,6 @@ export function WordCard({ word, targetElement, onClose }: WordCardProps): React
       }
     }
   }, [word])
-
-  const lookupWord = async (): Promise<void> => {
-    // 创建新的 AbortController 用于取消请求
-    abortControllerRef.current = new AbortController()
-    const { signal } = abortControllerRef.current
-
-    try {
-      // 使用 requestIdleCallback 或 setTimeout 确保不阻塞主线程
-      await new Promise((resolve) => {
-        if ('requestIdleCallback' in window) {
-          window.requestIdleCallback(resolve)
-        } else {
-          setTimeout(resolve, 0)
-        }
-      })
-
-      // 检查是否已被取消
-      if (signal.aborted) return
-
-      const settings = getSettings()
-
-      if (!settings.dictionary.selectedEngine) {
-        setDictionaryResult({
-          word,
-          definitions: [],
-          success: false,
-          error: '请先在设置中配置词典服务'
-        })
-        setIsLoading(false)
-        return
-      }
-
-      // 检查是否已被取消
-      if (signal.aborted) return
-
-      const service = DictionaryServiceFactory.createService(
-        settings.dictionary.selectedEngine,
-        settings.dictionary
-      )
-
-      if (!service) {
-        setDictionaryResult({
-          word,
-          definitions: [],
-          success: false,
-          error: '词典服务配置不完整'
-        })
-        setIsLoading(false)
-        return
-      }
-
-      // 检查是否已被取消
-      if (signal.aborted) return
-
-      // 添加超时处理
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('查询超时')), 10000)
-      })
-
-      const lookupPromise = service.lookupWord(word.toLowerCase().trim())
-
-      // 使用Promise.race来处理超时
-      const result = await Promise.race([lookupPromise, timeoutPromise])
-
-      // 检查是否已被取消
-      if (signal.aborted) return
-
-      // 如果查询结果为空，则认为查询失败
-      if (!result.success) {
-        setDictionaryResult({
-          word,
-          definitions: [],
-          success: false,
-          error: result.error || '未找到该单词'
-        })
-      } else {
-        setDictionaryResult(result)
-      }
-    } catch (error) {
-      // 检查是否是主动取消的
-      if (signal.aborted) return
-
-      const errorMessage = error instanceof Error ? error.message : '查询失败'
-      setDictionaryResult({
-        word,
-        definitions: [],
-        success: false,
-        error: errorMessage
-      })
-    } finally {
-      // 只有在没被取消的情况下才更新loading状态
-      if (!signal.aborted) {
-        setIsLoading(false)
-      }
-    }
-  }
 
   // 播放单词发音
   const playPronunciation = async (): Promise<void> => {

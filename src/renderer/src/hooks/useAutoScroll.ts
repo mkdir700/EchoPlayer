@@ -469,6 +469,8 @@ export function useAutoScroll({
       return // 没有字幕时不需要设置监听器
     }
 
+    // 捕获当前的 ref 值
+    const currentSubtitleListRef = subtitleListRef.current
     let cleanupFunction: (() => void) | undefined
 
     // 延迟设置监听器，确保 DOM 已经渲染
@@ -485,8 +487,8 @@ export function useAutoScroll({
       }
 
       // 清理滚动事件监听器
-      if (scrollEventListenerRef.current && subtitleListRef.current) {
-        const listElement = subtitleListRef.current.querySelector('[class*="subtitleList"]')
+      if (scrollEventListenerRef.current && currentSubtitleListRef) {
+        const listElement = currentSubtitleListRef.querySelector('[class*="subtitleList"]')
         if (listElement) {
           listElement.removeEventListener('scroll', handleUserScroll)
           scrollEventListenerRef.current = false

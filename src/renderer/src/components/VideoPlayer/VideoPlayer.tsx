@@ -254,6 +254,7 @@ function VideoPlayer({
         clearTimeout(hideControlsTimeoutRef.current)
       }
       if (mouseMoveThrottleTimeoutRef.current) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         clearTimeout(mouseMoveThrottleTimeoutRef.current)
       }
     }

@@ -21,25 +21,23 @@ interface SubtitleV3Props {
 }
 
 // 拆分子组件：遮罩覆盖层
-const MaskOverlay = memo(
-  ({ maskFrame }: { maskFrame: SubtitleMarginsState['maskFrame'] }): React.JSX.Element => {
-    const style = useMemo(
-      (): React.CSSProperties => ({
-        position: 'absolute',
-        left: '0%',
-        top: '0%',
-        width: '100%',
-        height: '100%',
-        zIndex: 5,
-        pointerEvents: 'none',
-        transition: 'all 0.3s ease-in-out'
-      }),
-      [maskFrame.width, maskFrame.height, maskFrame.left, maskFrame.top]
-    )
+const MaskOverlay = memo((): React.JSX.Element => {
+  const style = useMemo(
+    (): React.CSSProperties => ({
+      position: 'absolute',
+      left: '0%',
+      top: '0%',
+      width: '100%',
+      height: '100%',
+      zIndex: 5,
+      pointerEvents: 'none',
+      transition: 'all 0.3s ease-in-out'
+    }),
+    []
+  )
 
-    return <div className={styles.maskOverlay} style={style} />
-  }
-)
+  return <div className={styles.maskOverlay} style={style} />
+})
 MaskOverlay.displayName = 'MaskOverlay'
 
 // 拆分子组件：控制按钮
@@ -158,7 +156,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
   const [isHovering, setIsHovering] = useState(false)
   const [isControlsHovering, setIsControlsHovering] = useState(false)
   const [isMaskFrameActive, setIsMaskFrameActive] = useState(false)
-  const [isMaskFrameHovering, setIsMaskFrameHovering] = useState(false)
+  // const [isMaskFrameHovering, setIsMaskFrameHovering] = useState(false)
 
   // 引用
   const containerRef = useRef<HTMLDivElement>(null)
@@ -219,12 +217,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
       width: 100 - left - right,
       height: 100 - top - bottom
     }
-  }, [
-    subtitleState.margins.left,
-    subtitleState.margins.top,
-    subtitleState.margins.right,
-    subtitleState.margins.bottom
-  ])
+  }, [subtitleState.margins])
 
   // 使用拖拽和调整大小 hook
   const dragAndResizeProps = useSubtitleDragAndResize(
@@ -464,12 +457,12 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
 
       // 遮罩框悬停处理
       handleMaskFrameMouseEnter: (): void => {
-        setIsMaskFrameHovering(true)
+        // setIsMaskFrameHovering(true)
         setIsMaskFrameActive(true)
       },
 
       handleMaskFrameMouseLeave: (): void => {
-        setIsMaskFrameHovering(false)
+        // setIsMaskFrameHovering(false)
 
         // 延时检查遮罩边框状态
         if (maskFrameCheckTimeoutRef.current) {
@@ -492,17 +485,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
         dragAndResizeProps.handleResizeMouseDown(e, 'se')
       }
     }),
-    [
-      subtitleState,
-      updateSubtitleState,
-      dragAndResizeProps.handleMouseDown,
-      dragAndResizeProps.handleResizeMouseDown,
-      isControlsHovering,
-      isHovering,
-      isMaskFrameHovering,
-      displayAspectRatio,
-      containerRef
-    ]
+    [updateSubtitleState, subtitleState, displayAspectRatio, dragAndResizeProps, isControlsHovering]
   )
 
   // 全局事件监听器管理
@@ -551,7 +534,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
   useEffect(() => {
     if (!subtitleState.isMaskMode) {
       setIsMaskFrameActive(false)
-      setIsMaskFrameHovering(false)
+      // setIsMaskFrameHovering(false)
     }
   }, [subtitleState.isMaskMode])
 
@@ -617,7 +600,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
       {/* 遮罩模式效果 */}
       {subtitleState.isMaskMode && (
         <>
-          <MaskOverlay maskFrame={subtitleState.maskFrame} />
+          <MaskOverlay />
           <MaskFrame
             maskFrame={subtitleState.maskFrame}
             updateMaskFrame={stableHandlers.updateMaskFrame}

@@ -102,7 +102,7 @@ export const performanceMonitor = new PerformanceMonitor()
 /**
  * 防抖函数 - 优化版本
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number,
   immediate = false
@@ -110,7 +110,7 @@ export function debounce<T extends (...args: any[]) => any>(
   let timeout: NodeJS.Timeout | null = null
 
   return function executedFunction(...args: Parameters<T>) {
-    const later = () => {
+    const later = (): void => {
       timeout = null
       if (!immediate) func(...args)
     }
@@ -127,7 +127,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * 节流函数 - 优化版本
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -151,11 +151,12 @@ export function isSlowDevice(): boolean {
   if (cores <= 2) return true
 
   // 检查内存（如果可用）
-  const memory = (navigator as any).deviceMemory
+  const memory = (navigator as unknown as { deviceMemory?: number }).deviceMemory
   if (memory && memory <= 2) return true
 
   // 检查连接速度（如果可用）
-  const connection = (navigator as any).connection
+  const connection = (navigator as unknown as { connection?: { effectiveType?: string } })
+    .connection
   if (
     connection &&
     connection.effectiveType &&
@@ -172,7 +173,7 @@ export function isSlowDevice(): boolean {
  */
 export function getDevicePerformanceLevel(): 'low' | 'medium' | 'high' {
   const cores = navigator.hardwareConcurrency || 1
-  const memory = (navigator as any).deviceMemory || 4
+  const memory = (navigator as unknown as { deviceMemory?: number }).deviceMemory || 4
 
   if (cores <= 2 || memory <= 2) return 'low'
   if (cores <= 4 || memory <= 4) return 'medium'
