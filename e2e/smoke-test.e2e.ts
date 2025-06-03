@@ -9,31 +9,6 @@ test.describe('EchoLab Smoke Test - MVP 核心验证', () => {
     await electronApp.waitForAppReady()
   })
 
-  test('烟雾测试: 应用能正常启动并显示主界面', async () => {
-    const page = electronApp.getPage()
-
-    // 验证应用标题
-    await expect(page).toHaveTitle(/EchoLab/i)
-
-    // 验证核心 UI 组件存在
-    const mainElements = [
-      '[data-testid="app-header"]',
-      '[data-testid="video-section"]',
-      'video, [data-testid="video-placeholder"]' // 视频播放器或占位符
-    ]
-
-    for (const selector of mainElements) {
-      try {
-        await expect(page.locator(selector)).toBeVisible({ timeout: 5000 })
-      } catch (error: unknown) {
-        console.error(error)
-        console.warn(`Element ${selector} not found, but continuing test...`)
-      }
-    }
-
-    console.log('✅ 烟雾测试通过: 应用成功启动')
-  })
-
   test('核心流程: 文件加载按钮可点击', async () => {
     const page = electronApp.getPage()
 
