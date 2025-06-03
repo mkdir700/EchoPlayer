@@ -1,10 +1,10 @@
 {
   "name": "echolab",
-  "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "version": "0.1.0",
+  "description": "EchoLab is a video player designed for language learners, helping users learn foreign languages efficiently through sentence-by-sentence intensive listening.",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "echolab.vip",
+  "homepage": "https://echolab.vip",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -32,8 +32,8 @@
     "@types/react-virtualized": "^9.22.2",
     "antd": "^5.25.2",
     "cheerio": "^1.0.0",
+    "electron-conf": "^1.3.0",
     "electron-log": "^5.4.0",
-    "electron-store": "^10.0.1",
     "electron-updater": "^6.3.9",
     "react-player": "^2.16.0",
     "react-virtualized": "^9.22.6"

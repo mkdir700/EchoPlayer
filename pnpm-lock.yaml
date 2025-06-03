@@ -29,6 +29,9 @@ importers:
       cheerio:
         specifier: ^1.0.0
         version: 1.0.0
+      electron-conf:
+        specifier: ^1.3.0
+        version: 1.3.0(electron@35.4.0)
       electron-log:
         specifier: ^5.4.0
         version: 5.4.0
@@ -2183,6 +2186,11 @@ packages:
     resolution: {integrity: sha512-poRgAtUHHOnlzZnc9PK4nzG53xh74wj2Jy7jkTrqZ0MWPoHGh1M2+C//hGeYdA+4K8w4yiVCNYoLXF7ySj2Wig==}
     engines: {node: '>=14.0.0'}
     hasBin: true
+
+  electron-conf@1.3.0:
+    resolution: {integrity: sha512-F1F33QntbFiRsmCW4r8n+CqfTmBzw9XhCWVh27weFpfCNATo9n0K1h1UQLEG5kYBZRqMfcWr1+IHSO+Yd7seRQ==}
+    peerDependencies:
+      electron: '>=15.0.0'
 
   electron-icon-maker@0.0.5:
     resolution: {integrity: sha512-xuNGe26K7jL7p7A7HhZNJFdjuxnPhu8cH0q6PExkG6ifFX6UbsCMUkxvUAh6PGeLOCSG21wEt9i2jPkiZ3ZItg==}
@@ -7570,6 +7578,11 @@ snapshots:
       - bluebird
       - electron-builder-squirrel-windows
       - supports-color
+
+  electron-conf@1.3.0(electron@35.4.0):
+    dependencies:
+      ajv: 8.17.1
+      electron: 35.4.0
 
   electron-icon-maker@0.0.5:
     dependencies:

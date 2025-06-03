@@ -1,7 +1,8 @@
-appId: com.electron.app
+appId: vip.echolab.app
 productName: echolab
 directories:
   buildResources: build
+icon: icons
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -13,6 +14,7 @@ asarUnpack:
   - resources/**
 win:
   executableName: echolab
+  icon: icons/win/icon.ico
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -20,6 +22,7 @@ nsis:
   createDesktopShortcut: always
 mac:
   entitlementsInherit: build/entitlements.mac.plist
+  icon: icons/mac/icon.icns
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
@@ -33,13 +36,14 @@ linux:
     - AppImage
     - snap
     - deb
-  maintainer: electronjs.org
+  maintainer: mkdir700
   category: Utility
+  icon: icons/png
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
   provider: generic
-  url: https://example.com/auto-updates
+  url: https://echolab.vip/auto-updates
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
