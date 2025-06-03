@@ -108,3 +108,21 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Tencent COS - Release Files
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload -r ./artifacts/ /releases/${{ github.ref_name }}/
+          secret_id: ${{ secrets.SECRET_ID }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket: ${{ secrets.BUCKET }}
+          region: ${{ secrets.REGION }}
+
+      - name: Upload to Tencent COS - AutoUpdate Files
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload ./artifacts/*/latest*.yml /autoupdate/ && upload ./artifacts/*/*.exe /autoupdate/ && upload ./artifacts/*/*.dmg /autoupdate/ && upload ./artifacts/*/*.AppImage /autoupdate/
+          secret_id: ${{ secrets.SECRET_ID }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket: ${{ secrets.BUCKET }}
+          region: ${{ secrets.REGION }}
