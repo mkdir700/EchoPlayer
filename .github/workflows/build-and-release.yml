@@ -9,6 +9,14 @@ on:
       version:
         description: 'Release version (e.g., v1.0.0)'
         required: true
+      is_test:
+        description: 'Is this a test build?'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   build:
@@ -27,6 +35,26 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set version variables
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.is_test }}" == "true" ]; then
+            COMMIT_HASH=$(git rev-parse --short HEAD)
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION="${{ github.event.inputs.version }}-${COMMIT_HASH}"
+            else
+              VERSION="${{ github.ref_name }}-${COMMIT_HASH}"
+            fi
+          else
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              VERSION="${{ github.event.inputs.version }}"
+            else
+              VERSION="${{ github.ref_name }}"
+            fi
+          fi
+          echo "BUILD_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "IS_TEST=${{ github.event.inputs.is_test }}" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -77,7 +105,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: echolab-${{ matrix.platform }}
+          name: echolab-${{ matrix.platform }}-${{ env.BUILD_VERSION }}
           path: |
             dist/*.exe
             dist/*.dmg
@@ -112,7 +140,7 @@ jobs:
       - name: Upload to Tencent COS - Release Files
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload -r ./artifacts/ /releases/${{ github.ref_name }}/
+          args: upload -r ./artifacts/ ${{ env.IS_TEST == 'true' && '/test-releases/' || '/releases/' }}${{ env.BUILD_VERSION }}/
           secret_id: ${{ secrets.SECRET_ID }}
           secret_key: ${{ secrets.SECRET_KEY }}
           bucket: ${{ secrets.BUCKET }}
@@ -121,7 +149,7 @@ jobs:
       - name: Upload to Tencent COS - AutoUpdate Files
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload ./artifacts/*/latest*.yml /autoupdate/ && upload ./artifacts/*/*.exe /autoupdate/ && upload ./artifacts/*/*.dmg /autoupdate/ && upload ./artifacts/*/*.AppImage /autoupdate/
+          args: upload ./artifacts/*/latest*.yml ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }} && upload ./artifacts/*/*.exe ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }} && upload ./artifacts/*/*.dmg ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }} && upload ./artifacts/*/*.AppImage ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }}
           secret_id: ${{ secrets.SECRET_ID }}
           secret_key: ${{ secrets.SECRET_KEY }}
           bucket: ${{ secrets.BUCKET }}
