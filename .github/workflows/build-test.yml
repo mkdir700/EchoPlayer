@@ -21,14 +21,6 @@ on:
         required: false
         default: true
         type: boolean
-  push:
-    branches:
-      - main
-      - develop
-    paths-ignore:
-      - '**.md'
-      - '.github/**'
-      - 'docs/**'
 
 jobs:
   determine-platforms:
