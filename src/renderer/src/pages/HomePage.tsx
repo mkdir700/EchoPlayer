@@ -15,6 +15,7 @@ import { formatTime } from '@renderer/utils/helpers'
 import { diagnoseAudioIssues } from '@renderer/utils/videoCompatibility'
 import type { RecentPlayItem } from '@renderer/types'
 import styles from './HomePage.module.css'
+import { COMMON_TEST_IDS, withTestId } from '@renderer/utils/test-utils'
 
 const { Title, Text } = Typography
 
@@ -250,6 +251,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
             icon={<PlusOutlined />}
             onClick={handleVideoFileSelect}
             className={styles.addVideoButton}
+            {...withTestId(COMMON_TEST_IDS.LOAD_VIDEO_BUTTON)}
           >
             <span>添加视频</span>
           </Button>
