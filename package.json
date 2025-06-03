@@ -22,7 +22,10 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "release:prepare": "chmod +x scripts/prepare-release.sh && scripts/prepare-release.sh",
+    "release:publish": "chmod +x scripts/publish-release.sh && scripts/publish-release.sh",
+    "release": "pnpm release:prepare && pnpm release:publish"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
