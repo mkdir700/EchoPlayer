@@ -7,10 +7,21 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., v1.0.0)'
-        required: true
-      is_test:
-        description: 'Is this a test build?'
+        description: 'Release version (e.g., v1.0.0, v1.0.0-beta.1, v1.0.0-alpha.1)'
+        required: false
+      force_version_type:
+        description: 'Force version type (overrides auto-detection)'
+        required: false
+        type: choice
+        options:
+          - ''
+          - 'dev'
+          - 'test'
+          - 'alpha'
+          - 'beta'
+          - 'stable'
+      skip_tests:
+        description: 'Skip tests for faster builds'
         required: false
         default: 'false'
         type: choice
@@ -23,7 +34,86 @@ permissions:
   pull-requests: read
 
 jobs:
+  detect-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_type: ${{ steps.version.outputs.version_type }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+      upload_path: ${{ steps.version.outputs.upload_path }}
+      autoupdate_path: ${{ steps.version.outputs.autoupdate_path }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect version and type
+        id: version
+        shell: bash
+        run: |
+          # Get version from input, tag, or package.json
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ -n "${{ github.ref_name }}" ] && [[ "${{ github.ref_name }}" == v* ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="v$(node -p "require('./package.json').version")"
+          fi
+
+          # Remove 'v' prefix for processing
+          VERSION_NO_V="${VERSION#v}"
+
+          # Detect version type
+          if [ -n "${{ github.event.inputs.force_version_type }}" ]; then
+            VERSION_TYPE="${{ github.event.inputs.force_version_type }}"
+          elif [[ "$VERSION_NO_V" == *"-dev"* ]]; then
+            VERSION_TYPE="dev"
+          elif [[ "$VERSION_NO_V" == *"-test"* ]]; then
+            VERSION_TYPE="test"
+          elif [[ "$VERSION_NO_V" == *"-alpha"* ]]; then
+            VERSION_TYPE="alpha"
+          elif [[ "$VERSION_NO_V" == *"-beta"* ]]; then
+            VERSION_TYPE="beta"
+          else
+            VERSION_TYPE="stable"
+          fi
+
+          # Determine if it's a prerelease
+          if [[ "$VERSION_TYPE" != "stable" ]]; then
+            IS_PRERELEASE="true"
+          else
+            IS_PRERELEASE="false"
+          fi
+
+          # Set upload paths based on version type
+          case "$VERSION_TYPE" in
+            "dev"|"test")
+              UPLOAD_PATH="/test-releases/"
+              AUTOUPDATE_PATH="/test-autoupdate/"
+              ;;
+            "alpha"|"beta")
+              UPLOAD_PATH="/prerelease/"
+              AUTOUPDATE_PATH="/prerelease-autoupdate/"
+              ;;
+            "stable")
+              UPLOAD_PATH="/releases/"
+              AUTOUPDATE_PATH="/autoupdate/"
+              ;;
+          esac
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "upload_path=$UPLOAD_PATH" >> $GITHUB_OUTPUT
+          echo "autoupdate_path=$AUTOUPDATE_PATH" >> $GITHUB_OUTPUT
+
+          echo "🏷️ Version: $VERSION"
+          echo "📦 Version Type: $VERSION_TYPE"
+          echo "🚀 Is Prerelease: $IS_PRERELEASE"
+          echo "📁 Upload Path: $UPLOAD_PATH"
+          echo "🔄 AutoUpdate Path: $AUTOUPDATE_PATH"
+
   build:
+    needs: detect-version
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -39,26 +129,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set version variables
-        shell: bash
-        run: |
-          if [ "${{ github.event.inputs.is_test }}" == "true" ]; then
-            COMMIT_HASH=$(git rev-parse --short HEAD)
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}-${COMMIT_HASH}"
-            else
-              VERSION="${{ github.ref_name }}-${COMMIT_HASH}"
-            fi
-          else
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}"
-            else
-              VERSION="${{ github.ref_name }}"
-            fi
-          fi
-          echo "BUILD_VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "IS_TEST=${{ github.event.inputs.is_test }}" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -87,10 +157,16 @@ jobs:
         run: pnpm install
 
       - name: Run tests
+        if: github.event.inputs.skip_tests != 'true' && needs.detect-version.outputs.version_type != 'dev'
         run: pnpm test:run
 
       - name: Type check
+        if: needs.detect-version.outputs.version_type != 'dev'
         run: pnpm typecheck
+
+      - name: Lint check
+        if: needs.detect-version.outputs.version_type == 'stable'
+        run: pnpm lint
 
       - name: Build application
         run: pnpm build
@@ -109,7 +185,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: echolab-${{ matrix.platform }}-${{ env.BUILD_VERSION }}
+          name: echolab-${{ matrix.platform }}-${{ needs.detect-version.outputs.version }}
           path: |
             dist/*.exe
             dist/*.dmg
@@ -117,45 +193,25 @@ jobs:
             dist/*.deb
             dist/*.snap
             dist/latest*.yml
-          retention-days: 7
+          retention-days: ${{ needs.detect-version.outputs.version_type == 'stable' && 30 || 7 }}
 
   upload-windows:
-    needs: build
+    needs: [detect-version, build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set version variables
-        shell: bash
-        run: |
-          if [ "${{ github.event.inputs.is_test }}" == "true" ]; then
-            COMMIT_HASH=$(git rev-parse --short HEAD)
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}-${COMMIT_HASH}"
-            else
-              VERSION="${{ github.ref_name }}-${COMMIT_HASH}"
-            fi
-          else
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}"
-            else
-              VERSION="${{ github.ref_name }}"
-            fi
-          fi
-          echo "BUILD_VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "IS_TEST=${{ github.event.inputs.is_test }}" >> $GITHUB_ENV
-
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
-          name: echolab-win-${{ env.BUILD_VERSION }}
-          path: artifacts/echolab-win-${{ env.BUILD_VERSION }}
+          name: echolab-win-${{ needs.detect-version.outputs.version }}
+          path: artifacts/echolab-win-${{ needs.detect-version.outputs.version }}
 
       - name: Upload to Tencent COS - Release Files (Windows)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload -r ./artifacts/echolab-win-${{ env.BUILD_VERSION }}/ ${{ env.IS_TEST == 'true' && '/test-releases/' || '/releases/' }}${{ env.BUILD_VERSION }}/win/
+          args: upload -r ./artifacts/echolab-win-${{ needs.detect-version.outputs.version }}/ ${{ needs.detect-version.outputs.upload_path }}${{ needs.detect-version.outputs.version }}/win/
           secret_id: ${{ secrets.SECRET_ID }}
           secret_key: ${{ secrets.SECRET_KEY }}
           bucket: ${{ secrets.BUCKET }}
@@ -164,49 +220,29 @@ jobs:
       - name: Upload to Tencent COS - AutoUpdate Config (Windows)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload ./artifacts/echolab-win-${{ env.BUILD_VERSION }}/latest.yml ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }}
+          args: upload ./artifacts/echolab-win-${{ needs.detect-version.outputs.version }}/latest.yml ${{ needs.detect-version.outputs.autoupdate_path }}
           secret_id: ${{ secrets.SECRET_ID }}
           secret_key: ${{ secrets.SECRET_KEY }}
           bucket: ${{ secrets.BUCKET }}
           region: ${{ secrets.REGION }}
 
   upload-mac:
-    needs: build
+    needs: [detect-version, build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set version variables
-        shell: bash
-        run: |
-          if [ "${{ github.event.inputs.is_test }}" == "true" ]; then
-            COMMIT_HASH=$(git rev-parse --short HEAD)
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}-${COMMIT_HASH}"
-            else
-              VERSION="${{ github.ref_name }}-${COMMIT_HASH}"
-            fi
-          else
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}"
-            else
-              VERSION="${{ github.ref_name }}"
-            fi
-          fi
-          echo "BUILD_VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "IS_TEST=${{ github.event.inputs.is_test }}" >> $GITHUB_ENV
-
       - name: Download Mac artifacts
         uses: actions/download-artifact@v4
         with:
-          name: echolab-mac-${{ env.BUILD_VERSION }}
-          path: artifacts/echolab-mac-${{ env.BUILD_VERSION }}
+          name: echolab-mac-${{ needs.detect-version.outputs.version }}
+          path: artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}
 
       - name: Upload to Tencent COS - Release Files (Mac)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload -r ./artifacts/echolab-mac-${{ env.BUILD_VERSION }}/ ${{ env.IS_TEST == 'true' && '/test-releases/' || '/releases/' }}${{ env.BUILD_VERSION }}/mac/
+          args: upload -r ./artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}/ ${{ needs.detect-version.outputs.upload_path }}${{ needs.detect-version.outputs.version }}/mac/
           secret_id: ${{ secrets.SECRET_ID }}
           secret_key: ${{ secrets.SECRET_KEY }}
           bucket: ${{ secrets.BUCKET }}
@@ -215,49 +251,29 @@ jobs:
       - name: Upload to Tencent COS - AutoUpdate Config (Mac)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload ./artifacts/echolab-mac-${{ env.BUILD_VERSION }}/latest-mac.yml ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }}
+          args: upload ./artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}/latest-mac.yml ${{ needs.detect-version.outputs.autoupdate_path }}
           secret_id: ${{ secrets.SECRET_ID }}
           secret_key: ${{ secrets.SECRET_KEY }}
           bucket: ${{ secrets.BUCKET }}
           region: ${{ secrets.REGION }}
 
   upload-linux:
-    needs: build
+    needs: [detect-version, build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set version variables
-        shell: bash
-        run: |
-          if [ "${{ github.event.inputs.is_test }}" == "true" ]; then
-            COMMIT_HASH=$(git rev-parse --short HEAD)
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}-${COMMIT_HASH}"
-            else
-              VERSION="${{ github.ref_name }}-${COMMIT_HASH}"
-            fi
-          else
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}"
-            else
-              VERSION="${{ github.ref_name }}"
-            fi
-          fi
-          echo "BUILD_VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "IS_TEST=${{ github.event.inputs.is_test }}" >> $GITHUB_ENV
-
       - name: Download Linux artifacts
         uses: actions/download-artifact@v4
         with:
-          name: echolab-linux-${{ env.BUILD_VERSION }}
-          path: artifacts/echolab-linux-${{ env.BUILD_VERSION }}
+          name: echolab-linux-${{ needs.detect-version.outputs.version }}
+          path: artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}
 
       - name: Upload to Tencent COS - Release Files (Linux)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload -r ./artifacts/echolab-linux-${{ env.BUILD_VERSION }}/ ${{ env.IS_TEST == 'true' && '/test-releases/' || '/releases/' }}${{ env.BUILD_VERSION }}/linux/
+          args: upload -r ./artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}/ ${{ needs.detect-version.outputs.upload_path }}${{ needs.detect-version.outputs.version }}/linux/
           secret_id: ${{ secrets.SECRET_ID }}
           secret_key: ${{ secrets.SECRET_KEY }}
           bucket: ${{ secrets.BUCKET }}
@@ -266,19 +282,18 @@ jobs:
       - name: Upload to Tencent COS - AutoUpdate Config (Linux)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload ./artifacts/echolab-linux-${{ env.BUILD_VERSION }}/latest-linux.yml ${{ env.IS_TEST == 'true' && '/test-autoupdate/' || '/autoupdate/' }}
+          args: upload ./artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}/latest-linux.yml ${{ needs.detect-version.outputs.autoupdate_path }}
           secret_id: ${{ secrets.SECRET_ID }}
           secret_key: ${{ secrets.SECRET_KEY }}
           bucket: ${{ secrets.BUCKET }}
           region: ${{ secrets.REGION }}
 
   release:
-    needs: [upload-windows, upload-mac, upload-linux]
+    needs: [detect-version, upload-windows, upload-mac, upload-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: read
-    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Download all artifacts
@@ -289,10 +304,52 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.detect-version.outputs.version }}
+          name: ${{ needs.detect-version.outputs.version_type == 'stable' && format('Release {0}', needs.detect-version.outputs.version) || format('{0} Release {1}', needs.detect-version.outputs.version_type, needs.detect-version.outputs.version) }}
           files: |
             artifacts/**/*
-          draft: true
-          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+          draft: ${{ needs.detect-version.outputs.version_type == 'dev' || needs.detect-version.outputs.version_type == 'test' }}
+          prerelease: ${{ needs.detect-version.outputs.is_prerelease == 'true' }}
           generate_release_notes: true
+          body: |
+            ## 📦 Version Type: ${{ needs.detect-version.outputs.version_type }}
+
+            ${{ needs.detect-version.outputs.version_type == 'stable' && '🎉 This is a stable release.' || '' }}
+            ${{ needs.detect-version.outputs.version_type == 'beta' && '🧪 This is a beta release. Please test thoroughly before using in production.' || '' }}
+            ${{ needs.detect-version.outputs.version_type == 'alpha' && '⚠️ This is an alpha release. Expect bugs and breaking changes.' || '' }}
+            ${{ needs.detect-version.outputs.version_type == 'test' && '🔧 This is a test build for internal testing only.' || '' }}
+            ${{ needs.detect-version.outputs.version_type == 'dev' && '🚧 This is a development build. Not recommended for production use.' || '' }}
+
+            ### 📥 Download
+
+            - **Windows**: `echolab-win-${{ needs.detect-version.outputs.version }}`
+            - **macOS**: `echolab-mac-${{ needs.detect-version.outputs.version }}`  
+            - **Linux**: `echolab-linux-${{ needs.detect-version.outputs.version }}`
+
+            ### 🔄 Auto Update
+
+            Auto-update is available for this ${{ needs.detect-version.outputs.version_type }} release.
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+  notify:
+    needs: [detect-version, release]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build Status Summary
+        run: |
+          echo "🏗️ Build Summary"
+          echo "==============="
+          echo "Version: ${{ needs.detect-version.outputs.version }}"
+          echo "Type: ${{ needs.detect-version.outputs.version_type }}"
+          echo "Prerelease: ${{ needs.detect-version.outputs.is_prerelease }}"
+          echo "Status: ${{ job.status }}"
+
+          if [ "${{ needs.detect-version.outputs.version_type }}" == "beta" ]; then
+            echo ""
+            echo "🧪 Beta Release Notes:"
+            echo "- This is a beta version, please test thoroughly"
+            echo "- Report any issues on GitHub"
+            echo "- Auto-update is enabled for beta users"
+          fi

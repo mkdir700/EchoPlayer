@@ -166,7 +166,7 @@
   ) !important;
   border: 1px solid var(--antd-border) !important;
   border-radius: var(--border-radius-lg) !important;
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.15),
     0 1px 4px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
@@ -190,7 +190,7 @@
 .ant-card:hover {
   transform: translateY(-2px) !important;
   border-color: rgba(102, 126, 234, 0.3) !important;
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.2),
     0 4px 16px rgba(102, 126, 234, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
@@ -432,7 +432,7 @@
 .ant-card-hoverable:hover {
   transform: translateY(-4px) scale(1.01) !important;
   border-color: var(--accent-color) !important;
-  box-shadow: 
+  box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.25),
     0 6px 20px rgba(102, 126, 234, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
@@ -481,19 +481,19 @@
     margin: var(--spacing-sm) !important;
     border-radius: var(--border-radius-md) !important;
   }
-  
+
   .ant-card-head {
     padding: var(--spacing-md) var(--spacing-lg) !important;
   }
-  
+
   .ant-card-head-title {
     font-size: var(--font-size-base) !important;
   }
-  
+
   .ant-card-body {
     padding: var(--spacing-lg) !important;
   }
-  
+
   .ant-card-actions > li > span {
     padding: var(--spacing-xs) var(--spacing-sm) !important;
     font-size: var(--font-size-sm) !important;
@@ -827,7 +827,7 @@
   overflow: hidden !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
@@ -956,7 +956,7 @@
     rgba(34, 197, 94, 0.03) 100%
   ) !important;
   border: 1px solid rgba(34, 197, 94, 0.35) !important;
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(34, 197, 94, 0.15),
     inset 0 1px 0 rgba(34, 197, 94, 0.2) !important;
 }
@@ -986,7 +986,7 @@
     rgba(251, 146, 60, 0.03) 100%
   ) !important;
   border: 1px solid rgba(251, 146, 60, 0.35) !important;
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(251, 146, 60, 0.15),
     inset 0 1px 0 rgba(251, 146, 60, 0.2) !important;
 }
@@ -1016,7 +1016,7 @@
     rgba(59, 130, 246, 0.03) 100%
   ) !important;
   border: 1px solid rgba(59, 130, 246, 0.35) !important;
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(59, 130, 246, 0.15),
     inset 0 1px 0 rgba(59, 130, 246, 0.2) !important;
 }
@@ -1046,7 +1046,7 @@
     rgba(248, 113, 113, 0.03) 100%
   ) !important;
   border: 1px solid rgba(248, 113, 113, 0.35) !important;
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(248, 113, 113, 0.15),
     inset 0 1px 0 rgba(248, 113, 113, 0.2) !important;
 }
@@ -1101,15 +1101,15 @@
   .ant-alert-with-description {
     padding: var(--spacing-md) var(--spacing-lg) !important;
   }
-  
+
   .ant-alert-with-description .ant-alert-message {
     font-size: var(--font-size-base) !important;
   }
-  
+
   .ant-alert-with-description .ant-alert-description {
     font-size: var(--font-size-sm) !important;
   }
-  
+
   .ant-alert-with-description .ant-alert-icon {
     font-size: var(--font-size-lg) !important;
     margin-right: var(--spacing-sm) !important;
@@ -1326,11 +1326,16 @@
 
 /* 代码样式 */
 .ant-typography code {
-  background: linear-gradient(135deg, var(--antd-bg-primary) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--antd-bg-primary) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  ) !important;
   color: var(--accent-color) !important;
   padding: 4px 8px !important;
   border-radius: 6px !important;
-  font-family: 'SFMono-Regular', 'Monaco', 'Inconsolata', 'Liberation Mono', 'Courier New', monospace !important;
+  font-family:
+    'SFMono-Regular', 'Monaco', 'Inconsolata', 'Liberation Mono', 'Courier New', monospace !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
   border: 1px solid var(--antd-border) !important;
@@ -1344,7 +1349,8 @@
   border-radius: var(--border-radius-lg) !important;
   border: 1px solid var(--antd-border) !important;
   overflow-x: auto !important;
-  font-family: 'SFMono-Regular', 'Monaco', 'Inconsolata', 'Liberation Mono', 'Courier New', monospace !important;
+  font-family:
+    'SFMono-Regular', 'Monaco', 'Inconsolata', 'Liberation Mono', 'Courier New', monospace !important;
   font-size: 0.875rem !important;
   line-height: 1.5 !important;
   box-shadow: var(--antd-shadow) !important;
@@ -1361,7 +1367,11 @@
 
 /* 引用样式 */
 .ant-typography blockquote {
-  background: linear-gradient(135deg, var(--antd-bg-primary) 0%, rgba(102, 126, 234, 0.05) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--antd-bg-primary) 0%,
+    rgba(102, 126, 234, 0.05) 100%
+  ) !important;
   border-left: 4px solid var(--accent-color) !important;
   margin: var(--spacing-lg) 0 !important;
   padding: var(--spacing-md) var(--spacing-lg) !important;
@@ -1543,7 +1553,11 @@ article ul ul ul li::before,
 }
 
 .ant-typography mark {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.1) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.3) 0%,
+    rgba(245, 158, 11, 0.1) 100%
+  ) !important;
   color: var(--antd-text) !important;
   padding: 2px 4px !important;
   border-radius: 4px !important;
