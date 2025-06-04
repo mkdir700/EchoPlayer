@@ -14,7 +14,6 @@ on:
         required: false
         type: choice
         options:
-          - ''
           - 'dev'
           - 'test'
           - 'alpha'
@@ -308,7 +307,7 @@ jobs:
           name: ${{ needs.detect-version.outputs.version_type == 'stable' && format('Release {0}', needs.detect-version.outputs.version) || format('{0} Release {1}', needs.detect-version.outputs.version_type, needs.detect-version.outputs.version) }}
           files: |
             artifacts/**/*
-          draft: ${{ needs.detect-version.outputs.version_type == 'dev' || needs.detect-version.outputs.version_type == 'test' }}
+          draft: true
           prerelease: ${{ needs.detect-version.outputs.is_prerelease == 'true' }}
           generate_release_notes: true
           body: |
