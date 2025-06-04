@@ -37,7 +37,10 @@
     "version:prerelease": "tsx scripts/version-manager.ts prerelease",
     "version:beta": "tsx scripts/version-manager.ts minor beta",
     "version:beta-patch": "tsx scripts/version-manager.ts patch beta",
-    "release": "electron-builder publish -p onTagOrDraft",
+    "release": "npm run build && electron-builder --publish onTagOrDraft",
+    "release:all": "npm run build && electron-builder --publish always",
+    "release:never": "npm run build && electron-builder --publish never",
+    "release:draft": "npm run build && electron-builder --publish onTagOrDraft",
     "prepare": "husky"
   },
   "dependencies": {
