@@ -37,9 +37,7 @@
     "version:prerelease": "tsx scripts/version-manager.ts prerelease",
     "version:beta": "tsx scripts/version-manager.ts minor beta",
     "version:beta-patch": "tsx scripts/version-manager.ts patch beta",
-    "release:prepare": "chmod +x scripts/prepare-release.sh && scripts/prepare-release.sh",
-    "release:publish": "chmod +x scripts/publish-release.sh && scripts/publish-release.sh",
-    "release": "pnpm release:prepare && pnpm release:publish",
+    "release": "electron-builder publish -p onTagOrDraft",
     "prepare": "husky"
   },
   "dependencies": {

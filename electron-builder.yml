@@ -61,8 +61,11 @@ appImage:
 npmRebuild: false
 publish:
   provider: github
-  repo: echolab
   owner: mkdir700
+  repo: echolab
+  vPrefixedTagName: true
+  releaseType: draft
+  publishAutoUpdate: true
 generateUpdatesFilesForAllChannels: true
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

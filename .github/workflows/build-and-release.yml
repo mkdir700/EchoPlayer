@@ -111,10 +111,9 @@ jobs:
           echo "📁 Upload Path: $UPLOAD_PATH"
           echo "🔄 AutoUpdate Path: $AUTOUPDATE_PATH"
 
-  build:
+  release:
     needs: detect-version
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         include:
@@ -167,169 +166,10 @@ jobs:
         if: needs.detect-version.outputs.version_type == 'stable'
         run: pnpm lint
 
-      - name: Build application
-        run: pnpm build
-
-      - name: Build packages
-        run: |
-          if [ "${{ matrix.platform }}" == "win" ]; then
-            pnpm build:win
-          elif [ "${{ matrix.platform }}" == "mac" ]; then
-            pnpm build:mac
-          else
-            pnpm build:linux
-          fi
-        shell: bash
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: echolab-${{ matrix.platform }}-${{ needs.detect-version.outputs.version }}
-          path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.snap
-            dist/latest*.yml
-          retention-days: ${{ needs.detect-version.outputs.version_type == 'stable' && 30 || 7 }}
-
-  # upload-windows:
-  #   needs: [detect-version, build]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: Download Windows artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: echolab-win-${{ needs.detect-version.outputs.version }}
-  #         path: artifacts/echolab-win-${{ needs.detect-version.outputs.version }}
-
-  #     - name: Upload to Tencent COS - Release Files (Windows)
-  #       uses: zkqiang/tencent-cos-action@v0.1.0
-  #       with:
-  #         args: upload -r ./artifacts/echolab-win-${{ needs.detect-version.outputs.version }}/ ${{ needs.detect-version.outputs.upload_path }}${{ needs.detect-version.outputs.version }}/win/
-  #         secret_id: ${{ secrets.SECRET_ID }}
-  #         secret_key: ${{ secrets.SECRET_KEY }}
-  #         bucket: ${{ secrets.BUCKET }}
-  #         region: ${{ secrets.REGION }}
-
-  #     - name: Upload to Tencent COS - AutoUpdate Config (Windows)
-  #       uses: zkqiang/tencent-cos-action@v0.1.0
-  #       with:
-  #         args: upload ./artifacts/echolab-win-${{ needs.detect-version.outputs.version }}/latest.yml ${{ needs.detect-version.outputs.autoupdate_path }}
-  #         secret_id: ${{ secrets.SECRET_ID }}
-  #         secret_key: ${{ secrets.SECRET_KEY }}
-  #         bucket: ${{ secrets.BUCKET }}
-  #         region: ${{ secrets.REGION }}
-
-  # upload-mac:
-  #   needs: [detect-version, build]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: Download Mac artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: echolab-mac-${{ needs.detect-version.outputs.version }}
-  #         path: artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}
-
-  #     - name: Upload to Tencent COS - Release Files (Mac)
-  #       uses: zkqiang/tencent-cos-action@v0.1.0
-  #       with:
-  #         args: upload -r ./artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}/ ${{ needs.detect-version.outputs.upload_path }}${{ needs.detect-version.outputs.version }}/mac/
-  #         secret_id: ${{ secrets.SECRET_ID }}
-  #         secret_key: ${{ secrets.SECRET_KEY }}
-  #         bucket: ${{ secrets.BUCKET }}
-  #         region: ${{ secrets.REGION }}
-
-  #     - name: Upload to Tencent COS - AutoUpdate Config (Mac)
-  #       uses: zkqiang/tencent-cos-action@v0.1.0
-  #       with:
-  #         args: upload ./artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}/latest-mac.yml ${{ needs.detect-version.outputs.autoupdate_path }}
-  #         secret_id: ${{ secrets.SECRET_ID }}
-  #         secret_key: ${{ secrets.SECRET_KEY }}
-  #         bucket: ${{ secrets.BUCKET }}
-  #         region: ${{ secrets.REGION }}
-
-  # upload-linux:
-  #   needs: [detect-version, build]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: Download Linux artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: echolab-linux-${{ needs.detect-version.outputs.version }}
-  #         path: artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}
-
-  #     - name: Upload to Tencent COS - Release Files (Linux)
-  #       uses: zkqiang/tencent-cos-action@v0.1.0
-  #       with:
-  #         args: upload -r ./artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}/ ${{ needs.detect-version.outputs.upload_path }}${{ needs.detect-version.outputs.version }}/linux/
-  #         secret_id: ${{ secrets.SECRET_ID }}
-  #         secret_key: ${{ secrets.SECRET_KEY }}
-  #         bucket: ${{ secrets.BUCKET }}
-  #         region: ${{ secrets.REGION }}
-
-  #     - name: Upload to Tencent COS - AutoUpdate Config (Linux)
-  #       uses: zkqiang/tencent-cos-action@v0.1.0
-  #       with:
-  #         args: upload ./artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}/latest-linux.yml ${{ needs.detect-version.outputs.autoupdate_path }}
-  #         secret_id: ${{ secrets.SECRET_ID }}
-  #         secret_key: ${{ secrets.SECRET_KEY }}
-  #         bucket: ${{ secrets.BUCKET }}
-  #         region: ${{ secrets.REGION }}
-
-  release:
-    needs: [detect-version, build]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: read
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.detect-version.outputs.version }}
-          name: ${{ needs.detect-version.outputs.version_type == 'stable' && format('Release {0}', needs.detect-version.outputs.version) || format('{0} Release {1}', needs.detect-version.outputs.version_type, needs.detect-version.outputs.version) }}
-          files: |
-            artifacts/**/*
-          draft: true
-          prerelease: ${{ needs.detect-version.outputs.is_prerelease == 'true' }}
-          generate_release_notes: true
-          body: |
-            ## 📦 Version Type: ${{ needs.detect-version.outputs.version_type }}
-
-            ${{ needs.detect-version.outputs.version_type == 'stable' && '🎉 This is a stable release.' || '' }}
-            ${{ needs.detect-version.outputs.version_type == 'beta' && '🧪 This is a beta release. Please test thoroughly before using in production.' || '' }}
-            ${{ needs.detect-version.outputs.version_type == 'alpha' && '⚠️ This is an alpha release. Expect bugs and breaking changes.' || '' }}
-            ${{ needs.detect-version.outputs.version_type == 'test' && '🔧 This is a test build for internal testing only.' || '' }}
-            ${{ needs.detect-version.outputs.version_type == 'dev' && '🚧 This is a development build. Not recommended for production use.' || '' }}
-
-            ### 📥 Download
-
-            - **Windows**: `echolab-win-${{ needs.detect-version.outputs.version }}`
-            - **macOS**: `echolab-mac-${{ needs.detect-version.outputs.version }}`  
-            - **Linux**: `echolab-linux-${{ needs.detect-version.outputs.version }}`
-
-            ### 🔄 Auto Update
-
-            Auto-update is available for this ${{ needs.detect-version.outputs.version_type }} release.
+      - name: Build and release using electron-builder
+        run: pnpm release
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     needs: [detect-version, release]
