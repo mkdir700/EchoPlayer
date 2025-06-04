@@ -6,7 +6,8 @@
 
 **专业的视频语言学习工具**
 
-[![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-red?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
+[![Development Status](https://img.shields.io/badge/status-Beta-orange?style=flat-square)](https://github.com/mkdir700/echolab)
 [![Electron](https://img.shields.io/badge/Electron-35+-blue?style=flat-square)](https://electronjs.org)
 [![React](https://img.shields.io/badge/React-19+-blue?style=flat-square)](https://reactjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue?style=flat-square)](https://typescriptlang.org)
@@ -20,6 +21,23 @@
 ## 📖 项目简介
 
 EchoLab 是一款专为语言学习者设计的视频播放器，通过**逐句精听**的方式帮助用户高效学习外语。无论是电影、电视剧、纪录片还是教学视频，EchoLab 都能让您的视频学习体验更加专业和高效。
+
+> **⚠️ 开发状态说明**  
+> 本软件目前处于 **Beta 开发阶段**，功能和界面可能会有所调整。我们正在积极开发和优化中，欢迎您的反馈和建议！
+
+## 📱 软件截图
+
+### 首页界面
+
+_清晰直观的首页设计，快速开始您的学习之旅_
+
+![首页截图](./assets/home.png)
+
+### 播放页面
+
+_专业的逐句精听界面，专注高效的语言学习体验_
+
+![播放页截图](./assets/playback.png)
 
 ## ✨ 功能特性
 
@@ -217,7 +235,7 @@ echolab/
 
 ## 📄 许可证
 
-本项目基于 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](LICENSE) 发布。
+本项目基于 [Apache License 2.0](LICENSE) 开源许可证发布。
 
 ## 🙏 致谢
 
