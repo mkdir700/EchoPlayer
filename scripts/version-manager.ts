@@ -2,7 +2,10 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
+import { fileURLToPath } from 'url'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 const PACKAGE_JSON_PATH = path.join(__dirname, '..', 'package.json')
 
 /**
@@ -212,9 +215,8 @@ Examples:
   }
 }
 
-if (require.main === module) {
-  main()
-}
+// Always run main function when script is executed directly
+main()
 
 export {
   parseVersion,
