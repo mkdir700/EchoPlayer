@@ -60,8 +60,9 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://echolab.vip/auto-updates
+  provider: github
+  repo: echolab
+  owner: mkdir700
 generateUpdatesFilesForAllChannels: true
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
