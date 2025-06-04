@@ -156,20 +156,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Update package.json version
-        shell: bash
-        run: |
-          # Update package.json with the detected version (without 'v' prefix)
-          VERSION_NO_V="${{ needs.detect-version.outputs.version }}"
-          VERSION_NO_V="${VERSION_NO_V#v}"
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.version = '$VERSION_NO_V';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          echo "Updated package.json version to: $VERSION_NO_V"
-
       - name: Run tests
         if: github.event.inputs.skip_tests != 'true' && needs.detect-version.outputs.version_type != 'dev'
         run: pnpm test:run
@@ -322,7 +308,7 @@ jobs:
           name: ${{ needs.detect-version.outputs.version_type == 'stable' && format('Release {0}', needs.detect-version.outputs.version) || format('{0} Release {1}', needs.detect-version.outputs.version_type, needs.detect-version.outputs.version) }}
           files: |
             artifacts/**/*
-          draft: ${{ needs.detect-version.outputs.version_type == 'dev' || needs.detect-version.outputs.version_type == 'test' }} || ${{ needs.detect-version.outputs.is_prerelease == 'true' }}
+          draft: ${{ needs.detect-version.outputs.version_type == 'dev' || needs.detect-version.outputs.version_type == 'test' }}
           prerelease: ${{ needs.detect-version.outputs.is_prerelease == 'true' }}
           generate_release_notes: true
           body: |
