@@ -1,49 +1,87 @@
 import React from 'react'
-import { Layout, Menu, Typography } from 'antd'
+import { Space, Button } from 'antd'
 import { HomeOutlined, SettingOutlined } from '@ant-design/icons'
 import { AppHeaderProps, PageType, NavigationItem } from '@renderer/types'
-import styles from './AppHeader.module.css'
 import { COMMON_TEST_IDS, withTestId } from '@renderer/utils/test-utils'
-
-const { Header } = Layout
-const { Title } = Typography
+import { useTheme } from '@renderer/hooks/useTheme'
 
 // 导航菜单配置
 const navigationItems: NavigationItem[] = [
   { key: 'home', label: '首页', icon: <HomeOutlined /> },
-  // { key: 'favorites', label: '收藏', icon: <HeartOutlined /> },
-  // { key: 'about', label: '关于', icon: <InfoCircleOutlined /> },
   { key: 'settings', label: '设置', icon: <SettingOutlined /> }
 ]
 
+// 扩展 CSS 属性类型以支持 WebkitAppRegion
+interface ExtendedCSSProperties extends React.CSSProperties {
+  WebkitAppRegion?: 'drag' | 'no-drag'
+}
+
 export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.JSX.Element {
+  const { token, styles, utils } = useTheme()
+
   return (
-    <Header className={styles.header}>
-      <div className={styles.headerLeft} {...withTestId(COMMON_TEST_IDS.APP_HEADER)}>
-        <Title level={4} style={{ color: '#ffffff', margin: 0, flexShrink: 0 }}>
-          🎬 EchoLab
-        </Title>
+    <div
+      style={
+        {
+          height: token.controlHeightLG + token.paddingSM, // 使用 token 计算高度
+          ...styles.glassEffect,
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'sticky',
+          top: 0,
+          zIndex: token.zIndexPopupBase,
+          WebkitAppRegion: 'drag'
+        } as ExtendedCSSProperties
+      }
+      {...withTestId(COMMON_TEST_IDS.APP_HEADER)}
+    >
+      {/* 导航栏区域 */}
+      <div
+        style={
+          {
+            height: token.controlHeightLG,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: `0 ${token.paddingLG}px`,
+            WebkitAppRegion: 'no-drag'
+          } as ExtendedCSSProperties
+        }
+      >
+        <Space size={token.marginLG}>
+          {navigationItems.map((item) => (
+            <Button
+              key={item.key}
+              type={currentPage === item.key ? 'primary' : 'text'}
+              icon={item.icon}
+              onClick={() => onPageChange(item.key as PageType)}
+              style={{
+                height: token.controlHeight,
+                borderRadius: token.borderRadius,
+                fontSize: token.fontSizeSM,
+                fontWeight: token.fontWeightStrong,
+                display: 'flex',
+                alignItems: 'center',
+                gap: token.marginXS,
+                padding: `0 ${token.paddingSM}px`,
+                transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
+                ...(currentPage === item.key
+                  ? {
+                      background: utils.hexToRgba(token.colorPrimary, 0.15),
+                      borderColor: 'transparent',
+                      color: token.colorPrimary
+                    }
+                  : {
+                      color: token.colorTextSecondary
+                    })
+              }}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </Space>
       </div>
-
-      {/* 导航菜单 */}
-      <div className={styles.headerCenter}>
-        <Menu
-          mode="horizontal"
-          selectedKeys={[currentPage]}
-          onClick={({ key }) => onPageChange(key as PageType)}
-          style={{
-            backgroundColor: 'transparent',
-            borderBottom: 'none'
-          }}
-          items={navigationItems.map((item) => ({
-            key: item.key,
-            icon: item.icon,
-            label: item.label
-          }))}
-        />
-      </div>
-
-      <div className={styles.headerRight}>{/* 右侧预留空间，可以放置其他功能按钮 */}</div>
-    </Header>
+    </div>
   )
 }

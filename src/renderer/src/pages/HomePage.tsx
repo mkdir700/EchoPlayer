@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
-import { Button, Typography, Card, Tooltip, Row, Col, Empty, Modal, message } from 'antd'
+import { Button, Typography, Card, Tooltip, Row, Col, Modal, message, Space } from 'antd'
 import {
   VideoCameraOutlined,
   PlayCircleOutlined,
-  ClockCircleOutlined,
   PlusOutlined,
   DeleteOutlined
 } from '@ant-design/icons'
@@ -14,8 +13,8 @@ import { useVideoFileSelection } from '@renderer/hooks/useVideoFileSelection'
 import { formatTime } from '@renderer/utils/helpers'
 import { diagnoseAudioIssues } from '@renderer/utils/videoCompatibility'
 import type { RecentPlayItem } from '@renderer/types'
-import styles from './HomePage.module.css'
-import { COMMON_TEST_IDS, withTestId } from '@renderer/utils/test-utils'
+import { useTheme } from '@renderer/hooks/useTheme'
+import { useThemeCustomization } from '@renderer/contexts/ThemeContext'
 
 const { Title, Text } = Typography
 
@@ -24,6 +23,13 @@ interface HomePageProps {
 }
 
 export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element {
+  const { token, styles, utils } = useTheme()
+  const { customization } = useThemeCustomization()
+
+  // 判断是否为紧凑模式
+  const isCompactMode =
+    customization.algorithm === 'compact' || customization.algorithm === 'darkCompact'
+
   // 使用自定义 Hooks
   const videoControls = useVideoControls()
   const { recentPlays, removeRecentPlay, clearRecentPlays, addRecentPlay, updateRecentPlay } =
@@ -188,35 +194,6 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
     await clearRecentPlays()
   }, [clearRecentPlays])
 
-  // 格式化最后打开时间
-  const formatLastOpened = (timestamp: number): string => {
-    const now = Date.now()
-    const diff = now - timestamp
-    const minutes = Math.floor(diff / (1000 * 60))
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
-    if (minutes < 1) return '刚刚'
-    if (minutes < 60) return `${minutes}分钟前`
-    if (hours < 24) return `${hours}小时前`
-    if (days < 7) return `${days}天前`
-    return new Date(timestamp).toLocaleDateString()
-  }
-
-  // 生成视频海报占位符
-  const generatePosterPlaceholder = (fileName: string): string => {
-    const colors = [
-      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
-    ]
-    const index = fileName.length % colors.length
-    return colors[index]
-  }
-
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedFileId, setSelectedFileId] = useState('')
   const [selectedFileName, setSelectedFileName] = useState('')
@@ -235,194 +212,400 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
   }
 
   return (
-    <div className={styles.homePageContainer}>
-      {/* 顶部欢迎区域 */}
-      <div className={styles.welcomeSection}>
-        <div className={styles.welcomeContent}>
-          <Title level={1} className={styles.welcomeTitle}>
-            我的视频库
-          </Title>
-          <Text className={styles.welcomeSubtitle}>逐句精听，逐步精进！</Text>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <Button
-            type="primary"
-            size="large"
-            icon={<PlusOutlined />}
-            onClick={handleVideoFileSelect}
-            className={styles.addVideoButton}
-            {...withTestId(COMMON_TEST_IDS.LOAD_VIDEO_BUTTON)}
+    <div style={styles.pageContainer}>
+      {/* 主要内容区域 */}
+      <div
+        style={{
+          maxWidth: 1400,
+          margin: '0 auto',
+          paddingBottom: token.paddingXL, // 添加底部间距
+          minHeight: 'calc(100vh - 60px)' // 改为最小高度而不是固定高度
+        }}
+      >
+        {/* 最近观看区域 - 移除固定高度限制 */}
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: token.marginLG,
+              padding: `0 ${token.paddingXS}px`
+            }}
           >
-            <span>添加视频</span>
-          </Button>
-        </div>
-      </div>
-
-      <div className={styles.mainContent}>
-        {/* 最近视频区域 */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <Title level={2} className={styles.sectionTitle}>
-              <ClockCircleOutlined className={styles.titleIcon} />
+            <Title level={3} style={{ ...styles.sectionTitle, margin: 0 }}>
               最近观看
+              <div
+                style={{
+                  background: utils.hexToRgba(token.colorPrimary, 0.1),
+                  color: token.colorPrimary,
+                  padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+                  borderRadius: token.borderRadius,
+                  fontSize: token.fontSizeSM,
+                  fontWeight: 600,
+                  marginLeft: token.marginSM
+                }}
+              >
+                {recentPlays.length}
+              </div>
             </Title>
+
             {recentPlays.length > 0 && (
               <Button
                 type="text"
                 size="small"
                 onClick={handleClearResouces}
-                className={styles.clearButton}
+                style={{
+                  color: token.colorTextTertiary,
+                  fontWeight: 500,
+                  borderRadius: token.borderRadius
+                }}
               >
-                清空列表
+                清空
               </Button>
             )}
           </div>
 
           {recentPlays.length === 0 ? (
-            <Empty
-              image={<VideoCameraOutlined className={styles.emptyIcon} />}
-              description={
-                <div className={styles.emptyDescription}>
-                  <Text>还没有观看过任何视频</Text>
-                  <br />
-                  <Text type="secondary">点击上方按钮添加您的第一个视频</Text>
-                </div>
-              }
-            />
+            <div
+              style={{
+                ...styles.emptyContainer,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: token.paddingXL,
+                minHeight: '400px' // 给空状态一个合适的最小高度
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 64,
+                  marginBottom: token.marginLG,
+                  opacity: 0.6
+                }}
+              >
+                📺
+              </div>
+              <Title
+                level={4}
+                style={{
+                  color: token.colorText,
+                  fontWeight: 600,
+                  marginBottom: token.marginSM
+                }}
+              >
+                还没有观看过任何视频
+              </Title>
+              <Text
+                style={{
+                  color: token.colorTextDescription,
+                  fontSize: token.fontSize,
+                  marginBottom: token.marginLG
+                }}
+              >
+                点击下方按钮添加您的第一个视频
+              </Text>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleVideoFileSelect}
+                style={{ borderRadius: token.borderRadiusLG }}
+              >
+                立即添加
+              </Button>
+            </div>
           ) : (
-            <Row gutter={[24, 24]} className={styles.videoGrid}>
-              {recentPlays.slice(0, 8).map((item) => (
-                <Col xs={12} sm={8} md={6} lg={4} xl={4} key={item.fileId}>
-                  <div
-                    onClick={() => {
-                      console.log('卡片被点击了！', item.fileName)
-                      handleOpenResouce(item)
-                    }}
-                    style={{ cursor: 'pointer' }}
+            // 卡片网格 - 移除内部滚动，让内容自然流动
+            <div style={{ paddingBottom: token.paddingXL }}>
+              <Row gutter={[token.paddingSM, token.paddingSM]}>
+                {recentPlays.slice(0, 12).map((item) => (
+                  <Col
+                    xs={isCompactMode ? 12 : 24}
+                    sm={isCompactMode ? 8 : 12}
+                    md={isCompactMode ? 6 : 8}
+                    lg={isCompactMode ? 4 : 6}
+                    xl={isCompactMode ? 3 : 4}
+                    key={item.fileId}
                   >
-                    <Card
-                      className={styles.videoCard}
-                      hoverable
-                      cover={
-                        <div className={styles.videoPoster}>
+                    <div
+                      onClick={() => {
+                        console.log('卡片被点击了！', item.fileName)
+                        handleOpenResouce(item)
+                      }}
+                      style={{
+                        cursor: 'pointer',
+                        transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
+                        transformOrigin: 'center bottom'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)'
+                        e.currentTarget.style.boxShadow = styles.cardHover.boxShadow as string
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0) scale(1)'
+                        e.currentTarget.style.boxShadow = styles.cardContainer.boxShadow as string
+                      }}
+                    >
+                      <Card
+                        size="small"
+                        style={{
+                          ...styles.cardContainer,
+                          border: 'none',
+                          overflow: 'hidden',
+                          height: '100%'
+                        }}
+                        bodyStyle={{
+                          padding: isCompactMode ? token.paddingXS : token.paddingSM
+                        }}
+                        cover={
                           <div
-                            className={styles.posterPlaceholder}
-                            style={{ background: generatePosterPlaceholder(item.fileName) }}
+                            style={{
+                              ...styles.videoPoster,
+                              height: isCompactMode ? 120 : 180, // 紧凑模式120px，默认模式180px
+                              position: 'relative'
+                            }}
                           >
-                            <VideoCameraOutlined className={styles.posterIcon} />
+                            <div
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                background: utils.generatePosterBackground(item.fileName),
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                position: 'relative'
+                              }}
+                            >
+                              <VideoCameraOutlined
+                                style={{
+                                  fontSize: isCompactMode ? 32 : 48,
+                                  color: utils.hexToRgba('#fff', 0.8)
+                                }}
+                              />
+
+                              {/* 播放覆盖层 */}
+                              <div style={styles.playOverlay} className="play-overlay">
+                                <PlayCircleOutlined
+                                  style={{
+                                    fontSize: isCompactMode ? 40 : 56,
+                                    color: '#fff'
+                                  }}
+                                />
+                              </div>
+
+                              {/* 删除按钮 */}
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: token.paddingXS,
+                                  right: token.paddingXS,
+                                  opacity: 0,
+                                  transition: `opacity ${token.motionDurationMid} ease`
+                                }}
+                                className="delete-button"
+                              >
+                                <Tooltip title="删除">
+                                  <Button
+                                    type="text"
+                                    size="small"
+                                    icon={<DeleteOutlined />}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      showDeleteConfirm(item.fileId, item.fileName)
+                                    }}
+                                    style={{
+                                      ...styles.deleteButton,
+                                      width: isCompactMode ? 24 : 32,
+                                      height: isCompactMode ? 24 : 32,
+                                      fontSize: isCompactMode ? 12 : 14
+                                    }}
+                                  />
+                                </Tooltip>
+                              </div>
+
+                              {/* 时长标签 */}
+                              {item.duration && (
+                                <div
+                                  style={{
+                                    ...styles.durationBadge,
+                                    fontSize: isCompactMode ? token.fontSizeSM : token.fontSize,
+                                    padding: isCompactMode
+                                      ? `${token.paddingXXS}px ${token.paddingXS}px`
+                                      : `${token.paddingXS}px ${token.paddingSM}px`
+                                  }}
+                                >
+                                  {formatTime(item.duration)}
+                                </div>
+                              )}
+
+                              {/* 进度条 */}
+                              {item.currentTime && item.duration && (
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    height: isCompactMode ? 2 : 3,
+                                    background: utils.hexToRgba('#fff', 0.2)
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      height: '100%',
+                                      width: `${(item.currentTime / item.duration) * 100}%`,
+                                      background: `linear-gradient(90deg, ${token.colorPrimary}, ${token.colorSuccess})`,
+                                      borderRadius: `0 ${token.borderRadiusSM}px ${token.borderRadiusSM}px 0`
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className={styles.playOverlay}>
-                            <PlayCircleOutlined className={styles.playIcon} />
+                        }
+                      >
+                        <div
+                          style={{
+                            padding: isCompactMode ? 0 : `${token.paddingXS}px 0`
+                          }}
+                        >
+                          <Tooltip title={item.fileName}>
+                            <Text
+                              strong
+                              ellipsis
+                              style={{
+                                display: 'block',
+                                fontSize: isCompactMode ? token.fontSizeSM : token.fontSize,
+                                fontWeight: 600,
+                                color: token.colorText,
+                                marginBottom: isCompactMode ? token.marginXXS : token.marginXS,
+                                lineHeight: 1.3
+                              }}
+                            >
+                              {item.fileName.replace(/\.[^/.]+$/, '')}
+                            </Text>
+                          </Tooltip>
+
+                          {/* 默认模式显示更多信息 */}
+                          {!isCompactMode && (
+                            <div style={{ marginBottom: token.marginXS }}>
+                              <Text
+                                style={{
+                                  fontSize: token.fontSizeSM,
+                                  color: token.colorTextTertiary,
+                                  display: 'block',
+                                  lineHeight: 1.2
+                                }}
+                              >
+                                {item.subtitleFile
+                                  ? `字幕: ${item.subtitleFile.split('/').pop()}`
+                                  : '暂无字幕'}
+                              </Text>
+                            </div>
+                          )}
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              fontSize: token.fontSizeSM
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: token.fontSizeSM,
+                                color: token.colorTextDescription
+                              }}
+                            >
+                              {utils.formatTimeAgo(item.lastOpenedAt)}
+                            </Text>
+                            {item.currentTime && item.duration && (
+                              <Text
+                                style={{
+                                  fontSize: token.fontSizeSM,
+                                  color: token.colorPrimary,
+                                  fontWeight: 500,
+                                  background: isCompactMode
+                                    ? 'transparent'
+                                    : utils.hexToRgba(token.colorPrimary, 0.1),
+                                  padding: isCompactMode
+                                    ? 0
+                                    : `${token.paddingXXS}px ${token.paddingXS}px`,
+                                  borderRadius: isCompactMode ? 0 : token.borderRadius
+                                }}
+                              >
+                                {Math.round((item.currentTime / item.duration) * 100)}%
+                              </Text>
+                            )}
                           </div>
-                          <div className={styles.deleteButton}>
-                            <Tooltip title="删除记录">
+
+                          {/* 默认模式显示操作区域 */}
+                          {!isCompactMode && (
+                            <div
+                              style={{
+                                marginTop: token.marginSM,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <Space size="small">
+                                {item.currentTime && item.duration && (
+                                  <Text
+                                    style={{
+                                      fontSize: token.fontSizeSM,
+                                      color: token.colorTextSecondary
+                                    }}
+                                  >
+                                    {formatTime(item.currentTime)} / {formatTime(item.duration)}
+                                  </Text>
+                                )}
+                              </Space>
                               <Button
                                 type="text"
                                 size="small"
-                                icon={<DeleteOutlined />}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  showDeleteConfirm(item.fileId, item.fileName)
+                                style={{
+                                  color: token.colorPrimary,
+                                  fontWeight: 500,
+                                  height: 24,
+                                  fontSize: token.fontSizeSM
                                 }}
-                                className={styles.deleteIcon}
-                              />
-                            </Tooltip>
-                          </div>
-                          {item.duration && (
-                            <div className={styles.durationBadge}>{formatTime(item.duration)}</div>
+                              >
+                                继续观看
+                              </Button>
+                            </div>
                           )}
                         </div>
-                      }
-                    >
-                      <div className={styles.videoInfo}>
-                        <Tooltip title={item.fileName}>
-                          <Text strong ellipsis className={styles.videoTitle}>
-                            {item.fileName.replace(/\.[^/.]+$/, '')}
-                          </Text>
-                        </Tooltip>
-                        <Text type="secondary" className={styles.lastWatched}>
-                          {formatLastOpened(item.lastOpenedAt)}
-                        </Text>
-                      </div>
-                    </Card>
-                  </div>
-                </Col>
-              ))}
-            </Row>
+                      </Card>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            </div>
           )}
         </div>
-
-        {/* 推荐视频区域 */}
-        {/* <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <Title level={2} className={styles.sectionTitle}>
-              <StarOutlined className={styles.titleIcon} />
-              推荐视频
-            </Title>
-          </div>
-
-          <Row gutter={[24, 24]} className={styles.videoGrid}>
-            {recommendedVideos.map((video) => (
-              <Col xs={12} sm={8} md={6} lg={4} xl={4} key={video.id}>
-                <Card
-                  className={styles.videoCard}
-                  hoverable
-                  cover={
-                    <div className={styles.videoPoster}>
-                      <img
-                        src={video.poster}
-                        alt={video.title}
-                        className={styles.posterImage}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.style.display = 'none'
-                          const placeholder = target.nextElementSibling as HTMLElement
-                          if (placeholder) {
-                            placeholder.style.display = 'flex'
-                          }
-                        }}
-                      />
-                      <div
-                        className={styles.posterPlaceholder}
-                        style={{
-                          background: generatePosterPlaceholder(video.title),
-                          display: 'none'
-                        }}
-                      >
-                        <VideoCameraOutlined className={styles.posterIcon} />
-                      </div>
-                      <div className={styles.playOverlay}>
-                        <PlayCircleOutlined className={styles.playIcon} />
-                      </div>
-                      <div className={styles.durationBadge}>{formatTime(video.duration)}</div>
-                      <div className={styles.categoryBadge}>
-                        <Tag color="blue">{video.category}</Tag>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className={styles.videoInfo}>
-                    <Tooltip title={video.title}>
-                      <Text strong ellipsis className={styles.videoTitle}>
-                        {video.title}
-                      </Text>
-                    </Tooltip>
-                    <Text type="secondary" className={styles.videoCategory}>
-                      推荐内容
-                    </Text>
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </div> */}
       </div>
 
+      {/* 删除确认模态框 */}
       <Modal
         title={
-          <div className={styles.modalTitle}>
-            <DeleteOutlined className={styles.modalTitleIcon} />
-            确认删除
+          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: utils.hexToRgba(token.colorError, 0.1),
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <DeleteOutlined style={{ color: token.colorError, fontSize: token.fontSize }} />
+            </div>
+            <span style={{ fontSize: token.fontSize, fontWeight: 600 }}>确认删除</span>
           </div>
         }
         open={isModalOpen}
@@ -431,23 +614,77 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
         okText="删除"
         cancelText="取消"
         okType="danger"
-        className="delete-modal"
         centered
         width={480}
+        style={{
+          borderRadius: token.borderRadiusLG,
+          overflow: 'hidden'
+        }}
+        styles={{
+          content: {
+            borderRadius: token.borderRadiusLG,
+            background: styles.glassEffect.background,
+            backdropFilter: styles.glassEffect.backdropFilter,
+            WebkitBackdropFilter: styles.glassEffect.WebkitBackdropFilter,
+            border: `1px solid ${token.colorBorderSecondary}`
+          }
+        }}
       >
-        <div className={styles.modalContent}>
-          <p className={styles.confirmText}>
+        <div style={{ padding: `${token.paddingSM}px 0` }}>
+          <p
+            style={{
+              fontSize: token.fontSize,
+              color: token.colorText,
+              margin: `0 0 ${token.marginSM}px 0`,
+              lineHeight: 1.5
+            }}
+          >
             确定要删除视频{' '}
-            <strong className={styles.fileName}>&ldquo;{selectedFileName}&rdquo;</strong>{' '}
+            <strong
+              style={{
+                color: token.colorPrimary,
+                background: utils.hexToRgba(token.colorPrimary, 0.1),
+                padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+                borderRadius: token.borderRadius,
+                fontWeight: 600
+              }}
+            >
+              &ldquo;{selectedFileName}&rdquo;
+            </strong>{' '}
             的观看记录吗？
           </p>
-          <div className={styles.warningBox}>
-            <p className={styles.warningText}>
+          <div
+            style={{
+              background: utils.hexToRgba(token.colorWarning, 0.08),
+              border: `1px solid ${utils.hexToRgba(token.colorWarning, 0.2)}`,
+              borderRadius: token.borderRadius,
+              padding: token.paddingXS
+            }}
+          >
+            <p
+              style={{
+                fontSize: token.fontSizeSM,
+                color: token.colorTextSecondary,
+                margin: 0,
+                lineHeight: 1.4
+              }}
+            >
               此操作将删除该视频的观看进度等所有相关数据，且无法恢复。
             </p>
           </div>
         </div>
       </Modal>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          .ant-card:hover .play-overlay,
+          .ant-card:hover .delete-button {
+            opacity: 1 !important;
+          }
+        `
+        }}
+      />
     </div>
   )
 }

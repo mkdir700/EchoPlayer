@@ -1,19 +1,24 @@
 import React, { useState } from 'react'
-import { Typography, Row, Col } from 'antd'
+import { Typography } from 'antd'
 import { SettingOutlined } from '@ant-design/icons'
 import { ShortcutsSection } from '@renderer/components/Settings/ShortcutsSection'
 import { DataManagementSection } from '@renderer/components/Settings/DataManagementSection'
 import { SettingsNavigation } from '@renderer/components/Settings/SettingsNavigation'
-// 移除未使用的导入
 import { AppearanceSection } from '@renderer/components/Settings/AppearanceSection'
 import { ThirdPartyServicesSection } from '@renderer/components/Settings/ThirdPartyServicesSection'
 import { VideoConversionSection } from '@renderer/components/Settings/VideoConversionSection'
 import { UpdateSection } from '@renderer/components/Settings/UpdateSection'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 const { Title } = Typography
 
 export function SettingsPage(): React.JSX.Element {
   const [activeSection, setActiveSection] = useState('about')
+  const { token, styles } = useTheme()
+
+  const handleSectionChange = (section: string): void => {
+    setActiveSection(section)
+  }
 
   const renderMainContent = (): React.JSX.Element => {
     switch (activeSection) {
@@ -35,24 +40,72 @@ export function SettingsPage(): React.JSX.Element {
   }
 
   return (
-    <div className="settings-page">
-      <div className="settings-header">
-        <SettingOutlined className="settings-icon" />
-        <Title level={2} style={{ color: 'var(--text-primary)', margin: 0 }}>
-          设置
-        </Title>
-      </div>
+    <div style={styles.settingsContainer}>
+      <div style={styles.settingsLayout}>
+        {/* Left Sidebar */}
+        <div style={styles.settingsSidebar}>
+          <div
+            style={{
+              padding: `${token.paddingLG}px ${token.paddingLG}px ${token.paddingMD}px`,
+              borderBottom: `1px solid ${token.colorBorderSecondary}`
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: token.marginSM,
+                marginBottom: token.marginXS
+              }}
+            >
+              <SettingOutlined
+                style={{
+                  fontSize: token.fontSizeHeading3,
+                  color: token.colorPrimary
+                }}
+              />
+              <Title
+                level={4}
+                style={{
+                  margin: 0,
+                  color: token.colorText,
+                  fontWeight: 600
+                }}
+              >
+                设置
+              </Title>
+            </div>
+            <div
+              style={{
+                fontSize: token.fontSizeSM,
+                color: token.colorTextSecondary
+              }}
+            >
+              配置应用偏好设置
+            </div>
+          </div>
 
-      <div className="settings-content">
-        <Row gutter={24}>
-          <Col span={6}>
-            <SettingsNavigation activeSection={activeSection} onSectionChange={setActiveSection} />
-          </Col>
+          <div
+            style={{
+              flex: 1,
+              padding: `${token.paddingMD}px 0`
+              // 移除独立滚动，让整个页面统一滚动
+            }}
+          >
+            <SettingsNavigation
+              activeSection={activeSection}
+              onSectionChange={handleSectionChange}
+            />
+          </div>
+        </div>
 
-          <Col span={18}>
-            <div className="settings-main">{renderMainContent()}</div>
-          </Col>
-        </Row>
+        {/* Right Content */}
+        <div style={styles.settingsContent}>
+          <div style={styles.settingsMain}>
+            {/* Content Body */}
+            <div style={styles.settingsMainContent}>{renderMainContent()}</div>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -1,0 +1,218 @@
+# EchoLab 开发指南 - 主题系统最佳实践
+
+## 📋 概述
+
+本项目采用 Ant Design 5.x 的 CSS 变量模式，结合苹果设计美学，构建了统一的主题管理系统。
+
+## 🎨 主题架构
+
+### 文件结构
+
+```
+src/renderer/src/
+├── styles/
+│   └── theme.ts          # 主题配置文件
+├── hooks/
+│   └── useTheme.ts       # 主题 Hook
+└── App.tsx              # ConfigProvider 配置
+```
+
+## 🔧 核心配置
+
+### 1. 主题配置 (`src/styles/theme.ts`)
+
+**主要特性：**
+
+- 启用 CSS 变量模式 (`cssVar: true`)
+- 关闭 hash 以减小样式体积 (`hashed: false`)
+- 苹果设计风格的 token 配置
+- 支持亮色/暗色主题切换
+
+**核心 Token：**
+
+```typescript
+// 苹果设计色彩
+colorPrimary: '#007AFF'     // 苹果蓝
+colorSuccess: '#34C759'     // 苹果绿
+colorWarning: '#FF9500'     // 苹果橙
+colorError: '#FF3B30'       // 苹果红
+
+// 苹果字体系统
+fontFamily: '-apple-system, BlinkMacSystemFont, ...'
+
+// 统一的圆角和间距
+borderRadius: 8
+borderRadiusLG: 12
+padding/margin: 统一的间距系统
+```
+
+### 2. 自定义主题 Hook (`src/hooks/useTheme.ts`)
+
+**提供的功能：**
+
+- `token`: 原始 Ant Design token
+- `styles`: 预定义的样式组合
+- `utils`: 工具函数集合
+
+**预定义样式：**
+
+- `pageContainer`: 页面容器样式
+- `cardContainer`: 卡片容器样式
+- `glassEffect`: 毛玻璃效果
+- `gradientText`: 渐变文字
+- `primaryButton`: 主要按钮样式
+
+## 📝 使用规范
+
+### ✅ 推荐做法
+
+1. **使用统一的主题 Hook**
+
+```typescript
+import { useTheme } from '@renderer/hooks/useTheme'
+
+const { token, styles, utils } = useTheme()
+
+// 使用预定义样式
+<div style={styles.pageContainer}>
+  <Button style={styles.primaryButton}>按钮</Button>
+</div>
+```
+
+2. **利用预定义样式组合**
+
+```typescript
+// 替代大量内联样式
+<Card style={styles.cardContainer}>
+  <Title style={styles.pageTitle}>标题</Title>
+</Card>
+```
+
+3. **使用工具函数**
+
+```typescript
+// 颜色处理
+background: utils.generatePosterBackground(fileName)
+
+// 时间格式化
+{
+  utils.formatTimeAgo(timestamp)
+}
+```
+
+### ❌ 避免的做法
+
+1. **直接使用 theme.useToken()**
+
+```typescript
+// ❌ 不推荐
+const { token } = theme.useToken()
+
+// ✅ 推荐
+const { token } = useTheme()
+```
+
+2. **硬编码样式值**
+
+```typescript
+// ❌ 不推荐
+padding: '24px'
+color: '#007AFF'
+
+// ✅ 推荐
+padding: token.paddingLG
+color: token.colorPrimary
+```
+
+3. **重复定义相同的样式组合**
+
+```typescript
+// ❌ 不推荐 - 在每个组件中重复定义
+const cardStyle = {
+  borderRadius: token.borderRadiusLG,
+  border: `1px solid ${token.colorBorderSecondary}`,
+  // ...
+}
+
+// ✅ 推荐 - 使用预定义样式
+<Card style={styles.cardContainer} />
+```
+
+## 🎯 设计原则
+
+### 1. 苹果设计美学
+
+- **简洁性**: 干净、明确的视觉层次
+- **一致性**: 统一的间距、圆角、色彩系统
+- **优雅**: 微妙的动画和渐变效果
+
+### 2. 高斯模糊效果
+
+```typescript
+// 毛玻璃效果的标准实现
+glassEffect: {
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+}
+```
+
+### 3. 动画和过渡
+
+- 使用苹果标准的缓动函数: `cubic-bezier(0.4, 0, 0.2, 1)`
+- 适度的动画时长: `0.2s - 0.3s`
+- 平滑的悬停效果
+
+## 🚀 性能优化
+
+### 1. CSS 变量的优势
+
+- 同一组件在不同主题下样式可共享
+- 主题切换无需重新序列化样式
+- 减少了样式体积
+
+### 2. 推荐的优化策略
+
+```typescript
+// 在 ConfigProvider 中启用
+<ConfigProvider theme={appleTheme}>
+  <App />
+</ConfigProvider>
+```
+
+## 🔄 主题扩展
+
+### 添加新的预定义样式
+
+1. 在 `useTheme.ts` 的 `styles` 对象中添加
+2. 确保使用 token 而非硬编码值
+3. 提供清晰的命名和注释
+
+### 添加新的工具函数
+
+1. 在 `useTheme.ts` 的 `utils` 对象中添加
+2. 确保函数的可复用性
+3. 编写类型定义
+
+## 📚 参考资源
+
+- [Ant Design CSS 变量文档](https://ant.design/docs/react/css-variables-cn)
+- [从 Less 变量到 Design Token](https://ant.design/docs/react/migrate-less-variables-cn)
+- [苹果人机界面指南](https://developer.apple.com/design/human-interface-guidelines/)
+
+## 🔍 调试和开发
+
+### 主题调试技巧
+
+1. 使用浏览器开发者工具查看 CSS 变量
+2. 利用 React DevTools 检查 token 值
+3. 在 Console 中验证 utils 函数
+
+### 常见问题
+
+1. **类型错误**: 确保正确导入 ThemeConfig 类型
+2. **样式不生效**: 检查 ConfigProvider 是否正确配置
+3. **性能问题**: 避免在渲染函数中创建新的样式对象
+
+---
+
+_本指南将随着项目的发展持续更新，确保团队成员遵循最佳实践。_

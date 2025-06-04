@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Button, Divider, message, Tag, Input, Typography } from 'antd'
+import { Button, message, Tag, Input, Typography } from 'antd'
 import { EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
 import { useShortcuts } from '@renderer/hooks/useShortcuts'
 import { DEFAULT_SHORTCUTS } from '@renderer/hooks/useShortcutManager'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 const { Text, Paragraph } = Typography
 
@@ -76,6 +77,8 @@ function ShortcutItem({
   const [newKey, setNewKey] = useState('')
   const [isWaiting, setIsWaiting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [isHovered, setIsHovered] = useState(false)
+  const { token, styles } = useTheme()
 
   // 当开始编辑时设置等待状态
   useEffect(() => {
@@ -179,36 +182,49 @@ function ShortcutItem({
   }
 
   return (
-    <div className="shortcut-item">
-      <div className="shortcut-info">
-        <div className="shortcut-name">
-          <Text strong style={{ color: 'var(--text-primary)' }}>
+    <div
+      style={{
+        ...styles.shortcutItem,
+        backgroundColor: isHovered ? token.colorFillQuaternary : 'transparent'
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div style={{ flex: 1 }}>
+        <div style={{ marginBottom: token.marginXXS }}>
+          <Text strong style={{ color: token.colorText, fontSize: token.fontSizeLG }}>
             {config.name}
           </Text>
         </div>
-        <Text style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{config.description}</Text>
+        <Text
+          style={{
+            color: token.colorTextDescription,
+            fontSize: token.fontSizeSM
+          }}
+        >
+          {config.description}
+        </Text>
       </div>
 
-      <div className="shortcut-key">
+      <div style={{ position: 'relative' }}>
         {isEditing ? (
-          <div
-            className={`shortcut-edit ${isWaiting ? 'waiting' : ''} ${errorMessage ? 'error' : ''}`}
-          >
+          <div style={styles.shortcutEditInput}>
             {isWaiting && (
               <div
                 style={{
                   position: 'absolute',
-                  top: '-24px',
+                  top: -token.paddingLG - token.paddingXS,
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  fontSize: '11px',
-                  color: 'var(--accent-color)',
-                  background: 'var(--card-bg)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--border-radius-sm)',
-                  border: '1px solid var(--accent-color)',
+                  fontSize: token.fontSizeSM,
+                  color: token.colorPrimary,
+                  background: token.colorBgContainer,
+                  padding: `${token.paddingXXS}px ${token.paddingSM}px`,
+                  borderRadius: token.borderRadius,
+                  border: `1px solid ${token.colorPrimary}`,
                   whiteSpace: 'nowrap',
-                  zIndex: 10
+                  zIndex: 10,
+                  boxShadow: token.boxShadowSecondary
                 }}
               >
                 ⌨️ 等待按键输入...
@@ -219,12 +235,12 @@ function ShortcutItem({
               placeholder={isWaiting ? '按下新的快捷键...' : '等待输入...'}
               value={newKey ? formatKeyForDisplay(newKey) : ''}
               onKeyDown={handleKeyDown}
-              className={`${isWaiting ? 'shortcut-input-waiting' : ''} ${errorMessage ? 'shortcut-input-error' : ''}`}
               style={{
                 width: 140,
-                marginRight: 8,
+                marginRight: token.marginXS,
                 background: 'transparent',
-                border: 'none'
+                border: 'none',
+                fontFamily: 'Monaco, "SF Mono", Consolas, monospace'
               }}
               status={errorMessage ? 'error' : undefined}
               autoFocus
@@ -236,7 +252,7 @@ function ShortcutItem({
               icon={<CheckOutlined />}
               onClick={handleSave}
               disabled={!newKey || !!errorMessage}
-              style={{ color: 'var(--success-color)' }}
+              style={{ color: token.colorSuccess }}
               title="按 Enter 确认"
             />
             <Button
@@ -244,7 +260,7 @@ function ShortcutItem({
               size="small"
               icon={<CloseOutlined />}
               onClick={handleCancel}
-              style={{ color: 'var(--error-color)' }}
+              style={{ color: token.colorError }}
               title="按 Esc 取消"
             />
             {errorMessage && (
@@ -253,9 +269,9 @@ function ShortcutItem({
                   position: 'absolute',
                   top: '100%',
                   left: 0,
-                  fontSize: '11px',
-                  color: '#ff4d4f',
-                  marginTop: 2,
+                  fontSize: token.fontSizeSM,
+                  color: token.colorError,
+                  marginTop: token.marginXXS,
                   whiteSpace: 'nowrap'
                 }}
               >
@@ -264,14 +280,22 @@ function ShortcutItem({
             )}
           </div>
         ) : (
-          <div className="shortcut-display">
-            <Tag className="shortcut-tag">{formatKeyForDisplay(currentKey)}</Tag>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: token.marginSM
+            }}
+          >
+            <Tag style={styles.shortcutKeyTag}>{formatKeyForDisplay(currentKey)}</Tag>
             <Button
               type="text"
               size="small"
               icon={<EditOutlined />}
               onClick={onEdit}
-              style={{ color: 'var(--text-muted)' }}
+              style={{
+                color: token.colorTextDescription
+              }}
             />
           </div>
         )}
@@ -287,6 +311,7 @@ interface ShortcutsSectionProps {
 export function ShortcutsSection({ className }: ShortcutsSectionProps): React.JSX.Element {
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
   const { shortcuts, getCurrentShortcut, updateShortcut, resetShortcuts } = useShortcuts()
+  const { token } = useTheme()
 
   const handleEditShortcut = (key: string): void => {
     setEditingShortcut(key)
@@ -342,36 +367,66 @@ export function ShortcutsSection({ className }: ShortcutsSectionProps): React.JS
   }
 
   return (
-    <Card title="快捷键设置" className={`settings-section-card ${className || ''}`}>
-      <Paragraph style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
-        自定义快捷键以提高使用效率。点击快捷键右侧的编辑按钮进行修改。
-      </Paragraph>
+    <div className={className}>
+      <div style={{ marginBottom: token.marginLG }}>
+        <Paragraph
+          style={{
+            color: token.colorTextDescription,
+            marginBottom: 0,
+            fontSize: token.fontSizeLG
+          }}
+        >
+          自定义快捷键以提高使用效率。点击快捷键右侧的编辑按钮进行修改。
+        </Paragraph>
+      </div>
 
-      <div className="shortcuts-list">
-        {SHORTCUT_CONFIGS.map((config) => (
-          <ShortcutItem
-            key={config.key}
-            config={config}
-            currentKey={getCurrentShortcut(config.key)}
-            isEditing={editingShortcut === config.key}
-            onEdit={() => handleEditShortcut(config.key)}
-            onSave={(newKey) => handleSaveShortcut(config.key, newKey)}
-            onCancel={handleCancelEdit}
-            checkConflict={checkShortcutConflict}
-          />
+      <div
+        style={{
+          background: token.colorBgContainer,
+          borderRadius: token.borderRadius,
+          border: `1px solid ${token.colorBorder}`,
+          overflow: 'hidden',
+          marginBottom: token.marginLG
+        }}
+      >
+        {SHORTCUT_CONFIGS.map((config, index) => (
+          <div key={config.key}>
+            <ShortcutItem
+              config={config}
+              currentKey={getCurrentShortcut(config.key)}
+              isEditing={editingShortcut === config.key}
+              onEdit={() => handleEditShortcut(config.key)}
+              onSave={(newKey) => handleSaveShortcut(config.key, newKey)}
+              onCancel={handleCancelEdit}
+              checkConflict={checkShortcutConflict}
+            />
+            {index < SHORTCUT_CONFIGS.length - 1 && (
+              <div
+                style={{
+                  height: 1,
+                  background: token.colorBorder,
+                  margin: `0 ${token.paddingLG}px`
+                }}
+              />
+            )}
+          </div>
         ))}
       </div>
 
-      <Divider />
-
-      <div style={{ textAlign: 'center' }}>
-        <Button type="default" style={{ marginRight: 8 }} onClick={handleResetToDefault}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: token.marginSM
+        }}
+      >
+        <Button type="default" onClick={handleResetToDefault}>
           重置为默认
         </Button>
         <Button type="primary" onClick={handleExportConfig}>
           导出配置
         </Button>
       </div>
-    </Card>
+    </div>
   )
 }
