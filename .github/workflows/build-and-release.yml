@@ -222,6 +222,14 @@ jobs:
           name: echolab-win-${{ needs.detect-version.outputs.version }}
           path: artifacts/echolab-win-${{ needs.detect-version.outputs.version }}
 
+      - name: Debug - List downloaded files
+        run: |
+          echo "📁 Listing downloaded artifacts:"
+          find artifacts/ -type f -name "*.yml" -o -name "*.exe" | head -20
+          echo ""
+          echo "📁 Specific Windows artifact directory:"
+          ls -la artifacts/echolab-win-${{ needs.detect-version.outputs.version }}/ || echo "Directory not found"
+
       - name: Upload to Tencent COS - Release Files (Windows)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
@@ -231,7 +239,19 @@ jobs:
           bucket: ${{ secrets.BUCKET }}
           region: ${{ secrets.REGION }}
 
+      - name: Check if Windows AutoUpdate Config exists
+        id: check_win_yml
+        run: |
+          if [ -f "./artifacts/echolab-win-${{ needs.detect-version.outputs.version }}/latest.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Windows AutoUpdate config found"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ Windows AutoUpdate config not found"
+          fi
+
       - name: Upload to Tencent COS - AutoUpdate Config (Windows)
+        if: steps.check_win_yml.outputs.exists == 'true'
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
           args: upload ./artifacts/echolab-win-${{ needs.detect-version.outputs.version }}/latest.yml ${{ needs.detect-version.outputs.autoupdate_path }}
@@ -253,6 +273,14 @@ jobs:
           name: echolab-mac-${{ needs.detect-version.outputs.version }}
           path: artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}
 
+      - name: Debug - List downloaded files
+        run: |
+          echo "📁 Listing downloaded artifacts:"
+          find artifacts/ -type f -name "*.yml" -o -name "*.dmg" | head -20
+          echo ""
+          echo "📁 Specific Mac artifact directory:"
+          ls -la artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}/ || echo "Directory not found"
+
       - name: Upload to Tencent COS - Release Files (Mac)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
@@ -262,7 +290,19 @@ jobs:
           bucket: ${{ secrets.BUCKET }}
           region: ${{ secrets.REGION }}
 
+      - name: Check if Mac AutoUpdate Config exists
+        id: check_mac_yml
+        run: |
+          if [ -f "./artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}/latest-mac.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Mac AutoUpdate config found"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ Mac AutoUpdate config not found"
+          fi
+
       - name: Upload to Tencent COS - AutoUpdate Config (Mac)
+        if: steps.check_mac_yml.outputs.exists == 'true'
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
           args: upload ./artifacts/echolab-mac-${{ needs.detect-version.outputs.version }}/latest-mac.yml ${{ needs.detect-version.outputs.autoupdate_path }}
@@ -284,6 +324,14 @@ jobs:
           name: echolab-linux-${{ needs.detect-version.outputs.version }}
           path: artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}
 
+      - name: Debug - List downloaded files
+        run: |
+          echo "📁 Listing downloaded artifacts:"
+          find artifacts/ -type f -name "*.yml" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.snap" | head -20
+          echo ""
+          echo "📁 Specific Linux artifact directory:"
+          ls -la artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}/ || echo "Directory not found"
+
       - name: Upload to Tencent COS - Release Files (Linux)
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
@@ -293,7 +341,19 @@ jobs:
           bucket: ${{ secrets.BUCKET }}
           region: ${{ secrets.REGION }}
 
+      - name: Check if Linux AutoUpdate Config exists
+        id: check_linux_yml
+        run: |
+          if [ -f "./artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}/latest-linux.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Linux AutoUpdate config found"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ Linux AutoUpdate config not found"
+          fi
+
       - name: Upload to Tencent COS - AutoUpdate Config (Linux)
+        if: steps.check_linux_yml.outputs.exists == 'true'
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
           args: upload ./artifacts/echolab-linux-${{ needs.detect-version.outputs.version }}/latest-linux.yml ${{ needs.detect-version.outputs.autoupdate_path }}
