@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Space, Button, Typography, Tooltip } from 'antd'
 import {
   HomeOutlined,
@@ -39,90 +39,144 @@ interface ExtendedCSSProperties extends React.CSSProperties {
 export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.JSX.Element {
   const { token, styles, utils } = useTheme()
 
+  // Memoize color calculations to avoid expensive hex-to-RGB conversion on every render
+  const primaryRGBA02 = useMemo(
+    () => utils.hexToRgba(token.colorPrimary, 0.02),
+    [utils, token.colorPrimary]
+  )
+
+  const primaryRGBA15 = useMemo(
+    () => utils.hexToRgba(token.colorPrimary, 0.15),
+    [utils, token.colorPrimary]
+  )
+
+  const primaryRGBA20 = useMemo(
+    () => utils.hexToRgba(token.colorPrimary, 0.2),
+    [utils, token.colorPrimary]
+  )
+
+  // Memoize header styles to avoid re-allocation on every render
+  const headerStyle = useMemo(
+    () =>
+      ({
+        height: 64, // 更高的 header 高度
+        ...styles.glassEffect,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        display: 'flex',
+        position: 'sticky',
+        top: 0,
+        zIndex: token.zIndexPopupBase,
+        WebkitAppRegion: 'drag',
+        boxShadow: styles.cardContainer.boxShadow
+      }) as ExtendedCSSProperties,
+    [
+      styles.glassEffect,
+      styles.cardContainer.boxShadow,
+      token.colorBorderSecondary,
+      token.zIndexPopupBase
+    ]
+  )
+
+  // Memoize background decoration styles
+  const backgroundDecorationStyle = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: `linear-gradient(
+        90deg,
+        ${primaryRGBA02} 0%,
+        transparent 20%,
+        transparent 80%,
+        ${primaryRGBA02} 100%
+      )`,
+      pointerEvents: 'none' as const
+    }),
+    [primaryRGBA02]
+  )
+
+  // Memoize left section styles
+  const leftSectionStyle = useMemo(
+    () =>
+      ({
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: token.paddingLG,
+        flex: '0 0 240px',
+        WebkitAppRegion: 'no-drag',
+        zIndex: 1
+      }) as ExtendedCSSProperties,
+    [token.paddingLG]
+  )
+
+  // Memoize brand text styles
+  const brandTextStyle = useMemo(
+    () => ({
+      fontSize: token.fontSizeLG,
+      fontWeight: COMPONENT_TOKENS.HEADER.BRAND_FONT_WEIGHT,
+      background: styles.gradientText.background,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text'
+    }),
+    [token.fontSizeLG, styles.gradientText.background]
+  )
+
+  // Memoize middle section styles
+  const middleSectionStyle = useMemo(
+    () =>
+      ({
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        WebkitAppRegion: 'no-drag',
+        zIndex: 1
+      }) as ExtendedCSSProperties,
+    []
+  )
+
+  // Memoize right section styles
+  const rightSectionStyle = useMemo(
+    () =>
+      ({
+        display: 'flex',
+        alignItems: 'center',
+        paddingRight: token.paddingLG,
+        gap: token.marginSM,
+        flex: '0 0 240px',
+        justifyContent: 'flex-end',
+        WebkitAppRegion: 'no-drag',
+        zIndex: 1
+      }) as ExtendedCSSProperties,
+    [token.paddingLG, token.marginSM]
+  )
+
+  // Memoize auxiliary button styles
+  const auxiliaryButtonStyle = useMemo(
+    () => ({
+      color: token.colorTextSecondary,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }),
+    [token.colorTextSecondary]
+  )
+
   return (
-    <div
-      style={
-        {
-          height: 64, // 更高的 header 高度
-          ...styles.glassEffect,
-          borderBottom: `1px solid ${token.colorBorderSecondary}`,
-          display: 'flex',
-          position: 'sticky',
-          top: 0,
-          zIndex: token.zIndexPopupBase,
-          WebkitAppRegion: 'drag',
-          boxShadow: styles.cardContainer.boxShadow
-        } as ExtendedCSSProperties
-      }
-      {...withTestId(COMMON_TEST_IDS.APP_HEADER)}
-    >
+    <div style={headerStyle} {...withTestId(COMMON_TEST_IDS.APP_HEADER)}>
       {/* 背景装饰 */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: `linear-gradient(
-            90deg,
-            rgba(${token.colorPrimary
-              .slice(1)
-              .match(/.{2}/g)
-              ?.map((hex) => parseInt(hex, 16))
-              .join(', ')}, 0.02) 0%,
-            transparent 20%,
-            transparent 80%,
-            rgba(${token.colorPrimary
-              .slice(1)
-              .match(/.{2}/g)
-              ?.map((hex) => parseInt(hex, 16))
-              .join(', ')}, 0.02) 100%
-          )`,
-          pointerEvents: 'none'
-        }}
-      />
+      <div style={backgroundDecorationStyle} />
 
       {/* 左侧：应用图标和名称 */}
-      <div
-        style={
-          {
-            display: 'flex',
-            alignItems: 'center',
-            paddingLeft: token.paddingLG,
-            flex: '0 0 240px',
-            WebkitAppRegion: 'no-drag',
-            zIndex: 1
-          } as ExtendedCSSProperties
-        }
-      >
-        <Text
-          style={{
-            fontSize: token.fontSizeLG,
-            fontWeight: COMPONENT_TOKENS.HEADER.BRAND_FONT_WEIGHT,
-            background: styles.gradientText.background,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}
-        >
-          EchoLab
-        </Text>
+      <div style={leftSectionStyle}>
+        <Text style={brandTextStyle}>EchoLab</Text>
       </div>
 
       {/* 中间：导航按钮 */}
-      <div
-        style={
-          {
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            WebkitAppRegion: 'no-drag',
-            zIndex: 1
-          } as ExtendedCSSProperties
-        }
-      >
+      <div style={middleSectionStyle}>
         <Space size={token.marginLG}>
           {navigationItems.map((item) => (
             <Button
@@ -142,9 +196,9 @@ export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.
                 transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
                 ...(currentPage === item.key
                   ? {
-                      background: utils.hexToRgba(token.colorPrimary, 0.15),
+                      background: primaryRGBA15,
                       color: token.colorPrimary,
-                      boxShadow: `0 2px 8px ${utils.hexToRgba(token.colorPrimary, 0.2)}`
+                      boxShadow: `0 2px 8px ${primaryRGBA20}`
                     }
                   : {
                       color: token.colorTextSecondary
@@ -158,31 +212,13 @@ export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.
       </div>
 
       {/* 右侧：辅助功能按钮 */}
-      <div
-        style={
-          {
-            display: 'flex',
-            alignItems: 'center',
-            paddingRight: token.paddingLG,
-            gap: token.marginSM,
-            flex: '0 0 240px',
-            justifyContent: 'flex-end',
-            WebkitAppRegion: 'no-drag',
-            zIndex: 1
-          } as ExtendedCSSProperties
-        }
-      >
+      <div style={rightSectionStyle}>
         <Tooltip title="帮助文档">
           <Button
             type="text"
             icon={<QuestionCircleOutlined />}
             shape="circle"
-            style={{
-              color: token.colorTextSecondary,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            style={auxiliaryButtonStyle}
           />
         </Tooltip>
         <Tooltip title="GitHub 仓库">
@@ -190,12 +226,7 @@ export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.
             type="text"
             icon={<GithubOutlined />}
             shape="circle"
-            style={{
-              color: token.colorTextSecondary,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            style={auxiliaryButtonStyle}
           />
         </Tooltip>
       </div>
