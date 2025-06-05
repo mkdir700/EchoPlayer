@@ -174,8 +174,14 @@ interface UseThemeReturn {
 }
 
 /**
- * 自定义主题 Hook
- * 提供统一的主题访问接口，封装常用的样式组合
+ * Provides a unified React hook for accessing theme tokens, predefined style objects, and utility functions for consistent UI theming.
+ *
+ * The returned object includes:
+ * - `token`: The current Ant Design theme token.
+ * - `styles`: A comprehensive set of reusable CSS-in-JS style objects for various UI components and states.
+ * - `utils`: Utility functions for color conversion, time formatting, hover style creation, and poster background generation.
+ *
+ * @returns An object containing theme tokens, style definitions, and theme-related utility functions for use throughout the application.
  */
 export function useTheme(): UseThemeReturn {
   const { token } = theme.useToken()

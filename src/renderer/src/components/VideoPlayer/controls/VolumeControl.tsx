@@ -33,6 +33,18 @@ interface CustomVolumeSliderProps {
   }
 }
 
+/**
+ * Renders a custom horizontal volume slider with draggable handle and clickable key volume points.
+ *
+ * Allows users to adjust volume by dragging the slider handle or clicking on predefined key points (0%, 25%, 50%, 75%, 100%). The slider visually reflects the current volume and provides immediate feedback during interaction.
+ *
+ * @param value - The current volume level, between 0 and 1.
+ * @param onChange - Callback invoked when the volume is changed via dragging.
+ * @param onKeyPointClick - Callback invoked when a key volume point is clicked.
+ * @param styles - Inline styles for customizing the slider's appearance.
+ *
+ * @returns The rendered custom volume slider component.
+ */
 function CustomVolumeSlider({
   value,
   onChange,
@@ -182,6 +194,13 @@ function CustomVolumeSlider({
   )
 }
 
+/**
+ * Renders a volume control button with a custom slider for adjusting video playback volume.
+ *
+ * Displays a button that toggles a horizontal slider popup for volume adjustment. The slider supports dragging and clicking on preset key points to set the volume. Volume changes are synchronized with the video player and playback settings context. Keyboard shortcuts for volume up and down are registered, and the slider popup closes automatically when clicking outside the control.
+ *
+ * @returns The volume control UI element.
+ */
 export function VolumeControl(): React.JSX.Element {
   const { playerRef } = useVideoPlayerContext()
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)

@@ -133,6 +133,15 @@ const ResizeHandle = memo(
 )
 ResizeHandle.displayName = 'ResizeHandle'
 
+/**
+ * Renders an interactive subtitle component with draggable, resizable, and mask overlay features.
+ *
+ * Provides word-level hover and click interactions, subtitle area drag and resize, mask mode with adjustable frame, and dynamic background styling. Integrates with video context for aspect ratio-aware layout and exposes callbacks for word hover and video pause events.
+ *
+ * @param onWordHover - Callback invoked when a word in the subtitle is hovered.
+ * @param onPauseOnHover - Callback invoked to pause the video when a word is hovered.
+ * @returns The rendered subtitle UI with controls, mask overlay, and word card popup.
+ */
 function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleV3',

@@ -15,6 +15,23 @@ interface MaskFrameProps {
   onMaskFrameMouseLeave?: () => void
 }
 
+/**
+ * Renders an interactive rectangular mask overlay for positioning subtitles or similar elements over a video.
+ *
+ * The mask frame can be dragged and resized within the container, and reset to match the video display area. Visual cues and controls are shown on hover or when active. Styling is dynamically derived from the current theme.
+ *
+ * @param maskFrame - The current position and size of the mask frame, as percentages relative to the container.
+ * @param updateMaskFrame - Callback to update the mask frame's position and size.
+ * @param containerRef - Ref to the container DOM element.
+ * @param onResetToVideo - Optional callback invoked after resetting the mask frame to the video area.
+ * @param isMaskFrameActive - If true, the mask frame border is shown as active regardless of hover state.
+ * @param onMaskFrameMouseEnter - Optional callback for mouse enter events on the mask frame.
+ * @param onMaskFrameMouseLeave - Optional callback for mouse leave events on the mask frame.
+ *
+ * @returns The rendered mask frame element with drag, resize, and reset controls.
+ *
+ * @remark The mask frame's minimum size is clamped to 10% of the container's width and height.
+ */
 function MaskFrame({
   maskFrame,
   updateMaskFrame,

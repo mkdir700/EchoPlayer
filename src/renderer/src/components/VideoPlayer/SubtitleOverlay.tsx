@@ -7,6 +7,13 @@ interface SubtitleOverlayProps {
   onPauseOnHover: () => void
 }
 
+/**
+ * Renders a full-area overlay for subtitles, forwarding hover and pause events to the underlying subtitle component.
+ *
+ * @param onWordHover - Callback invoked when a word in the subtitle is hovered or unhovered.
+ * @param onPauseOnHover - Callback triggered when playback should pause due to subtitle hover.
+ * @returns A React element displaying the subtitle overlay.
+ */
 function SubtitleOverlay({ onWordHover, onPauseOnHover }: SubtitleOverlayProps): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleOverlay'

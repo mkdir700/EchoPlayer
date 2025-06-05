@@ -11,6 +11,14 @@ interface AutoPauseButtonProps {
   isVideoLoaded: boolean
 }
 
+/**
+ * Renders a button that toggles automatic pausing of video playback at subtitle boundaries.
+ *
+ * When enabled, the video will automatically pause after each subtitle finishes displaying, allowing users to review subtitles at their own pace. The button is disabled if the video is not loaded and visually indicates whether auto-pause is active.
+ *
+ * @param isVideoLoaded - Indicates whether the video is currently loaded and ready for interaction.
+ * @returns The rendered auto-pause toggle button component.
+ */
 export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.JSX.Element {
   const { styles } = useTheme()
   const isAutoPause = useIsAutoPause()

@@ -24,6 +24,18 @@ interface ExtendedCSSProperties extends React.CSSProperties {
   WebkitAppRegion?: 'drag' | 'no-drag'
 }
 
+/**
+ * Renders the application header bar with navigation and auxiliary buttons.
+ *
+ * Displays the app name, navigation buttons for switching pages, and icon buttons for help and GitHub access. The header features a glass effect, sticky positioning, and draggable regions for desktop environments.
+ *
+ * @param currentPage - The currently active page key.
+ * @param onPageChange - Callback invoked when a navigation button is clicked.
+ *
+ * @returns The styled application header component.
+ *
+ * @remark The header uses `WebkitAppRegion` styles to support draggable and non-draggable areas, suitable for Electron-like desktop applications.
+ */
 export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.JSX.Element {
   const { token, styles, utils } = useTheme()
 

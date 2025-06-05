@@ -15,6 +15,17 @@ interface KeyboardShortcutProps {
   style?: React.CSSProperties
 }
 
+/**
+ * Displays a keyboard shortcut as a sequence of styled keycaps, using platform-specific symbols for modifiers and special keys.
+ *
+ * @param shortcut - The shortcut string to display, using '+' to separate keys (e.g., "Ctrl+Shift+K").
+ * @param className - Optional CSS class for the container.
+ * @param style - Optional inline styles for the container.
+ *
+ * @returns A React element rendering the formatted shortcut.
+ *
+ * @remark On macOS, modifier keys are shown with their respective symbols (e.g., ⌘ for Ctrl, ⌥ for Alt).
+ */
 function KeyboardShortcut({
   shortcut,
   className,
@@ -137,6 +148,21 @@ interface ShortcutItemProps {
   checkConflict: (newKey: string, currentKey: string) => string | null
 }
 
+/**
+ * Renders a single keyboard shortcut configuration item with display and edit functionality.
+ *
+ * Displays the shortcut's name, description, and current key combination. Allows users to edit the shortcut via a modal dialog that captures key input, validates against forbidden keys, and checks for conflicts with other shortcuts. Provides visual feedback and error messages during editing.
+ *
+ * @param config - The shortcut configuration object containing name, description, and key.
+ * @param currentKey - The currently assigned shortcut key combination.
+ * @param isEditing - Whether this shortcut is currently being edited.
+ * @param onEdit - Callback to initiate editing mode.
+ * @param onSave - Callback to save the new shortcut key.
+ * @param onCancel - Callback to cancel editing mode.
+ * @param checkConflict - Function to check for conflicts with other shortcuts.
+ *
+ * @returns The rendered shortcut item component.
+ */
 function ShortcutItem({
   config,
   currentKey,
@@ -454,6 +480,14 @@ interface ShortcutsSectionProps {
   className?: string
 }
 
+/**
+ * Renders the keyboard shortcuts management section, allowing users to view, edit, reset, and export shortcut configurations.
+ *
+ * Displays a list of all configurable shortcuts, each with options to edit or resolve conflicts. Provides buttons to reset all shortcuts to their default values or export the current configuration as a JSON file.
+ *
+ * @param className - Optional CSS class for the container.
+ * @returns The rendered shortcuts management UI.
+ */
 export function ShortcutsSection({ className }: ShortcutsSectionProps): React.JSX.Element {
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
   const { shortcuts, getCurrentShortcut, updateShortcut, resetShortcuts } = useShortcuts()

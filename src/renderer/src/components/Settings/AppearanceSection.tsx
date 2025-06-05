@@ -33,6 +33,13 @@ import { ThemeCustomization, useThemeCustomization } from '@renderer/hooks/useTh
 
 const { Text, Title } = Typography
 
+/**
+ * Renders the appearance settings section, providing a user interface for customizing theme modes, colors, and subtitle display options.
+ *
+ * Includes controls for selecting theme algorithms (light, dark, compact, dark compact), customizing primary and status colors, and resetting theme or subtitle settings. Typography and layout customization panels are present but currently disabled. Also displays informational tips and shortcut key explanations related to subtitle management.
+ *
+ * @returns The appearance settings UI as a React element.
+ */
 export function AppearanceSection(): React.JSX.Element {
   const { resetSubtitleSettings, hasSubtitleSettings } = useSubtitleReset()
   const { token } = useTheme()
