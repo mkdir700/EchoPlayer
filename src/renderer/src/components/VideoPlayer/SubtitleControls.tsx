@@ -25,72 +25,38 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
   onReset,
   onExpandHorizontally
 }) => {
-  const { styles } = useTheme()
+  const { token, styles } = useTheme()
   const currentBackgroundConfig =
     BACKGROUND_TYPES.find((bg) => bg.type === backgroundType) || BACKGROUND_TYPES[0]
 
-  const dynamicControlButtonStyle: React.CSSProperties = {
+  // Dynamic sizing based on props
+  const dynamicSizing: React.CSSProperties = {
     width: `${buttonSize}px`,
     height: `${buttonSize}px`,
     fontSize: `${iconSize}px`
   }
 
-  // Enhanced styling for mask mode button with high contrast
-  const maskModeButtonStyle: React.CSSProperties = {
+  // Mask mode button styling using theme tokens
+  const getMaskModeButtonStyle = (): React.CSSProperties => ({
     ...styles.subtitleControlButton,
-    ...dynamicControlButtonStyle,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...dynamicSizing,
     ...(isMaskMode
-      ? {
-          ...styles.subtitleControlButtonActive,
-          background: 'linear-gradient(135deg, #ff4d4f, #ff7875) !important',
-          color: '#ffffff !important',
-          boxShadow: '0 0 15px rgba(255, 77, 79, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
-          border: '2px solid #ffffff !important',
-          transform: 'scale(1.08)'
-        }
-      : {
-          background: 'rgba(255, 255, 255, 0.9) !important',
-          color: '#1890ff !important',
-          border: '2px solid rgba(24, 144, 255, 0.8) !important',
-          backdropFilter: 'blur(8px)',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
-        })
-  }
+      ? styles.subtitleControlButtonMaskActive
+      : styles.subtitleControlButtonMaskInactive)
+  })
 
-  // High contrast icon styling
-  const iconStyle: React.CSSProperties = {
-    fontSize: `${iconSize}px`,
-    lineHeight: 1,
-    fontWeight: 'bold' as const,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }
+  // Regular control button styling using theme tokens
+  const getRegularButtonStyle = (): React.CSSProperties => ({
+    ...styles.subtitleControlButton,
+    ...dynamicSizing,
+    color: `${token.colorWhite} !important`
+  })
 
-  // Mask mode icon styling with perfect alignment
-  const maskIconStyle: React.CSSProperties = {
-    fontSize: `${iconSize}px`,
-    lineHeight: 1,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#ffffff',
-    filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8))',
-    verticalAlign: 'middle',
-    height: '100%',
-    width: '100%'
-  }
-
-  // Regular icon styling with high contrast
-  const regularIconStyle: React.CSSProperties = {
-    ...iconStyle,
-    color: '#ffffff',
-    filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9))',
-    textShadow: '0 1px 2px rgba(0, 0, 0, 1), 0 0 4px rgba(0, 0, 0, 0.8)'
-  }
+  // Icon styling using theme system
+  const getIconStyle = (isMaskButton = false): React.CSSProperties => ({
+    ...(isMaskButton ? styles.subtitleControlIconMask : styles.subtitleControlIcon),
+    fontSize: `${iconSize}px`
+  })
 
   return (
     <div style={styles.subtitleControls}>
@@ -102,12 +68,12 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
             e.stopPropagation()
             onToggleMaskMode()
           }}
-          style={maskModeButtonStyle}
+          style={getMaskModeButtonStyle()}
         >
           {isMaskMode ? (
-            <EyeInvisibleOutlined style={maskIconStyle} />
+            <EyeInvisibleOutlined style={getIconStyle(true)} />
           ) : (
-            <EyeOutlined style={maskIconStyle} />
+            <EyeOutlined style={getIconStyle(true)} />
           )}
         </Button>
       </Tooltip>
@@ -119,13 +85,9 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
             e.stopPropagation()
             onToggleBackgroundType()
           }}
-          style={{
-            ...styles.subtitleControlButton,
-            ...dynamicControlButtonStyle,
-            color: '#ffffff !important'
-          }}
+          style={getRegularButtonStyle()}
         >
-          <span style={regularIconStyle}>{currentBackgroundConfig.icon}</span>
+          <span style={getIconStyle()}>{currentBackgroundConfig.icon}</span>
         </Button>
       </Tooltip>
       <Tooltip title="重置位置和大小">
@@ -136,13 +98,9 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
             e.stopPropagation()
             onReset()
           }}
-          style={{
-            ...styles.subtitleControlButton,
-            ...dynamicControlButtonStyle,
-            color: '#ffffff !important'
-          }}
+          style={getRegularButtonStyle()}
         >
-          <span style={regularIconStyle}>↺</span>
+          <span style={getIconStyle()}>↺</span>
         </Button>
       </Tooltip>
       <Tooltip title="铺满左右区域">
@@ -153,13 +111,9 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
             e.stopPropagation()
             onExpandHorizontally()
           }}
-          style={{
-            ...styles.subtitleControlButton,
-            ...dynamicControlButtonStyle,
-            color: '#ffffff !important'
-          }}
+          style={getRegularButtonStyle()}
         >
-          <span style={regularIconStyle}>↔</span>
+          <span style={getIconStyle()}>↔</span>
         </Button>
       </Tooltip>
     </div>

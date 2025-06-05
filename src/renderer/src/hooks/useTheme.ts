@@ -136,6 +136,10 @@ interface ThemeStyles {
   subtitleControlButton: CSSProperties
   subtitleControlButtonHover: CSSProperties
   subtitleControlButtonActive: CSSProperties
+  subtitleControlButtonMaskActive: CSSProperties
+  subtitleControlButtonMaskInactive: CSSProperties
+  subtitleControlIcon: CSSProperties
+  subtitleControlIconMask: CSSProperties
   subtitleResizeHandle: CSSProperties
   subtitleResizeHandleHover: CSSProperties
   subtitleMaskOverlay: CSSProperties
@@ -1353,6 +1357,47 @@ function buildStyles(token: GlobalToken): ThemeStyles {
     subtitleControlButtonActive: {
       color: `${token.colorPrimary} !important`,
       background: `${COMPONENT_TOKENS.SUBTITLE.CONTROL_BUTTON_ACTIVE_BACKGROUND} !important`
+    },
+
+    subtitleControlButtonMaskActive: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: `linear-gradient(135deg, ${token.colorError}, ${token.colorErrorHover}) !important`,
+      color: `${token.colorWhite} !important`,
+      boxShadow: `0 0 15px ${token.colorError}CC, inset 0 1px 0 rgba(255, 255, 255, 0.4)`,
+      border: `2px solid ${token.colorWhite} !important`,
+      transform: 'scale(1.08)'
+    },
+
+    subtitleControlButtonMaskInactive: {
+      background: 'rgba(255, 255, 255, 0.9) !important',
+      color: `${token.colorPrimary} !important`,
+      border: `2px solid ${token.colorPrimary}CC !important`,
+      backdropFilter: 'blur(8px)',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+    },
+
+    subtitleControlIcon: {
+      lineHeight: 1,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: `${token.colorWhite}`,
+      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9))',
+      textShadow: '0 1px 2px rgba(0, 0, 0, 1), 0 0 4px rgba(0, 0, 0, 0.8)'
+    },
+
+    subtitleControlIconMask: {
+      lineHeight: 1,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: `${token.colorWhite}`,
+      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8))',
+      verticalAlign: 'middle',
+      height: '100%',
+      width: '100%'
     },
 
     subtitleResizeHandle: {

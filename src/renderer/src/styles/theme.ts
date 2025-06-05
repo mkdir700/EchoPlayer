@@ -248,6 +248,11 @@ export const appleTheme: ThemeConfig = {
     colorError: '#FF3B30', // 苹果红
     colorInfo: '#5AC8FA', // 苹果浅蓝
 
+    // 扩展色彩 token - 用于字幕控制
+    colorErrorHover: '#FF453A', // 错误色悬停态
+    colorPrimaryHover: '#0051D0', // 主色悬停态
+    colorWhite: '#ffffff', // 白色常量
+
     // 圆角
     borderRadius: BORDER_RADIUS.BASE,
     borderRadiusLG: BORDER_RADIUS.LG,
@@ -386,6 +391,11 @@ export const appleDarkTheme: ThemeConfig = {
 
     colorBorder: '#38383a',
     colorBorderSecondary: '#2c2c2e',
+
+    // 扩展色彩 token - 暗色模式下的字幕控制
+    colorErrorHover: '#FF453A', // 暗色模式下的错误色悬停态
+    colorPrimaryHover: '#0A84FF', // 暗色模式下的主色悬停态
+    colorWhite: '#ffffff', // 保持一致的白色
 
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
     boxShadowSecondary: '0 4px 16px rgba(0, 0, 0, 0.4)',
