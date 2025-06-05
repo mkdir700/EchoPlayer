@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { COMPONENT_TOKENS } from '@renderer/styles/theme'
 
 export const useSubtitleStyles = (currentLayout: {
   left: number
@@ -13,35 +14,35 @@ export const useSubtitleStyles = (currentLayout: {
   buttonSize: number
   iconSize: number
 } => {
-  // 计算动态字体大小 - 基于容器尺寸和屏幕尺寸等比缩放
+  // Calculate dynamic font size based on container size and screen size with proportional scaling
   const getDynamicFontSize = useCallback(() => {
     const screenWidth = window.innerWidth
 
-    // 根据屏幕宽度调整基础字体大小
+    // Adjust base font size based on screen width
     let baseSize: number
     if (screenWidth >= 2560) {
-      baseSize = 1.8 // 4K 屏幕
+      baseSize = 1.8 // 4K screen
     } else if (screenWidth >= 1440) {
-      baseSize = 1.5 // 大屏幕
+      baseSize = 1.5 // Large screen
     } else if (screenWidth >= 1024) {
-      baseSize = 1.2 // 中等屏幕
+      baseSize = 1.2 // Medium screen
     } else if (screenWidth >= 768) {
-      baseSize = 0.9 // 小屏幕
+      baseSize = 0.9 // Small screen
     } else {
-      baseSize = 0.7 // 更小屏幕
+      baseSize = 0.7 // Smaller screen
     }
 
-    const baseSizeWidth = 60 // 基础容器宽度 (%)
-    const baseSizeHeight = 20 // 基础容器高度 (%)
+    const baseSizeWidth = 60 // Base container width (%)
+    const baseSizeHeight = 20 // Base container height (%)
 
-    // 基于容器尺寸计算缩放比例
+    // Calculate scaling ratio based on container size
     const widthScale = currentLayout.width / baseSizeWidth
     const heightScale = currentLayout.height / baseSizeHeight
 
-    // 使用较小的缩放比例，确保文字不会超出容器
+    // Use the smaller scaling ratio to ensure text doesn't exceed container
     const scale = Math.min(widthScale, heightScale)
 
-    // 根据屏幕大小设置不同的字体大小限制
+    // Set different font size limits based on screen size
     let minSize: number, maxSize: number
     if (screenWidth >= 2560) {
       minSize = 1.2
@@ -64,61 +65,79 @@ export const useSubtitleStyles = (currentLayout: {
     return `${dynamicSize}rem`
   }, [currentLayout])
 
-  // 计算英文和中文的动态字体大小
+  // Calculate dynamic English font size
   const getDynamicEnglishFontSize = useCallback(() => {
-    const baseDynamicSize = parseFloat(getDynamicFontSize())
-    return `${baseDynamicSize * 1.17}rem` // 英文字体比基础字体大17%
+    const baseFontSize = getDynamicFontSize()
+    const baseValue = parseFloat(baseFontSize)
+    const englishSize =
+      (baseValue * COMPONENT_TOKENS.SUBTITLE.ENGLISH_FONT_SCALE) /
+      COMPONENT_TOKENS.SUBTITLE.DEFAULT_FONT_SCALE
+    return `${englishSize}rem`
   }, [getDynamicFontSize])
 
+  // Calculate dynamic Chinese font size
   const getDynamicChineseFontSize = useCallback(() => {
-    const baseDynamicSize = parseFloat(getDynamicFontSize())
-    return `${baseDynamicSize * 0.93}rem` // 中文字体比基础字体小7%
+    const baseFontSize = getDynamicFontSize()
+    const baseValue = parseFloat(baseFontSize)
+    const chineseSize =
+      (baseValue * COMPONENT_TOKENS.SUBTITLE.CHINESE_FONT_SCALE) /
+      COMPONENT_TOKENS.SUBTITLE.DEFAULT_FONT_SCALE
+    return `${chineseSize}rem`
   }, [getDynamicFontSize])
 
-  // 计算动态控制按钮大小
+  // Calculate dynamic control button size
   const getDynamicControlButtonSize = useCallback(() => {
     const screenWidth = window.innerWidth
 
-    // 根据屏幕宽度设置基础按钮大小
+    // Adjust base button size based on screen width
     let baseButtonSize: number
-    let baseIconSize: number
-
     if (screenWidth >= 2560) {
-      baseButtonSize = 40 // 4K 屏幕
-      baseIconSize = 18
+      baseButtonSize = 48 // 4K screen
     } else if (screenWidth >= 1440) {
-      baseButtonSize = 36 // 大屏幕
-      baseIconSize = 16
+      baseButtonSize = 40 // Large screen
     } else if (screenWidth >= 1024) {
-      baseButtonSize = 34 // 中等屏幕
-      baseIconSize = 15
+      baseButtonSize = 36 // Medium screen
     } else if (screenWidth >= 768) {
-      baseButtonSize = 30 // 小屏幕
-      baseIconSize = 13
+      baseButtonSize = 32 // Small screen
     } else {
-      baseButtonSize = 28 // 更小屏幕
-      baseIconSize = 12
+      baseButtonSize = 28 // Smaller screen
     }
 
-    // 基于字幕容器大小计算缩放比例
-    const baseSizeWidth = 60 // 基础容器宽度 (%)
-    const baseSizeHeight = 20 // 基础容器高度 (%)
+    const baseSizeWidth = 60 // Base container width (%)
+    const baseSizeHeight = 20 // Base container height (%)
 
+    // Calculate scaling ratio based on container size
     const widthScale = currentLayout.width / baseSizeWidth
     const heightScale = currentLayout.height / baseSizeHeight
+
+    // Use the smaller scaling ratio to ensure buttons don't exceed container
     const scale = Math.min(widthScale, heightScale)
 
-    // 限制按钮大小范围
-    const minButtonSize = 24
-    const maxButtonSize = 50
-    const minIconSize = 10
-    const maxIconSize = 24
+    // Set button size limits based on screen size
+    let minButtonSize: number, maxButtonSize: number
+    if (screenWidth >= 2560) {
+      minButtonSize = 40
+      maxButtonSize = 60
+    } else if (screenWidth >= 1440) {
+      minButtonSize = 32
+      maxButtonSize = 48
+    } else if (screenWidth >= 1024) {
+      minButtonSize = 28
+      maxButtonSize = 40
+    } else if (screenWidth >= 768) {
+      minButtonSize = 24
+      maxButtonSize = 36
+    } else {
+      minButtonSize = 20
+      maxButtonSize = 32
+    }
 
     const dynamicButtonSize = Math.max(
       minButtonSize,
       Math.min(maxButtonSize, baseButtonSize * scale)
     )
-    const dynamicIconSize = Math.max(minIconSize, Math.min(maxIconSize, baseIconSize * scale))
+
+    const dynamicIconSize = dynamicButtonSize * COMPONENT_TOKENS.SUBTITLE.CONTROL_ICON_SIZE_RATIO
 
     return {
       buttonSize: Math.round(dynamicButtonSize),
@@ -126,7 +145,7 @@ export const useSubtitleStyles = (currentLayout: {
     }
   }, [currentLayout])
 
-  // 动态文本样式
+  // Dynamic text style
   const dynamicTextStyle: React.CSSProperties = {
     fontSize: getDynamicFontSize()
   }
@@ -139,7 +158,7 @@ export const useSubtitleStyles = (currentLayout: {
     fontSize: getDynamicChineseFontSize()
   }
 
-  // 动态控制按钮样式
+  // Dynamic control button style
   const { buttonSize, iconSize } = getDynamicControlButtonSize()
 
   const dynamicControlButtonStyle: React.CSSProperties = {

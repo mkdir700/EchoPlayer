@@ -6,7 +6,7 @@ import { useShortcuts } from '@renderer/hooks/useShortcuts'
 import { DEFAULT_SHORTCUTS } from '@renderer/hooks/useShortcutManager'
 import { useTheme } from '@renderer/hooks/useTheme'
 
-const { Text, Paragraph } = Typography
+const { Text } = Typography
 
 // 快捷键显示组件
 interface KeyboardShortcutProps {
@@ -514,18 +514,6 @@ export function ShortcutsSection({ className }: ShortcutsSectionProps): React.JS
 
   return (
     <div className={className}>
-      <div style={{ marginBottom: token.marginLG }}>
-        <Paragraph
-          style={{
-            color: token.colorTextDescription,
-            marginBottom: 0,
-            fontSize: token.fontSizeLG
-          }}
-        >
-          自定义快捷键以提高使用效率。点击快捷键右侧的编辑按钮进行修改。
-        </Paragraph>
-      </div>
-
       <div
         style={{
           background: token.colorBgContainer,

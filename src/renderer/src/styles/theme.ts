@@ -152,6 +152,74 @@ export const COMPONENT_TOKENS = {
   NAVIGATION: {
     ACTIVE_FONT_WEIGHT: FONT_WEIGHTS.SEMIBOLD,
     INACTIVE_FONT_WEIGHT: FONT_WEIGHTS.MEDIUM
+  },
+
+  // 字幕组件
+  SUBTITLE: {
+    // 字体相关
+    ENGLISH_FONT_WEIGHT: FONT_WEIGHTS.BOLD,
+    CHINESE_FONT_WEIGHT: FONT_WEIGHTS.MEDIUM,
+    DEFAULT_FONT_WEIGHT: FONT_WEIGHTS.SEMIBOLD,
+
+    // 字体大小比例（基于 base 字体大小的倍数）
+    ENGLISH_FONT_SCALE: 1.75,
+    CHINESE_FONT_SCALE: 1.4,
+    DEFAULT_FONT_SCALE: 1.5,
+
+    // 行高
+    DEFAULT_LINE_HEIGHT: 1.6,
+    ENGLISH_LINE_HEIGHT: 1.7,
+    CHINESE_LINE_HEIGHT: 1.5,
+
+    // 颜色
+    DEFAULT_COLOR: '#ffffff',
+    CHINESE_COLOR: '#f0f0f0',
+    HOVER_COLOR: '#ffffff',
+    HIDDEN_COLOR: 'rgba(255, 255, 255, 0.7)',
+
+    // 背景颜色
+    BLUR_BACKGROUND: 'rgba(0, 0, 0, 0.6)',
+    SOLID_BLACK_BACKGROUND: 'rgba(0, 0, 0, 0.8)',
+    SOLID_GRAY_BACKGROUND: 'rgba(128, 128, 128, 0.7)',
+
+    // 边框颜色
+    CONTAINER_BORDER_HOVER: 'rgba(102, 126, 234, 0.6)',
+    CONTAINER_BORDER_DRAGGING: 'rgba(102, 126, 234, 0.8)',
+
+    // 控制按钮
+    CONTROL_BUTTON_SIZE_BASE: 32,
+    CONTROL_ICON_SIZE_RATIO: 0.6,
+    CONTROL_BACKGROUND: 'rgba(0, 0, 0, 0.9)',
+    CONTROL_BUTTON_BACKGROUND: 'rgba(255, 255, 255, 0.1)',
+    CONTROL_BUTTON_HOVER_BACKGROUND: 'rgba(102, 126, 234, 0.8)',
+    CONTROL_BUTTON_ACTIVE_BACKGROUND: 'rgba(102, 126, 234, 0.2)',
+
+    // 调整大小控制点
+    RESIZE_HANDLE_COLOR: 'rgba(102, 126, 234, 0.8)',
+    RESIZE_HANDLE_BORDER: 'rgba(255, 255, 255, 0.9)',
+
+    // 单词交互
+    WORD_HOVER_BACKGROUND: 'rgba(0, 122, 255, 0.6)',
+    CLICKABLE_WORD_HOVER_BACKGROUND: 'rgba(0, 122, 255, 0.8)',
+
+    // 阴影
+    DEFAULT_TEXT_SHADOW:
+      '0 1px 2px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4)',
+    ENGLISH_TEXT_SHADOW:
+      '0 1px 3px rgba(0, 0, 0, 0.9), 0 2px 6px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 0, 0, 0.5)',
+    CHINESE_TEXT_SHADOW: '0 1px 2px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6)',
+    CONTAINER_SHADOW_HOVER: '0 0 0 1px rgba(102, 126, 234, 0.3)',
+    CONTAINER_SHADOW_DRAGGING: '0 8px 32px rgba(0, 0, 0, 0.4)',
+
+    // 尺寸限制
+    MIN_WIDTH_PERCENT: 20,
+    MIN_HEIGHT_PERCENT: 5,
+    MAX_WIDTH_PERCENT: 100,
+    MAX_HEIGHT_PERCENT: 50,
+
+    // 动画
+    TRANSITION_DURATION: ANIMATION_DURATION.MEDIUM,
+    FADE_IN_DURATION: ANIMATION_DURATION.SLOW
   }
 } as const
 

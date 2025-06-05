@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+[theme.ts](mdc:src/renderer/src/styles/theme.ts) [useTheme.ts](mdc:src/renderer/src/hooks/useTheme.ts) [theme-guide.mdc](mdc:.cursor/rules/theme-guide.mdc)
+
+请根据主题设计系统指南重构以下模块代码：
+
+1. 分析现有模块样式，将符合设计系统的样式保留，并考虑将通用样式抽象为设计 token
+2. 评估模块级 CSS 文件的必要性，如果样式可被主题系统覆盖或已无使用场景，请移除冗余文件
+3. 确保重构后的代码符合主题切换机制，支持样式变量复用
+4. 提供重构前后的对比说明，包括移除的样式规则及其迁移方案

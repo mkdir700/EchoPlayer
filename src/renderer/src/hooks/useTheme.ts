@@ -1,5 +1,12 @@
 import { theme } from 'antd'
-import { themeStyles } from '@renderer/styles/theme'
+import {
+  themeStyles,
+  COMPONENT_TOKENS,
+  FONT_SIZES,
+  SPACING,
+  ANIMATION_DURATION,
+  EASING
+} from '@renderer/styles/theme'
 import type { GlobalToken } from 'antd'
 import type { CSSProperties } from 'react'
 
@@ -107,6 +114,44 @@ interface ThemeStyles {
   mediumWidthSecondaryRow: CSSProperties
   mediumWidthPrimaryControls: CSSProperties
   mediumWidthSecondaryControls: CSSProperties
+  // Subtitle specific styles
+  subtitleContainer: CSSProperties
+  subtitleContainerHover: CSSProperties
+  subtitleContainerDragging: CSSProperties
+  subtitleContent: CSSProperties
+  subtitleContentTransparent: CSSProperties
+  subtitleContentBlur: CSSProperties
+  subtitleContentSolidBlack: CSSProperties
+  subtitleContentSolidGray: CSSProperties
+  subtitleText: CSSProperties
+  subtitleTextEnglish: CSSProperties
+  subtitleTextChinese: CSSProperties
+  subtitleTextHidden: CSSProperties
+  subtitleWord: CSSProperties
+  subtitleWordHover: CSSProperties
+  subtitleWordClickable: CSSProperties
+  subtitleWordClickableHover: CSSProperties
+  subtitleControls: CSSProperties
+  subtitleControlButton: CSSProperties
+  subtitleControlButtonHover: CSSProperties
+  subtitleControlButtonActive: CSSProperties
+  subtitleResizeHandle: CSSProperties
+  subtitleResizeHandleHover: CSSProperties
+  subtitleMaskOverlay: CSSProperties
+  // Subtitle list item specific styles
+  subtitleListItem: CSSProperties
+  subtitleListItemActive: CSSProperties
+  subtitleListItemHover: CSSProperties
+  subtitleListItemTime: CSSProperties
+  subtitleListItemText: CSSProperties
+  subtitleListItemIndicator: CSSProperties
+  // Subtitle list container specific styles
+  subtitleListContainer: CSSProperties
+  subtitleListContainerNoHeader: CSSProperties
+  subtitleListContent: CSSProperties
+  subtitleListHeader: CSSProperties
+  subtitleListEmptyState: CSSProperties
+  subtitleListVirtualizedList: CSSProperties
 }
 
 interface ThemeUtils {
@@ -1115,6 +1160,378 @@ export function useTheme(): UseThemeReturn {
         width: '100%',
         paddingTop: token.marginXS,
         borderTop: `1px solid ${token.colorBorderSecondary}`
+      },
+
+      // Subtitle component styles
+      subtitleContainer: {
+        minWidth: `${COMPONENT_TOKENS.SUBTITLE.MIN_WIDTH_PERCENT}%`,
+        minHeight: `${COMPONENT_TOKENS.SUBTITLE.MIN_HEIGHT_PERCENT}%`,
+        maxWidth: `${COMPONENT_TOKENS.SUBTITLE.MAX_WIDTH_PERCENT}%`,
+        maxHeight: `${COMPONENT_TOKENS.SUBTITLE.MAX_HEIGHT_PERCENT}%`,
+        pointerEvents: 'auto' as const,
+        position: 'absolute' as const,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: token.marginSM,
+        transition: `all ${COMPONENT_TOKENS.SUBTITLE.TRANSITION_DURATION} ease-out`,
+        borderRadius: token.borderRadiusLG,
+        flexShrink: 0,
+        flexGrow: 0,
+        overflow: 'hidden',
+        boxSizing: 'border-box' as const,
+        border: '2px dashed transparent'
+      },
+
+      subtitleContainerHover: {
+        border: `2px dashed ${COMPONENT_TOKENS.SUBTITLE.CONTAINER_BORDER_HOVER}`,
+        boxShadow: COMPONENT_TOKENS.SUBTITLE.CONTAINER_SHADOW_HOVER
+      },
+
+      subtitleContainerDragging: {
+        zIndex: 100,
+        transform: 'rotate(1deg)',
+        boxShadow: COMPONENT_TOKENS.SUBTITLE.CONTAINER_SHADOW_DRAGGING,
+        border: `2px dashed ${COMPONENT_TOKENS.SUBTITLE.CONTAINER_BORDER_DRAGGING}`
+      },
+
+      subtitleContent: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center' as const,
+        position: 'relative' as const,
+        padding: `${token.paddingMD}px ${token.paddingLG}px`,
+        borderRadius: token.borderRadiusLG,
+        background: 'transparent',
+        backdropFilter: 'none',
+        transition: `all ${COMPONENT_TOKENS.SUBTITLE.TRANSITION_DURATION}`,
+        pointerEvents: 'auto' as const,
+        boxSizing: 'border-box' as const,
+        overflow: 'hidden'
+      },
+
+      subtitleContentTransparent: {
+        background: 'transparent',
+        backdropFilter: 'none',
+        border: 'none',
+        boxShadow: 'none'
+      },
+
+      subtitleContentBlur: {
+        background: COMPONENT_TOKENS.SUBTITLE.BLUR_BACKGROUND,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+      },
+
+      subtitleContentSolidBlack: {
+        background: COMPONENT_TOKENS.SUBTITLE.SOLID_BLACK_BACKGROUND,
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+      },
+
+      subtitleContentSolidGray: {
+        background: COMPONENT_TOKENS.SUBTITLE.SOLID_GRAY_BACKGROUND,
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+      },
+
+      subtitleText: {
+        fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
+        lineHeight: COMPONENT_TOKENS.SUBTITLE.DEFAULT_LINE_HEIGHT,
+        fontWeight: COMPONENT_TOKENS.SUBTITLE.DEFAULT_FONT_WEIGHT,
+        color: COMPONENT_TOKENS.SUBTITLE.DEFAULT_COLOR,
+        textShadow: COMPONENT_TOKENS.SUBTITLE.DEFAULT_TEXT_SHADOW,
+        letterSpacing: '0.02em',
+        display: 'inline-block',
+        transition: `all ${COMPONENT_TOKENS.SUBTITLE.TRANSITION_DURATION}`,
+        width: 'auto',
+        whiteSpace: 'pre-wrap' as const,
+        wordWrap: 'break-word' as const,
+        overflowWrap: 'break-word' as const
+      },
+
+      subtitleTextEnglish: {
+        fontWeight: COMPONENT_TOKENS.SUBTITLE.ENGLISH_FONT_WEIGHT,
+        color: COMPONENT_TOKENS.SUBTITLE.DEFAULT_COLOR,
+        textShadow: COMPONENT_TOKENS.SUBTITLE.ENGLISH_TEXT_SHADOW,
+        lineHeight: COMPONENT_TOKENS.SUBTITLE.ENGLISH_LINE_HEIGHT
+      },
+
+      subtitleTextChinese: {
+        fontWeight: COMPONENT_TOKENS.SUBTITLE.CHINESE_FONT_WEIGHT,
+        color: COMPONENT_TOKENS.SUBTITLE.CHINESE_COLOR,
+        textShadow: COMPONENT_TOKENS.SUBTITLE.CHINESE_TEXT_SHADOW,
+        opacity: 0.95,
+        lineHeight: COMPONENT_TOKENS.SUBTITLE.CHINESE_LINE_HEIGHT
+      },
+
+      subtitleTextHidden: {
+        color: `${COMPONENT_TOKENS.SUBTITLE.HIDDEN_COLOR} !important`,
+        fontStyle: 'italic',
+        fontSize: '14px !important',
+        fontWeight: '500 !important',
+        textShadow: COMPONENT_TOKENS.SUBTITLE.CHINESE_TEXT_SHADOW,
+        background: 'rgba(0, 0, 0, 0.4)',
+        padding: `${token.paddingXS}px ${token.paddingMD}px`,
+        borderRadius: token.borderRadiusSM,
+        border: '1px dashed rgba(255, 255, 255, 0.3)',
+        backdropFilter: 'blur(4px)'
+      },
+
+      subtitleWord: {
+        cursor: 'default',
+        padding: '2px 4px',
+        borderRadius: '4px',
+        transition: `all ${COMPONENT_TOKENS.SUBTITLE.TRANSITION_DURATION}`,
+        position: 'relative' as const,
+        display: 'inline-block',
+        pointerEvents: 'auto' as const,
+        zIndex: 2
+      },
+
+      subtitleWordHover: {
+        backgroundColor: COMPONENT_TOKENS.SUBTITLE.WORD_HOVER_BACKGROUND,
+        color: `${COMPONENT_TOKENS.SUBTITLE.HOVER_COLOR} !important`,
+        transform: 'scale(1.05)',
+        fontWeight: '700 !important',
+        textShadow:
+          '0 1px 3px rgba(0, 0, 0, 0.9), 0 2px 6px rgba(102, 126, 234, 0.6), 0 0 12px rgba(102, 126, 234, 0.4)',
+        backdropFilter: 'blur(8px)'
+      },
+
+      subtitleWordClickable: {
+        cursor: 'pointer',
+        transition: `all ${COMPONENT_TOKENS.SUBTITLE.TRANSITION_DURATION}`,
+        pointerEvents: 'auto' as const
+      },
+
+      subtitleWordClickableHover: {
+        backgroundColor: `${COMPONENT_TOKENS.SUBTITLE.CLICKABLE_WORD_HOVER_BACKGROUND} !important`,
+        color: `${COMPONENT_TOKENS.SUBTITLE.HOVER_COLOR} !important`,
+        transform: 'scale(1.08) !important',
+        fontWeight: '700 !important',
+        textShadow:
+          '0 1px 3px rgba(0, 0, 0, 0.9), 0 2px 6px rgba(102, 126, 234, 0.8), 0 0 16px rgba(102, 126, 234, 0.6) !important',
+        backdropFilter: 'blur(12px)'
+      },
+
+      subtitleControls: {
+        position: 'relative' as const,
+        top: 'auto',
+        right: 'auto',
+        display: 'flex',
+        gap: '2px',
+        background: COMPONENT_TOKENS.SUBTITLE.CONTROL_BACKGROUND,
+        backdropFilter: 'blur(12px)',
+        borderRadius: token.borderRadiusSM,
+        padding: '4px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.6)',
+        animation: `${COMPONENT_TOKENS.SUBTITLE.FADE_IN_DURATION} ease-out fadeInDown`,
+        pointerEvents: 'auto' as const,
+        zIndex: 60,
+        minWidth: 'auto'
+      },
+
+      subtitleControlButton: {
+        color: 'rgba(255, 255, 255, 0.9) !important',
+        border: 'none !important',
+        background: `${COMPONENT_TOKENS.SUBTITLE.CONTROL_BUTTON_BACKGROUND} !important`,
+        borderRadius: `${token.borderRadiusSM}px !important`,
+        display: 'flex !important',
+        alignItems: 'center !important',
+        justifyContent: 'center !important',
+        transition: `all ${COMPONENT_TOKENS.SUBTITLE.TRANSITION_DURATION} !important`,
+        fontWeight: 'bold !important'
+      },
+
+      subtitleControlButtonHover: {
+        color: '#ffffff !important',
+        background: `${COMPONENT_TOKENS.SUBTITLE.CONTROL_BUTTON_HOVER_BACKGROUND} !important`,
+        transform: 'scale(1.1)',
+        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
+      },
+
+      subtitleControlButtonActive: {
+        color: `${token.colorPrimary} !important`,
+        background: `${COMPONENT_TOKENS.SUBTITLE.CONTROL_BUTTON_ACTIVE_BACKGROUND} !important`
+      },
+
+      subtitleResizeHandle: {
+        position: 'absolute' as const,
+        background: COMPONENT_TOKENS.SUBTITLE.RESIZE_HANDLE_COLOR,
+        border: `2px solid ${COMPONENT_TOKENS.SUBTITLE.RESIZE_HANDLE_BORDER}`,
+        zIndex: 50,
+        transition: `all ${COMPONENT_TOKENS.SUBTITLE.TRANSITION_DURATION}`,
+        pointerEvents: 'auto' as const
+      },
+
+      subtitleResizeHandleHover: {
+        background: token.colorPrimary,
+        transform: 'scale(1.1)',
+        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
+      },
+
+      subtitleMaskOverlay: {
+        boxSizing: 'border-box' as const,
+        transition: `all ${COMPONENT_TOKENS.SUBTITLE.FADE_IN_DURATION} ease-in-out`,
+        animation: `${COMPONENT_TOKENS.SUBTITLE.FADE_IN_DURATION} ease-out fadeInMask`,
+        boxShadow: 'none'
+      },
+
+      // Subtitle list item specific styles
+      subtitleListItem: {
+        padding: `${SPACING.SM}px ${SPACING.MD}px`,
+        margin: `0 0 ${SPACING.XXS}px 0`,
+        width: '100%',
+        height: '60px',
+        boxSizing: 'border-box' as const,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: 'center',
+        position: 'relative' as const,
+        overflow: 'hidden',
+        cursor: 'pointer',
+        userSelect: 'none' as const,
+        border: 'none', // 移除边框，避免悬停时出现黑色边框
+        background: 'transparent',
+        borderRadius: token.borderRadius,
+        wordBreak: 'break-word' as const,
+        overflowWrap: 'break-word' as const,
+        hyphens: 'auto' as const,
+        willChange: 'transform, background-color, box-shadow',
+        contain: 'layout style paint' as const,
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden' as const,
+        WebkitBackfaceVisibility: 'hidden' as const,
+        WebkitFontSmoothing: 'antialiased' as const,
+        MozOsxFontSmoothing: 'grayscale' as const,
+        transition: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? `background-color ${ANIMATION_DURATION.FAST} ease, box-shadow ${ANIMATION_DURATION.FAST} ease, transform ${ANIMATION_DURATION.FAST} ease`
+          : `background-color ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}, box-shadow ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}, transform ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}`
+      },
+
+      subtitleListItemActive: {
+        backgroundColor: `${token.colorPrimary}18`,
+        border: 'none', // 确保激活状态也没有边框
+        boxShadow: `0 6px 20px ${token.colorPrimary}40, 0 3px 6px rgba(0, 0, 0, 0.12)`,
+        transform: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'translateZ(0)'
+          : 'scale(1.02) translateZ(0)',
+        zIndex: 3
+      },
+
+      subtitleListItemHover: {
+        backgroundColor: `${token.colorPrimary}08`, // 减淡悬停背景色，使其更微妙
+        border: 'none', // 确保悬停状态没有边框
+        transform: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'translateZ(0)'
+          : 'translateY(-1px) scale(1.005) translateZ(0)', // 减少悬停动画幅度，使其更优雅
+        boxShadow: `0 2px 8px ${token.colorPrimary}20, 0 1px 3px rgba(0, 0, 0, 0.06)`, // 减淡阴影
+        zIndex: 2
+      },
+
+      subtitleListItemTime: {
+        fontSize: FONT_SIZES.XS,
+        fontWeight: 'normal'
+      },
+
+      subtitleListItemText: {
+        fontSize: window.innerWidth <= 768 ? FONT_SIZES.XS : 13,
+        lineHeight: 1.3,
+        fontWeight: 'normal',
+        overflow: 'hidden',
+        display: '-webkit-box' as const,
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical' as const,
+        textOverflow: 'ellipsis',
+        whiteSpace: 'normal' as const,
+        maxHeight: '2.6em'
+      },
+
+      subtitleListItemIndicator: {
+        position: 'absolute' as const,
+        left: 0,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        width: 4,
+        height: '70%',
+        background: `linear-gradient(to bottom, ${token.colorPrimary}, ${token.colorPrimary}99)`,
+        boxShadow: `0 0 8px ${token.colorPrimary}66`
+      },
+
+      // Subtitle list container specific styles
+      subtitleListContainer: {
+        background: token.colorBgContainer,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        borderRadius: token.borderRadiusLG,
+        boxShadow: themeStyles.appleCardShadow.light,
+        backdropFilter: 'blur(20px)',
+        marginBottom: token.marginLG,
+        height: 320,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        overflow: 'hidden'
+      },
+
+      subtitleListContainerNoHeader: {
+        background: 'var(--darker-bg)',
+        border: 'none',
+        borderRadius: 0,
+        boxShadow: 'none',
+        backdropFilter: 'none',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        overflow: 'hidden',
+        borderTop: '1px solid rgba(255, 255, 255, 0.04)'
+      },
+
+      subtitleListContent: {
+        flex: 1,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        minHeight: 0,
+        height: '100%',
+        position: 'relative' as const
+      },
+
+      subtitleListHeader: {
+        padding: `${token.paddingXS}px`,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 0%, transparent 100%)'
+      },
+
+      subtitleListEmptyState: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        padding: token.paddingXL,
+        color: token.colorTextTertiary,
+        fontSize: token.fontSize
+      },
+
+      subtitleListVirtualizedList: {
+        outline: 'none',
+        overflowY: 'auto' as const,
+        overflowX: 'hidden' as const,
+        // Custom scrollbar styles through CSS variables
+        scrollbarWidth: 'thin' as const,
+        scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
+        // 确保虚拟列表内部元素不受其他样式影响
+        border: 'none',
+        background: 'transparent'
       }
     },
 

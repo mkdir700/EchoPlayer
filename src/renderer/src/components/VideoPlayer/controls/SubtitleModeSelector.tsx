@@ -13,7 +13,7 @@ const DISPLAY_MODE_CONFIG = {
   none: { label: '隐藏' },
   original: { label: '原始' },
   chinese: { label: '中文' },
-  english: { label: 'English' },
+  english: { label: '原文' },
   bilingual: { label: '双语' }
 }
 
@@ -84,13 +84,6 @@ export function SubtitleModeSelector(): React.JSX.Element {
         title={`字幕模式: ${currentModeConfig.label}`}
         open={showSubtitleModeSelector ? false : undefined}
         placement="top"
-        color={token.colorBgElevated}
-        overlayStyle={{
-          color: token.colorText,
-          fontSize: token.fontSizeSM,
-          padding: `${token.paddingXS}px ${token.paddingSM}px`,
-          boxShadow: 'none'
-        }}
       >
         <Button
           type="text"
