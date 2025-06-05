@@ -128,8 +128,15 @@ function CustomVolumeSlider({
       return () => {
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
+        // Clean up any pending animation frame
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current)
+          animationFrameRef.current = null
+        }
       }
     }
+    // Always return a cleanup function to satisfy TypeScript
+    return () => {}
   }, [isDragging, handleMouseMove, handleMouseUp])
 
   return (
