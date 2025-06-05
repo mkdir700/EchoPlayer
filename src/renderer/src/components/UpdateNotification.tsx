@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Modal, Button, Progress, Typography, Space, notification } from 'antd'
+import { Modal, Button, Progress, Typography, Space } from 'antd'
 import { CloudDownloadOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons'
 
 const { Text, Paragraph } = Typography
@@ -38,13 +38,13 @@ const UpdateNotification: React.FC = () => {
       }
 
       // 当发生错误时显示通知
-      if (status.status === 'error') {
-        notification.error({
-          message: '更新错误',
-          description: status.error || '检查更新时发生未知错误',
-          duration: 0
-        })
-      }
+      // if (status.status === 'error') {
+      //   notification.error({
+      //     message: '更新错误',
+      //     description: status.error || '检查更新时发生未知错误',
+      //     duration: 0
+      //   })
+      // }
     })
 
     // 组件挂载时自动检查更新（静默模式）
