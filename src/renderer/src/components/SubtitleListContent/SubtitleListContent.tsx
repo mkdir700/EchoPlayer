@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
-import { Space, Typography } from 'antd'
-import { MessageOutlined } from '@ant-design/icons'
+import { Space, Typography, Button } from 'antd'
+import { MessageOutlined, FileTextOutlined, CloudUploadOutlined } from '@ant-design/icons'
 import { List as VirtualizedList, AutoSizer, ListRowProps } from 'react-virtualized'
 import 'react-virtualized/styles.css'
-import './SubtitleListContent.css'
+
 import { SubtitleListItem } from './SubtitleListItem'
 import { formatTime } from '@renderer/utils/helpers'
 import { useTheme } from '@renderer/hooks/useTheme'
@@ -14,6 +14,8 @@ import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubt
 import { AimButton } from './AimButton'
 import { RendererLogger } from '@renderer/utils/logger'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { SPACING, FONT_SIZES } from '@renderer/styles/theme'
+
 const { Text } = Typography
 
 // 虚拟列表项高度（与CSS中的height保持一致）
@@ -51,7 +53,9 @@ export function SubtitleListContent(): React.JSX.Element {
     enableAutoScroll,
     disableAutoScroll,
     getSubtitleIndexForTime,
-    setCurrentSubtitleIndex
+    setCurrentSubtitleIndex,
+    showSubtitlePrompt,
+    handleManualSubtitleImport
   } = subtitleListContext
   const virtualListRef = useRef<VirtualizedList>(null)
 
@@ -321,14 +325,90 @@ export function SubtitleListContent(): React.JSX.Element {
     <div className="subtitle-list-container" style={styles.subtitleListContainerNoHeader}>
       {subtitleItemsRef.current.length > 0 && (
         <div style={styles.subtitleListHeader}>
-          <Text style={{ fontSize: 12, color: token.colorTextTertiary }}>
+          <Text style={{ fontSize: FONT_SIZES.XS, color: token.colorTextTertiary }}>
             字幕列表 ({subtitleItemsRef.current.length})
           </Text>
           <Space>{currentSubtitleIndexRef.current >= 0 && <AimButton />}</Space>
         </div>
       )}
       <div style={styles.subtitleListContent}>
-        {subtitleItemsRef.current.length > 0 ? (
+        {showSubtitlePrompt ? (
+          // 简化的字幕提示界面
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              padding: `${SPACING.XL}px ${SPACING.LG}px`,
+              gap: SPACING.LG,
+              textAlign: 'center'
+            }}
+          >
+            {/* 装饰性图标 */}
+            <FileTextOutlined
+              style={{
+                fontSize: '48px',
+                color: token.colorTextTertiary,
+                opacity: 0.6,
+                marginBottom: SPACING.SM
+              }}
+            />
+
+            {/* 提示文本 */}
+            <div>
+              <Text
+                style={{
+                  fontSize: FONT_SIZES.LG,
+                  color: token.colorText,
+                  fontWeight: 500,
+                  display: 'block',
+                  marginBottom: SPACING.XS
+                }}
+              >
+                未找到字幕文件
+              </Text>
+              <Text
+                style={{
+                  fontSize: FONT_SIZES.SM,
+                  color: token.colorTextSecondary,
+                  lineHeight: 1.5
+                }}
+              >
+                在视频文件同目录下未找到匹配的字幕文件
+              </Text>
+            </div>
+
+            {/* 导入按钮 */}
+            <Button
+              type="primary"
+              icon={<CloudUploadOutlined />}
+              onClick={handleManualSubtitleImport}
+              style={{
+                height: '40px',
+                fontSize: FONT_SIZES.SM,
+                fontWeight: 500,
+                borderRadius: token.borderRadius,
+                paddingLeft: SPACING.MD,
+                paddingRight: SPACING.MD
+              }}
+            >
+              导入字幕文件
+            </Button>
+
+            {/* 支持格式提示 */}
+            <Text
+              style={{
+                fontSize: FONT_SIZES.XS,
+                color: token.colorTextTertiary,
+                fontFamily: token.fontFamilyCode || 'monospace'
+              }}
+            >
+              支持格式：.srt, .vtt, .json, .ass, .ssa
+            </Text>
+          </div>
+        ) : subtitleItemsRef.current.length > 0 ? (
           <AutoSizer defaultHeight={100}>
             {({ height, width }) => (
               <VirtualizedList
@@ -352,9 +432,20 @@ export function SubtitleListContent(): React.JSX.Element {
           </AutoSizer>
         ) : (
           <div style={styles.subtitleListEmptyState}>
-            <MessageOutlined style={{ fontSize: 32, marginBottom: 16, opacity: 0.5 }} />
+            <MessageOutlined
+              style={{
+                fontSize: token.fontSizeHeading2,
+                marginBottom: SPACING.MD,
+                opacity: 0.5
+              }}
+            />
             <div>暂无字幕文件</div>
-            <div style={{ fontSize: 12, marginTop: 8 }}>
+            <div
+              style={{
+                fontSize: FONT_SIZES.XS,
+                marginTop: SPACING.XS
+              }}
+            >
               请点击&ldquo;导入字幕&rdquo;按钮加载字幕文件
             </div>
           </div>

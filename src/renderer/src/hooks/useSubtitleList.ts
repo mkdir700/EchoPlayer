@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useState } from 'react'
 import { message } from 'antd'
 import { parseSubtitles } from '../utils/subtitleParser'
 import type { SubtitleItem } from '@types_/shared'
@@ -16,6 +16,10 @@ export interface UseSubtitleListReturn {
   disableAutoScroll: () => void
   setCurrentSubtitleIndex: (index: number) => void
   restoreSubtitles: (subtitles: SubtitleItem[], currentSubtitleIndex: number) => void
+  showSubtitlePrompt: boolean
+  setShowSubtitlePrompt: (show: boolean) => void
+  handleManualSubtitleImport: () => void
+  handleSkipSubtitleImport: () => void
 }
 
 export function useSubtitleList(): UseSubtitleListReturn {
@@ -23,6 +27,9 @@ export function useSubtitleList(): UseSubtitleListReturn {
   const isAutoScrollEnabledRef = useRef(true)
   const subtitleItemsRef = useRef<SubtitleItem[]>([])
   const currentSubtitleIndexRef = useRef(-1)
+
+  // 新增：字幕文件匹配失败时的提示状态
+  const [showSubtitlePrompt, setShowSubtitlePrompt] = useState(false)
 
   // 字幕文件上传处理
   const handleSubtitleUpload = useCallback((file: File): boolean => {
@@ -35,6 +42,8 @@ export function useSubtitleList(): UseSubtitleListReturn {
         message.success({
           content: `字幕文件 ${file.name} 已导入，共 ${parsedSubtitles.length} 条字幕`
         })
+        // 导入成功后隐藏提示
+        setShowSubtitlePrompt(false)
       } catch (error) {
         message.error({
           content: `字幕文件解析失败: ${(error as Error).message}`
@@ -43,6 +52,51 @@ export function useSubtitleList(): UseSubtitleListReturn {
     }
     reader.readAsText(file)
     return false
+  }, [])
+
+  // 新增：手动导入字幕文件
+  const handleManualSubtitleImport = useCallback(() => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.srt,.vtt,.json,.ass,.ssa'
+
+    input.onchange = async (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0]
+      if (!file) {
+        return
+      }
+
+      try {
+        const content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.onerror = () => reject(new Error('读取文件失败'))
+          reader.readAsText(file)
+        })
+
+        const subtitles = parseSubtitles(content, file.name)
+        if (subtitles.length === 0) {
+          throw new Error('字幕文件解析失败或为空')
+        }
+
+        subtitleItemsRef.current = subtitles
+        currentSubtitleIndexRef.current = 0
+        setShowSubtitlePrompt(false)
+
+        message.success(`成功加载字幕文件：${file.name}，共 ${subtitles.length} 条字幕`)
+      } catch (error) {
+        console.error('加载字幕文件失败:', error)
+        message.error(`加载字幕文件失败：${(error as Error).message}`)
+      }
+    }
+
+    input.click()
+  }, [])
+
+  // 新增：跳过字幕导入
+  const handleSkipSubtitleImport = useCallback(() => {
+    setShowSubtitlePrompt(false)
+    message.info('已跳过字幕导入，您可以稍后手动添加字幕文件')
   }, [])
 
   // 获取当前字幕索引
@@ -119,6 +173,9 @@ export function useSubtitleList(): UseSubtitleListReturn {
         isAutoScrollEnabledRef.current = true
       }
 
+      // 恢复字幕后隐藏提示
+      setShowSubtitlePrompt(false)
+
       RendererLogger.debug('✅ 字幕状态恢复完成', {
         isAutoScrollEnabled: isAutoScrollEnabledRef.current
       })
@@ -137,6 +194,10 @@ export function useSubtitleList(): UseSubtitleListReturn {
     enableAutoScroll,
     disableAutoScroll,
     setCurrentSubtitleIndex,
-    restoreSubtitles
+    restoreSubtitles,
+    showSubtitlePrompt,
+    setShowSubtitlePrompt,
+    handleManualSubtitleImport,
+    handleSkipSubtitleImport
   }
 }
