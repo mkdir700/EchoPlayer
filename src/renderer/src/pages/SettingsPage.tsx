@@ -20,7 +20,7 @@ const { Title } = Typography
  * @returns The settings page React element.
  */
 export function SettingsPage(): React.JSX.Element {
-  const [activeSection, setActiveSection] = useState('about')
+  const [activeSection, setActiveSection] = useState('shortcuts')
   const { token, styles } = useTheme()
 
   const handleSectionChange = (section: string): void => {
