@@ -1,5 +1,5 @@
 import React from 'react'
-import { Space, Button, Typography, Tooltip, Avatar } from 'antd'
+import { Space, Button, Typography, Tooltip } from 'antd'
 import {
   HomeOutlined,
   SettingOutlined,
@@ -83,27 +83,17 @@ export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.
           } as ExtendedCSSProperties
         }
       >
-        <Avatar
-          shape="square"
-          size={36}
-          src="/resources/icon.png"
-          style={{
-            marginRight: token.marginSM,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-            borderRadius: token.borderRadiusSM
-          }}
-        />
         <Text
           style={{
             fontSize: token.fontSizeLG,
-            fontWeight: 600,
+            fontWeight: 700,
             background: styles.gradientText.background,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
           }}
         >
-          Echo Lab
+          EchoLab
         </Text>
       </div>
 
