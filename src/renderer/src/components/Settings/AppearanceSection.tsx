@@ -28,8 +28,8 @@ import {
 } from '@ant-design/icons'
 import { useSubtitleReset } from '@renderer/hooks/useSubtitleReset'
 import { useTheme } from '@renderer/hooks/useTheme'
-import { useThemeCustomization, type ThemeCustomization } from '@renderer/contexts/ThemeContext'
 import type { Color } from 'antd/es/color-picker'
+import { ThemeCustomization, useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
 
 const { Text, Title } = Typography
 

@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 import type { ThemeConfig } from 'antd'
-import { ThemeContext } from '@renderer/contexts/ThemeContext'
+import { ThemeContext } from '@renderer/contexts/theme-context'
 
 export interface ThemeCustomization {
   // Basic colors

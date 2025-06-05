@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Button, Tooltip } from 'antd'
 import { TranslationOutlined } from '@ant-design/icons'
 import type { DisplayMode } from '@renderer/types'
-import styles from '../VideoControlsCompact.module.css'
+import { useTheme } from '@renderer/hooks/useTheme'
 import { useSubtitleDisplayModeControls } from '@renderer/hooks/useSubtitleDisplayMode'
 import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
 import { useSubtitleDisplayMode } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
@@ -18,6 +18,7 @@ const DISPLAY_MODE_CONFIG = {
 }
 
 export function SubtitleModeSelector(): React.JSX.Element {
+  const { styles } = useTheme()
   // 使用新的订阅模式 hooks
   const { setDisplayMode, toggleDisplayMode } = useSubtitleDisplayModeControls()
   const displayMode = useSubtitleDisplayMode()
@@ -63,7 +64,7 @@ export function SubtitleModeSelector(): React.JSX.Element {
 
   RendererLogger.debug(`SubtitleModeSelector, displayMode: ${displayMode}`)
   return (
-    <div className={styles.subtitleModeControl}>
+    <div style={styles.subtitleModeControl}>
       {/* 字幕模式切换按钮 */}
       <Tooltip
         title={`字幕模式: ${currentModeConfig.label}`}
@@ -74,13 +75,16 @@ export function SubtitleModeSelector(): React.JSX.Element {
           size="small"
           icon={<TranslationOutlined />}
           onClick={handleSubtitleModeSelectorClick}
-          className={`${styles.controlBtn} ${showSubtitleModeSelector ? styles.activeBtn : ''}`}
+          style={{
+            ...styles.controlBtn,
+            ...(showSubtitleModeSelector ? styles.controlBtnActive : {})
+          }}
         />
       </Tooltip>
 
       {/* 展开的模式选择器 */}
       {showSubtitleModeSelector && (
-        <div className={styles.controlPopup} ref={subtitleModeSelectorRef}>
+        <div style={styles.controlPopup} ref={subtitleModeSelectorRef}>
           {Object.entries(DISPLAY_MODE_CONFIG).map(([mode, config]) => (
             <Button
               key={mode}
@@ -93,7 +97,6 @@ export function SubtitleModeSelector(): React.JSX.Element {
               style={{
                 width: '100%',
                 textAlign: 'left',
-                color: 'var(--text-primary)',
                 marginBottom: '4px'
               }}
             >

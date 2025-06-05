@@ -35,6 +35,66 @@ interface ThemeStyles {
   sidebarItemActive: CSSProperties
   sidebarIcon: CSSProperties
   sidebarLabel: CSSProperties
+  // Play page specific styles
+  playPageContainer: CSSProperties
+  playPageContent: CSSProperties
+  playPageSplitter: CSSProperties
+  mainContentArea: CSSProperties
+  videoPlayerSection: CSSProperties
+  sidebarSection: CSSProperties
+  sidebarDivider: CSSProperties
+  playPageGlassPanel: CSSProperties
+  videoSectionContainer: CSSProperties
+  immersiveContainer: CSSProperties
+  // Video controls specific styles
+  compactControlsContainer: CSSProperties
+  progressSection: CSSProperties
+  progressSlider: CSSProperties
+  timeDisplay: CSSProperties
+  timeText: CSSProperties
+  mainControls: CSSProperties
+  leftControls: CSSProperties
+  centerControls: CSSProperties
+  rightControls: CSSProperties
+  controlBtn: CSSProperties
+  controlBtnActive: CSSProperties
+  playPauseBtn: CSSProperties
+  controlPopup: CSSProperties
+  playbackRateControl: CSSProperties
+  playbackRateSelect: CSSProperties
+  volumeControl: CSSProperties
+  volumeSliderPopup: CSSProperties
+  volumeSliderVertical: CSSProperties
+  volumeSliderHorizontal: CSSProperties
+  volumeSliderHorizontalContainer: CSSProperties
+  volumeSliderHorizontalTrack: CSSProperties
+  volumeSliderKeyPoint: CSSProperties
+  volumeSliderKeyPointActive: CSSProperties
+  volumeSliderKeyPointLabel: CSSProperties
+  customVolumeSlider: CSSProperties
+  customVolumeSliderTrack: CSSProperties
+  customVolumeSliderTrackFilled: CSSProperties
+  customVolumeSliderHandle: CSSProperties
+  customVolumeSliderKeyPoint: CSSProperties
+  customVolumeSliderKeyPointActive: CSSProperties
+  volumeText: CSSProperties
+  videoSettingsControl: CSSProperties
+  videoSettingsPopup: CSSProperties
+  videoSettingsContent: CSSProperties
+  videoSettingsTitle: CSSProperties
+  videoSettingsItem: CSSProperties
+  videoSettingsLabel: CSSProperties
+  subtitleModeControl: CSSProperties
+  subtitleModeSelector: CSSProperties
+  compactLayoutContainer: CSSProperties
+  // Medium width responsive styles (768px-840px)
+  mediumWidthMainControls: CSSProperties
+  mediumWidthLeftControls: CSSProperties
+  mediumWidthCenterControls: CSSProperties
+  mediumWidthRightControls: CSSProperties
+  mediumWidthSecondaryRow: CSSProperties
+  mediumWidthPrimaryControls: CSSProperties
+  mediumWidthSecondaryControls: CSSProperties
 }
 
 interface ThemeUtils {
@@ -360,6 +420,563 @@ export function useTheme(): UseThemeReturn {
         whiteSpace: 'nowrap' as const,
         overflow: 'hidden',
         textOverflow: 'ellipsis'
+      },
+
+      // Play page specific styles
+      playPageContainer: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        height: '100vh',
+        width: '100%',
+        background: token.colorBgLayout,
+        position: 'relative' as const,
+        overflow: 'hidden',
+        boxSizing: 'border-box' as const
+      },
+
+      playPageContent: {
+        display: 'flex',
+        flex: 1,
+        minHeight: 0,
+        position: 'relative' as const,
+        background: token.colorBgContainer
+      },
+
+      playPageSplitter: {
+        background: token.colorBgContainer,
+        boxShadow: themeStyles.appleCardShadow.light,
+        borderRadius: 0,
+        border: 'none'
+      },
+
+      mainContentArea: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        minWidth: 0,
+        height: '100%',
+        background: token.colorBgContainer,
+        transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
+        position: 'relative' as const
+      },
+
+      videoPlayerSection: {
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#000000',
+        position: 'relative' as const,
+        minHeight: 0,
+        overflow: 'hidden',
+        borderRadius: `0 0 ${token.borderRadiusLG}px 0`,
+        boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.1)'
+      },
+
+      sidebarSection: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        height: '100%',
+        background: token.colorBgContainer,
+        borderLeft: `1px solid ${token.colorBorderSecondary}`,
+        position: 'relative' as const,
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)'
+      },
+
+      sidebarDivider: {
+        position: 'absolute' as const,
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 1,
+        background: `linear-gradient(
+          to bottom,
+          transparent 0%,
+          ${token.colorBorderSecondary} 20%,
+          ${token.colorBorder} 50%,
+          ${token.colorBorderSecondary} 80%,
+          transparent 100%
+        )`,
+        zIndex: 1
+      },
+
+      playPageGlassPanel: {
+        background: `rgba(${token.colorBgContainer
+          .slice(1)
+          .match(/.{2}/g)
+          ?.map((hex) => parseInt(hex, 16))
+          .join(', ')}, 0.85)`,
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        border: `1px solid rgba(${token.colorBorder
+          .slice(1)
+          .match(/.{2}/g)
+          ?.map((hex) => parseInt(hex, 16))
+          .join(', ')}, 0.3)`,
+        borderRadius: token.borderRadiusLG,
+        boxShadow: themeStyles.appleCardShadow.medium
+      },
+
+      videoSectionContainer: {
+        width: '100%',
+        height: '100%',
+        position: 'relative' as const,
+        background: '#000000',
+        borderRadius: token.borderRadiusLG,
+        overflow: 'hidden',
+        boxShadow: themeStyles.appleCardShadow.heavy
+      },
+
+      immersiveContainer: {
+        background: `linear-gradient(
+          135deg,
+          ${token.colorBgContainer} 0%,
+          ${token.colorBgLayout} 50%,
+          ${token.colorBgContainer} 100%
+        )`,
+        minHeight: '100vh',
+        position: 'relative' as const,
+        overflow: 'hidden'
+      },
+
+      // Video controls specific styles
+      compactControlsContainer: {
+        background: token.colorBgContainer,
+        borderTop: `1px solid ${token.colorBorderSecondary}`,
+        padding: `${token.paddingSM}px ${token.paddingMD}px`,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: token.marginSM,
+        borderRadius: 0,
+        transition: `all ${token.motionDurationSlow} ${themeStyles.easing.apple}`
+      },
+
+      progressSection: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: token.marginSM,
+        paddingBottom: token.marginXS
+      },
+
+      progressSlider: {
+        flex: 1
+      },
+
+      timeDisplay: {
+        minWidth: 90,
+        textAlign: 'center' as const,
+        flexShrink: 0
+      },
+
+      timeText: {
+        color: token.colorTextSecondary,
+        fontSize: token.fontSizeSM,
+        fontWeight: 500,
+        fontFamily: '"SF Mono", "Monaco", "Consolas", monospace'
+      },
+
+      mainControls: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        minHeight: 44
+      },
+
+      leftControls: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: token.marginXXS,
+        flex: '0 0 auto',
+        minWidth: 120
+      },
+
+      centerControls: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: token.marginXS,
+        flex: '1 1 auto'
+      },
+
+      rightControls: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: token.marginXXS,
+        flex: '0 0 auto',
+        minWidth: 120,
+        justifyContent: 'flex-end'
+      },
+
+      controlBtn: {
+        width: 32,
+        height: 32,
+        border: 'none',
+        background: 'transparent',
+        color: token.colorTextSecondary,
+        borderRadius: token.borderRadiusSM,
+        transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        fontSize: token.fontSizeSM,
+        flexShrink: 0
+      },
+
+      controlBtnActive: {
+        background: `rgba(${token.colorPrimary
+          .slice(1)
+          .match(/.{2}/g)
+          ?.map((hex) => parseInt(hex, 16))
+          .join(', ')}, 0.15)`,
+        color: token.colorPrimary
+      },
+
+      playPauseBtn: {
+        background: token.colorPrimary,
+        width: 40,
+        height: 40,
+        borderRadius: '50%',
+        color: token.colorWhite,
+        fontSize: token.fontSizeHeading5,
+        border: 'none',
+        cursor: 'pointer',
+        transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
+        flexShrink: 0,
+        boxShadow: `0 2px 8px rgba(${token.colorPrimary
+          .slice(1)
+          .match(/.{2}/g)
+          ?.map((hex) => parseInt(hex, 16))
+          .join(', ')}, 0.3)`
+      },
+
+      controlPopup: {
+        position: 'absolute' as const,
+        bottom: 45,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: token.colorBgElevated,
+        padding: `${token.paddingLG}px ${token.paddingMD}px`,
+        borderRadius: token.borderRadiusLG,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        alignItems: 'center',
+        gap: token.marginSM,
+        minHeight: 120,
+        boxShadow: themeStyles.appleCardShadow.heavy,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        zIndex: 1000
+      },
+
+      playbackRateControl: {
+        position: 'relative' as const
+      },
+
+      playbackRateSelect: {
+        width: 50,
+        height: 30,
+        fontSize: token.fontSizeSM
+      },
+
+      volumeControl: {
+        position: 'relative' as const
+      },
+
+      volumeSliderPopup: {
+        position: 'absolute' as const,
+        bottom: 45,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: token.colorBgElevated,
+        padding: `${token.paddingLG}px ${token.paddingMD}px`,
+        borderRadius: token.borderRadiusLG,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        alignItems: 'center',
+        gap: token.marginSM,
+        minHeight: 120,
+        boxShadow: themeStyles.appleCardShadow.heavy,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        zIndex: 1000
+      },
+
+      volumeSliderVertical: {
+        height: 80
+      },
+
+      volumeSliderHorizontal: {
+        width: 150,
+        position: 'relative' as const
+      },
+
+      volumeSliderHorizontalContainer: {
+        position: 'absolute' as const,
+        bottom: 45,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: token.marginXS,
+        background: token.colorBgElevated,
+        padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+        borderRadius: token.borderRadiusSM,
+        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)',
+        border: `1px solid ${token.colorBorder}`,
+        width: 180,
+        height: 32,
+        boxSizing: 'border-box' as const,
+        zIndex: 1000
+      },
+
+      volumeSliderHorizontalTrack: {
+        position: 'relative' as const,
+        width: '100%',
+        padding: `${token.marginSM}px 0`
+      },
+
+      volumeSliderKeyPoint: {
+        position: 'absolute' as const,
+        top: -2,
+        width: 4,
+        height: 4,
+        borderRadius: '50%',
+        background: token.colorTextQuaternary,
+        cursor: 'pointer',
+        transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
+        zIndex: 2,
+        transform: 'translateX(-50%)'
+      },
+
+      volumeSliderKeyPointActive: {
+        background: token.colorPrimary,
+        width: 6,
+        height: 6,
+        transform: 'translateX(-50%)',
+        boxShadow: `0 1px 3px rgba(${token.colorPrimary
+          .slice(1)
+          .match(/.{2}/g)
+          ?.map((hex) => parseInt(hex, 16))
+          .join(', ')}, 0.4)`
+      },
+
+      volumeSliderKeyPointLabel: {
+        position: 'absolute' as const,
+        top: -20,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: 10,
+        color: token.colorTextTertiary,
+        fontWeight: 500,
+        whiteSpace: 'nowrap' as const,
+        pointerEvents: 'none' as const,
+        opacity: 0,
+        transition: `opacity ${token.motionDurationMid} ${themeStyles.easing.apple}`
+      },
+
+      customVolumeSlider: {
+        position: 'relative' as const,
+        width: 120,
+        height: 16,
+        cursor: 'pointer'
+      },
+
+      customVolumeSliderTrack: {
+        position: 'absolute' as const,
+        top: '50%',
+        left: 0,
+        right: 0,
+        height: 3,
+        background: token.colorFillSecondary,
+        borderRadius: 1.5,
+        transform: 'translateY(-50%)'
+      },
+
+      customVolumeSliderTrackFilled: {
+        position: 'absolute' as const,
+        top: 0,
+        left: 0,
+        height: '100%',
+        background: token.colorPrimary,
+        borderRadius: 2,
+        transition: `width ${token.motionDurationMid} ${themeStyles.easing.apple}`
+      },
+
+      customVolumeSliderHandle: {
+        position: 'absolute' as const,
+        top: '50%',
+        width: 12,
+        height: 12,
+        background: token.colorPrimary,
+        borderRadius: '50%',
+        transform: 'translate(-50%, -50%)',
+        cursor: 'grab',
+        transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
+        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+        zIndex: 3
+      },
+
+      customVolumeSliderKeyPoint: {
+        position: 'absolute' as const,
+        top: '50%',
+        width: 6,
+        height: 6,
+        background: token.colorTextSecondary,
+        borderRadius: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 2,
+        cursor: 'pointer',
+        transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`
+      },
+
+      customVolumeSliderKeyPointActive: {
+        width: 8,
+        height: 8,
+        background: token.colorPrimary,
+        boxShadow: `0 0 0 2px ${token.colorBgContainer}`
+      },
+
+      volumeText: {
+        color: token.colorTextSecondary,
+        fontSize: token.fontSizeSM,
+        fontWeight: 600,
+        width: 36,
+        textAlign: 'center' as const,
+        lineHeight: 1,
+        flexShrink: 0
+      },
+
+      videoSettingsControl: {
+        position: 'relative' as const
+      },
+
+      videoSettingsPopup: {
+        position: 'absolute' as const,
+        bottom: 45,
+        right: 0,
+        background: token.colorBgElevated,
+        borderRadius: token.borderRadiusLG,
+        minWidth: 200,
+        boxShadow: themeStyles.appleCardShadow.heavy,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        zIndex: 1000
+      },
+
+      videoSettingsContent: {
+        padding: token.paddingLG
+      },
+
+      videoSettingsTitle: {
+        color: token.colorText,
+        fontSize: token.fontSize,
+        fontWeight: 600,
+        marginBottom: token.marginMD,
+        display: 'block'
+      },
+
+      videoSettingsItem: {
+        padding: `${token.paddingSM}px 0`,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        cursor: 'pointer',
+        transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
+        borderRadius: token.borderRadiusSM,
+        margin: `${token.marginXXS}px 0`
+      },
+
+      videoSettingsLabel: {
+        color: token.colorTextSecondary,
+        fontSize: token.fontSizeSM,
+        transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`
+      },
+
+      subtitleModeControl: {
+        position: 'relative' as const,
+        display: 'flex',
+        alignItems: 'center',
+        gap: token.marginXXS
+      },
+
+      subtitleModeSelector: {
+        position: 'absolute' as const,
+        top: -200,
+        left: 0,
+        background: token.colorBgElevated,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        borderRadius: token.borderRadiusLG,
+        padding: token.paddingXS,
+        minWidth: 120,
+        boxShadow: themeStyles.appleCardShadow.heavy,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        zIndex: 1000
+      },
+
+      compactLayoutContainer: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: token.marginSM
+      },
+
+      // Medium width responsive styles (768px-840px)
+      mediumWidthMainControls: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: token.marginXS,
+        width: '100%'
+      },
+
+      mediumWidthLeftControls: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: token.marginXS,
+        flex: '0 0 auto'
+      },
+
+      mediumWidthCenterControls: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: token.marginXS,
+        flex: '1 1 auto'
+      },
+
+      mediumWidthRightControls: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: token.marginXS,
+        flex: '0 0 auto'
+      },
+
+      mediumWidthSecondaryRow: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: token.marginXS,
+        paddingTop: token.marginXS,
+        borderTop: `1px solid ${token.colorBorderSecondary}`
+      },
+
+      mediumWidthPrimaryControls: {
+        display: 'flex',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        width: '100%',
+        minHeight: 40
+      },
+
+      mediumWidthSecondaryControls: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        paddingTop: token.marginXS,
+        borderTop: `1px solid ${token.colorBorderSecondary}`
       }
     },
 

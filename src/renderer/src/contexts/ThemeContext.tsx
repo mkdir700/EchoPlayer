@@ -1,9 +1,12 @@
 import React, { useState, useCallback } from 'react'
 import { ConfigProvider, theme } from 'antd'
-import { appleTheme, appleDarkTheme } from '@renderer/styles/theme'
-import { ThemeContext } from '@renderer/contexts/ThemeContext'
-import type { ThemeCustomization, ThemeContextType } from '@renderer/hooks/useThemeCustomization'
+// import { appleTheme, appleDarkTheme } from '@renderer/styles/theme'
+// import { ThemeContext } from '@renderer/contexts/ThemeContext'
+// import type { ThemeCustomization, ThemeContextType } from '@renderer/hooks/useThemeCustomization'
 import type { ThemeConfig } from 'antd'
+import { ThemeContext } from '@renderer/contexts/theme-context'
+import appleTheme, { appleDarkTheme } from '@renderer/styles/theme'
+import { ThemeCustomization, ThemeContextType } from '@renderer/hooks/useThemeCustomization'
 
 const defaultCustomization: ThemeCustomization = {
   colorPrimary: '#007AFF',

@@ -1,34 +1,195 @@
 import React, { useCallback, useState, useEffect, useRef, useLayoutEffect } from 'react'
-import { Button, Slider, Tooltip, Typography } from 'antd'
+import { Button, Tooltip, Typography } from 'antd'
 import { SoundOutlined, SoundFilled } from '@ant-design/icons'
 import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { usePlaybackVolume } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
 import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
+import { useTheme } from '@renderer/hooks/useTheme'
 import { VOLUME_SETTINGS } from '@renderer/constants'
 const { Text } = Typography
 
-interface VolumeControlProps {
-  className?: string
-  sliderClassName?: string
-  sliderVerticalClassName?: string
-  textClassName?: string
-  buttonClassName?: string
+// Define key volume points for quick selection
+const VOLUME_KEY_POINTS = [
+  { value: 0, label: '静音' },
+  { value: 0.25, label: '25%' },
+  { value: 0.5, label: '50%' },
+  { value: 0.75, label: '75%' },
+  { value: 1, label: '100%' }
+]
+
+// Custom Volume Slider Component
+interface CustomVolumeSliderProps {
+  value: number
+  onChange: (value: number) => void
+  onKeyPointClick: (value: number) => void
+  styles: {
+    customVolumeSlider: React.CSSProperties
+    customVolumeSliderTrack: React.CSSProperties
+    customVolumeSliderTrackFilled: React.CSSProperties
+    customVolumeSliderHandle: React.CSSProperties
+    customVolumeSliderKeyPoint: React.CSSProperties
+    customVolumeSliderKeyPointActive: React.CSSProperties
+  }
 }
 
-export function VolumeControl({
-  className = '',
-  sliderClassName = '',
-  sliderVerticalClassName = '',
-  textClassName = '',
-  buttonClassName = ''
-}: VolumeControlProps): React.JSX.Element {
+function CustomVolumeSlider({
+  value,
+  onChange,
+  onKeyPointClick,
+  styles
+}: CustomVolumeSliderProps): React.JSX.Element {
+  const sliderRef = useRef<HTMLDivElement>(null)
+  const handleRef = useRef<HTMLDivElement>(null)
+  const trackFilledRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const animationFrameRef = useRef<number | null>(null)
+
+  const updateValue = useCallback(
+    (clientX: number) => {
+      if (!sliderRef.current) return
+
+      const rect = sliderRef.current.getBoundingClientRect()
+      const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+      onChange(percentage)
+    },
+    [onChange]
+  )
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      setIsDragging(true)
+
+      // 禁用 transition 以获得即时响应
+      if (handleRef.current) {
+        handleRef.current.style.transition = 'none'
+      }
+      if (trackFilledRef.current) {
+        trackFilledRef.current.style.transition = 'none'
+      }
+
+      // 立即更新值，无需 requestAnimationFrame
+      updateValue(e.clientX)
+    },
+    [updateValue]
+  )
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isDragging) {
+        // 取消之前的动画帧
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current)
+        }
+
+        // 使用 requestAnimationFrame 确保流畅更新
+        animationFrameRef.current = requestAnimationFrame(() => {
+          updateValue(e.clientX)
+        })
+      }
+    },
+    [isDragging, updateValue]
+  )
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+
+    // 取消待处理的动画帧
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+
+    // 重新启用 transition
+    if (handleRef.current) {
+      handleRef.current.style.transition = ''
+    }
+    if (trackFilledRef.current) {
+      trackFilledRef.current.style.transition = ''
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp])
+
+  return (
+    <div ref={sliderRef} style={styles.customVolumeSlider} onMouseDown={handleMouseDown}>
+      {/* Slider track background */}
+      <div style={styles.customVolumeSliderTrack}>
+        {/* Filled track */}
+        <div
+          ref={trackFilledRef}
+          style={{
+            ...styles.customVolumeSliderTrackFilled,
+            width: `${value * 100}%`
+          }}
+        />
+      </div>
+
+      {/* Key volume points inside track */}
+      {VOLUME_KEY_POINTS.map((point) => {
+        const isActive = Math.abs(value - point.value) < 0.05
+        const leftPosition = `${point.value * 100}%`
+
+        return (
+          <div
+            key={point.value}
+            style={{
+              ...styles.customVolumeSliderKeyPoint,
+              ...(isActive ? styles.customVolumeSliderKeyPointActive : {}),
+              left: leftPosition
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onKeyPointClick(point.value)
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.2)'
+                e.currentTarget.style.background = styles.customVolumeSliderKeyPointActive
+                  .background as string
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)'
+                e.currentTarget.style.background = styles.customVolumeSliderKeyPoint
+                  .background as string
+              }
+            }}
+          />
+        )
+      })}
+
+      {/* Slider handle */}
+      <div
+        ref={handleRef}
+        style={{
+          ...styles.customVolumeSliderHandle,
+          left: `${value * 100}%`,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
+      />
+    </div>
+  )
+}
+
+export function VolumeControl(): React.JSX.Element {
   const { playerRef } = useVideoPlayerContext()
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
   const volumeControlRef = useRef<HTMLDivElement>(null)
   const sliderRef = useRef<HTMLDivElement>(null)
   const { volumeRef, updateVolume } = useVideoPlaybackSettingsContext()
   const volume = usePlaybackVolume()
+  const { styles } = useTheme()
 
   // 点击音量按钮切换滑块显示状态
   const handleVolumeButtonClick = useCallback(
@@ -55,6 +216,14 @@ export function VolumeControl({
       }
     },
     [playerRef, updateVolume, volumeRef]
+  )
+
+  // Handle key point selection
+  const handleKeyPointClick = useCallback(
+    (value: number) => {
+      handleVolumeChange(value)
+    },
+    [handleVolumeChange]
   )
 
   // NOTE: 注册快捷键
@@ -94,7 +263,7 @@ export function VolumeControl({
   }, [showVolumeSlider])
 
   return (
-    <div className={className} ref={volumeControlRef}>
+    <div style={styles.volumeControl} ref={volumeControlRef}>
       <Tooltip
         title={showVolumeSlider ? '' : `音量: ${Math.round(volumeRef.current * 100)}%`}
         open={showVolumeSlider ? false : undefined}
@@ -103,23 +272,23 @@ export function VolumeControl({
           icon={volumeRef.current > 0 ? <SoundFilled /> : <SoundOutlined />}
           type="text"
           size="small"
-          className={buttonClassName}
+          style={styles.controlBtn}
           onClick={handleVolumeButtonClick}
         />
       </Tooltip>
 
       {showVolumeSlider && (
-        <div className={sliderClassName} ref={sliderRef}>
-          <Slider
-            vertical
-            min={0}
-            max={1}
-            step={0.05}
+        <div style={styles.volumeSliderHorizontalContainer} ref={sliderRef}>
+          {/* Custom Volume Slider with embedded key points */}
+          <CustomVolumeSlider
             value={volume}
             onChange={handleVolumeChange}
-            className={sliderVerticalClassName}
+            onKeyPointClick={handleKeyPointClick}
+            styles={styles}
           />
-          <Text className={textClassName}>{Math.round(volume * 100)}%</Text>
+
+          {/* Volume percentage display */}
+          <Text style={styles.volumeText}>{Math.round(volume * 100)}%</Text>
         </div>
       )}
     </div>

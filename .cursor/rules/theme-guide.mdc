@@ -1,4 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 # EchoLab 开发指南 - 主题系统最佳实践
+
+## 📋 概述
+
+本项目采用 Ant Design 5.x 的 CSS 变量模式，结合苹果设计美学，构建了统一的主题管理系统。通过 `useTheme` Hook 提供预定义样式组合，实现样式的集中管理和复用。
 
 ## 📋 概述
 
@@ -195,9 +204,9 @@ glassEffect: {
 
 ## 📚 参考资源
 
-- [Ant Design CSS 变量文档](https://ant.design/docs/react/css-variables-cn)
-- [从 Less 变量到 Design Token](https://ant.design/docs/react/migrate-less-variables-cn)
-- [苹果人机界面指南](https://developer.apple.com/design/human-interface-guidelines/)
+- [Ant Design CSS 变量文档](mdc:https:/ant.design/docs/react/css-variables-cn)
+- [从 Less 变量到 Design Token](mdc:https:/ant.design/docs/react/migrate-less-variables-cn)
+- [苹果人机界面指南](mdc:https:/developer.apple.com/design/human-interface-guidelines)
 
 ## 🔍 调试和开发
 
@@ -212,6 +221,260 @@ glassEffect: {
 1. **类型错误**: 确保正确导入 ThemeConfig 类型
 2. **样式不生效**: 检查 ConfigProvider 是否正确配置
 3. **性能问题**: 避免在渲染函数中创建新的样式对象
+
+## 🎬 播放页面样式重构指南
+
+### 重构原则
+
+播放页面作为应用的核心功能页面，采用了完全基于主题系统的样式方案：
+
+1. **完全移除 CSS Modules**: 摒弃 `PlayPage.module.css` 文件
+2. **统一样式管理**: 所有样式定义迁移至 `useTheme.ts`
+3. **沉浸式体验**: 视频播放区域采用纯黑背景，营造影院感
+4. **苹果设计美学**: 整体遵循苹果 HIG 设计规范
+
+### 新增样式定义
+
+在 `useTheme.ts` 中新增了播放页面专用样式：
+
+```typescript
+interface ThemeStyles {
+  // ... 原有样式
+  // Play page specific styles
+  playPageContainer: CSSProperties     // 播放页面主容器
+  playPageContent: CSSProperties       // 内容区域
+  playPageSplitter: CSSProperties      // 分割器样式
+  mainContentArea: CSSProperties       // 主内容区域
+  videoPlayerSection: CSSProperties    // 视频播放区域
+  sidebarSection: CSSProperties        // 侧边栏区域
+  sidebarDivider: CSSProperties        // 侧边栏分割线
+  playPageGlassPanel: CSSProperties    // 毛玻璃面板
+  videoSectionContainer: CSSProperties // 视频容器
+  immersiveContainer: CSSProperties    // 沉浸式容器
+}
+```
+
+### 核心设计特色
+
+1. **沉浸式视频体验**
+   ```typescript
+   videoPlayerSection: {
+     background: '#000000',  // 纯黑背景
+     borderRadius: `0 0 ${token.borderRadiusLG}px 0`,
+     boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.1)'
+   }
+   ```
+
+2. **毛玻璃侧边栏**
+   ```typescript
+   sidebarSection: {
+     backdropFilter: 'blur(10px)',
+     WebkitBackdropFilter: 'blur(10px)',
+     borderLeft: `1px solid ${token.colorBorderSecondary}`
+   }
+   ```
+
+3. **渐变分割线**
+   ```typescript
+   sidebarDivider: {
+     background: `linear-gradient(
+       to bottom,
+       transparent 0%,
+       ${token.colorBorderSecondary} 20%,
+       ${token.colorBorder} 50%,
+       ${token.colorBorderSecondary} 80%,
+       transparent 100%
+     )`
+   }
+   ```
+
+### 组件使用示例
+
+```tsx
+import { useTheme } from '@renderer/hooks/useTheme'
+
+function PlayPage({ onBack }: PlayPageProps) {
+  const { styles, token } = useTheme()
+
+  return (
+    <div style={styles.playPageContainer}>
+      <div style={styles.playPageContent}>
+        <Splitter style={styles.playPageSplitter} layout="horizontal">
+          <Splitter.Panel defaultSize="70%" min="50%" max="80%">
+            <div style={styles.mainContentArea}>
+              <div style={styles.videoPlayerSection}>
+                <VideoSection />
+              </div>
+            </div>
+          </Splitter.Panel>
+          <Splitter.Panel>
+            <div style={styles.sidebarSection}>
+              <div style={styles.sidebarDivider} />
+              <SidebarSectionContainer />
+            </div>
+          </Splitter.Panel>
+        </Splitter>
+      </div>
+    </div>
+  )
+}
+```
+
+### 最佳实践
+
+1. **样式集中管理**: 所有播放页面相关样式统一在 `useTheme.ts` 中定义
+2. **响应式设计**: 利用 Ant Design Splitter 组件实现自适应布局
+3. **视觉层次**: 通过阴影、模糊、渐变营造深度感
+4. **性能优化**: 使用 `useMemo` 缓存计算密集的样式对象
+
+### 迁移指南
+
+对于其他页面的样式重构，建议遵循以下步骤：
+
+1. **分析现有样式**: 梳理 CSS 模块中的样式定义
+2. **抽取通用样式**: 将可复用样式添加到 `useTheme.ts`
+3. **页面特定样式**: 在 ThemeStyles 接口中添加页面专用样式
+4. **渐进式迁移**: 逐步替换内联样式调用
+5. **删除旧文件**: 确认迁移完成后删除 CSS 模块文件
+
+## 🎮 视频控制器组件重构指南
+
+### 重构概述
+
+VideoControlsCompact 组件作为视频播放器的核心控制界面，已完成从 CSS Modules 到主题系统的迁移：
+
+1. **完全移除 CSS Modules**: 删除 `VideoControlsCompact.module.css` 文件
+2. **添加专用样式**: 在 `useTheme.ts` 中新增 20+ 个控制器专用样式
+3. **简化组件接口**: 保持子组件的现有 API，只更新容器样式
+4. **保持响应式设计**: 维持移动端适配和交互状态
+
+### 新增样式列表
+
+在 `useTheme.ts` 中新增的视频控制器样式：
+
+```typescript
+// Video controls specific styles
+compactControlsContainer    // 主容器
+progressSection            // 进度条区域  
+progressSlider             // 进度滑块
+timeDisplay                // 时间显示
+timeText                   // 时间文本
+mainControls               // 主控制区
+leftControls               // 左侧控制
+centerControls             // 中央控制
+rightControls              // 右侧控制
+controlBtn                 // 控制按钮
+controlBtnActive           // 激活状态按钮
+playPauseBtn               // 播放/暂停按钮
+controlPopup               // 控制弹窗
+playbackRateControl        // 播放速度控制
+playbackRateSelect         // 速度选择器
+volumeControl              // 音量控制
+volumeSliderPopup          // 音量滑块弹窗
+volumeSliderVertical       // 垂直音量滑块
+volumeText                 // 音量文本
+videoSettingsControl       // 视频设置控制
+videoSettingsPopup         // 设置弹窗
+videoSettingsContent       // 设置内容
+videoSettingsTitle         // 设置标题
+videoSettingsItem          // 设置项
+videoSettingsLabel         // 设置标签
+subtitleModeControl        // 字幕模式控制
+subtitleModeSelector       // 字幕模式选择器
+mobileMainControls         // 移动端主控制
+```
+
+### 设计特色
+
+1. **苹果风格按钮**
+   ```typescript
+   controlBtn: {
+     width: 36,
+     height: 36,
+     borderRadius: token.borderRadius,
+     background: 'transparent',
+     color: token.colorTextSecondary,
+     transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`
+   }
+   ```
+
+2. **突出的播放按钮**
+   ```typescript
+   playPauseBtn: {
+     background: token.colorPrimary,
+     width: 44,
+     height: 44,
+     borderRadius: '50%',
+     color: token.colorWhite
+   }
+   ```
+
+3. **毛玻璃弹窗**
+   ```typescript
+   controlPopup: {
+     background: token.colorBgElevated,
+     backdropFilter: 'blur(20px)',
+     WebkitBackdropFilter: 'blur(20px)',
+     boxShadow: themeStyles.appleCardShadow.heavy
+   }
+   ```
+
+4. **响应式网格布局**
+   ```typescript
+   mobileMainControls: {
+     display: 'grid',
+     gridTemplateAreas: `
+       "center center"
+       "left right"
+     `,
+     gridTemplateColumns: '1fr 1fr'
+   }
+   ```
+
+### 组件使用示例
+
+```tsx
+import { useTheme } from '@renderer/hooks/useTheme'
+
+function VideoControlsCompact({ isVideoLoaded, videoError, onFullscreenToggle }) {
+  const { styles } = useTheme()
+  
+  return (
+    <div style={styles.compactControlsContainer}>
+      {/* 进度条区域 */}
+      <div style={styles.progressSection}>
+        <div style={styles.progressSlider}>
+          <Slider />
+        </div>
+        <div style={styles.timeDisplay}>
+          <Text style={styles.timeText}>时间</Text>
+        </div>
+      </div>
+      
+      {/* 控制按钮区域 */}
+      <div style={styles.mainControls}>
+        <div style={styles.leftControls}>...</div>
+        <div style={styles.centerControls}>...</div>
+        <div style={styles.rightControls}>...</div>
+      </div>
+    </div>
+  )
+}
+```
+
+### 重构策略
+
+1. **渐进式迁移**: 只替换容器样式，保持子组件接口不变
+2. **向下兼容**: 子组件仍可使用原有的 className 或内联样式
+3. **性能优化**: 避免不必要的 useMemo 和复杂的样式计算
+4. **类型安全**: 确保所有样式都有完整的 TypeScript 类型定义
+
+### 最佳实践
+
+1. **分离关注点**: 容器样式使用主题系统，业务逻辑保持独立
+2. **保持一致性**: 所有弹窗、按钮都使用统一的设计语言
+3. **优先可访问性**: 确保所有交互元素都有合适的焦点和状态样式
+4. **考虑移动端**: 提供响应式布局和触摸友好的交互区域
 
 ---
 

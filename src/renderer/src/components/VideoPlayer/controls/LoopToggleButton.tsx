@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef } from 'react'
 import { Button, Tooltip } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
-import styles from '../VideoControlsCompact.module.css'
+import { useTheme } from '@renderer/hooks/useTheme'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
@@ -15,6 +15,7 @@ interface LoopToggleButtonProps {
 }
 
 export function LoopToggleButton({ isVideoLoaded }: LoopToggleButtonProps): React.JSX.Element {
+  const { styles } = useTheme()
   const isLoopingDisplay = useIsSingleLoop()
   console.log('🔄 LoopToggleButton 渲染, isLoopingDisplay:', isLoopingDisplay)
   const subtitleControl = useSubtitleControl()
@@ -132,7 +133,10 @@ export function LoopToggleButton({ isVideoLoaded }: LoopToggleButtonProps): Reac
           e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
         }}
         type="text"
-        className={`${styles.controlBtn} ${isLoopingDisplay ? styles.activeBtn : ''}`}
+        style={{
+          ...styles.controlBtn,
+          ...(isLoopingDisplay ? styles.controlBtnActive : {})
+        }}
         disabled={!isVideoLoaded}
         size="small"
       />

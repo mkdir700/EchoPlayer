@@ -14,7 +14,7 @@ import { formatTime } from '@renderer/utils/helpers'
 import { diagnoseAudioIssues } from '@renderer/utils/videoCompatibility'
 import type { RecentPlayItem } from '@renderer/types'
 import { useTheme } from '@renderer/hooks/useTheme'
-import { useThemeCustomization } from '@renderer/contexts/ThemeContext'
+import { useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
 
 const { Title, Text } = Typography
 
