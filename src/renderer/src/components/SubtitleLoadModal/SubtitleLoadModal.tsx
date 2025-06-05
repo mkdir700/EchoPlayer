@@ -10,7 +10,7 @@ import {
 import { FileSystemHelper } from '@renderer/utils/fileSystemHelper'
 import { parseSubtitles } from '@renderer/utils/subtitleParser'
 import type { SubtitleItem } from '@types_/shared'
-import styles from './SubtitleLoadModal.module.css'
+import { useTheme } from '@renderer/hooks/useTheme'
 import { ReactCallback } from '@renderer/types/shared'
 
 const { Text } = Typography
@@ -36,6 +36,7 @@ export function SubtitleLoadModal({
   onSkip,
   onSubtitlesLoaded
 }: SubtitleLoadModalProps): React.JSX.Element {
+  const { token, styles } = useTheme()
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(false)
   const [subtitleFiles, setSubtitleFiles] = useState<SubtitleFileInfo[]>([])
@@ -45,6 +46,136 @@ export function SubtitleLoadModal({
 
   // 用于取消文件读取操作的引用
   const cancelTokenRef = useRef<{ cancelled: boolean }>({ cancelled: false })
+
+  // 组件特有样式
+  const componentStyles = {
+    modalTitle: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: token.marginMD,
+      color: token.colorText,
+      fontSize: token.fontSizeXL,
+      fontWeight: token.fontWeightStrong
+    },
+    titleIcon: {
+      color: token.colorPrimary,
+      fontSize: token.fontSizeHeading2,
+      filter: `drop-shadow(0 0 8px ${token.colorPrimary}30)`
+    },
+    modalContent: {
+      padding: token.paddingXL,
+      position: 'relative' as const
+    },
+    checkingSection: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      gap: token.marginXL,
+      padding: `${token.paddingXL}px ${token.paddingXL}px`,
+      textAlign: 'center' as const
+    },
+    checkingText: {
+      color: token.colorText,
+      fontSize: token.fontSizeLG,
+      fontWeight: token.fontWeightStrong
+    },
+    foundSection: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: token.marginXL
+    },
+    notFoundSection: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: token.marginXL
+    },
+    subtitleList: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: token.marginSM,
+      maxHeight: '200px',
+      overflowY: 'auto' as const,
+      padding: token.paddingSM,
+      background: token.colorBgContainer,
+      borderRadius: token.borderRadiusLG,
+      border: `1px solid ${token.colorBorderSecondary}`
+    },
+    subtitleItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: token.marginMD,
+      padding: token.paddingMD,
+      borderRadius: token.borderRadius,
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      border: `1px solid transparent`,
+      background: token.colorBgContainer
+    },
+    subtitleItemSelected: {
+      background: token.colorPrimaryBg,
+      borderColor: token.colorPrimary,
+      boxShadow: `0 0 0 2px ${token.colorPrimary}20`
+    },
+    subtitleItemHover: {
+      background: token.colorBgTextHover,
+      borderColor: token.colorBorder
+    },
+    fileIcon: {
+      color: token.colorPrimary,
+      fontSize: token.fontSizeLG
+    },
+    subtitleName: {
+      flex: 1,
+      color: token.colorText,
+      fontSize: token.fontSize,
+      fontWeight: token.fontWeightStrong
+    },
+    selectedIcon: {
+      color: token.colorSuccess,
+      fontSize: token.fontSizeLG
+    },
+    actionButtons: {
+      display: 'flex',
+      gap: token.marginMD,
+      justifyContent: 'center',
+      marginTop: token.marginXL
+    },
+    loadingOverlay: {
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: `${token.colorBgMask}80`,
+      backdropFilter: 'blur(8px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      borderRadius: token.borderRadiusLG
+    },
+    loadingContent: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      gap: token.marginLG,
+      padding: token.paddingXL,
+      background: token.colorBgContainer,
+      borderRadius: token.borderRadiusLG,
+      border: `1px solid ${token.colorBorderSecondary}`,
+      boxShadow: token.boxShadowSecondary
+    },
+    loadingText: {
+      color: token.colorText,
+      fontSize: token.fontSizeLG,
+      fontWeight: token.fontWeightStrong,
+      textAlign: 'center' as const,
+      marginTop: token.marginMD
+    },
+    cancelButton: {
+      marginTop: token.marginLG
+    }
+  }
 
   // 重置状态
   const resetState = useCallback(() => {
@@ -255,8 +386,8 @@ export function SubtitleLoadModal({
   return (
     <Modal
       title={
-        <div className={styles.modalTitle}>
-          <FileTextOutlined className={styles.titleIcon} />
+        <div style={componentStyles.modalTitle}>
+          <FileTextOutlined style={componentStyles.titleIcon} />
           字幕文件检查
         </div>
       }
@@ -264,22 +395,21 @@ export function SubtitleLoadModal({
       onCancel={handleModalCancel}
       footer={null}
       width={600}
-      className="subtitle-modal"
       maskClosable={!loading} // loading时不允许点击遮罩关闭
       closable={!loading} // loading时隐藏关闭按钮
     >
-      <div className={styles.modalContent}>
+      <div style={componentStyles.modalContent}>
         {/* Loading 蒙版 */}
         {loading && (
-          <div className={styles.loadingOverlay}>
-            <div className={styles.loadingContent}>
+          <div style={componentStyles.loadingOverlay}>
+            <div style={componentStyles.loadingContent}>
               <Spin size="large" />
-              <Text className={styles.loadingText}>{loadingMessage}</Text>
+              <Text style={componentStyles.loadingText}>{loadingMessage}</Text>
               <Button
                 type="default"
                 icon={<CloseOutlined />}
                 onClick={handleCancelLoading}
-                className={styles.cancelButton}
+                style={componentStyles.cancelButton}
               >
                 取消
               </Button>
@@ -288,68 +418,81 @@ export function SubtitleLoadModal({
         )}
 
         {checking ? (
-          <div className={styles.checkingSection}>
+          <div style={componentStyles.checkingSection}>
             <Spin size="large" />
-            <Text className={styles.checkingText}>正在检查同目录下的字幕文件...</Text>
+            <Text style={componentStyles.checkingText}>正在检查同目录下的字幕文件...</Text>
           </div>
         ) : (
           <>
             {subtitleFiles.length > 0 ? (
-              <div className={styles.foundSection}>
+              <div style={componentStyles.foundSection}>
                 <Alert
                   message="找到字幕文件"
                   description={`在视频文件同目录下找到 ${subtitleFiles.length} 个字幕文件`}
                   type="success"
                   icon={<CheckCircleOutlined />}
-                  className={styles.alert}
+                  style={{ marginBottom: token.marginLG }}
                 />
 
-                <div className={styles.subtitleList}>
+                <div style={componentStyles.subtitleList}>
                   {subtitleFiles.map((file) => (
                     <div
                       key={file.path}
-                      className={`${styles.subtitleItem} ${
-                        selectedFile?.path === file.path ? styles.selected : ''
-                      }`}
+                      style={{
+                        ...componentStyles.subtitleItem,
+                        ...(selectedFile?.path === file.path
+                          ? componentStyles.subtitleItemSelected
+                          : {})
+                      }}
                       onClick={() => setSelectedFile(file)}
+                      onMouseEnter={(e) => {
+                        if (selectedFile?.path !== file.path) {
+                          Object.assign(e.currentTarget.style, componentStyles.subtitleItemHover)
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedFile?.path !== file.path) {
+                          Object.assign(e.currentTarget.style, componentStyles.subtitleItem)
+                        }
+                      }}
                     >
-                      <FileTextOutlined className={styles.fileIcon} />
-                      <Text className={styles.subtitleName}>{file.name}</Text>
+                      <FileTextOutlined style={componentStyles.fileIcon} />
+                      <Text style={componentStyles.subtitleName}>{file.name}</Text>
                       {selectedFile?.path === file.path && (
-                        <CheckCircleOutlined className={styles.selectedIcon} />
+                        <CheckCircleOutlined style={componentStyles.selectedIcon} />
                       )}
                     </div>
                   ))}
                 </div>
 
-                <div className={styles.actionButtons}>
+                <div style={componentStyles.actionButtons}>
                   <Button
                     type="primary"
                     size="large"
                     onClick={loadSelectedSubtitle}
                     disabled={!selectedFile || loading}
-                    className={styles.loadButton}
+                    style={styles.primaryButton}
                   >
                     加载选中的字幕文件
                   </Button>
                   <Button
                     size="large"
                     onClick={onSkip}
-                    className={styles.skipButton}
                     disabled={loading}
+                    style={styles.secondaryButton}
                   >
                     稍后添加
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className={styles.notFoundSection}>
+              <div style={componentStyles.notFoundSection}>
                 <Alert
                   message="未找到字幕文件"
                   description="在视频文件同目录下未找到匹配的字幕文件（.srt, .vtt, .json, .ass, .ssa）"
                   type="warning"
                   icon={<ExclamationCircleOutlined />}
-                  className={styles.alert}
+                  style={{ marginBottom: token.marginLG }}
                 />
 
                 {uploadError && (
@@ -359,27 +502,26 @@ export function SubtitleLoadModal({
                     type="error"
                     closable
                     onClose={() => setUploadError(null)}
-                    className={styles.alert}
-                    style={{ marginBottom: 16 }}
+                    style={{ marginBottom: token.marginMD }}
                   />
                 )}
 
-                <div className={styles.actionButtons}>
+                <div style={componentStyles.actionButtons}>
                   <Button
                     type="primary"
                     size="large"
                     icon={<UploadOutlined />}
                     onClick={handleManualFileSelect}
-                    className={styles.uploadButton}
                     disabled={loading}
+                    style={styles.primaryButton}
                   >
                     手动添加字幕文件
                   </Button>
                   <Button
                     size="large"
                     onClick={onSkip}
-                    className={styles.skipButton}
                     disabled={loading}
+                    style={styles.secondaryButton}
                   >
                     稍后添加
                   </Button>
