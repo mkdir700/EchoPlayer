@@ -9,6 +9,7 @@ import {
 import { AppHeaderProps, PageType, NavigationItem } from '@renderer/types'
 import { COMMON_TEST_IDS, withTestId } from '@renderer/utils/test-utils'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { COMPONENT_TOKENS } from '@renderer/styles/theme'
 
 const { Text } = Typography
 
@@ -86,7 +87,7 @@ export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.
         <Text
           style={{
             fontSize: token.fontSizeLG,
-            fontWeight: 700,
+            fontWeight: COMPONENT_TOKENS.HEADER.BRAND_FONT_WEIGHT,
             background: styles.gradientText.background,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',

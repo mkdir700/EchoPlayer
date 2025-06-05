@@ -15,6 +15,7 @@ import { diagnoseAudioIssues } from '@renderer/utils/videoCompatibility'
 import type { RecentPlayItem } from '@renderer/types'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
+import { FONT_WEIGHTS } from '@renderer/styles/theme'
 
 const { Title, Text } = Typography
 
@@ -242,7 +243,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                   padding: `${token.paddingXXS}px ${token.paddingXS}px`,
                   borderRadius: token.borderRadius,
                   fontSize: token.fontSizeSM,
-                  fontWeight: 600,
+                  fontWeight: FONT_WEIGHTS.SEMIBOLD,
                   marginLeft: token.marginSM
                 }}
               >
@@ -250,20 +251,30 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
               </div>
             </Title>
 
-            {recentPlays.length > 0 && (
+            <div>
+              {recentPlays.length > 0 && (
+                <Button
+                  type="text"
+                  size="small"
+                  onClick={handleClearResouces}
+                  style={{
+                    color: token.colorTextTertiary,
+                    fontWeight: FONT_WEIGHTS.MEDIUM,
+                    borderRadius: token.borderRadius
+                  }}
+                >
+                  清空
+                </Button>
+              )}
               <Button
-                type="text"
-                size="small"
-                onClick={handleClearResouces}
-                style={{
-                  color: token.colorTextTertiary,
-                  fontWeight: 500,
-                  borderRadius: token.borderRadius
-                }}
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleVideoFileSelect}
+                style={{ marginLeft: token.marginXS, borderRadius: token.borderRadiusLG }}
               >
-                清空
+                添加视频
               </Button>
-            )}
+            </div>
           </div>
 
           {recentPlays.length === 0 ? (
@@ -291,7 +302,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                 level={4}
                 style={{
                   color: token.colorText,
-                  fontWeight: 600,
+                  fontWeight: FONT_WEIGHTS.SEMIBOLD,
                   marginBottom: token.marginSM
                 }}
               >
@@ -477,7 +488,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                               style={{
                                 display: 'block',
                                 fontSize: isCompactMode ? token.fontSizeSM : token.fontSize,
-                                fontWeight: 600,
+                                fontWeight: FONT_WEIGHTS.SEMIBOLD,
                                 color: token.colorText,
                                 marginBottom: isCompactMode ? token.marginXXS : token.marginXS,
                                 lineHeight: 1.3
@@ -526,7 +537,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                                 style={{
                                   fontSize: token.fontSizeSM,
                                   color: token.colorPrimary,
-                                  fontWeight: 500,
+                                  fontWeight: FONT_WEIGHTS.MEDIUM,
                                   background: isCompactMode
                                     ? 'transparent'
                                     : utils.hexToRgba(token.colorPrimary, 0.1),
@@ -568,7 +579,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                                 size="small"
                                 style={{
                                   color: token.colorPrimary,
-                                  fontWeight: 500,
+                                  fontWeight: FONT_WEIGHTS.MEDIUM,
                                   height: 24,
                                   fontSize: token.fontSizeSM
                                 }}
@@ -605,7 +616,9 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
             >
               <DeleteOutlined style={{ color: token.colorError, fontSize: token.fontSize }} />
             </div>
-            <span style={{ fontSize: token.fontSize, fontWeight: 600 }}>确认删除</span>
+            <span style={{ fontSize: token.fontSize, fontWeight: FONT_WEIGHTS.SEMIBOLD }}>
+              确认删除
+            </span>
           </div>
         }
         open={isModalOpen}
@@ -646,7 +659,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                 background: utils.hexToRgba(token.colorPrimary, 0.1),
                 padding: `${token.paddingXXS}px ${token.paddingXS}px`,
                 borderRadius: token.borderRadius,
-                fontWeight: 600
+                fontWeight: FONT_WEIGHTS.SEMIBOLD
               }}
             >
               &ldquo;{selectedFileName}&rdquo;

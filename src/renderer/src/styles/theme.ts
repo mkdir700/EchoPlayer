@@ -1,5 +1,170 @@
 import type { ThemeConfig } from 'antd'
 
+/**
+ * Design Tokens - 设计令牌常量
+ *
+ * 为了保持设计系统的一致性，将常用的样式值定义为预设常量
+ * 这些值与 Ant Design 的设计理念保持一致
+ */
+
+// Font Weight Tokens - 字体粗细
+export const FONT_WEIGHTS = {
+  // 常规文本
+  REGULAR: 400,
+  // 中等粗细 - 用于次要强调
+  MEDIUM: 500,
+  // 半粗体 - 用于强调文本、按钮、标题
+  SEMIBOLD: 600,
+  // 粗体 - 用于主要标题、品牌名称
+  BOLD: 700,
+  // 超粗体 - 用于大标题或特殊强调
+  EXTRABOLD: 800
+} as const
+
+// Typography Scale - 字体大小比例
+export const FONT_SIZES = {
+  // 极小文本 - 12px
+  XS: 12,
+  // 小文本 - 14px (Ant Design 默认 fontSizeSM)
+  SM: 14,
+  // 基础文本 - 16px (Ant Design 默认 fontSize)
+  BASE: 16,
+  // 大文本 - 18px (Ant Design 默认 fontSizeLG)
+  LG: 18,
+  // 标题 - 20px
+  XL: 20,
+  // 大标题 - 24px
+  XXL: 24,
+  // 特大标题 - 32px
+  XXXL: 32
+} as const
+
+// Spacing Scale - 间距比例
+export const SPACING = {
+  // 极小间距 - 4px
+  XXS: 4,
+  // 小间距 - 8px
+  XS: 8,
+  // 基础间距 - 12px
+  SM: 12,
+  // 中等间距 - 16px
+  MD: 16,
+  // 大间距 - 24px
+  LG: 24,
+  // 超大间距 - 32px
+  XL: 32,
+  // 特大间距 - 48px
+  XXL: 48
+} as const
+
+// Border Radius - 圆角半径
+export const BORDER_RADIUS = {
+  // 小圆角 - 6px
+  SM: 6,
+  // 基础圆角 - 8px
+  BASE: 8,
+  // 大圆角 - 12px
+  LG: 12,
+  // 特大圆角 - 16px
+  XL: 16,
+  // 圆形 - 50%
+  FULL: '50%'
+} as const
+
+// Z-Index Scale - 层级
+export const Z_INDEX = {
+  // 背景层
+  BACKGROUND: -1,
+  // 默认层
+  DEFAULT: 0,
+  // 悬浮层
+  ELEVATED: 10,
+  // 弹窗层
+  MODAL: 1000,
+  // 提示层
+  TOOLTIP: 1500,
+  // 最高层
+  TOP: 9999
+} as const
+
+// Animation Duration - 动画持续时间
+export const ANIMATION_DURATION = {
+  // 快速动画 - 0.1s
+  FAST: '0.1s',
+  // 中等动画 - 0.2s
+  MEDIUM: '0.2s',
+  // 慢速动画 - 0.3s
+  SLOW: '0.3s',
+  // 超慢动画 - 0.5s
+  SLOWER: '0.5s'
+} as const
+
+// Easing Functions - 缓动函数
+export const EASING = {
+  // 标准缓动
+  STANDARD: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  // 入场缓动
+  ENTER: 'cubic-bezier(0.0, 0, 0.2, 1)',
+  // 退场缓动
+  EXIT: 'cubic-bezier(0.4, 0, 1, 1)',
+  // 苹果风格缓动
+  APPLE: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  // 弹性缓动
+  SPRING: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+} as const
+
+// Shadow Levels - 阴影层级
+export const SHADOWS = {
+  // 轻微阴影
+  SM: '0 2px 8px rgba(0, 0, 0, 0.06)',
+  // 基础阴影
+  BASE: '0 4px 16px rgba(0, 0, 0, 0.08)',
+  // 强阴影
+  LG: '0 8px 24px rgba(0, 0, 0, 0.12)',
+  // 特强阴影
+  XL: '0 16px 40px rgba(0, 0, 0, 0.16)'
+} as const
+
+// Component Specific Tokens - 组件特定令牌
+export const COMPONENT_TOKENS = {
+  // 头部组件
+  HEADER: {
+    HEIGHT: 64,
+    TITLE_FONT_WEIGHT: FONT_WEIGHTS.BOLD,
+    BRAND_FONT_WEIGHT: FONT_WEIGHTS.BOLD
+  },
+
+  // 按钮组件
+  BUTTON: {
+    PRIMARY_FONT_WEIGHT: FONT_WEIGHTS.SEMIBOLD,
+    SECONDARY_FONT_WEIGHT: FONT_WEIGHTS.MEDIUM,
+    GHOST_FONT_WEIGHT: FONT_WEIGHTS.MEDIUM
+  },
+
+  // 卡片组件
+  CARD: {
+    TITLE_FONT_WEIGHT: FONT_WEIGHTS.SEMIBOLD,
+    SUBTITLE_FONT_WEIGHT: FONT_WEIGHTS.MEDIUM,
+    BODY_FONT_WEIGHT: FONT_WEIGHTS.REGULAR
+  },
+
+  // 导航组件
+  NAVIGATION: {
+    ACTIVE_FONT_WEIGHT: FONT_WEIGHTS.SEMIBOLD,
+    INACTIVE_FONT_WEIGHT: FONT_WEIGHTS.MEDIUM
+  }
+} as const
+
+// Type definitions for better TypeScript support
+export type FontWeight = (typeof FONT_WEIGHTS)[keyof typeof FONT_WEIGHTS]
+export type FontSize = (typeof FONT_SIZES)[keyof typeof FONT_SIZES]
+export type Spacing = (typeof SPACING)[keyof typeof SPACING]
+export type BorderRadius = (typeof BORDER_RADIUS)[keyof typeof BORDER_RADIUS]
+export type ZIndex = (typeof Z_INDEX)[keyof typeof Z_INDEX]
+export type AnimationDuration = (typeof ANIMATION_DURATION)[keyof typeof ANIMATION_DURATION]
+export type Easing = (typeof EASING)[keyof typeof EASING]
+export type Shadow = (typeof SHADOWS)[keyof typeof SHADOWS]
+
 // 苹果设计风格的主题配置
 export const appleTheme: ThemeConfig = {
   // 开启 CSS 变量模式
@@ -16,39 +181,39 @@ export const appleTheme: ThemeConfig = {
     colorInfo: '#5AC8FA', // 苹果浅蓝
 
     // 圆角
-    borderRadius: 8,
-    borderRadiusLG: 12,
-    borderRadiusSM: 6,
+    borderRadius: BORDER_RADIUS.BASE,
+    borderRadiusLG: BORDER_RADIUS.LG,
+    borderRadiusSM: BORDER_RADIUS.SM,
 
     // 字体
     fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`,
-    fontSizeHeading1: 32,
-    fontSizeHeading2: 24,
-    fontSizeHeading3: 20,
-    fontSizeHeading4: 18,
-    fontSize: 16,
-    fontSizeLG: 18,
-    fontSizeSM: 14,
+    fontSizeHeading1: FONT_SIZES.XXXL,
+    fontSizeHeading2: FONT_SIZES.XXL,
+    fontSizeHeading3: FONT_SIZES.XL,
+    fontSizeHeading4: FONT_SIZES.LG,
+    fontSize: FONT_SIZES.BASE,
+    fontSizeLG: FONT_SIZES.LG,
+    fontSizeSM: FONT_SIZES.SM,
 
     // 间距
-    padding: 16,
-    paddingLG: 24,
-    paddingXL: 32,
-    paddingSM: 12,
-    paddingXS: 8,
-    paddingXXS: 4,
+    padding: SPACING.MD,
+    paddingLG: SPACING.LG,
+    paddingXL: SPACING.XL,
+    paddingSM: SPACING.SM,
+    paddingXS: SPACING.XS,
+    paddingXXS: SPACING.XXS,
 
-    margin: 16,
-    marginLG: 24,
-    marginXL: 32,
-    marginSM: 12,
-    marginXS: 8,
-    marginXXS: 4,
+    margin: SPACING.MD,
+    marginLG: SPACING.LG,
+    marginXL: SPACING.XL,
+    marginSM: SPACING.SM,
+    marginXS: SPACING.XS,
+    marginXXS: SPACING.XXS,
 
     // 阴影 - 苹果风格的柔和阴影
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-    boxShadowSecondary: '0 4px 16px rgba(0, 0, 0, 0.08)',
-    boxShadowTertiary: '0 8px 24px rgba(0, 0, 0, 0.12)',
+    boxShadow: SHADOWS.SM,
+    boxShadowSecondary: SHADOWS.BASE,
+    boxShadowTertiary: SHADOWS.LG,
 
     // 背景色
     colorBgContainer: '#ffffff',
@@ -66,65 +231,65 @@ export const appleTheme: ThemeConfig = {
     colorBorderSecondary: '#f2f2f7',
 
     // 动画
-    motionDurationFast: '0.1s',
-    motionDurationMid: '0.2s',
-    motionDurationSlow: '0.3s',
-    motionEaseInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    motionEaseOut: 'cubic-bezier(0.0, 0, 0.2, 1)'
+    motionDurationFast: ANIMATION_DURATION.FAST,
+    motionDurationMid: ANIMATION_DURATION.MEDIUM,
+    motionDurationSlow: ANIMATION_DURATION.SLOW,
+    motionEaseInOut: EASING.STANDARD,
+    motionEaseOut: EASING.ENTER
   },
 
   components: {
     // Layout 组件配置
     Layout: {
       headerBg: 'rgba(255, 255, 255, 0.8)',
-      headerHeight: 64,
-      headerPadding: '0 24px',
+      headerHeight: COMPONENT_TOKENS.HEADER.HEIGHT,
+      headerPadding: `0 ${SPACING.LG}px`,
       bodyBg: '#ffffff'
     },
 
     // Button 组件配置
     Button: {
-      borderRadius: 8,
+      borderRadius: BORDER_RADIUS.BASE,
       controlHeight: 40,
       controlHeightLG: 48,
       controlHeightSM: 32,
-      fontWeight: 600,
+      fontWeight: FONT_WEIGHTS.SEMIBOLD,
       primaryShadow: '0 4px 16px rgba(0, 122, 255, 0.3)'
     },
 
     // Card 组件配置
     Card: {
-      borderRadiusLG: 12,
+      borderRadiusLG: BORDER_RADIUS.LG,
       headerBg: 'transparent',
       headerHeight: 48,
       actionsBg: 'transparent',
-      paddingLG: 24
+      paddingLG: SPACING.LG
     },
 
     // Menu 组件配置
     Menu: {
-      borderRadius: 8,
-      itemBorderRadius: 6,
+      borderRadius: BORDER_RADIUS.BASE,
+      itemBorderRadius: BORDER_RADIUS.SM,
       itemHeight: 40,
-      itemPaddingInline: 12,
+      itemPaddingInline: SPACING.SM,
       horizontalItemSelectedBg: 'rgba(0, 122, 255, 0.1)',
       horizontalItemSelectedColor: '#007AFF'
     },
 
     // Modal 组件配置
     Modal: {
-      borderRadiusLG: 16,
+      borderRadiusLG: BORDER_RADIUS.XL,
       headerBg: 'transparent',
       contentBg: 'rgba(255, 255, 255, 0.95)',
-      titleFontSize: 20,
+      titleFontSize: FONT_SIZES.XL,
       titleLineHeight: 1.4
     },
 
     // Typography 组件配置
     Typography: {
       titleMarginTop: 0,
-      titleMarginBottom: 16,
-      fontWeightStrong: 600
+      titleMarginBottom: SPACING.MD,
+      fontWeightStrong: FONT_WEIGHTS.SEMIBOLD
     },
 
     // Empty 组件配置
@@ -182,9 +347,9 @@ export const themeStyles = {
 
   // 苹果风格的卡片阴影
   appleCardShadow: {
-    light: '0 2px 8px rgba(0, 0, 0, 0.06)',
-    medium: '0 4px 16px rgba(0, 0, 0, 0.08)',
-    heavy: '0 8px 24px rgba(0, 0, 0, 0.12)'
+    light: SHADOWS.SM,
+    medium: SHADOWS.BASE,
+    heavy: SHADOWS.LG
   },
 
   // 渐变色
@@ -197,8 +362,8 @@ export const themeStyles = {
 
   // 动画缓动
   easing: {
-    apple: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    appleSpring: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+    apple: EASING.APPLE,
+    appleSpring: EASING.SPRING
   }
 }
 
