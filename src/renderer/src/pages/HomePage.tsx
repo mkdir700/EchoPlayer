@@ -322,10 +322,10 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                 {recentPlays.slice(0, 12).map((item) => (
                   <Col
                     xs={isCompactMode ? 12 : 24}
-                    sm={isCompactMode ? 8 : 12}
-                    md={isCompactMode ? 6 : 8}
-                    lg={isCompactMode ? 4 : 6}
-                    xl={isCompactMode ? 3 : 4}
+                    sm={isCompactMode ? 4 : 8}
+                    md={isCompactMode ? 4 : 8}
+                    lg={isCompactMode ? 4 : 8}
+                    xl={isCompactMode ? 4 : 8}
                     key={item.fileId}
                   >
                     <div
