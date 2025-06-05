@@ -155,10 +155,12 @@ export function UpdateSection(): React.JSX.Element {
     <Card title="应用更新" className="settings-card">
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         {/* 版本信息 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space>
-            <Text strong>当前版本:</Text>
-            <Tag color="blue">{currentVersion || '未知'}</Tag>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Space direction="vertical" size="small">
+            <Space>
+              <Text strong>当前版本:</Text>
+              <Tag color="blue">{currentVersion || '未知'}</Tag>
+            </Space>
             <Text type="secondary">上次检查: {formatLastChecked(updateSettings.lastChecked)}</Text>
           </Space>
 

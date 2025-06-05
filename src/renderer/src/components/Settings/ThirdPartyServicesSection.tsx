@@ -16,13 +16,9 @@ import type {
   ThirdPartyServicesSettings
 } from '@renderer/types'
 import { DictionaryServiceFactory } from '@renderer/utils/dictionaryServices'
-import styles from './Settings.module.css'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 const { Text, Link } = Typography
-
-interface ThirdPartyServicesSectionProps {
-  className?: string
-}
 
 const DICTIONARY_ENGINES: DictionaryEngineOption[] = [
   {
@@ -68,9 +64,9 @@ const OPENAI_MODELS: OpenAIModelOption[] = [
   }
 ]
 
-export function ThirdPartyServicesSection({
-  className
-}: ThirdPartyServicesSectionProps): React.JSX.Element {
+export function ThirdPartyServicesSection(): React.JSX.Element {
+  const { token, styles } = useTheme()
+
   // FIXME: 需要提前在 App.tsx 中引入 antd 的 APP，否则 message 会报错
   // 但是引入了 antd 的 APP 后，会导致卡顿，操作延迟变高
   const { message } = App.useApp()
@@ -244,9 +240,11 @@ export function ThirdPartyServicesSection({
   // 渲染 OpenAI 配置
   const renderOpenAIConfig = (): React.JSX.Element => {
     return (
-      <div className={styles.configSection}>
-        <div className={styles.inputGroup}>
-          <Text className={styles.inputLabel}>API Key</Text>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginLG }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
+          <Text style={{ color: token.colorText, fontSize: token.fontSizeSM, fontWeight: 500 }}>
+            API Key
+          </Text>
           <Input.Password
             placeholder="请输入 OpenAI API Key (sk-...)"
             value={settings.openai.apiKey}
@@ -255,8 +253,10 @@ export function ThirdPartyServicesSection({
           />
         </div>
 
-        <div className={styles.inputGroup}>
-          <Text className={styles.inputLabel}>API 基础地址</Text>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
+          <Text style={{ color: token.colorText, fontSize: token.fontSizeSM, fontWeight: 500 }}>
+            API 基础地址
+          </Text>
           <Input
             placeholder="https://api.openai.com/v1"
             value={settings.openai.baseUrl}
@@ -265,26 +265,35 @@ export function ThirdPartyServicesSection({
           />
         </div>
 
-        <div className={styles.inputGroup}>
-          <Text className={styles.inputLabel}>选择模型</Text>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
+          <Text style={{ color: token.colorText, fontSize: token.fontSizeSM, fontWeight: 500 }}>
+            选择模型
+          </Text>
           <Select
             placeholder="请选择 OpenAI 模型"
             value={settings.openai.selectedModel}
             onChange={(value) => handleOpenAIChange('selectedModel', value)}
             size="large"
+            style={{ width: '100%', maxWidth: 480 }}
             options={OPENAI_MODELS.map((model) => ({
               value: model.key,
               label: (
-                <div className={styles.engineOption}>
-                  <div className={styles.engineName}>{model.label}</div>
+                <div style={{ padding: `${token.paddingXXS}px 0` }}>
+                  <div
+                    style={{ fontWeight: 600, color: token.colorText, fontSize: token.fontSizeSM }}
+                  >
+                    {model.label}
+                  </div>
                 </div>
               )
             }))}
           />
         </div>
 
-        <div className={styles.inputGroup}>
-          <Text className={styles.inputLabel}>最大 Token 数量</Text>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
+          <Text style={{ color: token.colorText, fontSize: token.fontSizeSM, fontWeight: 500 }}>
+            最大 Token 数量
+          </Text>
           <InputNumber
             min={100}
             max={settings.openai.maxTokens}
@@ -295,8 +304,8 @@ export function ThirdPartyServicesSection({
           />
         </div>
 
-        <div className={styles.inputGroup}>
-          <Text className={styles.inputLabel}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
+          <Text style={{ color: token.colorText, fontSize: token.fontSizeSM, fontWeight: 500 }}>
             温度参数 (Temperature): {settings.openai.temperature}
           </Text>
           <div>
@@ -317,12 +326,12 @@ export function ThirdPartyServicesSection({
 
         <Alert
           message={
-            <span className={styles.alertContent}>
+            <span style={{ color: token.colorText, opacity: 0.95 }}>
               如需获取 API Key，请访问{' '}
               <Link
                 href="https://platform.openai.com/api-keys"
                 target="_blank"
-                className={styles.alertLink}
+                style={{ color: token.colorPrimary, textDecoration: 'none', fontWeight: 500 }}
               >
                 <LinkOutlined /> OpenAI 平台
               </Link>{' '}
@@ -346,16 +355,28 @@ export function ThirdPartyServicesSection({
     if (!selectedEngineOption || !selectedEngineOption.requiresAuth) return null
 
     return (
-      <div className={styles.engineConfigContainer}>
+      <div>
         {settings.dictionary.selectedEngine === 'eudic' && (
-          <div className={styles.configSection}>
-            <div className={styles.configHeader}>
-              <KeyOutlined className={styles.configIcon} />
-              <Text className={styles.configTitle}>欧陆词典 API 配置</Text>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginLG }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: token.marginSM,
+                paddingBottom: token.marginMD,
+                borderBottom: `1px solid ${token.colorBorderSecondary}`
+              }}
+            >
+              <KeyOutlined style={{ color: token.colorPrimary, fontSize: token.fontSizeLG }} />
+              <Text style={{ color: token.colorText, fontSize: token.fontSize, fontWeight: 600 }}>
+                欧陆词典 API 配置
+              </Text>
             </div>
 
-            <div className={styles.inputGroup}>
-              <Text className={styles.inputLabel}>API Token</Text>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
+              <Text style={{ color: token.colorText, fontSize: token.fontSizeSM, fontWeight: 500 }}>
+                API Token
+              </Text>
               <Input.Password
                 placeholder="请输入欧陆词典 API Token"
                 value={settings.dictionary.eudicApiToken}
@@ -366,12 +387,12 @@ export function ThirdPartyServicesSection({
 
             <Alert
               message={
-                <span className={styles.alertContent}>
+                <span style={{ color: token.colorText, opacity: 0.95 }}>
                   如需获取 API Token，请访问{' '}
                   <Link
                     href="https://my.eudic.net/OpenAPI/Authorization"
                     target="_blank"
-                    className={styles.alertLink}
+                    style={{ color: token.colorPrimary, textDecoration: 'none', fontWeight: 500 }}
                   >
                     <LinkOutlined /> 欧陆词典开放平台
                   </Link>
@@ -384,14 +405,26 @@ export function ThirdPartyServicesSection({
         )}
 
         {settings.dictionary.selectedEngine === 'youdao' && (
-          <div className={styles.configSection}>
-            <div className={styles.configHeader}>
-              <KeyOutlined className={styles.configIcon} />
-              <Text className={styles.configTitle}>有道词典 API 配置</Text>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginLG }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: token.marginSM,
+                paddingBottom: token.marginMD,
+                borderBottom: `1px solid ${token.colorBorderSecondary}`
+              }}
+            >
+              <KeyOutlined style={{ color: token.colorPrimary, fontSize: token.fontSizeLG }} />
+              <Text style={{ color: token.colorText, fontSize: token.fontSize, fontWeight: 600 }}>
+                有道词典 API 配置
+              </Text>
             </div>
 
-            <div className={styles.inputGroup}>
-              <Text className={styles.inputLabel}>应用ID</Text>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
+              <Text style={{ color: token.colorText, fontSize: token.fontSizeSM, fontWeight: 500 }}>
+                应用ID
+              </Text>
               <Input.Password
                 placeholder="请输入应用ID"
                 value={settings.dictionary.youdaoApiKey}
@@ -400,8 +433,10 @@ export function ThirdPartyServicesSection({
               />
             </div>
 
-            <div className={styles.inputGroup}>
-              <Text className={styles.inputLabel}>密钥</Text>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXS }}>
+              <Text style={{ color: token.colorText, fontSize: token.fontSizeSM, fontWeight: 500 }}>
+                密钥
+              </Text>
               <Input.Password
                 placeholder="请输入密钥"
                 value={settings.dictionary.youdaoApiSecret}
@@ -411,12 +446,12 @@ export function ThirdPartyServicesSection({
             </div>
             <Alert
               message={
-                <span className={styles.alertContent}>
+                <span style={{ color: token.colorText, opacity: 0.95 }}>
                   申请应用ID和密钥，请访问{' '}
                   <Link
                     href="https://ai.youdao.com/console/#/app-overview/create-application"
                     target="_blank"
-                    className={styles.alertLink}
+                    style={{ color: token.colorPrimary, textDecoration: 'none', fontWeight: 500 }}
                   >
                     <LinkOutlined /> 有道智云开放平台
                   </Link>
@@ -432,21 +467,32 @@ export function ThirdPartyServicesSection({
   }
 
   return (
-    <div className={`${className || ''} ${styles.servicesContainer}`}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginLG }}>
       {/* OpenAI 配置卡片 */}
       <Card
         title={
-          <div className={styles.cardTitle}>
-            <RobotOutlined className={styles.titleIcon} />
-            <span className={styles.titleText}>OpenAI 模型配置</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+            <RobotOutlined
+              style={{
+                fontSize: token.fontSizeLG,
+                color: token.colorPrimary,
+                background: `linear-gradient(135deg, ${token.colorPrimary}, #8b5cf6)`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            />
+            <span style={{ color: token.colorText, fontWeight: 600, fontSize: token.fontSizeLG }}>
+              OpenAI 模型配置
+            </span>
           </div>
         }
-        className={styles.modernCard}
+        style={styles.cardContainer}
         extra={
           <Button
-            type="primary"
             icon={isTestingOpenAI ? <LoadingOutlined /> : <ExperimentOutlined />}
-            className={styles.saveButton}
+            size="small"
+            type="default"
             onClick={testOpenAIConnection}
             disabled={!isOpenAIConfigComplete() || isTestingOpenAI}
             loading={isTestingOpenAI}
@@ -455,10 +501,16 @@ export function ThirdPartyServicesSection({
           </Button>
         }
       >
-        <div className={styles.cardContent}>
-          <div className={styles.engineSelection}>
-            <div className={styles.selectionHeader}>
-              <Text className={styles.sectionDescription}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXL }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginMD }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXXS }}>
+              <Text
+                style={{
+                  color: token.colorTextSecondary,
+                  fontSize: token.fontSizeSM,
+                  lineHeight: 1.5
+                }}
+              >
                 配置 OpenAI API 以启用 AI 功能，如智能翻译、语法分析等。配置会自动保存。
               </Text>
             </div>
@@ -470,17 +522,28 @@ export function ThirdPartyServicesSection({
       {/* 词典配置卡片 */}
       <Card
         title={
-          <div className={styles.cardTitle}>
-            <CloudOutlined className={styles.titleIcon} />
-            <span className={styles.titleText}>词典服务配置</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+            <CloudOutlined
+              style={{
+                fontSize: token.fontSizeLG,
+                color: token.colorPrimary,
+                background: `linear-gradient(135deg, ${token.colorPrimary}, #8b5cf6)`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            />
+            <span style={{ color: token.colorText, fontWeight: 600, fontSize: token.fontSizeLG }}>
+              词典服务配置
+            </span>
           </div>
         }
-        className={styles.modernCard}
+        style={styles.cardContainer}
         extra={
           <Button
-            type="primary"
+            type="default"
+            size="small"
             icon={isTestingDictionary ? <LoadingOutlined /> : <ExperimentOutlined />}
-            className={styles.saveButton}
             onClick={testDictionaryConnection}
             disabled={!isDictionaryConfigComplete() || isTestingDictionary}
             loading={isTestingDictionary}
@@ -489,48 +552,84 @@ export function ThirdPartyServicesSection({
           </Button>
         }
       >
-        <div className={styles.cardContent}>
-          <div className={styles.engineSelection}>
-            <div className={styles.selectionHeader}>
-              <Text className={styles.sectionDescription}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXL }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginMD }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXXS }}>
+              <Text
+                style={{
+                  color: token.colorTextSecondary,
+                  fontSize: token.fontSizeSM,
+                  lineHeight: 1.5
+                }}
+              >
                 配置词典服务以启用查词功能。配置会自动保存。
               </Text>
             </div>
           </div>
 
-          <div className={styles.engineSelection}>
-            <div className={styles.selectionHeader}>
-              <Text className={styles.sectionLabel}>选择查词引擎</Text>
-              <Text className={styles.sectionDescription}>选择您偏好的词典服务提供商</Text>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginMD }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: token.marginXXS }}>
+              <Text style={{ color: token.colorText, fontSize: token.fontSize, fontWeight: 600 }}>
+                选择查词引擎
+              </Text>
+              <Text
+                style={{
+                  color: token.colorTextSecondary,
+                  fontSize: token.fontSizeSM,
+                  lineHeight: 1.5
+                }}
+              >
+                选择您偏好的词典服务提供商
+              </Text>
             </div>
 
             <Select
               placeholder="请选择查词引擎"
               value={settings.dictionary.selectedEngine}
               onChange={(value) => handleDictionaryChange('selectedEngine', value)}
-              className={styles.modernSelect}
               size="large"
+              style={{ width: '100%', maxWidth: 480 }}
+              styles={{
+                popup: {
+                  root: {
+                    padding: token.paddingXS
+                  }
+                }
+              }}
               options={DICTIONARY_ENGINES.map((engine) => ({
                 value: engine.key,
-                label: (
-                  <div className={styles.engineOption}>
-                    <div className={styles.engineName}>{engine.label}</div>
-                    <div className={styles.engineDescription}>{engine.description}</div>
-                  </div>
-                )
+                label: engine.label,
+                description: engine.description
               }))}
+              optionRender={(option) => (
+                <div
+                  style={{
+                    padding: `${token.paddingXS}px ${token.paddingXS}px`,
+                    minHeight: 'auto',
+                    lineHeight: 1.4
+                  }}
+                >
+                  <div>{option.label}</div>
+                  <div
+                    style={{
+                      fontSize: token.fontSizeSM * 0.9,
+                      color: token.colorTextSecondary,
+                      lineHeight: 1.3,
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word'
+                    }}
+                  >
+                    {option.data.description}
+                  </div>
+                </div>
+              )}
             />
           </div>
 
           {renderDictionaryConfig()}
 
           {!settings.dictionary.selectedEngine && (
-            <Alert
-              message="请选择一个查词引擎以继续配置"
-              type="warning"
-              showIcon
-              className={styles.warningAlert}
-            />
+            <Alert message="请选择一个查词引擎以继续配置" type="warning" showIcon />
           )}
         </div>
       </Card>
