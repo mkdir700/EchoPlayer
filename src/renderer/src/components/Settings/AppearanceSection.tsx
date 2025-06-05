@@ -33,6 +33,83 @@ import { ThemeCustomization, useThemeCustomization } from '@renderer/hooks/useTh
 
 const { Text, Title } = Typography
 
+interface ThemeModeCardProps {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  title: string
+  description: string
+}
+
+/**
+ * Reusable theme mode card component
+ */
+function ThemeModeCard({
+  active,
+  onClick,
+  icon,
+  title,
+  description
+}: ThemeModeCardProps): React.JSX.Element {
+  const { token } = useTheme()
+
+  return (
+    <Col span={12}>
+      <Card
+        size="small"
+        className={active ? 'theme-mode-active' : 'theme-mode-card'}
+        onClick={onClick}
+        style={{
+          cursor: 'pointer',
+          border: active
+            ? `2px solid ${token.colorPrimary}`
+            : `1px solid ${token.colorBorderSecondary}`,
+          background: active ? token.colorPrimaryBg : token.colorBgContainer
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, color: token.colorPrimary, marginBottom: 8 }}>{icon}</div>
+          <div>
+            <Text strong>{title}</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+              {description}
+            </Text>
+          </div>
+        </div>
+      </Card>
+    </Col>
+  )
+}
+
+// Theme mode configuration
+const themeModes = [
+  {
+    key: 'default' as const,
+    icon: <SunOutlined />,
+    title: '亮色主题',
+    description: '清爽明亮的界面风格'
+  },
+  {
+    key: 'dark' as const,
+    icon: <MoonOutlined />,
+    title: '暗色主题',
+    description: '护眼的深色界面'
+  },
+  {
+    key: 'compact' as const,
+    icon: <CompressOutlined />,
+    title: '紧凑主题',
+    description: '节省空间的布局'
+  },
+  {
+    key: 'darkCompact' as const,
+    icon: <ExpandOutlined />,
+    title: '暗色紧凑',
+    description: '暗色 + 紧凑布局'
+  }
+]
+
 /**
  * Renders the appearance settings section, providing a user interface for customizing theme modes, colors, and subtitle display options.
  *
@@ -108,139 +185,16 @@ export function AppearanceSection(): React.JSX.Element {
           </Title>
 
           <Row gutter={[16, 16]}>
-            <Col span={12}>
-              <Card
-                size="small"
-                className={
-                  themeConfig.algorithm === 'default' ? 'theme-mode-active' : 'theme-mode-card'
-                }
-                onClick={() => handleAlgorithmChange('default')}
-                style={{
-                  cursor: 'pointer',
-                  border:
-                    themeConfig.algorithm === 'default'
-                      ? `2px solid ${token.colorPrimary}`
-                      : `1px solid ${token.colorBorderSecondary}`,
-                  background:
-                    themeConfig.algorithm === 'default'
-                      ? token.colorPrimaryBg
-                      : token.colorBgContainer
-                }}
-              >
-                <div style={{ textAlign: 'center' }}>
-                  <SunOutlined
-                    style={{ fontSize: 24, color: token.colorPrimary, marginBottom: 8 }}
-                  />
-                  <div>
-                    <Text strong>亮色主题</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                      清爽明亮的界面风格
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            </Col>
-
-            <Col span={12}>
-              <Card
-                size="small"
-                className={
-                  themeConfig.algorithm === 'dark' ? 'theme-mode-active' : 'theme-mode-card'
-                }
-                onClick={() => handleAlgorithmChange('dark')}
-                style={{
-                  cursor: 'pointer',
-                  border:
-                    themeConfig.algorithm === 'dark'
-                      ? `2px solid ${token.colorPrimary}`
-                      : `1px solid ${token.colorBorderSecondary}`,
-                  background:
-                    themeConfig.algorithm === 'dark' ? token.colorPrimaryBg : token.colorBgContainer
-                }}
-              >
-                <div style={{ textAlign: 'center' }}>
-                  <MoonOutlined
-                    style={{ fontSize: 24, color: token.colorPrimary, marginBottom: 8 }}
-                  />
-                  <div>
-                    <Text strong>暗色主题</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                      护眼的深色界面
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            </Col>
-
-            <Col span={12}>
-              <Card
-                size="small"
-                className={
-                  themeConfig.algorithm === 'compact' ? 'theme-mode-active' : 'theme-mode-card'
-                }
-                onClick={() => handleAlgorithmChange('compact')}
-                style={{
-                  cursor: 'pointer',
-                  border:
-                    themeConfig.algorithm === 'compact'
-                      ? `2px solid ${token.colorPrimary}`
-                      : `1px solid ${token.colorBorderSecondary}`,
-                  background:
-                    themeConfig.algorithm === 'compact'
-                      ? token.colorPrimaryBg
-                      : token.colorBgContainer
-                }}
-              >
-                <div style={{ textAlign: 'center' }}>
-                  <CompressOutlined
-                    style={{ fontSize: 24, color: token.colorPrimary, marginBottom: 8 }}
-                  />
-                  <div>
-                    <Text strong>紧凑主题</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                      节省空间的布局
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            </Col>
-
-            <Col span={12}>
-              <Card
-                size="small"
-                className={
-                  themeConfig.algorithm === 'darkCompact' ? 'theme-mode-active' : 'theme-mode-card'
-                }
-                onClick={() => handleAlgorithmChange('darkCompact')}
-                style={{
-                  cursor: 'pointer',
-                  border:
-                    themeConfig.algorithm === 'darkCompact'
-                      ? `2px solid ${token.colorPrimary}`
-                      : `1px solid ${token.colorBorderSecondary}`,
-                  background:
-                    themeConfig.algorithm === 'darkCompact'
-                      ? token.colorPrimaryBg
-                      : token.colorBgContainer
-                }}
-              >
-                <div style={{ textAlign: 'center' }}>
-                  <ExpandOutlined
-                    style={{ fontSize: 24, color: token.colorPrimary, marginBottom: 8 }}
-                  />
-                  <div>
-                    <Text strong>暗色紧凑</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                      暗色 + 紧凑布局
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            </Col>
+            {themeModes.map((mode) => (
+              <ThemeModeCard
+                key={mode.key}
+                active={themeConfig.algorithm === mode.key}
+                onClick={() => handleAlgorithmChange(mode.key)}
+                icon={mode.icon}
+                title={mode.title}
+                description={mode.description}
+              />
+            ))}
           </Row>
         </div>
 
