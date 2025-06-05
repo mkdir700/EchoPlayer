@@ -23,6 +23,14 @@ interface HomePageProps {
   onNavigateToPlay: () => void
 }
 
+/**
+ * Displays the home page for video playback, allowing users to view, add, open, and manage recently watched videos.
+ *
+ * Provides a responsive, theme-aware interface for selecting video files, viewing recent play history, resuming playback, and deleting records. Integrates with custom hooks for video control, recent play list management, and theme customization. Handles user interactions with confirmation dialogs and feedback messages.
+ *
+ * @param onNavigateToPlay - Callback invoked to navigate to the video playback page after a video is selected or opened.
+ * @returns The rendered home page React element.
+ */
 export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element {
   const { token, styles, utils } = useTheme()
   const { customization } = useThemeCustomization()

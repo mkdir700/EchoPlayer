@@ -22,6 +22,14 @@ const SPEED_OPTIONS = [
   { value: 2, label: '2x' }
 ]
 
+/**
+ * Renders a playback rate selector for a video player, allowing users to customize available playback speeds and quickly switch between them.
+ *
+ * Provides a dropdown panel where users can select which playback speeds are available for quick access. The current playback rate can be changed instantly via quick-select buttons. If the currently active speed is deselected, playback automatically switches to the next available selected speed.
+ *
+ * @param isVideoLoaded - Whether a video is currently loaded and playback controls should be enabled.
+ * @returns The rendered playback rate selector component.
+ */
 export function PlaybackRateSelector({
   isVideoLoaded
 }: PlaybackRateSelectorProps): React.JSX.Element {

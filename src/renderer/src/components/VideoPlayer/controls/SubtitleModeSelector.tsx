@@ -18,10 +18,11 @@ const DISPLAY_MODE_CONFIG = {
 }
 
 /**
- * 字幕模式选择器组件
+ * Renders a subtitle mode selector that allows users to switch between different subtitle display modes with a UI styled according to Apple design principles and the application's theme.
  *
- * 遵循苹果设计美学和主题系统最佳实践，提供字幕显示模式的切换功能
- * 使用主题系统的预定义样式，确保与应用其他部分的视觉一致性
+ * The selector provides options such as none, original, Chinese, English, and bilingual subtitles. It ensures accessibility, keyboard shortcut support, and robust handling of invalid display modes by defaulting to bilingual. The component manages focus and click-outside behavior for an optimal user experience.
+ *
+ * @returns The rendered subtitle mode selector component.
  */
 export function SubtitleModeSelector(): React.JSX.Element {
   const { styles, token } = useTheme()

@@ -29,6 +29,13 @@ const getItemHeight = (): number => {
   return ITEM_HEIGHT
 }
 
+/**
+ * Renders a virtualized, auto-scrolling list of subtitle items synchronized with video playback.
+ *
+ * Displays subtitle items in a scrollable list, automatically keeping the active subtitle centered as the video plays. Handles user-initiated scrolling by temporarily disabling auto-scroll, and provides instant or smooth scrolling based on context. Shows an empty state when no subtitles are loaded.
+ *
+ * @returns The rendered subtitle list content as a React element.
+ */
 export function SubtitleListContent(): React.JSX.Element {
   const { token, styles } = useTheme()
   const subtitleListContext = useSubtitleListContext()

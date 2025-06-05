@@ -25,7 +25,11 @@ import { performanceMonitor } from '@renderer/utils/performance'
 
 const { Content } = Layout
 
-// 内部组件，用于在Provider内部启用全局功能
+/**
+ * Renders the main application content with page navigation and context providers.
+ *
+ * Manages the current page state and conditionally renders the appropriate page component. Provides global subtitle reset functionality and wraps content with video-related context providers. Handles navigation between home, play, favorites, about, and settings pages.
+ */
 function AppContent(): React.JSX.Element {
   // 启用字幕重置功能和全局快捷键
   useSubtitleReset()
@@ -105,6 +109,13 @@ function AppContent(): React.JSX.Element {
   )
 }
 
+/**
+ * The root component that sets up global providers and renders the main application content.
+ *
+ * Wraps the application with theme and keyboard shortcut contexts, and displays update notifications.
+ *
+ * @returns The main application JSX element.
+ */
 function App(): React.JSX.Element {
   return (
     <ThemeProvider>

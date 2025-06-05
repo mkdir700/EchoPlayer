@@ -73,6 +73,15 @@ const ProgressSection = React.memo(
 )
 ProgressSection.displayName = 'ProgressSection'
 
+/**
+ * Renders a compact video playback control bar with progress slider, playback, subtitle, and system controls.
+ *
+ * @param isVideoLoaded - Indicates whether the video is loaded and controls should be enabled.
+ * @param videoError - Error state of the video, used to disable or adjust controls as needed.
+ * @param onFullscreenToggle - Callback invoked when the fullscreen button is toggled.
+ *
+ * @returns The compact video controls UI as a React element.
+ */
 export function VideoControlsCompact({
   isVideoLoaded,
   videoError,

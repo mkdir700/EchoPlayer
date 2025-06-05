@@ -14,6 +14,14 @@ interface LoopToggleButtonProps {
   isVideoLoaded: boolean
 }
 
+/**
+ * Renders a button that toggles single-sentence loop playback for subtitles in a video player.
+ *
+ * When enabled, the video will repeatedly loop the currently active subtitle segment. The button is disabled if the video is not loaded, and its appearance reflects the current loop state.
+ *
+ * @param isVideoLoaded - Indicates whether the video is loaded and ready for interaction.
+ * @returns The loop toggle button component.
+ */
 export function LoopToggleButton({ isVideoLoaded }: LoopToggleButtonProps): React.JSX.Element {
   const { styles } = useTheme()
   const isLoopingDisplay = useIsSingleLoop()

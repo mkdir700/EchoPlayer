@@ -8,6 +8,16 @@ interface SettingsNavigationProps {
   className?: string
 }
 
+/**
+ * Renders a themed navigation menu for selecting settings sections.
+ *
+ * Displays a list of settings sections with interactive highlighting for the active and hovered items. Invokes a callback when a section is selected.
+ *
+ * @param activeSection - The key of the currently active settings section.
+ * @param onSectionChange - Callback invoked with the key of the selected section when a navigation item is clicked.
+ * @param className - Optional additional CSS class for the root navigation element.
+ * @returns The rendered navigation menu as a React element.
+ */
 export function SettingsNavigation({
   activeSection,
   onSectionChange,

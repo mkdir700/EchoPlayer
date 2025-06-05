@@ -12,6 +12,13 @@ import { useTheme } from '@renderer/hooks/useTheme'
 
 const { Title } = Typography
 
+/**
+ * Renders the main settings page with navigation and content sections.
+ *
+ * Displays a sidebar for navigating between different settings categories and a main content area that shows the selected settings section. Styling is applied using theme tokens for a consistent appearance.
+ *
+ * @returns The settings page React element.
+ */
 export function SettingsPage(): React.JSX.Element {
   const [activeSection, setActiveSection] = useState('about')
   const { token, styles } = useTheme()
