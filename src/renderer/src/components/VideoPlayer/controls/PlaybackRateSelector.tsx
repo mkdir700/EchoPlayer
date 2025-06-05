@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { Button, Tooltip, Checkbox, Space } from 'antd'
 import { ThunderboltOutlined, DownOutlined, UpOutlined } from '@ant-design/icons'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
@@ -22,6 +22,11 @@ const SPEED_OPTIONS = [
   { value: 2, label: '2x' }
 ]
 
+interface DropdownPosition {
+  left: number
+  top: number
+}
+
 /**
  * Renders a playback rate selector for a video player, allowing users to customize available playback speeds and quickly switch between them.
  *
@@ -43,6 +48,24 @@ export function PlaybackRateSelector({
 
   // 管理哪些速度选项被勾选（默认勾选常用的几个）
   const [selectedRates, setSelectedRates] = useState<Set<number>>(new Set([0.75, 1, 1.25, 1.5, 2]))
+
+  // 下拉面板位置状态
+  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({ left: 0, top: 0 })
+
+  // refs for positioning calculation
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Calculate dropdown position using useLayoutEffect
+  useLayoutEffect(() => {
+    if (isDropdownOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        left: buttonRect.left,
+        top: buttonRect.top - 8
+      })
+    }
+  }, [isDropdownOpen])
 
   const handlePlaybackRateChange = useCallback(
     (value: number) => {
@@ -112,6 +135,7 @@ export function PlaybackRateSelector({
     <div style={{ ...styles.playbackRateControl, zIndex: 'auto' }} data-playback-rate-selector>
       <Tooltip title="播放速度设置">
         <Button
+          ref={buttonRef}
           size="small"
           disabled={!isVideoLoaded}
           icon={<ThunderboltOutlined />}
@@ -158,12 +182,11 @@ export function PlaybackRateSelector({
       {/* 下拉选择面板 */}
       {isDropdownOpen && (
         <div
+          ref={dropdownRef}
           style={{
             position: 'fixed',
-            bottom: 'auto',
-            top: 'auto',
-            left: 'auto',
-            right: 'auto',
+            left: `${dropdownPosition.left}px`,
+            top: `${dropdownPosition.top}px`,
             transform: 'translateY(-100%)',
             background: token.colorBgElevated,
             border: `1px solid ${token.colorBorderSecondary}`,
@@ -174,17 +197,6 @@ export function PlaybackRateSelector({
             minWidth: '400px',
             maxWidth: '480px',
             padding: '12px 16px'
-          }}
-          ref={(element) => {
-            if (element) {
-              // 动态计算位置，确保面板显示在按钮上方
-              const button = element.parentElement?.querySelector('button')
-              if (button) {
-                const buttonRect = button.getBoundingClientRect()
-                element.style.left = `${buttonRect.left}px`
-                element.style.top = `${buttonRect.top - 8}px`
-              }
-            }
           }}
         >
           {/* 所有选项配置区域 - 横向网格布局 */}
