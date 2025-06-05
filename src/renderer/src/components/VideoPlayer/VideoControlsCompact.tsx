@@ -2,8 +2,8 @@ import React from 'react'
 import { Slider, Typography } from 'antd'
 import type { VideoControlsProps } from '@renderer/types'
 
-// 导入样式
-import styles from './VideoControlsCompact.module.css'
+// 导入主题样式
+import { useTheme } from '@renderer/hooks/useTheme'
 
 // 导入控制按钮组件
 import {
@@ -33,28 +33,37 @@ function formatTime(time: number): string {
 const ProgressSection = React.memo(
   ({
     seekTo,
-    isVideoLoaded
+    isVideoLoaded,
+    progressStyle,
+    sliderStyle,
+    timeDisplayStyle,
+    timeTextStyle
   }: {
     seekTo: (time: number) => void
     isVideoLoaded: boolean
+    progressStyle: React.CSSProperties
+    sliderStyle: React.CSSProperties
+    timeDisplayStyle: React.CSSProperties
+    timeTextStyle: React.CSSProperties
   }): React.JSX.Element => {
     const currentTime = useVideoTime()
     const { durationRef } = useVideoPlayerContext()
     const duration = durationRef.current
 
     return (
-      <div className={styles.progressSection}>
-        <Slider
-          min={0}
-          max={duration}
-          value={currentTime}
-          onChange={seekTo}
-          className={styles.progressSlider}
-          disabled={!isVideoLoaded}
-          tooltip={{ formatter: (value) => formatTime(value || 0) }}
-        />
-        <div className={styles.timeDisplay}>
-          <Text className={styles.timeText}>
+      <div style={progressStyle}>
+        <div style={sliderStyle}>
+          <Slider
+            min={0}
+            max={duration}
+            value={currentTime}
+            onChange={seekTo}
+            disabled={!isVideoLoaded}
+            tooltip={{ formatter: (value) => formatTime(value || 0) }}
+          />
+        </div>
+        <div style={timeDisplayStyle}>
+          <Text style={timeTextStyle}>
             {formatTime(currentTime)} / {formatTime(duration)}
           </Text>
         </div>
@@ -64,70 +73,64 @@ const ProgressSection = React.memo(
 )
 ProgressSection.displayName = 'ProgressSection'
 
+/**
+ * Renders a compact video playback control bar with progress slider, playback, subtitle, and system controls.
+ *
+ * @param isVideoLoaded - Indicates whether the video is loaded and controls should be enabled.
+ * @param videoError - Error state of the video, used to disable or adjust controls as needed.
+ * @param onFullscreenToggle - Callback invoked when the fullscreen button is toggled.
+ *
+ * @returns The compact video controls UI as a React element.
+ */
 export function VideoControlsCompact({
   isVideoLoaded,
   videoError,
   onFullscreenToggle
 }: VideoControlsProps): React.JSX.Element {
+  const { styles } = useTheme()
   const { toggle, seekTo, stepBackward, stepForward } = useVideoControls()
   const subtitleControl = useSubtitleControl()
 
   return (
-    <div className={styles.compactControlsContainer}>
-      {/* 进度条 - 使用独立组件 */}
-      <ProgressSection seekTo={seekTo} isVideoLoaded={isVideoLoaded} />
+    <div style={styles.compactControlsContainer}>
+      {/* 🎵 进度条区域 */}
+      <ProgressSection
+        seekTo={seekTo}
+        isVideoLoaded={isVideoLoaded}
+        progressStyle={styles.progressSection}
+        sliderStyle={styles.progressSlider}
+        timeDisplayStyle={styles.timeDisplay}
+        timeTextStyle={styles.timeText}
+      />
 
-      {/* 主控制区 */}
-      <div className={styles.mainControls}>
-        {/* 左侧功能按钮 */}
-        <div className={styles.leftControls}>
-          {/* 循环播放 */}
+      {/* 🎮 控制按钮区域 */}
+      <div style={styles.mainControls}>
+        {/* 👈 左侧辅助控制 */}
+        <div style={styles.leftControls}>
           <LoopToggleButton isVideoLoaded={isVideoLoaded} />
-
-          {/* 自动暂停 */}
           <AutoPauseButton isVideoLoaded={isVideoLoaded} />
-
-          {/* 字幕显示模式控制 */}
           <SubtitleModeSelector />
         </div>
 
-        {/* 中央播放控制 */}
-        <PlaybackControlButtons
-          isVideoLoaded={isVideoLoaded}
-          videoError={videoError}
-          onPreviousSubtitle={subtitleControl.goToPreviousSubtitle}
-          onStepBackward={stepBackward}
-          onPlayPause={toggle}
-          onStepForward={stepForward}
-          onNextSubtitle={subtitleControl.goToNextSubtitle}
-          className={styles.centerControls}
-          buttonClassName={styles.controlBtn}
-          playPauseClassName={styles.playPauseBtn}
-        />
+        {/* 🎯 中央播放控制 */}
+        <div style={styles.centerControls}>
+          <PlaybackControlButtons
+            isVideoLoaded={isVideoLoaded}
+            videoError={videoError}
+            onPreviousSubtitle={subtitleControl.goToPreviousSubtitle}
+            onStepBackward={stepBackward}
+            onPlayPause={toggle}
+            onStepForward={stepForward}
+            onNextSubtitle={subtitleControl.goToNextSubtitle}
+          />
+        </div>
 
-        {/* 右侧系统控制 */}
-        <div className={styles.rightControls}>
-          {/* 播放倍数 */}
+        {/* 👉 右侧系统控制 */}
+        <div style={styles.rightControls}>
           <PlaybackRateSelector isVideoLoaded={isVideoLoaded} />
-
-          {/* 音量控制 */}
-          <VolumeControl
-            className={styles.volumeControl}
-            sliderClassName={styles.volumeSliderPopup}
-            sliderVerticalClassName={styles.volumeSliderVertical}
-            textClassName={styles.volumeText}
-            buttonClassName={styles.controlBtn}
-          />
-
-          {/* 全屏按钮 */}
-          <FullscreenButton onFullscreenToggle={onFullscreenToggle} className={styles.controlBtn} />
-
-          {/* 设置按钮 */}
-          <SettingsButton
-            className={styles.settingsControl}
-            popupClassName={styles.settingsPopup}
-            buttonClassName={styles.controlBtn}
-          />
+          <VolumeControl />
+          <FullscreenButton onFullscreenToggle={onFullscreenToggle} />
+          <SettingsButton />
         </div>
       </div>
     </div>

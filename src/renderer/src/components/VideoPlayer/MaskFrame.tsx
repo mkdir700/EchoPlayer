@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, memo } from 'react'
 import type { SubtitleMarginsState } from '@renderer/hooks/useSubtitleState'
 import { useMaskFrame } from '@renderer/hooks/useMaskFrame'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
-import styles from './Subtitle.module.css'
+import { useTheme } from '@renderer/hooks/useTheme'
 import RendererLogger from '@renderer/utils/logger'
 
 interface MaskFrameProps {
@@ -15,6 +15,23 @@ interface MaskFrameProps {
   onMaskFrameMouseLeave?: () => void
 }
 
+/**
+ * Renders an interactive rectangular mask overlay for positioning subtitles or similar elements over a video.
+ *
+ * The mask frame can be dragged and resized within the container, and reset to match the video display area. Visual cues and controls are shown on hover or when active. Styling is dynamically derived from the current theme.
+ *
+ * @param maskFrame - The current position and size of the mask frame, as percentages relative to the container.
+ * @param updateMaskFrame - Callback to update the mask frame's position and size.
+ * @param containerRef - Ref to the container DOM element.
+ * @param onResetToVideo - Optional callback invoked after resetting the mask frame to the video area.
+ * @param isMaskFrameActive - If true, the mask frame border is shown as active regardless of hover state.
+ * @param onMaskFrameMouseEnter - Optional callback for mouse enter events on the mask frame.
+ * @param onMaskFrameMouseLeave - Optional callback for mouse leave events on the mask frame.
+ *
+ * @returns The rendered mask frame element with drag, resize, and reset controls.
+ *
+ * @remark The mask frame's minimum size is clamped to 10% of the container's width and height.
+ */
 function MaskFrame({
   maskFrame,
   updateMaskFrame,
@@ -26,6 +43,7 @@ function MaskFrame({
 }: MaskFrameProps): React.JSX.Element {
   const { displayAspectRatio } = usePlayingVideoContext()
   const maskFrameController = useMaskFrame(maskFrame, updateMaskFrame, containerRef)
+  const { token } = useTheme()
 
   // 添加全局事件监听
   useEffect(() => {
@@ -114,6 +132,78 @@ function MaskFrame({
     onMaskFrameMouseLeave?.()
   }
 
+  // 计算遮罩框样式
+  const maskFrameStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: `${maskFrame.left}%`,
+    top: `${maskFrame.top}%`,
+    width: `${maskFrame.width}%`,
+    height: `${maskFrame.height}%`,
+    border: shouldShowBorder ? `2px dashed ${token.colorPrimary}` : 'none',
+    backgroundColor: 'transparent',
+    zIndex: 6,
+    pointerEvents: 'auto',
+    borderRadius: token.borderRadiusLG,
+    transition:
+      maskFrameController.isDragging || maskFrameController.isResizing
+        ? 'none'
+        : `all ${token.motionDurationMid} ease-in-out`,
+    cursor: maskFrameController.isDragging ? 'grabbing' : 'grab',
+    minWidth: '10%',
+    minHeight: '10%',
+    maxWidth: '100%',
+    maxHeight: '100%'
+  }
+
+  // 提示文字样式
+  const tooltipStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: token.paddingXS,
+    left: token.paddingSM,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: token.fontSizeSM,
+    fontWeight: 'bold',
+    textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+    borderRadius: token.borderRadiusSM,
+    pointerEvents: 'none'
+  }
+
+  // 重置按钮样式
+  const resetButtonStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: token.paddingXS,
+    right: token.paddingSM,
+    background: `rgba(${token.colorPrimary
+      .slice(1)
+      .match(/.{2}/g)
+      ?.map((hex) => parseInt(hex, 16))
+      .join(', ')}, 0.8)`,
+    color: 'white',
+    border: 'none',
+    borderRadius: token.borderRadiusSM,
+    padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+    fontSize: token.fontSizeSM - 1,
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: `all ${token.motionDurationFast} ease`,
+    zIndex: 10,
+    pointerEvents: 'auto'
+  }
+
+  // 调整大小控制点基础样式
+  const resizeHandleBaseStyle: React.CSSProperties = {
+    position: 'absolute',
+    background: token.colorPrimary,
+    border: '2px solid rgba(255, 255, 255, 0.9)',
+    zIndex: 50,
+    transition: `all ${token.motionDurationFast}`,
+    pointerEvents: 'auto',
+    width: '12px',
+    height: '12px'
+  }
+
   RendererLogger.componentRender({
     component: 'MaskFrame',
     props: {
@@ -126,79 +216,30 @@ function MaskFrame({
 
   return (
     <div
-      className={styles.maskFrame}
-      style={{
-        position: 'absolute',
-        left: `${maskFrame.left}%`,
-        top: `${maskFrame.top}%`,
-        width: `${maskFrame.width}%`,
-        height: `${maskFrame.height}%`,
-        border: shouldShowBorder ? '2px dashed rgba(102, 126, 234, 0.8)' : 'none',
-        backgroundColor: 'transparent',
-        zIndex: 6,
-        pointerEvents: 'auto', // 允许鼠标事件
-        borderRadius: '8px',
-        transition:
-          maskFrameController.isDragging || maskFrameController.isResizing
-            ? 'none'
-            : 'all 0.3s ease-in-out',
-        cursor: maskFrameController.isDragging ? 'grabbing' : 'grab',
-        // 确保定位框在窗口变化时保持可见性
-        minWidth: '10%',
-        minHeight: '10%',
-        maxWidth: '100%',
-        maxHeight: '100%'
-      }}
+      style={maskFrameStyle}
       onMouseDown={maskFrameController.handleMouseDown}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* 提示文字 - 只在悬停时显示 */}
       {(maskFrameController.isHovering || shouldShowBorder) && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '8px',
-            left: '12px',
-            color: 'rgba(255, 255, 255, 0.8)',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            textShadow: '1px 1px 2px rgba(0, 0, 0, 0.8)',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            pointerEvents: 'none'
-          }}
-        >
-          定位框 - 可拖拽和调整大小
-        </div>
+        <div style={tooltipStyle}>定位框 - 可拖拽和调整大小</div>
       )}
 
       {/* 重置按钮 */}
       {(maskFrameController.isHovering || shouldShowBorder) && (
         <button
           onClick={handleResetToVideo}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '12px',
-            background: 'rgba(102, 126, 234, 0.8)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '4px 8px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            zIndex: 10,
-            pointerEvents: 'auto'
-          }}
+          style={resetButtonStyle}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(102, 126, 234, 1)'
+            e.currentTarget.style.background = token.colorPrimary
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(102, 126, 234, 0.8)'
+            e.currentTarget.style.background = `rgba(${token.colorPrimary
+              .slice(1)
+              .match(/.{2}/g)
+              ?.map((hex) => parseInt(hex, 16))
+              .join(', ')}, 0.8)`
           }}
           onMouseDown={(e) => {
             e.stopPropagation() // 防止触发拖拽
@@ -213,55 +254,47 @@ function MaskFrame({
         <>
           {/* 右下角 */}
           <div
-            className={`${styles.resizeHandle} ${styles.resizeHandleSE}`}
-            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'se')}
             style={{
-              position: 'absolute',
+              ...resizeHandleBaseStyle,
               bottom: 0,
               right: 0,
-              width: '12px',
-              height: '12px',
-              cursor: 'se-resize'
+              cursor: 'se-resize',
+              borderRadius: '3px 0 8px 0'
             }}
+            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'se')}
           />
           {/* 左下角 */}
           <div
-            className={`${styles.resizeHandle} ${styles.resizeHandleSW}`}
-            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'sw')}
             style={{
-              position: 'absolute',
+              ...resizeHandleBaseStyle,
               bottom: 0,
               left: 0,
-              width: '12px',
-              height: '12px',
-              cursor: 'sw-resize'
+              cursor: 'sw-resize',
+              borderRadius: '0 3px 8px 0'
             }}
+            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'sw')}
           />
           {/* 右上角 */}
           <div
-            className={`${styles.resizeHandle} ${styles.resizeHandleNE}`}
-            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'ne')}
             style={{
-              position: 'absolute',
+              ...resizeHandleBaseStyle,
               top: 0,
               right: 0,
-              width: '12px',
-              height: '12px',
-              cursor: 'ne-resize'
+              cursor: 'ne-resize',
+              borderRadius: '3px 0 0 8px'
             }}
+            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'ne')}
           />
           {/* 左上角 */}
           <div
-            className={`${styles.resizeHandle} ${styles.resizeHandleNW}`}
-            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'nw')}
             style={{
-              position: 'absolute',
+              ...resizeHandleBaseStyle,
               top: 0,
               left: 0,
-              width: '12px',
-              height: '12px',
-              cursor: 'nw-resize'
+              cursor: 'nw-resize',
+              borderRadius: '0 3px 0 8px'
             }}
+            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'nw')}
           />
         </>
       )}

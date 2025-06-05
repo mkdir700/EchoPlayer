@@ -3,9 +3,10 @@ import { Space, Typography } from 'antd'
 import { MessageOutlined } from '@ant-design/icons'
 import { List as VirtualizedList, AutoSizer, ListRowProps } from 'react-virtualized'
 import 'react-virtualized/styles.css'
+import './SubtitleListContent.css'
 import { SubtitleListItem } from './SubtitleListItem'
 import { formatTime } from '@renderer/utils/helpers'
-import styles from './SubtitleListContent.module.css'
+import { useTheme } from '@renderer/hooks/useTheme'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
@@ -28,7 +29,15 @@ const getItemHeight = (): number => {
   return ITEM_HEIGHT
 }
 
+/**
+ * Renders a virtualized, auto-scrolling list of subtitle items synchronized with video playback.
+ *
+ * Displays subtitle items in a scrollable list, automatically keeping the active subtitle centered as the video plays. Handles user-initiated scrolling by temporarily disabling auto-scroll, and provides instant or smooth scrolling based on context. Shows an empty state when no subtitles are loaded.
+ *
+ * @returns The rendered subtitle list content as a React element.
+ */
 export function SubtitleListContent(): React.JSX.Element {
+  const { token, styles } = useTheme()
   const subtitleListContext = useSubtitleListContext()
   const { volumeRef, playbackRateRef } = useVideoPlaybackSettingsContext()
   const { restoreVideoState } = useVideoControls()
@@ -142,7 +151,18 @@ export function SubtitleListContent(): React.JSX.Element {
       const isActive = index === activeSubtitleIndex
 
       return (
-        <div key={key} style={style}>
+        <div
+          key={key}
+          style={{
+            ...style,
+            // 确保行容器没有边框
+            border: 'none',
+            outline: 'none',
+            padding: 0,
+            margin: 0,
+            background: 'transparent'
+          }}
+        >
           <SubtitleListItem
             item={item}
             index={index}
@@ -298,25 +318,16 @@ export function SubtitleListContent(): React.JSX.Element {
   }, [])
 
   return (
-    <div className={styles.subtitleListContainerNoHeader}>
+    <div className="subtitle-list-container" style={styles.subtitleListContainerNoHeader}>
       {subtitleItemsRef.current.length > 0 && (
-        <div
-          style={{
-            padding: '12px 16px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 0%, transparent 100%)'
-          }}
-        >
-          <Text style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+        <div style={styles.subtitleListHeader}>
+          <Text style={{ fontSize: 12, color: token.colorTextTertiary }}>
             字幕列表 ({subtitleItemsRef.current.length})
           </Text>
           <Space>{currentSubtitleIndexRef.current >= 0 && <AimButton />}</Space>
         </div>
       )}
-      <div className={styles.subtitleListContent}>
+      <div style={styles.subtitleListContent}>
         {subtitleItemsRef.current.length > 0 ? (
           <AutoSizer defaultHeight={100}>
             {({ height, width }) => (
@@ -330,11 +341,17 @@ export function SubtitleListContent(): React.JSX.Element {
                 onScroll={handleScroll}
                 overscanRowCount={10} // 预渲染额外的行以提高滚动体验
                 scrollToAlignment="center" // 改为居中对齐，让当前字幕显示在列表中间
+                style={{
+                  ...styles.subtitleListVirtualizedList,
+                  // 额外确保没有意外的边框
+                  outline: 'none',
+                  border: 'none'
+                }}
               />
             )}
           </AutoSizer>
         ) : (
-          <div className={styles.emptyState}>
+          <div style={styles.subtitleListEmptyState}>
             <MessageOutlined style={{ fontSize: 32, marginBottom: 16, opacity: 0.5 }} />
             <div>暂无字幕文件</div>
             <div style={{ fontSize: 12, marginTop: 8 }}>

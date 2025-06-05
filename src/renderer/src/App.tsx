@@ -15,19 +15,21 @@ import { PlayingVideoProvider } from '@renderer/contexts/PlayingVideoContext'
 import { SubtitleListProvider } from '@renderer/contexts/SubtitleListContext'
 import { VideoPlayerProvider } from '@renderer/contexts/VideoPlayerContext'
 import { useSubtitleReset } from '@renderer/hooks/useSubtitleReset'
+import { ThemeProvider } from '@renderer/contexts/ThemeContext'
 
 // 导入类型
 import { PageType } from '@renderer/types'
-
-// 导入样式
-import styles from './App.module.css'
 
 // 导入性能监控工具
 import { performanceMonitor } from '@renderer/utils/performance'
 
 const { Content } = Layout
 
-// 内部组件，用于在Provider内部启用全局功能
+/**
+ * Renders the main application content with page navigation and context providers.
+ *
+ * Manages the current page state and conditionally renders the appropriate page component. Provides global subtitle reset functionality and wraps content with video-related context providers. Handles navigation between home, play, favorites, about, and settings pages.
+ */
 function AppContent(): React.JSX.Element {
   // 启用字幕重置功能和全局快捷键
   useSubtitleReset()
@@ -55,7 +57,7 @@ function AppContent(): React.JSX.Element {
       <>
         {/* 主页 */}
         {currentPage === 'home' && (
-          <div className={styles.pageContainer}>
+          <div>
             <HomePage onNavigateToPlay={handleNavigateToPlay} />
           </div>
         )}
@@ -63,7 +65,7 @@ function AppContent(): React.JSX.Element {
         {/* 播放页面  */}
         {currentPage === 'play' && (
           <SubtitleListProvider>
-            <div className={styles.pageContainer}>
+            <div>
               <PlayPage onBack={handleBackToHome} />
             </div>
           </SubtitleListProvider>
@@ -71,17 +73,17 @@ function AppContent(): React.JSX.Element {
 
         {/* 其他页面 - 条件渲染，覆盖在播放页面之上 */}
         {currentPage === 'favorites' && (
-          <div className={`${styles.pageContainer} ${styles.otherPage}`}>
+          <div>
             <FavoritesPage />
           </div>
         )}
         {currentPage === 'about' && (
-          <div className={`${styles.pageContainer} ${styles.otherPage}`}>
+          <div>
             <AboutPage />
           </div>
         )}
         {currentPage === 'settings' && (
-          <div className={`${styles.pageContainer} ${styles.otherPage}`}>
+          <div>
             <SettingsPage />
           </div>
         )}
@@ -92,14 +94,14 @@ function AppContent(): React.JSX.Element {
   return (
     <PlayingVideoProvider>
       <VideoPlayerProvider>
-        <Layout className={styles.appLayout}>
+        <Layout>
           {currentPage !== 'play' ? (
             <>
               <AppHeader currentPage={currentPage} onPageChange={setCurrentPage} />
-              <Content className={styles.appContent}>{renderPageContent}</Content>
+              <Content>{renderPageContent}</Content>
             </>
           ) : (
-            <div className={styles.playPageFullscreen}>{renderPageContent}</div>
+            <div>{renderPageContent}</div>
           )}
         </Layout>
       </VideoPlayerProvider>
@@ -107,12 +109,21 @@ function AppContent(): React.JSX.Element {
   )
 }
 
+/**
+ * The root component that sets up global providers and renders the main application content.
+ *
+ * Wraps the application with theme and keyboard shortcut contexts, and displays update notifications.
+ *
+ * @returns The main application JSX element.
+ */
 function App(): React.JSX.Element {
   return (
-    <ShortcutProvider>
-      <AppContent />
-      <UpdateNotification />
-    </ShortcutProvider>
+    <ThemeProvider>
+      <ShortcutProvider>
+        <AppContent />
+        <UpdateNotification />
+      </ShortcutProvider>
+    </ThemeProvider>
   )
 }
 

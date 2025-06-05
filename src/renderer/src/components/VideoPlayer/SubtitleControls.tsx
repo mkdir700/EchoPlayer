@@ -1,7 +1,8 @@
 import React from 'react'
 import { Button, Tooltip } from 'antd'
+import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
 import { BACKGROUND_TYPES, type BackgroundType } from '@renderer/hooks/useSubtitleState'
-import styles from './Subtitle.module.css'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 interface SubtitleControlsProps {
   isMaskMode: boolean
@@ -24,17 +25,41 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
   onReset,
   onExpandHorizontally
 }) => {
+  const { token, styles } = useTheme()
   const currentBackgroundConfig =
     BACKGROUND_TYPES.find((bg) => bg.type === backgroundType) || BACKGROUND_TYPES[0]
 
-  const dynamicControlButtonStyle: React.CSSProperties = {
+  // Dynamic sizing based on props
+  const dynamicSizing: React.CSSProperties = {
     width: `${buttonSize}px`,
     height: `${buttonSize}px`,
     fontSize: `${iconSize}px`
   }
 
+  // Mask mode button styling using theme tokens
+  const getMaskModeButtonStyle = (): React.CSSProperties => ({
+    ...styles.subtitleControlButton,
+    ...dynamicSizing,
+    ...(isMaskMode
+      ? styles.subtitleControlButtonMaskActive
+      : styles.subtitleControlButtonMaskInactive)
+  })
+
+  // Regular control button styling using theme tokens
+  const getRegularButtonStyle = (): React.CSSProperties => ({
+    ...styles.subtitleControlButton,
+    ...dynamicSizing,
+    color: `${token.colorWhite} !important`
+  })
+
+  // Icon styling using theme system
+  const getIconStyle = (isMaskButton = false): React.CSSProperties => ({
+    ...(isMaskButton ? styles.subtitleControlIconMask : styles.subtitleControlIcon),
+    fontSize: `${iconSize}px`
+  })
+
   return (
-    <div className={styles.subtitleControls}>
+    <div style={styles.subtitleControls}>
       <Tooltip title={`遮罩模式: ${isMaskMode ? '开启' : '关闭'}`}>
         <Button
           size="small"
@@ -43,10 +68,13 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
             e.stopPropagation()
             onToggleMaskMode()
           }}
-          className={`${styles.controlButton} ${isMaskMode ? styles.active : ''}`}
-          style={dynamicControlButtonStyle}
+          style={getMaskModeButtonStyle()}
         >
-          <span style={{ fontSize: `${iconSize}px`, lineHeight: 1 }}>{isMaskMode ? '⊞' : '⊡'}</span>
+          {isMaskMode ? (
+            <EyeInvisibleOutlined style={getIconStyle(true)} />
+          ) : (
+            <EyeOutlined style={getIconStyle(true)} />
+          )}
         </Button>
       </Tooltip>
       <Tooltip title={`背景类型: ${currentBackgroundConfig.label}`}>
@@ -57,12 +85,9 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
             e.stopPropagation()
             onToggleBackgroundType()
           }}
-          className={styles.controlButton}
-          style={dynamicControlButtonStyle}
+          style={getRegularButtonStyle()}
         >
-          <span style={{ fontSize: `${iconSize}px`, lineHeight: 1 }}>
-            {currentBackgroundConfig.icon}
-          </span>
+          <span style={getIconStyle()}>{currentBackgroundConfig.icon}</span>
         </Button>
       </Tooltip>
       <Tooltip title="重置位置和大小">
@@ -73,10 +98,9 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
             e.stopPropagation()
             onReset()
           }}
-          className={styles.controlButton}
-          style={dynamicControlButtonStyle}
+          style={getRegularButtonStyle()}
         >
-          <span style={{ fontSize: `${iconSize}px`, lineHeight: 1 }}>↺</span>
+          <span style={getIconStyle()}>↺</span>
         </Button>
       </Tooltip>
       <Tooltip title="铺满左右区域">
@@ -87,10 +111,9 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
             e.stopPropagation()
             onExpandHorizontally()
           }}
-          className={styles.controlButton}
-          style={dynamicControlButtonStyle}
+          style={getRegularButtonStyle()}
         >
-          <span style={{ fontSize: `${iconSize}px`, lineHeight: 1 }}>↔</span>
+          <span style={getIconStyle()}>↔</span>
         </Button>
       </Tooltip>
     </div>

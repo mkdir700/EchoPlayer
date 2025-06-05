@@ -3,15 +3,24 @@ import { Button, Tooltip } from 'antd'
 import { PauseCircleFilled } from '@ant-design/icons'
 import { useIsAutoPause } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
 import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
-import styles from '../VideoControlsCompact.module.css'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 interface AutoPauseButtonProps {
   isVideoLoaded: boolean
 }
 
+/**
+ * Renders a button that toggles automatic pausing of video playback at subtitle boundaries.
+ *
+ * When enabled, the video will automatically pause after each subtitle finishes displaying, allowing users to review subtitles at their own pace. The button is disabled if the video is not loaded and visually indicates whether auto-pause is active.
+ *
+ * @param isVideoLoaded - Indicates whether the video is currently loaded and ready for interaction.
+ * @returns The rendered auto-pause toggle button component.
+ */
 export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.JSX.Element {
+  const { styles } = useTheme()
   const isAutoPause = useIsAutoPause()
   const subtitleControl = useSubtitleControl()
 
@@ -125,7 +134,10 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
           e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
         }}
         type="text"
-        className={`${styles.controlBtn} ${isAutoPause ? styles.activeBtn : ''}`}
+        style={{
+          ...styles.controlBtn,
+          ...(isAutoPause ? styles.controlBtnActive : {})
+        }}
         disabled={!isVideoLoaded}
         size="small"
       />

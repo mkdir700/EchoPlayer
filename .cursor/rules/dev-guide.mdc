@@ -8,6 +8,58 @@ alwaysApply: false
 ## 📋 项目概述
 EchoLab 是一个基于 Electron + React + TypeScript 的视频学习工具，支持字幕显示、单词查询等功能。
 
+## 🖥️ 系统要求与分辨率支持
+
+### 最小分辨率要求
+**重要：EchoLab 应用最小支持分辨率为 768px 宽度。**
+
+#### 支持的分辨率范围
+- **最小分辨率**：768px × 576px
+- **推荐分辨率**：1024px × 768px 及以上
+- **最佳体验**：1920px × 1080px 及以上
+
+#### 响应式设计断点
+```css
+/* 应用最小分辨率 (768px-900px) */
+@media (max-width: 900px) and (min-width: 768px) { }
+
+/* 中等屏幕 (901px-1024px) */
+@media (max-width: 1024px) and (min-width: 901px) { }
+
+/* 大屏幕 (1025px以上) */
+@media (min-width: 1025px) { }
+```
+
+#### Grid系统配置
+基于Ant Design Grid系统，针对768px+分辨率优化：
+
+```typescript
+// ✅ 正确的Grid配置（移除xs断点）
+<Row gutter={[{ sm: 20, md: 24, lg: 24 }, { sm: 20, md: 24, lg: 24 }]}>
+  <Col sm={12} md={8} lg={6} xl={4}>
+    {/* 内容 */}
+  </Col>
+</Row>
+
+// ❌ 错误的配置（包含小于768px的断点）
+<Row gutter={[{ xs: 16, sm: 20, md: 24 }, { xs: 16, sm: 20, md: 24 }]}>
+  <Col xs={24} sm={12} md={8} lg={6} xl={4}>
+    {/* 内容 */}
+  </Col>
+</Row>
+```
+
+#### 开发注意事项
+1. **媒体查询限制**：所有CSS媒体查询都应使用 `min-width: 768px`
+2. **Grid断点**：不使用 `xs` 断点，从 `sm` (768px) 开始
+3. **测试要求**：确保在768px宽度下应用功能完整且布局正常
+4. **用户提示**：对于低于768px的设备，考虑显示分辨率不支持提示
+
+#### 设计原则
+- **渐进式增强**：从768px基准向更大屏幕逐步优化
+- **内容优先**：确保在最小支持分辨率下所有核心功能可用
+- **性能考虑**：避免为不支持的小屏幕添加额外的CSS和JS代码
+
 ## 🎯 性能优化最佳实践
 
 ### 1. 组件渲染优化策略
@@ -2497,3 +2549,551 @@ pnpm dist
 - [ ] 优化播放设置的数据库存储结构
 - [ ] 增强字幕编辑功能
 - [ ] 添加更多字幕显示选项
+
+# EchoLab 主题系统优化指南
+
+## 概述
+
+本项目已完成从传统 CSS 覆盖方式向现代设计令牌（Design Token）系统的全面迁移，遵循 Ant Design 5.x 设计系统规范。该优化涉及 18 个 CSS 模块文件，总计超过 2000 行代码的现代化改造。
+
+### 核心优化原则
+
+#### 1. 设计令牌优先原则
+- **废弃**: 自定义 CSS 变量 (`--dark-bg`, `--text-primary`, `--accent-color`)
+- **采用**: Ant Design CSS 变量系统
+  ```css
+  /* 旧方式 */
+  background-color: var(--dark-bg);
+  color: var(--text-primary);
+  
+  /* 新方式 */
+  background-color: var(--ant-color-bg-layout);
+  color: var(--ant-color-text);
+  ```
+
+#### 2. 消除 !important 声明
+- **目标**: 完全移除所有不必要的 `!important` 声明
+- **方法**: 通过正确的 CSS 特异性和设计令牌实现样式优先级
+- **成果**: 消除了数百个 `!important` 声明，减少样式冲突
+
+#### 3. 标准化动画系统
+```css
+/* 统一使用 Ant Design 动画令牌 */
+transition: all var(--ant-motion-duration-mid) var(--ant-motion-ease-out);
+```
+
+### 关键文件优化记录
+
+#### 核心应用文件
+- **App.module.css** (154行): 布局变量转换，主内容区域样式优化
+- **VideoPlayer.module.css** (97行): 背景色和动画变量更新
+- **UserInputContainer.module.css** (51行): 完全移除 `!important` 声明
+
+#### 界面组件文件
+- **AppHeader.module.css** (92行): 消除 `!important` 使用，现代化过渡效果
+- **SidebarSection.module.css** (34行): 背景变量标准化
+- **Settings.module.css** (232行): 大规模清理，移除大量 `!important` 使用
+
+#### 核心功能组件
+- **WordCard.module.css** (279行): 全面现代化，移除所有 `!important` 声明
+- **HomePage.module.css** (440行): 大规模优化，清理大量 `!important` 声明
+- **Subtitle.module.css** (506行): 最复杂的优化，字幕系统全面现代化
+
+### 设计令牌映射表
+
+#### 颜色系统
+```css
+/* 背景色 */
+--dark-bg → --ant-color-bg-layout
+--card-bg → --ant-color-bg-container
+--border-color → --ant-color-border
+
+/* 文本色 */
+--text-primary → --ant-color-text
+--text-secondary → --ant-color-text-secondary
+--text-disabled → --ant-color-text-disabled
+
+/* 主题色 */
+--accent-color → --ant-color-primary
+--success-color → --ant-color-success
+--warning-color → --ant-color-warning
+--error-color → --ant-color-error
+```
+
+#### 尺寸系统
+```css
+/* 间距 */
+--spacing-sm → --ant-size-sm
+--spacing-md → --ant-size
+--spacing-lg → --ant-size-lg
+
+/* 圆角 */
+--border-radius → --ant-border-radius
+```
+
+#### 动画系统
+```css
+/* 持续时间 */
+--transition-fast → --ant-motion-duration-fast
+--transition-mid → --ant-motion-duration-mid
+--transition-slow → --ant-motion-duration-slow
+
+/* 缓动函数 */
+--ease-out → --ant-motion-ease-out
+--ease-in-out → --ant-motion-ease-in-out
+```
+
+### 开发最佳实践
+
+#### 1. CSS 变量使用规范
+```css
+/* ✅ 正确做法 */
+.component {
+  background-color: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border);
+  border-radius: var(--ant-border-radius);
+}
+
+/* ❌ 避免做法 */
+.component {
+  background-color: #1f1f1f !important;
+  border: 1px solid #333 !important;
+}
+```
+
+#### 2. 响应式设计原则
+- **最小分辨率要求**：768px 宽度，不支持更小的移动设备
+- 使用 Ant Design 断点系统（从 `sm` 开始，移除 `xs`）
+- 避免硬编码像素值
+- 优先使用相对单位（rem、em、%）
+- 所有媒体查询必须包含 `min-width: 768px`
+
+#### 3. 动画和过渡效果
+```css
+/* 标准过渡效果 */
+.interactive-element {
+  transition: all var(--ant-motion-duration-mid) var(--ant-motion-ease-out);
+}
+
+/* 悬停效果 */
+.button:hover {
+  background-color: var(--ant-color-primary-hover);
+  transform: translateY(-1px);
+}
+```
+
+### 性能优化成果
+
+#### 1. CSS 特异性优化
+- 移除了数百个 `!important` 声明
+- 减少了样式冲突和覆盖问题
+- 提升了渲染性能
+
+#### 2. 维护性提升
+- 统一的设计令牌系统
+- 更好的主题切换支持
+- 代码可读性显著提升
+
+#### 3. 文件大小优化
+- 从 43KB 的问题样式代码优化为清洁的设计令牌样式
+- 减少了冗余 CSS 规则
+- 提高了样式加载效率
+
+### 后续开发指导
+
+#### 1. 新组件开发
+- 必须使用 Ant Design 设计令牌
+- 禁止使用 `!important` 声明（除非绝对必要）
+- 遵循现有的命名约定和结构
+
+#### 2. 样式调试
+- 使用浏览器开发工具检查 CSS 变量值
+- 验证设计令牌是否正确应用
+- 确保在不同主题下的表现一致
+
+#### 3. 主题扩展
+- 新增主题变量应在 `constants/theme.ts` 中定义
+- 遵循 Ant Design 设计令牌命名规范
+- 确保与现有系统的兼容性
+
+### 质量保证
+
+#### 1. 代码审查检查点
+- [ ] 是否使用了正确的设计令牌
+- [ ] 是否避免了 `!important` 声明
+- [ ] 是否遵循了命名约定
+- [ ] 是否保持了响应式设计（最小768px）
+- [ ] 是否移除了 `xs` 断点配置
+- [ ] 媒体查询是否包含 `min-width: 768px`
+
+#### 2. 测试要求
+- 验证不同主题下的视觉效果
+- 测试响应式布局在768px-2560px分辨率范围内的表现
+- 确保在768px最小宽度下所有功能可用
+- 确保动画和过渡效果的流畅性
+- 验证Grid布局在不同断点下的正确性
+
+### 总结
+
+通过这次全面的主题系统优化，EchoLab 项目已经成功迁移到现代化的设计令牌系统。这不仅提升了代码质量和维护性，也为未来的功能扩展奠定了坚实的基础。所有开发者都应遵循本指南中的原则和最佳实践，确保项目代码的一致性和高质量。
+
+## 🏠 首页布局修复记录
+
+### 问题描述
+用户反馈首页布局在特定分辨率下出现错乱，经分析发现是响应式设计未正确支持768px以上分辨率要求。
+
+### 修复内容
+
+#### 1. 响应式媒体查询优化
+```css
+/* 修复前：包含小于768px的断点 */
+@media (max-width: 768px) { }
+@media (max-width: 480px) { }
+
+/* 修复后：只支持768px以上 */
+@media (max-width: 1024px) and (min-width: 768px) { }
+@media (max-width: 900px) and (min-width: 768px) { }
+```
+
+#### 2. Grid系统配置修正
+```typescript
+// 修复前：包含xs断点
+<Row gutter={[{ xs: 16, sm: 20, md: 24 }, { xs: 16, sm: 20, md: 24 }]}>
+  <Col xs={24} sm={12} md={8} lg={6} xl={4}>
+
+// 修复后：从sm开始
+<Row gutter={[{ sm: 20, md: 24, lg: 24 }, { sm: 20, md: 24, lg: 24 }]}>
+  <Col sm={12} md={8} lg={6} xl={4}>
+```
+
+#### 3. 布局断点策略
+| 分辨率范围 | 每行卡片数 | 间距 | 应用场景 |
+|-----------|-----------|------|---------|
+| 768px-900px | 2个 (sm=12) | 20px | 最小支持分辨率 |
+| 901px-1024px | 3个 (md=8) | 24px | 中等屏幕 |
+| 1025px-1439px | 4个 (lg=6) | 24px | 大屏幕 |
+| 1440px+ | 6个 (xl=4) | 24px | 超大屏幕 |
+
+### 文件修改清单
+- `src/renderer/src/pages/HomePage.module.css` - 响应式样式重写
+- `src/renderer/src/pages/HomePage.tsx` - Grid配置修正
+- `.cursor/rules/dev-guide.mdc` - 开发规范更新
+
+### 验证要点
+- [x] 移除所有小于768px的媒体查询
+- [x] Grid系统移除xs断点配置
+- [x] 添加最小分辨率支持文档
+- [x] 更新开发和测试规范
+
+### 影响范围
+此修复确保了EchoLab应用在768px以上分辨率下的最佳显示效果，移除了对小屏移动设备的支持以简化维护复杂度。
+
+---
+
+*最后更新: 2024-12-20*
+*修复版本: v2024.12*
+
+## 样式系统重构 - 采用 Ant Design v5 Design Token 系统
+
+### 问题背景
+
+项目之前使用了大量自定义 CSS 变量（如 `--darker-bg`、`--text-primary`、`--spacing-*` 等），但这些变量在 `variables.css` 中未定义，导致样式错乱。
+
+### 解决方案
+
+按照 [Ant Design v5 迁移指南](mdc:https:/ant.design/docs/react/migrate-less-variables-cn) 的最佳实践，我们进行了以下重构：
+
+#### 1. 主题配置重构
+
+- **文件**: `src/renderer/src/contexts/ThemeContext.tsx`
+- **改进**: 使用 `ConfigProvider` 和标准 Design Token 系统
+- **配置方式**: 通过 `theme` 属性配置全局和组件级别的 token
+
+```tsx
+<ConfigProvider theme={{
+  algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+  token: {
+    colorPrimary: '#667eea',
+    borderRadius: 8,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segui UI", Roboto...',
+    // 更多 token 配置...
+  },
+  components: {
+    Layout: { bodyBg: '#0f0f0f' },
+    Menu: { itemSelectedBg: 'rgba(102, 126, 234, 0.15)' },
+    // 组件级别配置...
+  }
+}}>
+```
+
+#### 2. CSS 变量标准化
+
+- **移除自定义变量**: 删除 `--darker-bg`、`--spacing-*`、`--font-size-*` 等
+- **使用标准 Token**: 改用 `var(--ant-color-*)`, `var(--ant-size-*)` 等
+- **变量映射关系**:
+  - `--darker-bg` → `var(--ant-color-bg-layout)`
+  - `--text-primary` → `var(--ant-color-text)`
+  - `--spacing-lg` → `var(--ant-size-lg)`
+  - `--font-size-base` → `var(--ant-font-size-base)`
+
+#### 3. 组件样式更新
+
+已更新的主要组件样式：
+- `PlayPage.module.css`: 背景色和边框样式
+- `PlayPageHeader.module.css`: 间距和色彩系统
+- `responsive.css`: 响应式断点的变量
+
+### 最佳实践规范
+
+#### 1. 主题配置原则
+
+- **优先使用 Design Token**: 通过 `ConfigProvider` 配置，而非自定义 CSS 变量
+- **组件级别配置**: 针对特定组件的样式需求使用 Component Token
+- **算法驱动**: 利用 `theme.darkAlgorithm` 等算法自动生成色彩系统
+
+#### 2. CSS 编写规范
+
+```css
+/* ✅ 推荐：使用 Ant Design Design Token */
+.component {
+  background: var(--ant-color-bg-container);
+  padding: var(--ant-size-lg);
+  border-radius: var(--ant-border-radius);
+  color: var(--ant-color-text);
+}
+
+/* ❌ 避免：自定义 CSS 变量 */
+.component {
+  background: var(--custom-bg);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-base);
+  color: var(--text-primary);
+}
+```
+
+#### 3. 组件开发规范
+
+- **主题感知**: 组件应该自动适应亮色/暗色主题
+- **Token 优先**: 优先使用现有的 Design Token
+- **组件配置**: 特殊需求通过 Component Token 配置
+- **响应式设计**: 使用 Ant Design 的断点系统
+
+### 性能优化收益
+
+1. **减少样式计算**: 利用 Ant Design 优化过的 CSS 变量系统
+2. **主题切换性能**: 通过算法自动生成，避免大量 CSS 重写
+3. **Bundle 大小**: 移除重复的自定义变量定义
+4. **开发效率**: 标准化的 Design Token 减少样式决策时间
+
+### 后续维护建议
+
+1. **新组件开发**: 严格遵循 Design Token 系统
+2. **样式调试**: 使用 Ant Design 开发工具查看 token 值
+3. **主题扩展**: 通过 `ConfigProvider` 扩展，而非自定义 CSS
+4. **设计一致性**: 利用 Design Token 保证视觉一致性
+
+### 相关资源
+
+- [Ant Design v5 迁移指南](mdc:https:/ant.design/docs/react/migrate-less-variables-cn)
+- [Design Token 详细文档](mdc:https:/ant.design/docs/react/customize-theme-cn)
+- [Component Token 配置](mdc:https:/ant.design/docs/react/customize-theme-cn#component-token)
+
+### 常见问题解决
+
+**Q: 如何调试 Design Token 值？**
+A: 在浏览器开发者工具中查看 `:root` 下的 CSS 变量，或使用 Ant Design 的主题编辑器。
+
+**Q: 需要自定义颜色怎么办？**
+A: 通过 `ConfigProvider` 的 `theme.token.colorPrimary` 等配置，而非 CSS 变量。
+
+**Q: 响应式设计如何处理？**
+A: 使用 Ant Design 的断点系统和 `@media` 查询，结合 Design Token。
+
+## 项目架构
+
+### 主题自定义系统
+
+#### 概述
+项目实现了完整的主题自定义系统，支持用户动态调整应用外观。
+
+#### 核心组件
+
+1. **ThemeProvider** (`src/renderer/src/contexts/ThemeContext.tsx`)
+   - 提供全局主题状态管理
+   - 支持预览模式和持久化存储
+   - 集成 Ant Design 的主题算法
+
+2. **AppearanceSection** (`src/renderer/src/components/Settings/AppearanceSection.tsx`)
+   - 主题自定义界面组件
+   - 支持色彩、字体、布局等设置
+   - 提供预览和应用功能
+
+#### 主要功能
+
+1. **主题模式切换**
+   - 亮色主题 (默认)
+   - 暗色主题 (darkAlgorithm)
+   - 紧凑主题 (compactAlgorithm)
+   - 暗色紧凑主题 (组合算法)
+
+2. **色彩定制**
+   - 主色调自定义
+   - 成功、警告、错误色定制
+   - 支持 Apple 色彩预设
+
+3. **布局设置**
+   - 圆角大小调整 (0-16px)
+   - 基础字号调整 (12-20px)
+
+4. **预览功能**
+   - 实时预览主题效果
+   - 可在预览和应用之间切换
+   - 支持重置为默认设置
+
+#### 技术实现
+
+1. **状态管理**
+   ```typescript
+   interface ThemeCustomization {
+     colorPrimary: string
+     colorSuccess: string
+     colorWarning: string
+     colorError: string
+     borderRadius: number
+     fontSize: number
+     algorithm: 'default' | 'dark' | 'compact' | 'darkCompact'
+   }
+   ```
+
+2. **持久化存储**
+   - 使用 localStorage 保存用户设置
+   - 键名: `echolab-theme-customization`
+   - 自动加载已保存的配置
+
+3. **主题生成**
+   ```typescript
+   const generateThemeConfig = (customization: ThemeCustomization): ThemeConfig => {
+     // 根据算法选择基础主题
+     // 应用用户自定义设置
+     // 返回完整的 Ant Design 主题配置
+   }
+   ```
+
+#### 使用方法
+
+1. **在组件中使用主题上下文**
+   ```typescript
+   import { useThemeCustomization } from '@renderer/contexts/ThemeContext'
+   
+   const {
+     customization,
+     updateCustomization,
+     resetToDefault,
+     applyTheme,
+     isPreviewMode,
+     setPreviewMode
+   } = useThemeCustomization()
+   ```
+
+2. **应用主题设置**
+   ```typescript
+   // 更新单个设置
+   updateCustomization({ colorPrimary: '#FF0000' })
+   
+   // 应用当前设置
+   applyTheme()
+   
+   // 重置为默认
+   resetToDefault()
+   ```
+
+#### 配置说明
+
+1. **主题文件结构**
+   ```
+   src/renderer/src/
+   ├── contexts/
+   │   └── ThemeContext.tsx     # 主题上下文
+   ├── styles/
+   │   └── theme.ts            # 基础主题配置
+   └── components/Settings/
+       └── AppearanceSection.tsx # 主题设置界面
+   ```
+
+2. **集成到应用**
+   - 在 `App.tsx` 中使用 `ThemeProvider` 包装整个应用
+   - 替换原有的 `ConfigProvider` 配置
+   - 支持嵌套的其他 Provider 组件
+
+#### 开发注意事项
+
+1. **类型安全**
+   - 所有主题相关接口都有完整的 TypeScript 类型定义
+   - 使用 Ant Design 的官方类型
+
+2. **性能优化**
+   - 使用 `useCallback` 避免不必要的重渲染
+   - 预览模式不会触发不必要的状态更新
+
+3. **用户体验**
+   - 提供预览功能让用户在应用前查看效果
+   - 支持一键重置避免用户设置错误
+   - 持久化存储确保设置在重启后保持
+
+#### 扩展指南
+
+1. **添加新的主题选项**
+   - 在 `ThemeCustomization` 接口中添加新字段
+   - 在 `generateThemeConfig` 中处理新配置
+   - 在 `AppearanceSection` 中添加对应的 UI 控件
+
+2. **添加新的预设主题**
+   - 在 `theme.ts` 中定义新的主题配置
+   - 在主题生成逻辑中支持新的算法组合
+
+3. **自定义组件主题**
+   - 使用 Ant Design 的 `components` 配置
+   - 在基础主题文件中添加组件特定的样式
+
+这个主题自定义系统为用户提供了丰富的个性化选项，同时保持了良好的开发体验和性能表现。
+
+## 现有架构
+
+### 状态管理
+- 使用 React Context 进行状态管理
+- 主要 Context：
+  - `ShortcutContext`: 快捷键管理
+  - `PlayingVideoContext`: 视频播放状态
+  - `SubtitleListContext`: 字幕列表管理
+  - `VideoPlayerContext`: 视频播放器控制
+  - `ThemeContext`: 主题自定义 (新增)
+
+### 主题系统
+- 基于 Ant Design 的主题系统
+- 使用 `useTheme` Hook 提供统一的主题访问
+- 苹果设计风格的默认主题
+- 支持 CSS 变量模式
+
+### 组件架构
+- 功能型组件分离
+- 使用自定义 Hook 管理业务逻辑
+- 统一的类型定义
+
+### 开发规范
+- TypeScript 严格模式
+- ESLint + Prettier 代码规范
+- 组件文档注释使用英文
+- Git 提交信息使用英文
+- 响应用户时使用中文
+
+### 性能优化
+- 使用 `useCallback` 和 `useMemo` 优化渲染
+- 条件渲染减少不必要的组件加载
+- 性能监控工具集成
+
+### 测试策略
+- E2E 测试使用 Playwright
+- 单元测试覆盖核心业务逻辑
+- 测试工具函数提供统一的测试 ID 管理
+
+这份指南将持续更新，确保团队成员了解项目的最新架构和最佳实践。

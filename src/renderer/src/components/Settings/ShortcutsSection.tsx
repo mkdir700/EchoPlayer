@@ -1,10 +1,94 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Button, Divider, message, Tag, Input, Typography } from 'antd'
-import { EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
+import { Button, message, Input, Typography, Modal } from 'antd'
+import type { InputRef } from 'antd'
+import { EditOutlined, CloseOutlined, KeyOutlined } from '@ant-design/icons'
 import { useShortcuts } from '@renderer/hooks/useShortcuts'
 import { DEFAULT_SHORTCUTS } from '@renderer/hooks/useShortcutManager'
+import { useTheme } from '@renderer/hooks/useTheme'
 
-const { Text, Paragraph } = Typography
+const { Text } = Typography
+
+// 快捷键显示组件
+interface KeyboardShortcutProps {
+  shortcut: string
+  className?: string
+  style?: React.CSSProperties
+}
+
+/**
+ * Displays a keyboard shortcut as a sequence of styled keycaps, using platform-specific symbols for modifiers and special keys.
+ *
+ * @param shortcut - The shortcut string to display, using '+' to separate keys (e.g., "Ctrl+Shift+K").
+ * @param className - Optional CSS class for the container.
+ * @param style - Optional inline styles for the container.
+ *
+ * @returns A React element rendering the formatted shortcut.
+ *
+ * @remark On macOS, modifier keys are shown with their respective symbols (e.g., ⌘ for Ctrl, ⌥ for Alt).
+ */
+function KeyboardShortcut({
+  shortcut,
+  className,
+  style
+}: KeyboardShortcutProps): React.JSX.Element {
+  const { token } = useTheme()
+  const isMacOS = window.navigator.platform.toLowerCase().includes('mac')
+
+  // 格式化快捷键显示
+  const formatShortcut = (key: string): string => {
+    if (isMacOS) {
+      return key
+        .replace(/Ctrl\+/g, '⌘')
+        .replace(/Alt\+/g, '⌥')
+        .replace(/Shift\+/g, '⇧')
+        .replace(/Enter/g, '↩')
+        .replace(/Escape/g, 'Esc')
+        .replace(/ArrowUp/g, '↑')
+        .replace(/ArrowDown/g, '↓')
+        .replace(/ArrowLeft/g, '←')
+        .replace(/ArrowRight/g, '→')
+    } else {
+      // Windows/Linux 样式
+      return key
+        .replace(/Enter/g, '↵')
+        .replace(/Escape/g, 'Esc')
+        .replace(/ArrowUp/g, '↑')
+        .replace(/ArrowDown/g, '↓')
+        .replace(/ArrowLeft/g, '←')
+        .replace(/ArrowRight/g, '→')
+    }
+  }
+
+  // 将快捷键拆分为单个按键
+  const keys = formatShortcut(shortcut).split('+')
+
+  return (
+    <span className={className} style={style}>
+      {keys.map((key, index) => (
+        <React.Fragment key={index}>
+          <kbd
+            style={{
+              display: 'inline-block',
+              padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+              margin: `0 ${token.marginXXS}px`,
+              backgroundColor: token.colorBgContainer,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              borderRadius: token.borderRadiusSM,
+              boxShadow: `0 1px 0 ${token.colorBorderSecondary}`,
+              fontSize: token.fontSizeSM,
+              fontFamily: 'Monaco, "SF Mono", Consolas, monospace',
+              lineHeight: 1,
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {key}
+          </kbd>
+          {index < keys.length - 1 && <span style={{ margin: `0 ${token.marginXXS}px` }}>+</span>}
+        </React.Fragment>
+      ))}
+    </span>
+  )
+}
 
 // 检测操作系统平台
 const isMac = window.navigator.platform.toLowerCase().includes('mac')
@@ -64,6 +148,21 @@ interface ShortcutItemProps {
   checkConflict: (newKey: string, currentKey: string) => string | null
 }
 
+/**
+ * Renders a single keyboard shortcut configuration item with display and edit functionality.
+ *
+ * Displays the shortcut's name, description, and current key combination. Allows users to edit the shortcut via a modal dialog that captures key input, validates against forbidden keys, and checks for conflicts with other shortcuts. Provides visual feedback and error messages during editing.
+ *
+ * @param config - The shortcut configuration object containing name, description, and key.
+ * @param currentKey - The currently assigned shortcut key combination.
+ * @param isEditing - Whether this shortcut is currently being edited.
+ * @param onEdit - Callback to initiate editing mode.
+ * @param onSave - Callback to save the new shortcut key.
+ * @param onCancel - Callback to cancel editing mode.
+ * @param checkConflict - Function to check for conflicts with other shortcuts.
+ *
+ * @returns The rendered shortcut item component.
+ */
 function ShortcutItem({
   config,
   currentKey,
@@ -76,6 +175,10 @@ function ShortcutItem({
   const [newKey, setNewKey] = useState('')
   const [isWaiting, setIsWaiting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [isHovered, setIsHovered] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false)
+  const inputRef = React.useRef<InputRef>(null)
+  const { token, styles } = useTheme()
 
   // 当开始编辑时设置等待状态
   useEffect(() => {
@@ -83,10 +186,32 @@ function ShortcutItem({
       setIsWaiting(true)
       setNewKey('')
       setErrorMessage('')
+      setModalVisible(true)
     } else {
       setIsWaiting(false)
+      setModalVisible(false)
     }
   }, [isEditing])
+
+  // 当模态框显示时，确保输入框获得焦点
+  useEffect(() => {
+    // 只在模态框显示时执行
+    if (!modalVisible) return
+
+    // 添加一个小延迟，确保模态框完全显示后再设置焦点
+    const focusInput = (): void => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
+    }
+
+    const timer = setTimeout(focusInput, 200)
+
+    // 清理函数
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [modalVisible])
 
   const formatKeyForDisplay = (keyString: string): string => {
     // 将 Ctrl 替换为平台特定的修饰键显示
@@ -179,103 +304,174 @@ function ShortcutItem({
   }
 
   return (
-    <div className="shortcut-item">
-      <div className="shortcut-info">
-        <div className="shortcut-name">
-          <Text strong style={{ color: 'var(--text-primary)' }}>
+    <div
+      style={{
+        ...styles.shortcutItem,
+        backgroundColor: isHovered ? token.colorFillQuaternary : 'transparent'
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div style={{ flex: 1 }}>
+        <div style={{ marginBottom: token.marginXXS }}>
+          <Text strong style={{ color: token.colorText, fontSize: token.fontSizeLG }}>
             {config.name}
           </Text>
         </div>
-        <Text style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{config.description}</Text>
+        <Text
+          style={{
+            color: token.colorTextDescription,
+            fontSize: token.fontSizeSM
+          }}
+        >
+          {config.description}
+        </Text>
       </div>
 
-      <div className="shortcut-key">
+      <div style={{ position: 'relative' }}>
         {isEditing ? (
-          <div
-            className={`shortcut-edit ${isWaiting ? 'waiting' : ''} ${errorMessage ? 'error' : ''}`}
-          >
-            {isWaiting && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '-24px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  fontSize: '11px',
-                  color: 'var(--accent-color)',
-                  background: 'var(--card-bg)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--border-radius-sm)',
-                  border: '1px solid var(--accent-color)',
-                  whiteSpace: 'nowrap',
-                  zIndex: 10
-                }}
-              >
-                ⌨️ 等待按键输入...
-              </div>
-            )}
+          <div style={styles.shortcutEditInput}>
             <Input
               size="small"
-              placeholder={isWaiting ? '按下新的快捷键...' : '等待输入...'}
+              placeholder="等待输入..."
               value={newKey ? formatKeyForDisplay(newKey) : ''}
-              onKeyDown={handleKeyDown}
-              className={`${isWaiting ? 'shortcut-input-waiting' : ''} ${errorMessage ? 'shortcut-input-error' : ''}`}
               style={{
                 width: 140,
-                marginRight: 8,
+                marginRight: token.marginXS,
                 background: 'transparent',
-                border: 'none'
+                border: 'none',
+                fontFamily: 'Monaco, "SF Mono", Consolas, monospace'
               }}
-              status={errorMessage ? 'error' : undefined}
-              autoFocus
               readOnly
-            />
-            <Button
-              type="text"
-              size="small"
-              icon={<CheckOutlined />}
-              onClick={handleSave}
-              disabled={!newKey || !!errorMessage}
-              style={{ color: 'var(--success-color)' }}
-              title="按 Enter 确认"
             />
             <Button
               type="text"
               size="small"
               icon={<CloseOutlined />}
               onClick={handleCancel}
-              style={{ color: 'var(--error-color)' }}
-              title="按 Esc 取消"
+              style={{ color: token.colorError }}
+              title="取消"
             />
-            {errorMessage && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  fontSize: '11px',
-                  color: '#ff4d4f',
-                  marginTop: 2,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {errorMessage}
-              </div>
-            )}
           </div>
         ) : (
-          <div className="shortcut-display">
-            <Tag className="shortcut-tag">{formatKeyForDisplay(currentKey)}</Tag>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: token.marginSM
+            }}
+          >
+            <KeyboardShortcut shortcut={currentKey} style={styles.shortcutKeyTag} />
             <Button
               type="text"
               size="small"
               icon={<EditOutlined />}
               onClick={onEdit}
-              style={{ color: 'var(--text-muted)' }}
+              style={{
+                color: token.colorTextDescription
+              }}
             />
           </div>
         )}
       </div>
+
+      {/* 快捷键设置模态框 */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+            <KeyOutlined />
+            <span>设置快捷键: {config.name}</span>
+          </div>
+        }
+        open={modalVisible}
+        footer={null}
+        closable={false}
+        maskClosable={false}
+        centered
+        width={400}
+        styles={{
+          body: {
+            padding: `${token.paddingLG}px`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+          }
+        }}
+      >
+        <div style={{ marginBottom: token.marginMD, textAlign: 'center' }}>
+          <Text type="secondary">{config.description}</Text>
+        </div>
+
+        <div
+          style={{
+            width: '100%',
+            height: 80,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: token.colorBgContainer,
+            border: `2px solid ${newKey ? token.colorPrimary : token.colorBorder}`,
+            borderRadius: token.borderRadiusLG,
+            marginBottom: token.marginLG,
+            position: 'relative',
+            transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`
+          }}
+        >
+          {isWaiting ? (
+            <div style={{ textAlign: 'center' }}>
+              <KeyOutlined
+                style={{ fontSize: 24, color: token.colorPrimary, marginBottom: token.marginSM }}
+              />
+              <div style={{ color: token.colorPrimary, fontWeight: 'bold' }}>
+                请按下快捷键组合...
+              </div>
+            </div>
+          ) : (
+            <KeyboardShortcut
+              shortcut={newKey}
+              style={{
+                fontSize: token.fontSizeLG,
+                fontWeight: 'bold'
+              }}
+            />
+          )}
+
+          <Input
+            ref={inputRef}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0
+            }}
+            onKeyDown={handleKeyDown}
+            autoFocus
+            readOnly
+          />
+        </div>
+
+        {errorMessage && (
+          <div
+            style={{
+              color: token.colorError,
+              marginBottom: token.marginMD,
+              textAlign: 'center'
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: token.marginMD }}>
+          <Button onClick={handleCancel}>取消 (Esc)</Button>
+          <Button type="primary" onClick={handleSave} disabled={!newKey || !!errorMessage}>
+            确认 (Enter)
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }
@@ -284,9 +480,18 @@ interface ShortcutsSectionProps {
   className?: string
 }
 
+/**
+ * Renders the keyboard shortcuts management section, allowing users to view, edit, reset, and export shortcut configurations.
+ *
+ * Displays a list of all configurable shortcuts, each with options to edit or resolve conflicts. Provides buttons to reset all shortcuts to their default values or export the current configuration as a JSON file.
+ *
+ * @param className - Optional CSS class for the container.
+ * @returns The rendered shortcuts management UI.
+ */
 export function ShortcutsSection({ className }: ShortcutsSectionProps): React.JSX.Element {
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
   const { shortcuts, getCurrentShortcut, updateShortcut, resetShortcuts } = useShortcuts()
+  const { token } = useTheme()
 
   const handleEditShortcut = (key: string): void => {
     setEditingShortcut(key)
@@ -342,36 +547,54 @@ export function ShortcutsSection({ className }: ShortcutsSectionProps): React.JS
   }
 
   return (
-    <Card title="快捷键设置" className={`settings-section-card ${className || ''}`}>
-      <Paragraph style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
-        自定义快捷键以提高使用效率。点击快捷键右侧的编辑按钮进行修改。
-      </Paragraph>
-
-      <div className="shortcuts-list">
-        {SHORTCUT_CONFIGS.map((config) => (
-          <ShortcutItem
-            key={config.key}
-            config={config}
-            currentKey={getCurrentShortcut(config.key)}
-            isEditing={editingShortcut === config.key}
-            onEdit={() => handleEditShortcut(config.key)}
-            onSave={(newKey) => handleSaveShortcut(config.key, newKey)}
-            onCancel={handleCancelEdit}
-            checkConflict={checkShortcutConflict}
-          />
+    <div className={className}>
+      <div
+        style={{
+          background: token.colorBgContainer,
+          borderRadius: token.borderRadius,
+          border: `1px solid ${token.colorBorder}`,
+          overflow: 'hidden',
+          marginBottom: token.marginLG
+        }}
+      >
+        {SHORTCUT_CONFIGS.map((config, index) => (
+          <div key={config.key}>
+            <ShortcutItem
+              config={config}
+              currentKey={getCurrentShortcut(config.key)}
+              isEditing={editingShortcut === config.key}
+              onEdit={() => handleEditShortcut(config.key)}
+              onSave={(newKey) => handleSaveShortcut(config.key, newKey)}
+              onCancel={handleCancelEdit}
+              checkConflict={checkShortcutConflict}
+            />
+            {index < SHORTCUT_CONFIGS.length - 1 && (
+              <div
+                style={{
+                  height: 1,
+                  background: token.colorBorder,
+                  margin: `0 ${token.paddingLG}px`
+                }}
+              />
+            )}
+          </div>
         ))}
       </div>
 
-      <Divider />
-
-      <div style={{ textAlign: 'center' }}>
-        <Button type="default" style={{ marginRight: 8 }} onClick={handleResetToDefault}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: token.marginSM
+        }}
+      >
+        <Button type="default" onClick={handleResetToDefault}>
           重置为默认
         </Button>
         <Button type="primary" onClick={handleExportConfig}>
           导出配置
         </Button>
       </div>
-    </Card>
+    </div>
   )
 }

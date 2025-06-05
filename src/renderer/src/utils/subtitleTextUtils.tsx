@@ -1,5 +1,4 @@
 import React from 'react'
-import styles from '../components/VideoPlayer/Subtitle.module.css'
 
 // 检测文本是否主要包含中文字符
 export const isChinese = (text: string): boolean => {
@@ -22,7 +21,7 @@ export const splitChineseText = (
     return (
       <span
         key={index}
-        className={`${styles.subtitleWord} ${isClickableChar ? styles.clickableWord : ''}`}
+        className={isClickableChar ? 'subtitle-word-clickable' : 'subtitle-word'}
         onMouseEnter={() => onWordHover(true)}
         onMouseLeave={() => onWordHover(false)}
         onClick={
@@ -34,7 +33,6 @@ export const splitChineseText = (
               }
             : undefined
         }
-        style={{ cursor: isClickableChar ? 'pointer' : 'default' }}
       >
         {char}
       </span>
@@ -60,7 +58,7 @@ export const splitEnglishText = (
     return (
       <span
         key={index}
-        className={`${styles.subtitleWord} ${isClickableWord ? styles.clickableWord : ''}`}
+        className={isClickableWord ? 'subtitle-word-clickable' : 'subtitle-word'}
         onMouseEnter={() => onWordHover(true)}
         onMouseLeave={() => onWordHover(false)}
         onClick={
@@ -72,7 +70,6 @@ export const splitEnglishText = (
               }
             : undefined
         }
-        style={{ cursor: isClickableWord ? 'pointer' : 'default' }}
       >
         {word}
       </span>

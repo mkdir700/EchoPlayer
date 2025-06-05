@@ -4,10 +4,9 @@ import {
   OriginalSubtitleText,
   ChineseSubtitleText,
   EnglishSubtitleText,
-  BilingualSubtitleLine,
-  SubtitlePlaceholder
+  BilingualSubtitleLine
 } from './SubtitleTextComponents'
-import styles from './Subtitle.module.css'
+
 import { useSubtitleDisplayModeControls } from '@renderer/hooks/useSubtitleDisplayMode'
 
 interface SubtitleContentProps {
@@ -32,11 +31,7 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
   // 根据显示模式渲染字幕内容
   const renderSubtitleContent = useMemo(() => {
     if (!currentSubtitle || displayMode === 'none') {
-      return (
-        <SubtitlePlaceholder
-          message={displayMode === 'none' ? '字幕已隐藏 - 悬停显示控制' : '等待字幕 - 悬停显示控制'}
-        />
-      )
+      return <></>
     }
 
     const { text, englishText, chineseText } = currentSubtitle
@@ -63,7 +58,7 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
             />
           )
         }
-        return <SubtitlePlaceholder message="没有中文字幕" />
+        return <></>
 
       case 'english':
         if (englishText) {
@@ -76,11 +71,22 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
             />
           )
         }
-        return <SubtitlePlaceholder message="没有英文字幕" />
+        return <></>
 
       case 'bilingual':
         return (
-          <div className={styles.subtitleContentBilingual}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              height: '100%',
+              gap: '8px',
+              overflow: 'hidden'
+            }}
+          >
             {englishText && (
               <BilingualSubtitleLine
                 text={englishText}

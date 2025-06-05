@@ -1,49 +1,235 @@
-import React from 'react'
-import { Layout, Menu, Typography } from 'antd'
-import { HomeOutlined, SettingOutlined } from '@ant-design/icons'
+import React, { useMemo } from 'react'
+import { Space, Button, Typography, Tooltip } from 'antd'
+import {
+  HomeOutlined,
+  SettingOutlined,
+  QuestionCircleOutlined,
+  GithubOutlined
+} from '@ant-design/icons'
 import { AppHeaderProps, PageType, NavigationItem } from '@renderer/types'
-import styles from './AppHeader.module.css'
 import { COMMON_TEST_IDS, withTestId } from '@renderer/utils/test-utils'
+import { useTheme } from '@renderer/hooks/useTheme'
+import { COMPONENT_TOKENS } from '@renderer/styles/theme'
 
-const { Header } = Layout
-const { Title } = Typography
+const { Text } = Typography
 
 // 导航菜单配置
 const navigationItems: NavigationItem[] = [
   { key: 'home', label: '首页', icon: <HomeOutlined /> },
-  // { key: 'favorites', label: '收藏', icon: <HeartOutlined /> },
-  // { key: 'about', label: '关于', icon: <InfoCircleOutlined /> },
   { key: 'settings', label: '设置', icon: <SettingOutlined /> }
 ]
 
+// 扩展 CSS 属性类型以支持 WebkitAppRegion
+interface ExtendedCSSProperties extends React.CSSProperties {
+  WebkitAppRegion?: 'drag' | 'no-drag'
+}
+
+/**
+ * Renders the application header bar with navigation and auxiliary buttons.
+ *
+ * Displays the app name, navigation buttons for switching pages, and icon buttons for help and GitHub access. The header features a glass effect, sticky positioning, and draggable regions for desktop environments.
+ *
+ * @param currentPage - The currently active page key.
+ * @param onPageChange - Callback invoked when a navigation button is clicked.
+ *
+ * @returns The styled application header component.
+ *
+ * @remark The header uses `WebkitAppRegion` styles to support draggable and non-draggable areas, suitable for Electron-like desktop applications.
+ */
 export function AppHeader({ currentPage, onPageChange }: AppHeaderProps): React.JSX.Element {
+  const { token, styles, utils } = useTheme()
+
+  // Memoize color calculations to avoid expensive hex-to-RGB conversion on every render
+  const primaryRGBA02 = useMemo(
+    () => utils.hexToRgba(token.colorPrimary, 0.02),
+    [utils, token.colorPrimary]
+  )
+
+  const primaryRGBA15 = useMemo(
+    () => utils.hexToRgba(token.colorPrimary, 0.15),
+    [utils, token.colorPrimary]
+  )
+
+  const primaryRGBA20 = useMemo(
+    () => utils.hexToRgba(token.colorPrimary, 0.2),
+    [utils, token.colorPrimary]
+  )
+
+  // Memoize header styles to avoid re-allocation on every render
+  const headerStyle = useMemo(
+    () =>
+      ({
+        height: 64, // 更高的 header 高度
+        ...styles.glassEffect,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        display: 'flex',
+        position: 'sticky',
+        top: 0,
+        zIndex: token.zIndexPopupBase,
+        WebkitAppRegion: 'drag',
+        boxShadow: styles.cardContainer.boxShadow
+      }) as ExtendedCSSProperties,
+    [
+      styles.glassEffect,
+      styles.cardContainer.boxShadow,
+      token.colorBorderSecondary,
+      token.zIndexPopupBase
+    ]
+  )
+
+  // Memoize background decoration styles
+  const backgroundDecorationStyle = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: `linear-gradient(
+        90deg,
+        ${primaryRGBA02} 0%,
+        transparent 20%,
+        transparent 80%,
+        ${primaryRGBA02} 100%
+      )`,
+      pointerEvents: 'none' as const
+    }),
+    [primaryRGBA02]
+  )
+
+  // Memoize left section styles
+  const leftSectionStyle = useMemo(
+    () =>
+      ({
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: token.paddingLG,
+        flex: '0 0 240px',
+        WebkitAppRegion: 'no-drag',
+        zIndex: 1
+      }) as ExtendedCSSProperties,
+    [token.paddingLG]
+  )
+
+  // Memoize brand text styles
+  const brandTextStyle = useMemo(
+    () => ({
+      fontSize: token.fontSizeLG,
+      fontWeight: COMPONENT_TOKENS.HEADER.BRAND_FONT_WEIGHT,
+      background: styles.gradientText.background,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text'
+    }),
+    [token.fontSizeLG, styles.gradientText.background]
+  )
+
+  // Memoize middle section styles
+  const middleSectionStyle = useMemo(
+    () =>
+      ({
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        WebkitAppRegion: 'no-drag',
+        zIndex: 1
+      }) as ExtendedCSSProperties,
+    []
+  )
+
+  // Memoize right section styles
+  const rightSectionStyle = useMemo(
+    () =>
+      ({
+        display: 'flex',
+        alignItems: 'center',
+        paddingRight: token.paddingLG,
+        gap: token.marginSM,
+        flex: '0 0 240px',
+        justifyContent: 'flex-end',
+        WebkitAppRegion: 'no-drag',
+        zIndex: 1
+      }) as ExtendedCSSProperties,
+    [token.paddingLG, token.marginSM]
+  )
+
+  // Memoize auxiliary button styles
+  const auxiliaryButtonStyle = useMemo(
+    () => ({
+      color: token.colorTextSecondary,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }),
+    [token.colorTextSecondary]
+  )
+
   return (
-    <Header className={styles.header}>
-      <div className={styles.headerLeft} {...withTestId(COMMON_TEST_IDS.APP_HEADER)}>
-        <Title level={4} style={{ color: '#ffffff', margin: 0, flexShrink: 0 }}>
-          🎬 EchoLab
-        </Title>
+    <div style={headerStyle} {...withTestId(COMMON_TEST_IDS.APP_HEADER)}>
+      {/* 背景装饰 */}
+      <div style={backgroundDecorationStyle} />
+
+      {/* 左侧：应用图标和名称 */}
+      <div style={leftSectionStyle}>
+        <Text style={brandTextStyle}>EchoLab</Text>
       </div>
 
-      {/* 导航菜单 */}
-      <div className={styles.headerCenter}>
-        <Menu
-          mode="horizontal"
-          selectedKeys={[currentPage]}
-          onClick={({ key }) => onPageChange(key as PageType)}
-          style={{
-            backgroundColor: 'transparent',
-            borderBottom: 'none'
-          }}
-          items={navigationItems.map((item) => ({
-            key: item.key,
-            icon: item.icon,
-            label: item.label
-          }))}
-        />
+      {/* 中间：导航按钮 */}
+      <div style={middleSectionStyle}>
+        <Space size={token.marginLG}>
+          {navigationItems.map((item) => (
+            <Button
+              key={item.key}
+              type="text"
+              icon={item.icon}
+              onClick={() => onPageChange(item.key as PageType)}
+              style={{
+                height: 40,
+                borderRadius: token.borderRadiusLG,
+                fontSize: token.fontSize,
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: token.marginXS,
+                padding: `0 ${token.paddingMD}px`,
+                transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
+                ...(currentPage === item.key
+                  ? {
+                      background: primaryRGBA15,
+                      color: token.colorPrimary,
+                      boxShadow: `0 2px 8px ${primaryRGBA20}`
+                    }
+                  : {
+                      color: token.colorTextSecondary
+                    })
+              }}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </Space>
       </div>
 
-      <div className={styles.headerRight}>{/* 右侧预留空间，可以放置其他功能按钮 */}</div>
-    </Header>
+      {/* 右侧：辅助功能按钮 */}
+      <div style={rightSectionStyle}>
+        <Tooltip title="帮助文档">
+          <Button
+            type="text"
+            icon={<QuestionCircleOutlined />}
+            shape="circle"
+            style={auxiliaryButtonStyle}
+          />
+        </Tooltip>
+        <Tooltip title="GitHub 仓库">
+          <Button
+            type="text"
+            icon={<GithubOutlined />}
+            shape="circle"
+            style={auxiliaryButtonStyle}
+          />
+        </Tooltip>
+      </div>
+    </div>
   )
 }
