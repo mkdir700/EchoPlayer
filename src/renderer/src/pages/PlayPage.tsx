@@ -2,17 +2,14 @@ import React, { useCallback, useMemo } from 'react'
 import { VideoSection } from '@renderer/components/VideoSection/VideoSection'
 import { SidebarSectionContainer } from '@renderer/components/SidebarSection/SidebarSectionContainer'
 import { PlayPageHeader } from '@renderer/components/PlayPageHeader'
-import { SubtitleLoadModal } from '@renderer/components/SubtitleLoadModal'
 
 // 导入所需的 hooks
-import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useShortcutCommand, useCommandShortcuts } from '@renderer/hooks/useCommandShortcuts'
 import { usePlayStateSaver } from '@renderer/hooks/usePlayStateSaver'
 import { usePlayStateInitializer } from '@renderer/hooks/usePlayStateInitializer'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { CurrentSubtitleDisplayProvider } from '@renderer/contexts/CurrentSubtitleDisplayContext'
-import type { SubtitleItem } from '@types_/shared'
 
 import { Splitter } from 'antd'
 import { VideoPlaybackSettingsProvider } from '@renderer/contexts/VideoPlaybackSettingsContext'
@@ -35,18 +32,13 @@ const PlayPageMemo = React.memo<PlayPageProps>(
     // 📹 视频播放相关 hooks - 稳定的引用
     const { toggle, stepBackward, stepForward } = useVideoControls()
 
-    // 📋 字幕相关 hooks - 稳定的引用
-    const subtitleListContext = useSubtitleListContext()
-
     // 💾 播放状态保存 - 🚀 已优化，不会导致重新渲染
     const { savePlayStateRef } = usePlayStateSaver()
 
     // 🔄 播放状态初始化
-    const { pendingVideoInfo, setPendingVideoInfo, showSubtitleModal, setShowSubtitleModal } =
-      usePlayStateInitializer({
-        showSubtitleModal: false,
-        savePlayStateRef
-      })
+    usePlayStateInitializer({
+      savePlayStateRef
+    })
 
     // 🚀 初始化命令式快捷键系统 - 只执行一次
     useCommandShortcuts()
@@ -65,37 +57,6 @@ const PlayPageMemo = React.memo<PlayPageProps>(
     useShortcutCommand('playPause', shortcutCommands.playPause)
     useShortcutCommand('stepBackward', shortcutCommands.stepBackward)
     useShortcutCommand('stepForward', shortcutCommands.stepForward)
-
-    // 📝 字幕模态框处理函数
-    const handleSubtitleModalCancel = useCallback(() => {
-      setShowSubtitleModal(false)
-      setPendingVideoInfo(null)
-    }, [setPendingVideoInfo, setShowSubtitleModal])
-
-    const handleSubtitleModalSkip = useCallback(() => {
-      setShowSubtitleModal(false)
-      setPendingVideoInfo(null)
-    }, [setPendingVideoInfo, setShowSubtitleModal])
-
-    const handleSubtitlesLoaded = useCallback(
-      async (loadedSubtitles: SubtitleItem[]) => {
-        // 加载字幕到应用状态
-        subtitleListContext.restoreSubtitles(loadedSubtitles, 0)
-        setShowSubtitleModal(false)
-        setPendingVideoInfo(null)
-
-        // 立即保存字幕数据
-        if (savePlayStateRef.current) {
-          console.log('📝 字幕加载完成，立即保存字幕数据')
-          try {
-            await savePlayStateRef.current(true)
-          } catch (error) {
-            console.error('保存字幕数据失败:', error)
-          }
-        }
-      },
-      [savePlayStateRef, setPendingVideoInfo, setShowSubtitleModal, subtitleListContext]
-    )
 
     // 🔙 返回处理 - 优化性能，确保保存状态
     const handleBack = useCallback(async () => {
@@ -151,15 +112,6 @@ const PlayPageMemo = React.memo<PlayPageProps>(
                 </Splitter.Panel>
               </Splitter>
             </div>
-
-            {/* 📝 字幕检查Modal - 移入PlayPage */}
-            <SubtitleLoadModal
-              visible={showSubtitleModal}
-              videoFilePath={pendingVideoInfo?.filePath || ''}
-              onCancel={handleSubtitleModalCancel}
-              onSkip={handleSubtitleModalSkip}
-              onSubtitlesLoaded={handleSubtitlesLoaded}
-            />
           </div>
         </VideoPlaybackSettingsProvider>
       </CurrentSubtitleDisplayProvider>

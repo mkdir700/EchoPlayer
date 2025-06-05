@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRecentPlayList } from './useRecentPlayList'
 import { FileSystemHelper } from '@renderer/utils/fileSystemHelper'
 import { parseSubtitles } from '@renderer/utils/subtitleParser'
@@ -7,21 +7,12 @@ import { usePlayingVideoContext } from './usePlayingVideoContext'
 import { useVideoControls } from './useVideoPlayerHooks'
 
 interface UsePlayStateInitializerProps {
-  /** 是否显示提示导入字幕的模态框 */
-  showSubtitleModal: boolean
   /** 保存播放状态的函数引用 */
   savePlayStateRef: React.RefObject<((force?: boolean) => Promise<void>) | null>
 }
 
 interface UsePlayStateInitializerReturn {
-  /** 待处理的视频信息 */
-  pendingVideoInfo: { filePath: string; fileName: string } | null
-  /** 是否显示字幕模态框 */
-  showSubtitleModal: boolean
-  /** 设置待处理的视频信息 */
-  setPendingVideoInfo: (info: { filePath: string; fileName: string } | null) => void
-  /** 设置是否显示字幕模态框 */
-  setShowSubtitleModal: (show: boolean) => void
+  // 移除字幕模态框相关的返回值
 }
 
 /**
@@ -36,13 +27,6 @@ export function usePlayStateInitializer({
   const subtitleListContext = useSubtitleListContext()
   const playingVideoContext = usePlayingVideoContext()
   const { restoreVideoState } = useVideoControls()
-
-  const [pendingVideoInfo, setPendingVideoInfo] = useState<{
-    filePath: string
-    fileName: string
-  } | null>(null)
-
-  const [showSubtitleModal, setShowSubtitleModal] = useState(false)
 
   // 🔧 使用 ref 来存储函数引用和状态，避免作为依赖
   const getRecentPlayByPathRef = useRef(getRecentPlayByPath)
@@ -156,12 +140,11 @@ export function usePlayStateInitializer({
       if (subtitleListContextRef.current.subtitleItemsRef.current.length === 0) {
         const found = await detectAndLoadSubtitles(currentFilePath)
 
+        // 如果没有找到字幕文件，通知 SubtitleListContext 处理
         if (!found) {
-          setPendingVideoInfo({
-            filePath: currentFilePath,
-            fileName: currentFileName || ''
-          })
-          setShowSubtitleModal(true)
+          console.log('📝 未找到同名字幕文件，显示字幕导入提示')
+          // 显示字幕导入提示
+          subtitleListContextRef.current.setShowSubtitlePrompt(true)
         }
       }
     }
@@ -176,10 +159,5 @@ export function usePlayStateInitializer({
     playingVideoContext.videoFileName
   ])
 
-  return {
-    pendingVideoInfo,
-    showSubtitleModal,
-    setPendingVideoInfo,
-    setShowSubtitleModal
-  }
+  return {}
 }
