@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Modal, Button, Typography, Spin, Alert, message } from 'antd'
 import {
   FileTextOutlined,
@@ -12,6 +12,7 @@ import { parseSubtitles } from '@renderer/utils/subtitleParser'
 import type { SubtitleItem } from '@types_/shared'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { ReactCallback } from '@renderer/types/shared'
+import { createSubtitleLoadModalStyles } from '@renderer/styles/subtitleLoadModal'
 
 const { Text } = Typography
 
@@ -37,6 +38,8 @@ export function SubtitleLoadModal({
   onSubtitlesLoaded
 }: SubtitleLoadModalProps): React.JSX.Element {
   const { token, styles } = useTheme()
+  const componentStyles = useMemo(() => createSubtitleLoadModalStyles(token), [token])
+
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(false)
   const [subtitleFiles, setSubtitleFiles] = useState<SubtitleFileInfo[]>([])
@@ -46,136 +49,6 @@ export function SubtitleLoadModal({
 
   // 用于取消文件读取操作的引用
   const cancelTokenRef = useRef<{ cancelled: boolean }>({ cancelled: false })
-
-  // 组件特有样式
-  const componentStyles = {
-    modalTitle: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: token.marginMD,
-      color: token.colorText,
-      fontSize: token.fontSizeXL,
-      fontWeight: token.fontWeightStrong
-    },
-    titleIcon: {
-      color: token.colorPrimary,
-      fontSize: token.fontSizeHeading2,
-      filter: `drop-shadow(0 0 8px ${token.colorPrimary}30)`
-    },
-    modalContent: {
-      padding: token.paddingXL,
-      position: 'relative' as const
-    },
-    checkingSection: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      gap: token.marginXL,
-      padding: `${token.paddingXL}px ${token.paddingXL}px`,
-      textAlign: 'center' as const
-    },
-    checkingText: {
-      color: token.colorText,
-      fontSize: token.fontSizeLG,
-      fontWeight: token.fontWeightStrong
-    },
-    foundSection: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: token.marginXL
-    },
-    notFoundSection: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: token.marginXL
-    },
-    subtitleList: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: token.marginSM,
-      maxHeight: '200px',
-      overflowY: 'auto' as const,
-      padding: token.paddingSM,
-      background: token.colorBgContainer,
-      borderRadius: token.borderRadiusLG,
-      border: `1px solid ${token.colorBorderSecondary}`
-    },
-    subtitleItem: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: token.marginMD,
-      padding: token.paddingMD,
-      borderRadius: token.borderRadius,
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      border: `1px solid transparent`,
-      background: token.colorBgContainer
-    },
-    subtitleItemSelected: {
-      background: token.colorPrimaryBg,
-      borderColor: token.colorPrimary,
-      boxShadow: `0 0 0 2px ${token.colorPrimary}20`
-    },
-    subtitleItemHover: {
-      background: token.colorBgTextHover,
-      borderColor: token.colorBorder
-    },
-    fileIcon: {
-      color: token.colorPrimary,
-      fontSize: token.fontSizeLG
-    },
-    subtitleName: {
-      flex: 1,
-      color: token.colorText,
-      fontSize: token.fontSize,
-      fontWeight: token.fontWeightStrong
-    },
-    selectedIcon: {
-      color: token.colorSuccess,
-      fontSize: token.fontSizeLG
-    },
-    actionButtons: {
-      display: 'flex',
-      gap: token.marginMD,
-      justifyContent: 'center',
-      marginTop: token.marginXL
-    },
-    loadingOverlay: {
-      position: 'absolute' as const,
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: `${token.colorBgMask}80`,
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      borderRadius: token.borderRadiusLG
-    },
-    loadingContent: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      gap: token.marginLG,
-      padding: token.paddingXL,
-      background: token.colorBgContainer,
-      borderRadius: token.borderRadiusLG,
-      border: `1px solid ${token.colorBorderSecondary}`,
-      boxShadow: token.boxShadowSecondary
-    },
-    loadingText: {
-      color: token.colorText,
-      fontSize: token.fontSizeLG,
-      fontWeight: token.fontWeightStrong,
-      textAlign: 'center' as const,
-      marginTop: token.marginMD
-    },
-    cancelButton: {
-      marginTop: token.marginLG
-    }
-  }
 
   // 重置状态
   const resetState = useCallback(() => {
