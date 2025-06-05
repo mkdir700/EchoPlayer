@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { Button, Tooltip } from 'antd'
 import { TranslationOutlined } from '@ant-design/icons'
 import type { DisplayMode } from '@renderer/types'
@@ -8,7 +8,7 @@ import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
 import { useSubtitleDisplayMode } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
 import { RendererLogger } from '@renderer/utils/logger'
 
-// 显示模式配置
+// 字幕显示模式配置 - 遵循苹果设计美学
 const DISPLAY_MODE_CONFIG = {
   none: { label: '隐藏' },
   original: { label: '原始' },
@@ -17,8 +17,14 @@ const DISPLAY_MODE_CONFIG = {
   bilingual: { label: '双语' }
 }
 
+/**
+ * 字幕模式选择器组件
+ *
+ * 遵循苹果设计美学和主题系统最佳实践，提供字幕显示模式的切换功能
+ * 使用主题系统的预定义样式，确保与应用其他部分的视觉一致性
+ */
 export function SubtitleModeSelector(): React.JSX.Element {
-  const { styles } = useTheme()
+  const { styles, token } = useTheme()
   // 使用新的订阅模式 hooks
   const { setDisplayMode, toggleDisplayMode } = useSubtitleDisplayModeControls()
   const displayMode = useSubtitleDisplayMode()
@@ -36,7 +42,8 @@ export function SubtitleModeSelector(): React.JSX.Element {
     [showSubtitleModeSelector]
   )
 
-  // 点击外部关闭字幕模式选择器
+  // 点击外部关闭字幕模式选择器 - 增强用户体验的交互设计
+  // 遵循苹果设计指南中的即时反馈原则
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
       if (
@@ -56,19 +63,34 @@ export function SubtitleModeSelector(): React.JSX.Element {
     return undefined
   }, [showSubtitleModeSelector])
 
-  // 获取当前模式的配置
+  // 获取当前模式的配置 - 确保即使遇到无效模式也能提供合理的默认值
+  // 这种防御性编程方式提高了组件的健壮性
   const validDisplayMode = Object.keys(DISPLAY_MODE_CONFIG).includes(displayMode)
     ? displayMode
     : 'bilingual'
   const currentModeConfig = DISPLAY_MODE_CONFIG[validDisplayMode]
 
-  RendererLogger.debug(`SubtitleModeSelector, displayMode: ${displayMode}`)
+  // 记录组件状态和样式使用情况，便于调试
+  RendererLogger.debug(
+    `SubtitleModeSelector: 当前显示模式=${displayMode}, 有效模式=${validDisplayMode}`
+  )
+  RendererLogger.debug(
+    `SubtitleModeSelector: 样式使用情况 - subtitleModeControl=${!!styles.subtitleModeControl}, subtitleModeSelector=${!!styles.subtitleModeSelector}`
+  )
   return (
     <div style={styles.subtitleModeControl}>
       {/* 字幕模式切换按钮 */}
       <Tooltip
         title={`字幕模式: ${currentModeConfig.label}`}
         open={showSubtitleModeSelector ? false : undefined}
+        placement="top"
+        color={token.colorBgElevated}
+        overlayStyle={{
+          color: token.colorText,
+          fontSize: token.fontSizeSM,
+          padding: `${token.paddingXS}px ${token.paddingSM}px`,
+          boxShadow: 'none'
+        }}
       >
         <Button
           type="text"
@@ -77,32 +99,59 @@ export function SubtitleModeSelector(): React.JSX.Element {
           onClick={handleSubtitleModeSelectorClick}
           style={{
             ...styles.controlBtn,
-            ...(showSubtitleModeSelector ? styles.controlBtnActive : {})
+            ...(showSubtitleModeSelector ? styles.controlBtnActive : {}),
+            fontSize: token.fontSizeLG,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         />
       </Tooltip>
 
-      {/* 展开的模式选择器 */}
+      {/* 展开的模式选择器 - 使用毛玻璃效果和平滑过渡动画 */}
       {showSubtitleModeSelector && (
-        <div style={styles.controlPopup} ref={subtitleModeSelectorRef}>
-          {Object.entries(DISPLAY_MODE_CONFIG).map(([mode, config]) => (
-            <Button
-              key={mode}
-              type={displayMode === mode ? 'primary' : 'text'}
-              size="small"
-              onClick={() => {
-                setDisplayMode(mode as DisplayMode)
-                setShowSubtitleModeSelector(false)
-              }}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                marginBottom: '4px'
-              }}
-            >
-              {config.label}
-            </Button>
-          ))}
+        <div
+          // 响应式设计 - 确保在不同屏幕尺寸下的良好表现
+          style={{
+            ...styles.subtitleModeSelector,
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            boxShadow: `0 8px 24px rgba(0, 0, 0, 0.12)`,
+            border: `1px solid ${token.colorBorderSecondary}`,
+            animation: `${token.motionDurationMid} ${token.motionEaseOut} fadeIn`,
+            transform: 'translateY(0)',
+            opacity: 1,
+            transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`
+          }}
+          ref={subtitleModeSelectorRef}
+        >
+          {Object.entries(DISPLAY_MODE_CONFIG).map(([mode, config]) => {
+            const isActive = displayMode === mode
+            return (
+              <Button
+                key={mode}
+                type={isActive ? 'primary' : 'text'}
+                size="small"
+                onClick={() => {
+                  setDisplayMode(mode as DisplayMode)
+                  setShowSubtitleModeSelector(false)
+                }}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  marginBottom: token.marginXXS,
+                  padding: `${token.paddingXS}px ${token.paddingSM}px`,
+                  borderRadius: token.borderRadiusSM,
+                  fontSize: token.fontSizeSM,
+                  fontWeight: isActive ? 600 : 400,
+                  transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
+                  boxShadow: isActive ? `0 2px 8px ${token.colorPrimary}30` : 'none'
+                }}
+              >
+                {config.label}
+              </Button>
+            )
+          })}
         </div>
       )}
     </div>
