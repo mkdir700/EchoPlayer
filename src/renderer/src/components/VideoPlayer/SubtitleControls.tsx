@@ -53,8 +53,8 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
   })
 
   // Icon styling using theme system
-  const getIconStyle = (isMaskButton = false): React.CSSProperties => ({
-    ...(isMaskButton ? styles.subtitleControlIconMask : styles.subtitleControlIcon),
+  const getIconStyle = (): React.CSSProperties => ({
+    ...styles.subtitleControlIcon,
     fontSize: `${iconSize}px`
   })
 
@@ -71,9 +71,9 @@ export const SubtitleControls: React.FC<SubtitleControlsProps> = ({
           style={getMaskModeButtonStyle()}
         >
           {isMaskMode ? (
-            <EyeInvisibleOutlined style={getIconStyle(true)} />
+            <EyeInvisibleOutlined style={getIconStyle()} />
           ) : (
-            <EyeOutlined style={getIconStyle(true)} />
+            <EyeOutlined style={getIconStyle()} />
           )}
         </Button>
       </Tooltip>
