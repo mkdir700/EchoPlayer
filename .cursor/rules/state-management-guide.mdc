@@ -1,0 +1,514 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# EchoLab 状态管理开发指南
+
+## 概述
+
+本项目采用 **Zustand** 作为主要状态管理库，结合 **Immer** 处理复杂的不可变状态更新。这种组合提供了简洁的 API、优秀的类型支持和高性能。
+
+## 核心原则
+
+1. **轻量简洁**: 使用 Zustand 的简单 API，避免样板代码
+2. **类型安全**: 充分利用 TypeScript 的类型系统
+3. **不可变更新**: 使用 Immer 安全地进行状态更新
+4. **关注点分离**: 按功能模块划分 store
+5. **性能优化**: 合理使用选择器，避免不必要的重渲染
+
+## 项目结构
+
+```
+src/renderer/src/stores/
+├── index.ts                 # 导出所有 stores
+├── types.ts                 # 状态类型定义
+├── slices/                  # Store 分片
+│   ├── videoStore.ts        # 视频播放相关状态
+│   ├── uiStore.ts          # UI 状态管理
+│   ├── settingsStore.ts    # 用户设置
+│   └── subtitleStore.ts    # 字幕相关状态
+└── middleware/              # 中间件
+    ├── persistence.ts       # 持久化中间件
+    └── devtools.ts          # 开发工具中间件
+```
+
+## Store 设计模式
+
+### 1. 基础 Store 模板
+
+```typescript
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { devtools } from 'zustand/middleware'
+
+// 状态类型定义
+interface VideoState {
+  currentVideo: VideoInfo | null
+  isPlaying: boolean
+  currentTime: number
+  volume: number
+  playbackRate: number
+  subtitles: SubtitleItem[]
+}
+
+// Action 类型定义
+interface VideoActions {
+  // 播放控制
+  play: () => void
+  pause: () => void
+  setCurrentTime: (time: number) => void
+  setVolume: (volume: number) => void
+  setPlaybackRate: (rate: number) => void
+  
+  // 视频管理
+  loadVideo: (video: VideoInfo) => void
+  clearVideo: () => void
+  
+  // 字幕管理
+  loadSubtitles: (subtitles: SubtitleItem[]) => void
+  updateSubtitle: (index: number, subtitle: Partial<SubtitleItem>) => void
+}
+
+// Store 类型
+type VideoStore = VideoState & VideoActions
+
+// 默认状态
+const initialState: VideoState = {
+  currentVideo: null,
+  isPlaying: false,
+  currentTime: 0,
+  volume: 0.8,
+  playbackRate: 1.0,
+  subtitles: []
+}
+
+export const useVideoStore = create<VideoStore>()(
+  devtools(
+    immer((set, get) => ({
+      ...initialState,
+      
+      // 播放控制
+      play: () => set((state) => {
+        state.isPlaying = true
+      }),
+      
+      pause: () => set((state) => {
+        state.isPlaying = false
+      }),
+      
+      setCurrentTime: (time) => set((state) => {
+        state.currentTime = time
+      }),
+      
+      setVolume: (volume) => set((state) => {
+        state.volume = Math.max(0, Math.min(1, volume))
+      }),
+      
+      setPlaybackRate: (rate) => set((state) => {
+        state.playbackRate = rate
+      }),
+      
+      // 视频管理
+      loadVideo: (video) => set((state) => {
+        state.currentVideo = video
+        state.currentTime = 0
+        state.isPlaying = false
+      }),
+      
+      clearVideo: () => set((state) => {
+        state.currentVideo = null
+        state.isPlaying = false
+        state.currentTime = 0
+        state.subtitles = []
+      }),
+      
+      // 字幕管理
+      loadSubtitles: (subtitles) => set((state) => {
+        state.subtitles = subtitles
+      }),
+      
+      updateSubtitle: (index, subtitle) => set((state) => {
+        if (state.subtitles[index]) {
+          Object.assign(state.subtitles[index], subtitle)
+        }
+      })
+    })),
+    { name: 'video-store' }
+  )
+)
+```
+
+### 2. 组合 Store 模式
+
+```typescript
+// 将相关状态组合到一个 store 中
+import { create } from 'zustand'
+import { subscribeWithSelector } from 'zustand/middleware'
+import { immer } from 'zustand/middleware/immer'
+
+interface AppState {
+  // 视频状态
+  video: VideoState
+  // UI 状态  
+  ui: UIState
+  // 设置状态
+  settings: SettingsState
+}
+
+interface AppActions {
+  // 视频相关 actions
+  video: VideoActions
+  // UI 相关 actions
+  ui: UIActions
+  // 设置相关 actions
+  settings: SettingsActions
+}
+
+export const useAppStore = create<AppState & AppActions>()(
+  subscribeWithSelector(
+    devtools(
+      immer((set, get) => ({
+        // 初始状态
+        video: initialVideoState,
+        ui: initialUIState,
+        settings: initialSettingsState,
+        
+        // Actions
+        video: {
+          play: () => set((state) => {
+            state.video.isPlaying = true
+          }),
+          // ... 其他 video actions
+        },
+        
+        ui: {
+          toggleSidebar: () => set((state) => {
+            state.ui.sidebarVisible = !state.ui.sidebarVisible
+          }),
+          // ... 其他 UI actions
+        },
+        
+        settings: {
+          updatePlaybackSettings: (settings) => set((state) => {
+            Object.assign(state.settings.playback, settings)
+          }),
+          // ... 其他 settings actions
+        }
+      })),
+      { name: 'app-store' }
+    )
+  )
+)
+```
+
+## 使用模式
+
+### 1. 基本使用
+
+```typescript
+// 组件中使用
+function VideoPlayer() {
+  // 选择特定状态
+  const { isPlaying, currentTime, volume } = useVideoStore(
+    (state) => ({
+      isPlaying: state.isPlaying,
+      currentTime: state.currentTime,
+      volume: state.volume
+    })
+  )
+  
+  // 选择 actions
+  const { play, pause, setVolume } = useVideoStore(
+    (state) => ({
+      play: state.play,
+      pause: state.pause,
+      setVolume: state.setVolume
+    })
+  )
+  
+  return (
+    <div>
+      <button onClick={isPlaying ? pause : play}>
+        {isPlaying ? 'Pause' : 'Play'}
+      </button>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.1"
+        value={volume}
+        onChange={(e) => setVolume(parseFloat(e.target.value))}
+      />
+    </div>
+  )
+}
+```
+
+### 2. 性能优化的选择器
+
+```typescript
+// 使用 shallow 比较避免不必要的重渲染
+import { shallow } from 'zustand/shallow'
+
+function VideoControls() {
+  // 只在相关状态改变时重渲染
+  const playbackState = useVideoStore(
+    (state) => ({
+      isPlaying: state.isPlaying,
+      volume: state.volume,
+      playbackRate: state.playbackRate
+    }),
+    shallow
+  )
+  
+  return <ControlPanel {...playbackState} />
+}
+```
+
+### 3. 自定义 Hook 封装
+
+```typescript
+// 创建专用的 hook
+export function usePlaybackControls() {
+  const isPlaying = useVideoStore((state) => state.isPlaying)
+  const play = useVideoStore((state) => state.play)
+  const pause = useVideoStore((state) => state.pause)
+  
+  const togglePlay = useCallback(() => {
+    if (isPlaying) {
+      pause()
+    } else {
+      play()
+    }
+  }, [isPlaying, play, pause])
+  
+  return {
+    isPlaying,
+    play,
+    pause,
+    togglePlay
+  }
+}
+```
+
+## 中间件使用
+
+### 1. 持久化中间件
+
+```typescript
+import { persist } from 'zustand/middleware'
+
+export const useSettingsStore = create<SettingsStore>()(
+  persist(
+    immer((set) => ({
+      // store 实现
+    })),
+    {
+      name: 'echolab-settings',
+      partialize: (state) => ({
+        // 只持久化特定字段
+        playback: state.playback,
+        ui: state.ui
+      })
+    }
+  )
+)
+```
+
+### 2. 订阅中间件
+
+```typescript
+import { subscribeWithSelector } from 'zustand/middleware'
+
+export const useVideoStore = create<VideoStore>()(
+  subscribeWithSelector(
+    immer((set) => ({
+      // store 实现
+    }))
+  )
+)
+
+// 在组件外部订阅状态变化
+useVideoStore.subscribe(
+  (state) => state.currentTime,
+  (currentTime) => {
+    // 处理时间变化
+    console.log('Current time changed:', currentTime)
+  }
+)
+```
+
+## 异步操作处理
+
+```typescript
+interface VideoStore extends VideoState {
+  // 异步 actions
+  loadVideoAsync: (videoPath: string) => Promise<void>
+  saveProgress: () => Promise<void>
+}
+
+export const useVideoStore = create<VideoStore>()(
+  immer((set, get) => ({
+    // ... 其他状态和 actions
+    
+    loadVideoAsync: async (videoPath) => {
+      try {
+        set((state) => {
+          state.loading = true
+          state.error = null
+        })
+        
+        const videoInfo = await window.api.video.loadVideo(videoPath)
+        const subtitles = await window.api.subtitle.loadSubtitles(videoPath)
+        
+        set((state) => {
+          state.currentVideo = videoInfo
+          state.subtitles = subtitles
+          state.loading = false
+        })
+      } catch (error) {
+        set((state) => {
+          state.error = error.message
+          state.loading = false
+        })
+      }
+    },
+    
+    saveProgress: async () => {
+      const { currentVideo, currentTime } = get()
+      if (currentVideo) {
+        await window.api.store.updateRecentPlay(currentVideo.id, {
+          currentTime,
+          lastOpenedAt: Date.now()
+        })
+      }
+    }
+  }))
+)
+```
+
+## 测试策略
+
+### 1. Store 单元测试
+
+```typescript
+import { renderHook, act } from '@testing-library/react'
+import { useVideoStore } from '../stores/videoStore'
+
+describe('VideoStore', () => {
+  beforeEach(() => {
+    // 重置 store 状态
+    useVideoStore.setState(initialState)
+  })
+  
+  it('should play video', () => {
+    const { result } = renderHook(() => useVideoStore())
+    
+    act(() => {
+      result.current.play()
+    })
+    
+    expect(result.current.isPlaying).toBe(true)
+  })
+  
+  it('should update volume correctly', () => {
+    const { result } = renderHook(() => useVideoStore())
+    
+    act(() => {
+      result.current.setVolume(0.5)
+    })
+    
+    expect(result.current.volume).toBe(0.5)
+  })
+})
+```
+
+### 2. 组件集成测试
+
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react'
+import { VideoPlayer } from '../components/VideoPlayer'
+
+test('should toggle play state', () => {
+  render(<VideoPlayer />)
+  
+  const playButton = screen.getByRole('button', { name: /play/i })
+  fireEvent.click(playButton)
+  
+  expect(screen.getByRole('button', { name: /pause/i })).toBeInTheDocument()
+})
+```
+
+## 最佳实践要点
+
+### 1. 状态设计原则
+- **扁平化状态结构**: 避免深层嵌套，便于 Immer 处理
+- **单一职责**: 每个 store 只负责相关的状态逻辑  
+- **不可变更新**: 始终使用 Immer 进行状态更新
+
+### 2. 性能优化
+- **选择器优化**: 使用 `shallow` 比较避免不必要的重渲染
+- **计算属性**: 使用 `useMemo` 缓存计算结果
+- **批量更新**: 在一个 action 中完成多个相关状态的更新
+
+### 3. 类型安全
+- **严格类型定义**: 为所有状态和 actions 定义明确的类型
+- **类型推导**: 充分利用 TypeScript 的类型推导能力
+- **接口分离**: 将状态接口和 actions 接口分开定义
+
+### 4. 代码组织
+- **模块化**: 按功能将 store 分割为多个模块
+- **命名规范**: 使用清晰的命名约定
+- **文档注释**: 为复杂的状态逻辑添加详细注释
+
+### 5. 调试和开发
+- **DevTools 集成**: 在开发环境启用 Redux DevTools
+- **日志记录**: 在关键状态变更时添加日志
+- **错误处理**: 妥善处理异步操作中的错误
+
+## 迁移指南
+
+### 从现有状态管理迁移
+
+1. **评估现有状态**: 分析当前的状态管理模式
+2. **设计新结构**: 按功能模块重新组织状态
+3. **渐进式迁移**: 逐个组件迁移到新的状态管理
+4. **测试验证**: 确保迁移后功能正常
+
+### 与现有 IPC 集成
+
+```typescript
+// 将现有的 IPC 调用封装到 store actions 中
+export const useAppStore = create<AppStore>()(
+  immer((set, get) => ({
+    // ... 其他状态
+    
+    loadRecentPlays: async () => {
+      try {
+        const recentPlays = await window.api.store.getRecentPlays()
+        set((state) => {
+          state.recentPlays = recentPlays
+        })
+      } catch (error) {
+        console.error('Failed to load recent plays:', error)
+      }
+    },
+    
+    updateSettings: async (newSettings) => {
+      try {
+        await window.api.store.updateSettings(newSettings)
+        set((state) => {
+          Object.assign(state.settings, newSettings)
+        })
+      } catch (error) {
+        console.error('Failed to update settings:', error)
+      }
+    }
+  }))
+)
+```
+
+## 总结
+
+通过遵循本指南，可以建立一个高效、类型安全且易于维护的状态管理系统。Zustand + Immer 的组合为 EchoLab 项目提供了简洁而强大的状态管理解决方案，既满足了性能要求，又保持了代码的可读性和可维护性。
