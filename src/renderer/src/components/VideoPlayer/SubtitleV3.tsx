@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect, memo } from 'react'
+import React, { useState, useMemo, useRef, useEffect, memo } from 'react'
 import { WordCard } from '@renderer/components/WordCard/WordCard'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import {
@@ -163,6 +163,12 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
   const [isControlsHovering, setIsControlsHovering] = useState(false)
   const [isMaskFrameActive, setIsMaskFrameActive] = useState(false)
 
+  // Add window dimensions state to trigger re-renders when window size changes
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  })
+
   // References
   const containerRef = useRef<HTMLDivElement>(null)
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -184,7 +190,46 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     }
   }, [onWordHover, onPauseOnHover])
 
-  // Get parent container dimensions - calculate only once
+  // Add window resize listener to update dimensions and trigger re-renders
+  useEffect(() => {
+    const handleResize = (): void => {
+      const newDimensions = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      }
+
+      // Only update if dimensions actually changed to avoid unnecessary re-renders
+      setWindowDimensions((prev) => {
+        if (prev.width !== newDimensions.width || prev.height !== newDimensions.height) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔄 Window resized, updating subtitle font sizes:', {
+              from: prev,
+              to: newDimensions
+            })
+          }
+          return newDimensions
+        }
+        return prev
+      })
+    }
+
+    // Use throttled resize handler to improve performance
+    const throttledResize = (() => {
+      let timeoutId: NodeJS.Timeout | null = null
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId)
+        timeoutId = setTimeout(handleResize, 100) // 100ms throttle
+      }
+    })()
+
+    window.addEventListener('resize', throttledResize)
+
+    return () => {
+      window.removeEventListener('resize', throttledResize)
+    }
+  }, [])
+
+  // Get parent container dimensions - recalculate when window dimensions change
   const parentDimensions = useMemo(() => {
     const parent = containerRef.current?.parentElement
     const dimensions = {
@@ -193,20 +238,22 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     }
     parentDimensionsRef.current = dimensions
     return dimensions
-  }, [])
+  }, []) // Add windowDimensions as dependency
 
   // Get stable function for parent container bounds
-  const getParentBounds = useCallback(() => {
-    const parent = containerRef.current?.parentElement
-    if (parent) {
-      const dimensions = {
-        width: parent.clientWidth,
-        height: parent.clientHeight
+  const getParentBounds = useMemo(() => {
+    return () => {
+      const parent = containerRef.current?.parentElement
+      if (parent) {
+        const dimensions = {
+          width: parent.clientWidth,
+          height: parent.clientHeight
+        }
+        parentDimensionsRef.current = dimensions
+        return dimensions
       }
-      parentDimensionsRef.current = dimensions
-      return dimensions
+      return parentDimensionsRef.current
     }
-    return parentDimensionsRef.current
   }, [])
 
   // Use state management hook
@@ -232,14 +279,26 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     currentLayout
   )
 
-  // Use styles hook
+  // Use styles hook - force recalculation when windowDimensions change by creating new layout object
+  const currentLayoutWithWindowDimensions = useMemo(() => {
+    return {
+      left: currentLayout.left,
+      top: currentLayout.top,
+      width: currentLayout.width,
+      height: currentLayout.height,
+      // Include window dimensions in the object to force hook recalculation
+      _windowWidth: windowDimensions.width,
+      _windowHeight: windowDimensions.height
+    }
+  }, [currentLayout, windowDimensions])
+
   const {
     dynamicTextStyle,
     dynamicEnglishTextStyle,
     dynamicChineseTextStyle,
     buttonSize,
     iconSize
-  } = useSubtitleStyles(currentLayout)
+  } = useSubtitleStyles(currentLayoutWithWindowDimensions)
 
   // Stable event handlers
   const stableHandlers = useMemo(

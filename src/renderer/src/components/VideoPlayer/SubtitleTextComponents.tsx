@@ -10,7 +10,6 @@ interface SubtitleTextProps {
   style: React.CSSProperties
   onWordHover: (isHovering: boolean) => void
   onWordClick: (word: string, event: React.MouseEvent) => void
-  className?: string
 }
 
 // Word wrapper component to handle hover states with theme system
@@ -156,6 +155,32 @@ const SmartTextContent: React.FC<{
   const containerRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
   const [needsSegmentation, setNeedsSegmentation] = useState(false)
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 })
+
+  // Use ResizeObserver to monitor container size changes
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect
+        setContainerDimensions((prev) => {
+          // Only update if dimensions actually changed to avoid unnecessary re-renders
+          if (prev.width !== width || prev.height !== height) {
+            return { width, height }
+          }
+          return prev
+        })
+      }
+    })
+
+    resizeObserver.observe(container)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [])
 
   useEffect(() => {
     if (containerRef.current && textRef.current) {
@@ -167,7 +192,7 @@ const SmartTextContent: React.FC<{
       // 如果文本长度超过阈值或者溢出，则需要分段
       setNeedsSegmentation(isOverflowing || text.length > 50)
     }
-  }, [text])
+  }, [text, containerDimensions, style.fontSize]) // Add containerDimensions and fontSize as dependencies
 
   if (!needsSegmentation) {
     return (
@@ -194,6 +219,7 @@ const SmartTextContent: React.FC<{
 
   return (
     <div
+      ref={containerRef}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -228,18 +254,6 @@ const SmartTextContent: React.FC<{
   )
 }
 
-// 自定义比较函数，只比较文本内容和样式
-const areSubtitlePropsEqual = (
-  prevProps: SubtitleTextProps,
-  nextProps: SubtitleTextProps
-): boolean => {
-  return (
-    prevProps.text === nextProps.text &&
-    JSON.stringify(prevProps.style) === JSON.stringify(nextProps.style) &&
-    prevProps.className === nextProps.className
-  )
-}
-
 // 双语字幕行接口
 interface BilingualLineProps {
   text: string
@@ -249,15 +263,155 @@ interface BilingualLineProps {
   language: 'english' | 'chinese' | 'original'
 }
 
-// 双语字幕行自定义比较函数
-const areBilingualPropsEqual = (
-  prevProps: BilingualLineProps,
-  nextProps: BilingualLineProps
-): boolean => {
+// 原始字幕文本组件
+export const OriginalSubtitleText: React.FC<SubtitleTextProps> = ({
+  text,
+  style,
+  onWordHover,
+  onWordClick
+}) => {
+  const { styles } = useTheme()
+
+  RendererLogger.componentRender({
+    component: 'OriginalSubtitleText',
+    props: { text: text.substring(0, 20) + '...' }
+  })
+
+  const containerStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    textAlign: 'center',
+    overflow: 'hidden',
+    boxSizing: 'border-box'
+  }
+
   return (
-    prevProps.text === nextProps.text &&
-    JSON.stringify(prevProps.style) === JSON.stringify(nextProps.style) &&
-    prevProps.language === nextProps.language
+    <div style={containerStyle}>
+      <SmartTextContent
+        text={text}
+        style={{ ...styles.subtitleText, ...style }}
+        onWordHover={onWordHover}
+        onWordClick={onWordClick}
+      />
+    </div>
+  )
+}
+
+// 中文字幕文本组件
+export const ChineseSubtitleText: React.FC<SubtitleTextProps> = ({
+  text,
+  style,
+  onWordHover,
+  onWordClick
+}) => {
+  const { styles } = useTheme()
+
+  RendererLogger.componentRender({
+    component: 'ChineseSubtitleText',
+    props: { text: text.substring(0, 20) + '...' }
+  })
+
+  const containerStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    textAlign: 'center',
+    overflow: 'hidden',
+    boxSizing: 'border-box'
+  }
+
+  return (
+    <div style={containerStyle}>
+      <SmartTextContent
+        text={text}
+        style={{ ...styles.subtitleText, ...styles.subtitleTextChinese, ...style }}
+        onWordHover={onWordHover}
+        onWordClick={onWordClick}
+      />
+    </div>
+  )
+}
+
+// 英文字幕文本组件
+export const EnglishSubtitleText: React.FC<SubtitleTextProps> = ({
+  text,
+  style,
+  onWordHover,
+  onWordClick
+}) => {
+  const { styles } = useTheme()
+
+  const containerStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    textAlign: 'center',
+    overflow: 'hidden',
+    boxSizing: 'border-box'
+  }
+
+  return (
+    <div style={containerStyle}>
+      <SmartTextContent
+        text={text}
+        style={{ ...styles.subtitleText, ...styles.subtitleTextEnglish, ...style }}
+        onWordHover={onWordHover}
+        onWordClick={onWordClick}
+      />
+    </div>
+  )
+}
+
+// 双语字幕行组件
+export const BilingualSubtitleLine: React.FC<BilingualLineProps> = ({
+  text,
+  style,
+  onWordHover,
+  onWordClick,
+  language
+}) => {
+  const { styles } = useTheme()
+
+  const lineStyle: React.CSSProperties = {
+    width: '100%',
+    textAlign: 'center',
+    margin: 0,
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '2px',
+    boxSizing: 'border-box'
+  }
+
+  const getTextStyle = (): React.CSSProperties => {
+    const baseStyle = { ...styles.subtitleText, ...style }
+    switch (language) {
+      case 'english':
+        return { ...baseStyle, ...styles.subtitleTextEnglish }
+      case 'chinese':
+        return { ...baseStyle, ...styles.subtitleTextChinese }
+      default:
+        return baseStyle
+    }
+  }
+
+  return (
+    <div style={lineStyle}>
+      <SmartTextContent
+        text={text}
+        style={getTextStyle()}
+        onWordHover={onWordHover}
+        onWordClick={onWordClick}
+      />
+    </div>
   )
 }
 
@@ -266,159 +420,8 @@ interface SubtitlePlaceholderProps {
   message: string
 }
 
-// 占位符比较函数
-const arePlaceholderPropsEqual = (
-  prevProps: SubtitlePlaceholderProps,
-  nextProps: SubtitlePlaceholderProps
-): boolean => {
-  return prevProps.message === nextProps.message
-}
-
-// 原始字幕文本组件
-export const OriginalSubtitleText = React.memo<SubtitleTextProps>(
-  ({ text, style, onWordHover, onWordClick }) => {
-    const { styles } = useTheme()
-
-    RendererLogger.componentRender({
-      component: 'OriginalSubtitleText',
-      props: { text: text.substring(0, 20) + '...' }
-    })
-
-    const containerStyle: React.CSSProperties = {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      height: '100%',
-      textAlign: 'center',
-      overflow: 'hidden',
-      boxSizing: 'border-box'
-    }
-
-    return (
-      <div style={containerStyle}>
-        <SmartTextContent
-          text={text}
-          style={{ ...styles.subtitleText, ...style }}
-          onWordHover={onWordHover}
-          onWordClick={onWordClick}
-        />
-      </div>
-    )
-  },
-  areSubtitlePropsEqual
-)
-
-// 中文字幕文本组件
-export const ChineseSubtitleText = React.memo<SubtitleTextProps>(
-  ({ text, style, onWordHover, onWordClick }) => {
-    const { styles } = useTheme()
-
-    RendererLogger.componentRender({
-      component: 'ChineseSubtitleText',
-      props: { text: text.substring(0, 20) + '...' }
-    })
-
-    const containerStyle: React.CSSProperties = {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      height: '100%',
-      textAlign: 'center',
-      overflow: 'hidden',
-      boxSizing: 'border-box'
-    }
-
-    return (
-      <div style={containerStyle}>
-        <SmartTextContent
-          text={text}
-          style={{ ...styles.subtitleText, ...styles.subtitleTextChinese, ...style }}
-          onWordHover={onWordHover}
-          onWordClick={onWordClick}
-        />
-      </div>
-    )
-  },
-  areSubtitlePropsEqual
-)
-
-// 英文字幕文本组件
-export const EnglishSubtitleText = React.memo<SubtitleTextProps>(
-  ({ text, style, onWordHover, onWordClick }) => {
-    const { styles } = useTheme()
-
-    const containerStyle: React.CSSProperties = {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      height: '100%',
-      textAlign: 'center',
-      overflow: 'hidden',
-      boxSizing: 'border-box'
-    }
-
-    return (
-      <div style={containerStyle}>
-        <SmartTextContent
-          text={text}
-          style={{ ...styles.subtitleText, ...styles.subtitleTextEnglish, ...style }}
-          onWordHover={onWordHover}
-          onWordClick={onWordClick}
-        />
-      </div>
-    )
-  },
-  areSubtitlePropsEqual
-)
-
-// 双语字幕行组件
-export const BilingualSubtitleLine = React.memo<BilingualLineProps>(
-  ({ text, style, onWordHover, onWordClick, language }) => {
-    const { styles } = useTheme()
-
-    const lineStyle: React.CSSProperties = {
-      width: '100%',
-      textAlign: 'center',
-      margin: 0,
-      overflow: 'hidden',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2px',
-      boxSizing: 'border-box'
-    }
-
-    const getTextStyle = (): React.CSSProperties => {
-      const baseStyle = { ...styles.subtitleText, ...style }
-      switch (language) {
-        case 'english':
-          return { ...baseStyle, ...styles.subtitleTextEnglish }
-        case 'chinese':
-          return { ...baseStyle, ...styles.subtitleTextChinese }
-        default:
-          return baseStyle
-      }
-    }
-
-    return (
-      <div style={lineStyle}>
-        <SmartTextContent
-          text={text}
-          style={getTextStyle()}
-          onWordHover={onWordHover}
-          onWordClick={onWordClick}
-        />
-      </div>
-    )
-  },
-  areBilingualPropsEqual
-)
-
 // 占位符组件
-export const SubtitlePlaceholder = React.memo<SubtitlePlaceholderProps>(({ message }) => {
+export const SubtitlePlaceholder: React.FC<SubtitlePlaceholderProps> = ({ message }) => {
   const { styles } = useTheme()
 
   const placeholderStyle: React.CSSProperties = {
@@ -437,7 +440,7 @@ export const SubtitlePlaceholder = React.memo<SubtitlePlaceholderProps>(({ messa
       <Text style={styles.subtitleTextHidden}>{message}</Text>
     </div>
   )
-}, arePlaceholderPropsEqual)
+}
 
 OriginalSubtitleText.displayName = 'OriginalSubtitleText'
 ChineseSubtitleText.displayName = 'ChineseSubtitleText'

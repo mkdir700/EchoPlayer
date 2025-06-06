@@ -6,6 +6,8 @@ export const useSubtitleStyles = (currentLayout: {
   top: number
   width: number
   height: number
+  _windowWidth?: number
+  _windowHeight?: number
 }): {
   dynamicTextStyle: React.CSSProperties
   dynamicEnglishTextStyle: React.CSSProperties
@@ -16,7 +18,8 @@ export const useSubtitleStyles = (currentLayout: {
 } => {
   // Calculate dynamic font size based on container size and screen size with proportional scaling
   const getDynamicFontSize = useCallback(() => {
-    const screenWidth = window.innerWidth
+    // Use window dimensions from layout object if available, otherwise fall back to window.innerWidth
+    const screenWidth = currentLayout._windowWidth || window.innerWidth
 
     // Adjust base font size based on screen width
     let baseSize: number
@@ -87,7 +90,8 @@ export const useSubtitleStyles = (currentLayout: {
 
   // Calculate dynamic control button size
   const getDynamicControlButtonSize = useCallback(() => {
-    const screenWidth = window.innerWidth
+    // Use window dimensions from layout object if available, otherwise fall back to window.innerWidth
+    const screenWidth = currentLayout._windowWidth || window.innerWidth
 
     // Adjust base button size based on screen width
     let baseButtonSize: number
