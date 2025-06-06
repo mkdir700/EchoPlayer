@@ -88,6 +88,13 @@ export const DEFAULT_SHORTCUTS: Record<string, ShortcutConfig> = {
     description: '重置字幕位置、大小和背景为默认配置',
     defaultKey: 'Ctrl+Shift+R',
     category: 'appearance'
+  },
+  toggleFullscreen: {
+    key: 'toggleFullscreen',
+    name: '切换全屏模式',
+    description: '在应用内切换全屏/窗口模式',
+    defaultKey: 'F',
+    category: 'appearance'
   }
 }
 

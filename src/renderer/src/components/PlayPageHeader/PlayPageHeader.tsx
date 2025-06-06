@@ -4,6 +4,7 @@ import { ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons'
 import { performanceMonitor } from '@renderer/utils/performance'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { useUIStore } from '@renderer/stores'
 
 const { Text } = Typography
 
@@ -36,10 +37,32 @@ export const PlayPageHeader = React.memo<PlayPageHeaderProps>(function PlayPageH
   const videoFileName = playingVideoContext.videoFileName
   const { styles } = useTheme()
 
+  // 获取全屏状态，决定是否显示头部
+  const showPlayPageHeader = useUIStore((state) => state.showPlayPageHeader)
+
+  // 动态计算样式，使用height和margin动画实现平滑过渡且不占用空间
+  const headerStyle = {
+    ...styles.playPageHeader,
+    height: showPlayPageHeader ? '56px' : '0px',
+    marginBottom: showPlayPageHeader ? '0px' : '0px',
+    overflow: 'hidden' as const,
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // 使用Material Design缓动函数
+    opacity: showPlayPageHeader ? 1 : 0,
+    pointerEvents: showPlayPageHeader ? 'auto' : 'none',
+    willChange: 'height, opacity' // 优化性能
+  } as React.CSSProperties
+
+  // 背景装饰样式，跟随头部显示状态
+  const backgroundStyle = {
+    ...styles.playPageHeaderBackground,
+    opacity: showPlayPageHeader ? 1 : 0,
+    transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+  }
+
   return (
-    <div style={styles.playPageHeader}>
+    <div style={headerStyle}>
       {/* 背景装饰 */}
-      <div style={styles.playPageHeaderBackground} />
+      <div style={backgroundStyle} />
 
       {/* 左侧：返回按钮 */}
       <div style={styles.playPageHeaderLeft}>

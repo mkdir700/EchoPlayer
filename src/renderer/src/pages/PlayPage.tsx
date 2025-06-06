@@ -10,8 +10,9 @@ import { usePlayStateInitializer } from '@renderer/hooks/usePlayStateInitializer
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { CurrentSubtitleDisplayProvider } from '@renderer/contexts/CurrentSubtitleDisplayContext'
+import { useUIStore, useFullscreenMode } from '@renderer/stores'
+import { FullscreenTestInfo } from '@renderer/components/VideoPlayer/FullscreenTestInfo'
 
-import { Splitter } from 'antd'
 import { VideoPlaybackSettingsProvider } from '@renderer/contexts/VideoPlaybackSettingsContext'
 
 interface PlayPageProps {
@@ -23,6 +24,13 @@ const PlayPageMemo = React.memo<PlayPageProps>(
   function PlayPage({ onBack }) {
     // 🎨 获取主题样式
     const { styles, token } = useTheme()
+
+    // 🖥️ 获取UI状态，用于全屏模式布局调整
+    const showSubtitleList = useUIStore((state) => state.showSubtitleList)
+    const showPlayPageHeader = useUIStore((state) => state.showPlayPageHeader)
+
+    // 🖥️ 获取全屏模式控制
+    const { toggleFullscreen } = useFullscreenMode()
 
     // 📊 移除频繁的渲染日志，避免性能影响
     if (process.env.NODE_ENV === 'development') {
@@ -48,15 +56,17 @@ const PlayPageMemo = React.memo<PlayPageProps>(
       () => ({
         playPause: toggle,
         stepBackward: stepBackward,
-        stepForward: stepForward
+        stepForward: stepForward,
+        toggleFullscreen: toggleFullscreen
       }),
-      [toggle, stepBackward, stepForward]
+      [toggle, stepBackward, stepForward, toggleFullscreen]
     )
 
     // 注册快捷键 - 使用稳定的引用避免重新绑定
     useShortcutCommand('playPause', shortcutCommands.playPause)
     useShortcutCommand('stepBackward', shortcutCommands.stepBackward)
     useShortcutCommand('stepForward', shortcutCommands.stepForward)
+    useShortcutCommand('toggleFullscreen', shortcutCommands.toggleFullscreen)
 
     // 🔙 返回处理 - 优化性能，确保保存状态
     const handleBack = useCallback(async () => {
@@ -73,44 +83,83 @@ const PlayPageMemo = React.memo<PlayPageProps>(
       onBack()
     }, [onBack, savePlayStateRef])
 
-    // 🎨 动态计算分割器样式
-    const splitterStyle = useMemo(
-      () =>
-        ({
-          ...styles.playPageSplitter,
-          '--splitter-trigger-bg': token.colorBorderSecondary,
-          '--splitter-trigger-hover-bg': token.colorPrimary
-        }) as React.CSSProperties,
-      [styles.playPageSplitter, token]
-    )
+    // 动态计算容器样式，全屏时移除可能的白色背景
+    const containerStyle = {
+      ...styles.playPageContainer,
+      // 全屏时使用黑色背景，避免白色区域
+      backgroundColor: showPlayPageHeader ? styles.playPageContainer?.backgroundColor : '#000000'
+    }
 
     return (
       <CurrentSubtitleDisplayProvider>
         <VideoPlaybackSettingsProvider>
-          <div style={styles.playPageContainer}>
-            {/* 播放页面独立Header */}
+          <div style={containerStyle}>
+            {/* Debug信息组件 - 仅开发环境显示 */}
+            <FullscreenTestInfo />
+
+            {/* 播放页面独立Header - 始终渲染，由组件内部控制显示/隐藏动画 */}
             <PlayPageHeader onBack={handleBack} />
 
-            <div style={styles.playPageContent}>
-              {/* 🎨 现代化分割器 - 苹果风格 */}
-              <Splitter style={splitterStyle} layout="horizontal">
-                <Splitter.Panel defaultSize="70%" min="50%" max="80%">
-                  <div style={styles.mainContentArea}>
-                    {/* 🎬 视频播放区域 - 沉浸式体验 */}
-                    <div style={styles.videoPlayerSection}>
-                      <VideoSection />
+            <div
+              style={{
+                ...styles.playPageContent,
+                // 全屏时确保内容区域也是黑色背景
+                backgroundColor: showPlayPageHeader
+                  ? styles.playPageContent?.backgroundColor
+                  : '#000000'
+              }}
+            >
+              {/* 🎬 视频播放区域 - 始终保持在固定位置，避免重新挂载 */}
+              <div
+                style={{
+                  display: 'flex',
+                  height: '100%',
+                  width: '100%'
+                }}
+              >
+                {/* 视频区域容器 - 根据全屏状态调整宽度 */}
+                <div
+                  style={{
+                    flex: showSubtitleList ? '1 1 70%' : '1 1 100%',
+                    minWidth: showSubtitleList ? '50%' : '100%',
+                    maxWidth: showSubtitleList ? '80%' : '100%',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // 使用更流畅的缓动函数
+                    willChange: 'flex, min-width, max-width' // 优化性能
+                  }}
+                >
+                  <VideoSection key="main-video-section" />
+                </div>
+
+                {/* 侧边栏区域 - 使用动画控制显示/隐藏 */}
+                <>
+                  {/* 分割线 */}
+                  <div
+                    style={{
+                      width: '1px',
+                      backgroundColor: token.colorBorderSecondary,
+                      cursor: 'col-resize',
+                      opacity: showSubtitleList ? 1 : 0,
+                      transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  />
+                  {/* 字幕列表区域 */}
+                  <div
+                    style={{
+                      flex: showSubtitleList ? '1 1 30%' : '0 0 0%',
+                      minWidth: showSubtitleList ? '20%' : '0%',
+                      maxWidth: showSubtitleList ? '50%' : '0%',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      willChange: 'flex, min-width, max-width'
+                    }}
+                  >
+                    <div style={styles.sidebarSection}>
+                      <div style={styles.sidebarDivider} />
+                      <SidebarSectionContainer />
                     </div>
                   </div>
-                </Splitter.Panel>
-                <Splitter.Panel>
-                  {/* 📋 字幕列表区域 - 毛玻璃效果 */}
-                  <div style={styles.sidebarSection}>
-                    {/* 分割线装饰效果 */}
-                    <div style={styles.sidebarDivider} />
-                    <SidebarSectionContainer />
-                  </div>
-                </Splitter.Panel>
-              </Splitter>
+                </>
+              </div>
             </div>
           </div>
         </VideoPlaybackSettingsProvider>
