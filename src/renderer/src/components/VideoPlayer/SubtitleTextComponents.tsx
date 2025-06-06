@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Typography } from 'antd'
 import { useTheme } from '@renderer/hooks/useTheme'
 import RendererLogger from '@renderer/utils/logger'
@@ -54,6 +54,34 @@ const WordWrapper: React.FC<{
       {children}
     </span>
   )
+}
+
+// 智能分段函数
+const segmentText = (text: string): string[] => {
+  // 如果文本较短，不需要分段
+  if (text.length <= 50) return [text]
+
+  // 尝试按句子分段（中文句号、英文句号、问号、感叹号等）
+  const sentenceSegments = text.split(/(?<=[。.!?！？])\s*/)
+  if (sentenceSegments.length > 1) {
+    return sentenceSegments.filter((segment) => segment.trim().length > 0)
+  }
+
+  // 如果没有句子分隔符，尝试按逗号、分号等分段
+  const phraseSegments = text.split(/(?<=[,，;；])\s*/)
+  if (phraseSegments.length > 1) {
+    return phraseSegments.filter((segment) => segment.trim().length > 0)
+  }
+
+  // 如果没有标点符号，按固定长度分段
+  const segments: string[] = []
+  const maxSegmentLength = 30
+
+  for (let i = 0; i < text.length; i += maxSegmentLength) {
+    segments.push(text.substring(i, Math.min(i + maxSegmentLength, text.length)))
+  }
+
+  return segments
 }
 
 // Enhanced text splitting function with theme integration
@@ -116,6 +144,88 @@ const splitTextWithTheme = (
       )
     })
   }
+}
+
+// 智能文本组件
+const SmartTextContent: React.FC<{
+  text: string
+  style: React.CSSProperties
+  onWordHover: (isHovering: boolean) => void
+  onWordClick: (word: string, event: React.MouseEvent) => void
+}> = ({ text, style, onWordHover, onWordClick }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLDivElement>(null)
+  const [needsSegmentation, setNeedsSegmentation] = useState(false)
+
+  useEffect(() => {
+    if (containerRef.current && textRef.current) {
+      // 检查文本是否超出容器
+      const isOverflowing =
+        textRef.current.scrollWidth > containerRef.current.clientWidth ||
+        textRef.current.scrollHeight > containerRef.current.clientHeight
+
+      // 如果文本长度超过阈值或者溢出，则需要分段
+      setNeedsSegmentation(isOverflowing || text.length > 50)
+    }
+  }, [text])
+
+  if (!needsSegmentation) {
+    return (
+      <div
+        ref={containerRef}
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <Text ref={textRef} style={style}>
+          {splitTextWithTheme(text, onWordHover, onWordClick)}
+        </Text>
+      </div>
+    )
+  }
+
+  // 如果需要分段，使用智能分段逻辑
+  const segments = segmentText(text)
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden'
+      }}
+    >
+      {segments.map((segment, index) => (
+        <div
+          key={index}
+          style={{
+            ...style,
+            fontSize:
+              segments.length > 1
+                ? `calc(${parseFloat(style.fontSize as string) * (1 - 0.1 * Math.min(segments.length - 1, 2))}rem)`
+                : style.fontSize,
+            marginBottom: index < segments.length - 1 ? '4px' : 0,
+            lineHeight: segments.length > 1 ? 1.3 : style.lineHeight || 'inherit',
+            textAlign: 'center',
+            width: '100%',
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word'
+          }}
+        >
+          {splitTextWithTheme(segment, onWordHover, onWordClick)}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // 自定义比较函数，只比较文本内容和样式
@@ -181,14 +291,18 @@ export const OriginalSubtitleText = React.memo<SubtitleTextProps>(
       width: '100%',
       height: '100%',
       textAlign: 'center',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }
 
     return (
       <div style={containerStyle}>
-        <Text style={{ ...styles.subtitleText, ...style }}>
-          {splitTextWithTheme(text, onWordHover, onWordClick)}
-        </Text>
+        <SmartTextContent
+          text={text}
+          style={{ ...styles.subtitleText, ...style }}
+          onWordHover={onWordHover}
+          onWordClick={onWordClick}
+        />
       </div>
     )
   },
@@ -212,14 +326,18 @@ export const ChineseSubtitleText = React.memo<SubtitleTextProps>(
       width: '100%',
       height: '100%',
       textAlign: 'center',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }
 
     return (
       <div style={containerStyle}>
-        <Text style={{ ...styles.subtitleText, ...styles.subtitleTextChinese, ...style }}>
-          {splitTextWithTheme(text, onWordHover, onWordClick)}
-        </Text>
+        <SmartTextContent
+          text={text}
+          style={{ ...styles.subtitleText, ...styles.subtitleTextChinese, ...style }}
+          onWordHover={onWordHover}
+          onWordClick={onWordClick}
+        />
       </div>
     )
   },
@@ -238,14 +356,18 @@ export const EnglishSubtitleText = React.memo<SubtitleTextProps>(
       width: '100%',
       height: '100%',
       textAlign: 'center',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }
 
     return (
       <div style={containerStyle}>
-        <Text style={{ ...styles.subtitleText, ...styles.subtitleTextEnglish, ...style }}>
-          {splitTextWithTheme(text, onWordHover, onWordClick)}
-        </Text>
+        <SmartTextContent
+          text={text}
+          style={{ ...styles.subtitleText, ...styles.subtitleTextEnglish, ...style }}
+          onWordHover={onWordHover}
+          onWordClick={onWordClick}
+        />
       </div>
     )
   },
@@ -264,7 +386,9 @@ export const BilingualSubtitleLine = React.memo<BilingualLineProps>(
       overflow: 'hidden',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      padding: '2px',
+      boxSizing: 'border-box'
     }
 
     const getTextStyle = (): React.CSSProperties => {
@@ -281,7 +405,12 @@ export const BilingualSubtitleLine = React.memo<BilingualLineProps>(
 
     return (
       <div style={lineStyle}>
-        <Text style={getTextStyle()}>{splitTextWithTheme(text, onWordHover, onWordClick)}</Text>
+        <SmartTextContent
+          text={text}
+          style={getTextStyle()}
+          onWordHover={onWordHover}
+          onWordClick={onWordClick}
+        />
       </div>
     )
   },

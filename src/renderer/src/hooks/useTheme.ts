@@ -1288,7 +1288,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
 
     subtitleWord: {
       cursor: 'default',
-      padding: '2px 4px',
+      padding: '1px 2px',
       borderRadius: '4px',
       transition: `all ${COMPONENT_TOKENS.SUBTITLE.TRANSITION_DURATION}`,
       position: 'relative' as const,
