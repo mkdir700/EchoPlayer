@@ -12,10 +12,12 @@ import {
   generateCompatibilityReport,
   type VideoCompatibilityReport
 } from '@renderer/utils/videoCompatibility'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 const { Title, Text, Paragraph } = Typography
 
 export function VideoConversionSection(): React.JSX.Element {
+  const { token } = useTheme()
   const [showGuide, setShowGuide] = useState(false)
   const [compatibilityReport, setCompatibilityReport] = useState<VideoCompatibilityReport | null>(
     null
@@ -71,8 +73,8 @@ export function VideoConversionSection(): React.JSX.Element {
 
   return (
     <div className="video-conversion-section">
-      <Title level={3} style={{ color: 'var(--text-primary)', marginBottom: 24 }}>
-        <VideoCameraOutlined style={{ marginRight: 8 }} />
+      <Title level={3} style={{ color: token.colorText, marginBottom: token.marginLG }}>
+        <VideoCameraOutlined style={{ marginRight: token.marginXS }} />
         视频格式转换
       </Title>
 

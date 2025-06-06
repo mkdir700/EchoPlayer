@@ -1,5 +1,6 @@
 import React from 'react'
 import { Card, Typography } from 'antd'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 const { Text } = Typography
 
@@ -14,10 +15,21 @@ export function PlaceholderSection({
   description,
   className
 }: PlaceholderSectionProps): React.JSX.Element {
+  const { token, styles } = useTheme()
+
   return (
-    <Card title={title} className={`settings-section-card ${className || ''}`}>
-      <div style={{ textAlign: 'center', padding: '40px 0' }}>
-        <Text style={{ color: 'var(--text-muted)' }}>{description}</Text>
+    <Card
+      title={title}
+      className={`settings-section-card ${className || ''}`}
+      style={styles.cardContainer}
+    >
+      <div
+        style={{
+          textAlign: 'center',
+          padding: `${token.paddingXL}px 0`
+        }}
+      >
+        <Text style={{ color: token.colorTextSecondary }}>{description}</Text>
       </div>
     </Card>
   )

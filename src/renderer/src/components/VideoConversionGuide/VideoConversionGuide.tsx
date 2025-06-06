@@ -2,6 +2,7 @@ import React from 'react'
 import { Modal, Typography, Space, Button, Divider, Alert } from 'antd'
 import { CopyOutlined, DownloadOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { message } from 'antd'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 const { Title, Text, Paragraph } = Typography
 
@@ -16,6 +17,7 @@ export function VideoConversionGuide({
   onClose,
   videoFileName
 }: VideoConversionGuideProps): React.JSX.Element {
+  const { token } = useTheme()
   const copyToClipboard = async (text: string): Promise<void> => {
     try {
       await navigator.clipboard.writeText(text)
@@ -77,12 +79,12 @@ export function VideoConversionGuide({
             <div
               style={{
                 background: 'rgba(255, 255, 255, 0.08)',
-                padding: 12,
-                borderRadius: 6,
-                marginTop: 8,
-                fontFamily: 'var(--font-family-mono)',
-                fontSize: 13,
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                padding: token.paddingSM,
+                borderRadius: token.borderRadius,
+                marginTop: token.marginXS,
+                fontFamily: 'Monaco, "SF Mono", Consolas, monospace',
+                fontSize: token.fontSizeSM,
+                border: `1px solid rgba(255, 255, 255, 0.12)`,
                 position: 'relative',
                 backdropFilter: 'blur(10px)'
               }}

@@ -1208,7 +1208,6 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       justifyContent: 'center',
       textAlign: 'center' as const,
       position: 'relative' as const,
-      padding: `${token.paddingMD}px ${token.paddingLG}px`,
       borderRadius: token.borderRadiusLG,
       background: 'transparent',
       backdropFilter: 'none',
