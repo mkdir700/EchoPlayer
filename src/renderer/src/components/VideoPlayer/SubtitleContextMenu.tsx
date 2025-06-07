@@ -74,7 +74,7 @@ const SubtitleContextMenu = memo(
             onClose()
           }
         }}
-        dropdownRender={() => (
+        popupRender={() => (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             {/* Main menu container - 主菜单容器 */}
             <div
@@ -232,18 +232,24 @@ const SubtitleContextMenu = memo(
                   </Button>
                 </Tooltip>
 
-                <Tooltip title="重置位置和大小">
+                <Tooltip title={isSubtitleLayoutLocked ? '布局已锁定，无法重置' : '重置位置和大小'}>
                   <Button
                     type="text"
                     size="small"
                     onClick={handleResetClick}
+                    disabled={isSubtitleLayoutLocked}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       height: '32px',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      borderColor: 'rgba(255, 255, 255, 0.2)'
+                      color: isSubtitleLayoutLocked
+                        ? 'rgba(255, 255, 255, 0.3)'
+                        : 'rgba(255, 255, 255, 0.9)',
+                      borderColor: isSubtitleLayoutLocked
+                        ? 'rgba(255, 255, 255, 0.1)'
+                        : 'rgba(255, 255, 255, 0.2)',
+                      cursor: isSubtitleLayoutLocked ? 'not-allowed' : 'pointer'
                     }}
                   >
                     <span>↺</span>
