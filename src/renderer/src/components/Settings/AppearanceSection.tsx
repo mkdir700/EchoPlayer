@@ -17,7 +17,6 @@ import {
   EyeOutlined,
   ReloadOutlined,
   BgColorsOutlined,
-  SettingOutlined,
   SunOutlined,
   MoonOutlined,
   CompressOutlined,
@@ -26,7 +25,6 @@ import {
   FontSizeOutlined,
   BorderOutlined
 } from '@ant-design/icons'
-import { useSubtitleReset } from '@renderer/hooks/useSubtitleReset'
 import { useTheme } from '@renderer/hooks/useTheme'
 import type { Color } from 'antd/es/color-picker'
 import { ThemeCustomization, useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
@@ -118,7 +116,6 @@ const themeModes = [
  * @returns The appearance settings UI as a React element.
  */
 export function AppearanceSection(): React.JSX.Element {
-  const { resetSubtitleSettings, hasSubtitleSettings } = useSubtitleReset()
   const { token } = useTheme()
   const {
     customization: themeConfig,
@@ -488,205 +485,6 @@ export function AppearanceSection(): React.JSX.Element {
                     🚧 功能开发中，敬请期待
                   </div>
                 </div>
-              )
-            }
-          ]}
-        />
-
-        <Divider />
-
-        {/* 字幕设置区域 */}
-        <div>
-          <Title level={5} style={{ margin: 0, marginBottom: token.marginSM }}>
-            <SettingOutlined style={{ marginRight: token.marginXS, color: token.colorPrimary }} />
-            字幕显示设置
-          </Title>
-
-          <div style={{ marginBottom: token.marginMD }}>
-            <Text
-              style={{
-                color: token.colorTextSecondary,
-                fontSize: token.fontSizeSM,
-                display: 'block',
-                lineHeight: '1.5'
-              }}
-            >
-              管理字幕的位置、大小和背景设置。如果字幕显示异常或无法看到，可以重置为默认配置。
-            </Text>
-          </div>
-
-          <Card
-            size="small"
-            style={{
-              background: token.colorBgContainer,
-              border: `1px solid ${token.colorBorderSecondary}`,
-              borderRadius: token.borderRadius
-            }}
-          >
-            <div
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
-            >
-              <div style={{ flex: 1 }}>
-                <Text strong style={{ color: token.colorText, display: 'block' }}>
-                  重置字幕设置
-                </Text>
-                <Text
-                  style={{
-                    color: token.colorTextSecondary,
-                    fontSize: token.fontSizeSM,
-                    lineHeight: '1.4'
-                  }}
-                >
-                  将字幕位置、大小和背景重置为默认配置
-                </Text>
-                {hasSubtitleSettings() && (
-                  <Text
-                    style={{
-                      color: token.colorWarning,
-                      fontSize: token.fontSizeSM,
-                      fontStyle: 'italic',
-                      display: 'block',
-                      marginTop: token.marginXXS
-                    }}
-                  >
-                    检测到自定义字幕设置
-                  </Text>
-                )}
-              </div>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={resetSubtitleSettings}
-                type="default"
-                size="small"
-              >
-                重置
-              </Button>
-            </div>
-          </Card>
-        </div>
-
-        <Divider />
-
-        {/* 说明信息 */}
-        <div
-          style={{
-            background: token.colorInfoBg,
-            border: `1px solid ${token.colorInfoBorder}`,
-            borderRadius: token.borderRadius,
-            padding: token.paddingSM
-          }}
-        >
-          <Text
-            style={{
-              fontSize: token.fontSizeSM,
-              color: token.colorTextSecondary,
-              lineHeight: 1.5
-            }}
-          >
-            💡 <strong>提示：</strong>
-            主题设置会立即生效并自动保存。您可以随时点击右上角的&ldquo;重置主题&rdquo;按钮恢复默认设置。
-          </Text>
-        </div>
-
-        {/* 快捷键说明 */}
-        <Collapse
-          ghost
-          expandIconPosition="end"
-          items={[
-            {
-              key: 'shortcuts',
-              label: (
-                <Title level={5} style={{ margin: 0 }}>
-                  快捷键说明
-                </Title>
-              ),
-              children: (
-                <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Text style={{ color: token.colorTextSecondary }}>重置字幕设置</Text>
-                    <Text
-                      code
-                      style={{
-                        background: token.colorFillQuaternary,
-                        color: token.colorPrimary,
-                        padding: `${token.paddingXXS}px ${token.paddingXS}px`,
-                        borderRadius: token.borderRadius,
-                        fontSize: token.fontSizeSM
-                      }}
-                    >
-                      Ctrl + Shift + R
-                    </Text>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Text style={{ color: token.colorTextSecondary }}>拖拽字幕位置</Text>
-                    <Text
-                      code
-                      style={{
-                        background: token.colorFillQuaternary,
-                        color: token.colorPrimary,
-                        padding: `${token.paddingXXS}px ${token.paddingXS}px`,
-                        borderRadius: token.borderRadius,
-                        fontSize: token.fontSizeSM
-                      }}
-                    >
-                      鼠标拖拽
-                    </Text>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Text style={{ color: token.colorTextSecondary }}>调整字幕大小</Text>
-                    <Text
-                      code
-                      style={{
-                        background: token.colorFillQuaternary,
-                        color: token.colorPrimary,
-                        padding: `${token.paddingXXS}px ${token.paddingXS}px`,
-                        borderRadius: token.borderRadius,
-                        fontSize: token.fontSizeSM
-                      }}
-                    >
-                      拖拽右下角
-                    </Text>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Text style={{ color: token.colorTextSecondary }}>切换字幕背景</Text>
-                    <Text
-                      code
-                      style={{
-                        background: token.colorFillQuaternary,
-                        color: token.colorPrimary,
-                        padding: `${token.paddingXXS}px ${token.paddingXS}px`,
-                        borderRadius: token.borderRadius,
-                        fontSize: token.fontSizeSM
-                      }}
-                    >
-                      悬停字幕区域
-                    </Text>
-                  </div>
-                </Space>
               )
             }
           ]}
