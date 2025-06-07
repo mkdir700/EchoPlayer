@@ -1956,7 +1956,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       overflow: 'hidden',
       cursor: 'pointer',
       userSelect: 'none' as const,
-      border: 'none', // 移除边框，避免悬停时出现黑色边框
+      border: 'none', // 移除边框，避免悬停时出现黑色边框 / Remove border to avoid black border on hover
       background: 'transparent',
       borderRadius: token.borderRadius,
       wordBreak: 'break-word' as const,
@@ -1969,6 +1969,8 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       WebkitBackfaceVisibility: 'hidden' as const,
       WebkitFontSmoothing: 'antialiased' as const,
       MozOsxFontSmoothing: 'grayscale' as const,
+      // 禁用 focus 样式 / Disable focus styles
+      outline: 'none',
       transition: window.matchMedia('(prefers-reduced-motion: reduce)').matches
         ? `background-color ${ANIMATION_DURATION.FAST} ease, box-shadow ${ANIMATION_DURATION.FAST} ease, transform ${ANIMATION_DURATION.FAST} ease`
         : `background-color ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}, box-shadow ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}, transform ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}`

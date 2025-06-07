@@ -1,0 +1,28 @@
+/* 字幕列表项样式 - 禁用 focus 样式 / Subtitle list item styles - Disable focus styles */
+.subtitle-list-item {
+  outline: none !important;
+}
+
+.subtitle-list-item:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.subtitle-list-item:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.subtitle-list-item:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 确保所有 focus 状态都被禁用 / Ensure all focus states are disabled */
+.subtitle-list-item *:focus {
+  outline: none !important;
+}
+
+.subtitle-list-item *:focus-visible {
+  outline: none !important;
+} 

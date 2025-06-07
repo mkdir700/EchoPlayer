@@ -3,6 +3,7 @@ import { Typography } from 'antd'
 import { SubtitleListItemProps } from '@renderer/types'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { COMPONENT_TOKENS } from '@renderer/styles/theme'
+import './SubtitleListItem.css'
 
 const { Text } = Typography
 
@@ -54,12 +55,13 @@ export const SubtitleListItem = React.memo<SubtitleListItemProps>(
     return (
       <div
         key={index}
+        className="subtitle-list-item"
         style={itemStyle}
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         role="button"
-        tabIndex={0}
+        tabIndex={-1} // 禁用键盘焦点 / Disable keyboard focus
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
