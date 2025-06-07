@@ -235,17 +235,23 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
     setIsModalOpen(true)
   }
 
+  // 响应式容器样式 / Responsive container styles
+  const getResponsiveContainerStyle = (): React.CSSProperties => {
+    return {
+      width: '100%',
+      // 确保左右间距完全一致
+      paddingLeft: token.paddingSM, // 使用最小的padding
+      paddingRight: token.paddingSM, // 右侧与左侧保持一致
+      paddingTop: token.paddingLG,
+      paddingBottom: token.paddingXL,
+      minHeight: 'calc(100vh - 60px)'
+    }
+  }
+
   return (
     <div style={styles.pageContainer}>
       {/* 主要内容区域 */}
-      <div
-        style={{
-          maxWidth: 1400,
-          margin: '0 auto',
-          paddingBottom: token.paddingXL, // 添加底部间距
-          minHeight: 'calc(100vh - 60px)' // 改为最小高度而不是固定高度
-        }}
-      >
+      <div style={getResponsiveContainerStyle()}>
         {/* 最近观看区域 - 移除固定高度限制 */}
         <div>
           <div
@@ -253,8 +259,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: token.marginLG,
-              padding: `0 ${token.paddingXS}px`
+              marginBottom: token.marginLG
             }}
           >
             <Title level={3} style={{ ...styles.sectionTitle, margin: 0 }}>
@@ -336,6 +341,47 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           .ant-card:hover .play-overlay,
           .ant-card:hover .delete-button {
             opacity: 1 !important;
+          }
+          
+          /* 响应式容器优化 */
+          @media (max-width: 576px) {
+            .ant-row {
+              margin-left: -6px !important;
+              margin-right: -6px !important;
+            }
+            .ant-col {
+              padding-left: 6px !important;
+              padding-right: 6px !important;
+            }
+          }
+          
+          /* 在宽屏下减少左侧间距，增加右侧间距平衡 */
+          @media (min-width: 1400px) {
+            .ant-layout-content {
+              margin-left: 80px !important;
+            }
+          }
+          
+          @media (min-width: 1600px) {
+            .ant-row {
+              margin-left: -8px !important;
+              margin-right: -8px !important;
+            }
+            .ant-col {
+              padding-left: 8px !important;
+              padding-right: 8px !important;
+            }
+          }
+          
+          @media (min-width: 1920px) {
+            .ant-row {
+              margin-left: -10px !important;
+              margin-right: -10px !important;
+            }
+            .ant-col {
+              padding-left: 10px !important;
+              padding-right: 10px !important;
+            }
           }
         `
         }}

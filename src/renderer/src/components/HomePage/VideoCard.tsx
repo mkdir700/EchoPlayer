@@ -214,13 +214,21 @@ export function VideoCard({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   fontSize: token.fontSizeSM,
-                  marginBottom: isCompactMode ? token.marginXS : token.marginSM
+                  marginBottom: isCompactMode ? token.marginXS : token.marginSM,
+                  minHeight: 20, // 确保固定最小高度
+                  height: 20 // 固定高度
                 }}
               >
                 <Text
+                  ellipsis
                   style={{
                     fontSize: token.fontSizeSM,
-                    color: token.colorTextDescription
+                    color: token.colorTextDescription,
+                    flex: 1,
+                    whiteSpace: 'nowrap', // 防止换行
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    marginRight: token.marginXS
                   }}
                 >
                   {utils.formatTimeAgo(item.lastOpenedAt)}
@@ -235,7 +243,9 @@ export function VideoCard({
                         ? 'transparent'
                         : utils.hexToRgba(token.colorPrimary, 0.1),
                       padding: isCompactMode ? 0 : `${token.paddingXXS}px ${token.paddingXS}px`,
-                      borderRadius: isCompactMode ? 0 : token.borderRadius
+                      borderRadius: isCompactMode ? 0 : token.borderRadius,
+                      flexShrink: 0, // 防止被压缩
+                      whiteSpace: 'nowrap' // 防止换行
                     }}
                   >
                     {Math.round(((item.currentTime || 0) / item.duration) * 100)}%
@@ -250,15 +260,28 @@ export function VideoCard({
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  minHeight: 24, // 确保固定高度
+                  height: 24 // 固定高度防止换行导致的高度变化
                 }}
               >
-                <div>
+                <div
+                  style={{
+                    flex: 1,
+                    overflow: 'hidden', // 防止溢出
+                    marginRight: token.marginXS
+                  }}
+                >
                   {item.duration && item.duration > 0 ? (
                     <Text
+                      ellipsis
                       style={{
                         fontSize: token.fontSizeSM,
-                        color: token.colorTextSecondary
+                        color: token.colorTextSecondary,
+                        display: 'block',
+                        whiteSpace: 'nowrap', // 防止换行
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}
                     >
                       {formatTime(item.currentTime || 0)} / {formatTime(item.duration)}
@@ -267,7 +290,8 @@ export function VideoCard({
                     <Text
                       style={{
                         fontSize: token.fontSizeSM,
-                        color: token.colorTextTertiary
+                        color: token.colorTextTertiary,
+                        whiteSpace: 'nowrap' // 防止换行
                       }}
                     >
                       未知时长
@@ -281,7 +305,8 @@ export function VideoCard({
                     color: token.colorPrimary,
                     fontWeight: FONT_WEIGHTS.MEDIUM,
                     height: 24,
-                    fontSize: token.fontSizeSM
+                    fontSize: token.fontSizeSM,
+                    flexShrink: 0 // 防止按钮被压缩
                   }}
                 >
                   继续观看
