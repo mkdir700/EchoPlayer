@@ -4,7 +4,6 @@ import { DataManagementSection } from '@renderer/components/Settings/DataManagem
 import { SettingsNavigation } from '@renderer/components/Settings/SettingsNavigation'
 import { AppearanceSection } from '@renderer/components/Settings/AppearanceSection'
 import { ThirdPartyServicesSection } from '@renderer/components/Settings/ThirdPartyServicesSection'
-import { VideoConversionSection } from '@renderer/components/Settings/VideoConversionSection'
 import { UpdateSection } from '@renderer/components/Settings/UpdateSection'
 import { useTheme } from '@renderer/hooks/useTheme'
 
@@ -31,9 +30,9 @@ export function SettingsPage(): React.JSX.Element {
         return <DataManagementSection />
       case 'appearance':
         return <AppearanceSection />
-      case 'video':
-        return <VideoConversionSection />
-      case 'dictionary':
+      // case 'video':
+      //   return <VideoConversionSection />
+      case 'third-party':
         return <ThirdPartyServicesSection />
       case 'about':
         return <UpdateSection />
