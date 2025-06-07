@@ -18,8 +18,9 @@ import {
   WarningOutlined,
   ExperimentOutlined
 } from '@ant-design/icons'
+import { useTheme } from '@renderer/hooks/useTheme'
 
-const { Text, Paragraph } = Typography
+const { Text } = Typography
 const { Option } = Select
 
 interface UpdateSettings {
@@ -29,6 +30,9 @@ interface UpdateSettings {
 }
 
 export function UpdateSection(): React.JSX.Element {
+  // 使用统一的主题系统
+  const { token, styles } = useTheme()
+
   const [updateSettings, setUpdateSettings] = useState<UpdateSettings>({
     autoUpdate: true,
     lastChecked: 0,
@@ -36,6 +40,38 @@ export function UpdateSection(): React.JSX.Element {
   })
   const [isCheckingForUpdates, setIsCheckingForUpdates] = useState(false)
   const [currentVersion, setCurrentVersion] = useState<string>('')
+
+  // 组件特有样式 - 其他使用通用主题样式
+  const componentStyles = {
+    versionInfoContainer: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: token.marginLG
+    },
+    versionDetails: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: token.marginXS
+    },
+    versionInfo: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: token.marginSM
+    },
+    updateChannelSection: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: token.marginSM,
+      width: '100%'
+    },
+    updateChannelSelect: {
+      width: 200
+    },
+    alertContainer: {
+      marginTop: token.marginSM
+    }
+  }
 
   // 获取当前版本和设置
   useEffect(() => {
@@ -152,121 +188,120 @@ export function UpdateSection(): React.JSX.Element {
   }
 
   return (
-    <Card title="应用更新" className="settings-card">
-      <Space direction="vertical" style={{ width: '100%' }} size="large">
+    <Card title="应用更新" style={styles.settingsSectionCard}>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {/* 版本信息 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Space direction="vertical" size="small">
-            <Space>
+        <div style={componentStyles.versionInfoContainer}>
+          <div style={componentStyles.versionDetails}>
+            <div style={componentStyles.versionInfo}>
               <Text strong>当前版本:</Text>
               <Tag color="blue">{currentVersion || '未知'}</Tag>
-            </Space>
+            </div>
             <Text type="secondary">上次检查: {formatLastChecked(updateSettings.lastChecked)}</Text>
-          </Space>
+          </div>
 
           <Button
             type="primary"
             icon={<SyncOutlined spin={isCheckingForUpdates} />}
             loading={isCheckingForUpdates}
             onClick={handleCheckForUpdates}
+            style={styles.primaryButton}
           >
             检查更新
           </Button>
         </div>
 
-        <Divider />
+        <Divider style={styles.settingsDivider} />
 
         {/* 自动更新设置 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space direction="vertical">
+        <div style={styles.settingsRow}>
+          <div style={styles.settingsRowDescription}>
             <Text strong>自动检查更新</Text>
             <Text type="secondary">应用将定期在后台检查更新并通知您</Text>
-          </Space>
+          </div>
           <Switch checked={updateSettings.autoUpdate} onChange={handleToggleAutoUpdate} />
         </div>
 
-        <Divider />
+        <Divider style={styles.settingsDivider} />
 
         {/* 更新渠道设置 */}
-        <div>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Text strong>更新渠道</Text>
-            <Select
-              value={updateSettings.updateChannel}
-              onChange={handleUpdateChannelChange}
-              style={{ width: 200 }}
-            >
-              <Option value="stable">
-                <Space>
-                  <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                  稳定版
-                </Space>
-              </Option>
-              <Option value="beta">
-                <Space>
-                  <WarningOutlined style={{ color: '#faad14' }} />
-                  测试版
-                </Space>
-              </Option>
-              <Option value="alpha">
-                <Space>
-                  <ExperimentOutlined style={{ color: '#f5222d' }} />
-                  开发版
-                </Space>
-              </Option>
-            </Select>
+        <div style={componentStyles.updateChannelSection}>
+          <Text strong>更新渠道</Text>
+          <Select
+            value={updateSettings.updateChannel}
+            onChange={handleUpdateChannelChange}
+            style={componentStyles.updateChannelSelect}
+          >
+            <Option value="stable">
+              <Space>
+                <CheckCircleOutlined style={{ color: token.colorSuccess }} />
+                稳定版
+              </Space>
+            </Option>
+            <Option value="beta">
+              <Space>
+                <WarningOutlined style={{ color: token.colorWarning }} />
+                测试版
+              </Space>
+            </Option>
+            <Option value="alpha">
+              <Space>
+                <ExperimentOutlined style={{ color: token.colorError }} />
+                开发版
+              </Space>
+            </Option>
+          </Select>
 
-            <Alert
-              message={
-                <Space>
-                  <Text>当前使用 {getChannelDisplayName(updateSettings.updateChannel)} 渠道</Text>
-                </Space>
-              }
-              description={
-                updateSettings.updateChannel === 'stable'
-                  ? '推荐用于日常使用，稳定性最高，更新频率较低'
-                  : updateSettings.updateChannel === 'beta'
-                    ? '包含新功能的预发布版本，可能存在一些已知问题'
-                    : '包含最新功能的开发版本，仅供测试使用，可能不稳定'
-              }
-              type={
-                updateSettings.updateChannel === 'stable'
-                  ? 'success'
-                  : updateSettings.updateChannel === 'beta'
-                    ? 'warning'
-                    : 'error'
-              }
-              showIcon
-              style={{ marginTop: 8 }}
-            />
-          </Space>
+          <Alert
+            message={
+              <Space>
+                <Text>当前使用 {getChannelDisplayName(updateSettings.updateChannel)} 渠道</Text>
+              </Space>
+            }
+            description={
+              updateSettings.updateChannel === 'stable'
+                ? '推荐用于日常使用，稳定性最高，更新频率较低'
+                : updateSettings.updateChannel === 'beta'
+                  ? '包含新功能的预发布版本，可能存在一些已知问题'
+                  : '包含最新功能的开发版本，仅供测试使用，可能不稳定'
+            }
+            type={
+              updateSettings.updateChannel === 'stable'
+                ? 'success'
+                : updateSettings.updateChannel === 'beta'
+                  ? 'warning'
+                  : 'error'
+            }
+            showIcon
+            style={componentStyles.alertContainer}
+          />
         </div>
 
-        <Divider />
+        <Divider style={styles.settingsDivider} />
 
         {/* 更新说明 */}
         <div>
-          <Paragraph>
-            <InfoCircleOutlined style={{ marginRight: 8 }} />
+          <div style={styles.settingsInfoHeader}>
+            <InfoCircleOutlined style={styles.settingsInfoIcon} />
             <Text strong>更新功能说明：</Text>
-          </Paragraph>
-          <ul style={{ paddingLeft: 24, margin: 0 }}>
-            <li>
+          </div>
+          <ul style={styles.settingsFeatureList}>
+            <li style={styles.settingsFeatureListItem}>
               <Text>
                 <strong>增量更新：</strong> 只下载变更部分，节省带宽和时间
               </Text>
             </li>
-            <li>
+            <li style={styles.settingsFeatureListItem}>
               <Text>
                 <strong>安全验证：</strong> 更新包经过数字签名验证，确保安全可靠
               </Text>
             </li>
-            <li>
+            <li style={styles.settingsFeatureListItem}>
               <Text>
                 <strong>自动重启：</strong> 更新完成后，应用将自动重启以应用新版本
               </Text>
             </li>
-            <li>
+            <li style={styles.settingsFeatureListItem}>
               <Text>
                 <strong>回滚保护：</strong> 支持在更新失败时自动回滚到之前版本
               </Text>

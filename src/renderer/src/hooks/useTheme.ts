@@ -38,6 +38,15 @@ interface ThemeStyles {
   shortcutKeyTag: CSSProperties
   shortcutEditInput: CSSProperties
   settingsActionBar: CSSProperties
+  // Settings section specific styles - 设置区块通用样式
+  settingsSectionCard: CSSProperties
+  settingsRow: CSSProperties
+  settingsRowDescription: CSSProperties
+  settingsInfoHeader: CSSProperties
+  settingsInfoIcon: CSSProperties
+  settingsFeatureList: CSSProperties
+  settingsFeatureListItem: CSSProperties
+  settingsDivider: CSSProperties
   // Navigation specific styles
   sidebarItem: CSSProperties
   sidebarItemActive: CSSProperties
@@ -493,6 +502,54 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       display: 'flex',
       justifyContent: 'center',
       gap: token.marginSM
+    },
+
+    // Settings section specific styles - 设置区块通用样式
+    settingsSectionCard: {
+      background: token.colorBgContainer,
+      borderRadius: token.borderRadiusLG,
+      border: `1px solid ${token.colorBorderSecondary}`,
+      boxShadow: themeStyles.appleCardShadow.light,
+      overflow: 'hidden',
+      marginBottom: token.marginLG
+    },
+
+    settingsRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: token.marginLG
+    },
+
+    settingsRowDescription: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: token.marginXXS
+    },
+
+    settingsInfoHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      marginBottom: token.marginSM
+    },
+
+    settingsInfoIcon: {
+      marginRight: token.marginSM,
+      color: token.colorPrimary
+    },
+
+    settingsFeatureList: {
+      paddingLeft: token.paddingMD,
+      margin: 0,
+      lineHeight: token.lineHeight
+    },
+
+    settingsFeatureListItem: {
+      marginBottom: token.marginXS
+    },
+
+    settingsDivider: {
+      margin: `${token.marginLG}px 0`
     },
 
     // Sidebar navigation styles
