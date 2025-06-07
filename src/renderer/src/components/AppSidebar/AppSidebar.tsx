@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Button, Tooltip, Space } from 'antd'
 import { HomeOutlined, SettingOutlined, HeartOutlined } from '@ant-design/icons'
 import { AppHeaderProps, PageType, NavigationItem } from '@renderer/types'
 import { COMMON_TEST_IDS, withTestId } from '@renderer/utils/test-utils'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { useAppConfig } from '@renderer/hooks/useAppConfig'
 
 // 导航菜单配置 - 主要功能页面
 const navigationItems: NavigationItem[] = [
@@ -39,6 +40,22 @@ interface ExtendedCSSProperties extends React.CSSProperties {
  */
 export function AppSidebar({ currentPage, onPageChange }: AppHeaderProps): React.JSX.Element {
   const { token, styles, utils } = useTheme()
+  const { useWindowFrame } = useAppConfig()
+  const [platform, setPlatform] = useState<string>('')
+
+  // 获取平台信息 / Get platform information
+  useEffect(() => {
+    const initializePlatform = async (): Promise<void> => {
+      try {
+        const platformInfo = await window.api.window.getPlatform()
+        setPlatform(platformInfo)
+      } catch (error) {
+        console.error('获取平台信息失败:', error)
+      }
+    }
+
+    initializePlatform()
+  }, [])
 
   // 计算主题色的 RGBA 变体
   const primaryRGBA15 = useMemo(
@@ -77,17 +94,23 @@ export function AppSidebar({ currentPage, onPageChange }: AppHeaderProps): React
   )
 
   // 导航区域样式
-  const navigationSectionStyle = useMemo(
-    () => ({
+  const navigationSectionStyle = useMemo(() => {
+    // 判断是否为 Mac 并且启用了沉浸式标题栏 / Check if it's Mac and immersive title bar is enabled
+    const isMacWithImmersiveTitleBar = platform === 'darwin' && !useWindowFrame
+
+    return {
       flex: 1,
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'center',
-      padding: `${token.paddingLG}px ${token.paddingMD}px`,
+      // 在 macOS 沉浸式标题栏模式下，调整 padding 配置
+      // Adjust padding configuration in macOS immersive title bar mode
+      padding: isMacWithImmersiveTitleBar
+        ? `60px ${token.paddingLG}px ${token.paddingMD}px`
+        : `60px ${token.paddingMD}px ${token.paddingLG}px`,
       gap: token.marginMD
-    }),
-    [token.paddingLG, token.paddingMD, token.marginMD]
-  )
+    }
+  }, [platform, useWindowFrame, token.paddingLG, token.paddingMD, token.marginMD])
 
   // 底部辅助功能区域样式
   const auxiliarySectionStyle = useMemo(

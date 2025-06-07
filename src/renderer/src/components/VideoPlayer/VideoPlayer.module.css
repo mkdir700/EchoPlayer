@@ -25,7 +25,8 @@
   /* 移除边框和背景模糊 */
   border: none;
   backdrop-filter: none;
-  aspect-ratio: 16/9;
+  /* 🔧 移除固定宽高比，避免溢出问题 - Remove fixed aspect ratio to avoid overflow issues */
+  /* aspect-ratio: 16/9; */
   /* 保持平滑过渡 */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

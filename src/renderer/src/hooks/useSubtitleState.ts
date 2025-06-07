@@ -50,7 +50,7 @@ export const createDefaultSubtitleState = (dynamicMaskFrame?: {
     left: 20,
     top: 75,
     right: 20,
-    bottom: 5
+    bottom: 15
   },
   backgroundType: 'transparent',
   isMaskMode: false,

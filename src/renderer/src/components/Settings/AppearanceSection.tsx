@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import {
   Card,
   Typography,
@@ -11,7 +11,10 @@ import {
   Col,
   Collapse,
   InputNumber,
-  message
+  message,
+  Switch,
+  Alert,
+  Modal
 } from 'antd'
 import {
   EyeOutlined,
@@ -23,11 +26,15 @@ import {
   ExpandOutlined,
   BgColorsOutlined as PaletteOutlined,
   FontSizeOutlined,
-  BorderOutlined
+  BorderOutlined,
+  WindowsOutlined,
+  ExclamationCircleOutlined,
+  ReloadOutlined as RestartOutlined
 } from '@ant-design/icons'
 import { useTheme } from '@renderer/hooks/useTheme'
 import type { Color } from 'antd/es/color-picker'
 import { ThemeCustomization, useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
+import { useAppConfig } from '@renderer/hooks/useAppConfig'
 
 const { Text, Title } = Typography
 
@@ -123,6 +130,10 @@ export function AppearanceSection(): React.JSX.Element {
     resetToDefault
   } = useThemeCustomization()
 
+  // 应用配置管理 / Application configuration management
+  const { useWindowFrame, updateConfig, restartApp } = useAppConfig()
+  const [isRestartModalVisible, setIsRestartModalVisible] = useState(false)
+
   const handleColorChange = useCallback(
     (
       colorType: keyof Pick<
@@ -155,6 +166,39 @@ export function AppearanceSection(): React.JSX.Element {
     resetToDefault()
     message.success('主题设置已重置为默认配置')
   }, [resetToDefault])
+
+  // 窗口框架设置处理器 / Window frame settings handlers
+  const handleWindowFrameChange = useCallback(
+    async (checked: boolean) => {
+      try {
+        const response = await updateConfig({ useWindowFrame: checked })
+        if (response.success) {
+          // 显示重启确认对话框 / Show restart confirmation dialog
+          setIsRestartModalVisible(true)
+        } else {
+          message.error(response.error || '更新窗口框架设置失败')
+        }
+      } catch (error) {
+        console.error('更新窗口框架设置失败:', error)
+        message.error('更新窗口框架设置失败')
+      }
+    },
+    [updateConfig]
+  )
+
+  const handleConfirmRestart = useCallback(async () => {
+    try {
+      await restartApp()
+    } catch (error) {
+      console.error('重启应用失败:', error)
+      message.error('重启应用失败')
+    }
+  }, [restartApp])
+
+  const handleCancelRestart = useCallback(() => {
+    setIsRestartModalVisible(false)
+    message.info('设置已保存，请手动重启应用使设置生效')
+  }, [])
 
   return (
     <Card
@@ -193,6 +237,48 @@ export function AppearanceSection(): React.JSX.Element {
               />
             ))}
           </Row>
+        </div>
+
+        <Divider />
+
+        {/* 窗口框架设置 / Window Frame Settings */}
+        <div>
+          <Title level={5} style={{ margin: 0, marginBottom: token.marginSM }}>
+            <WindowsOutlined style={{ marginRight: token.marginXS, color: token.colorPrimary }} />
+            窗口框架设置
+          </Title>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              padding: `${token.paddingMD}px 0`
+            }}
+          >
+            <div style={{ flex: 1, marginRight: token.marginLG }}>
+              <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
+                使用系统窗口框架
+              </Text>
+              <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                启用后将使用系统原生的窗口标题栏和边框，禁用后将使用自定义的沉浸式标题栏设计
+              </Text>
+              <br />
+              <Alert
+                message="更改此设置需要重启应用才能生效"
+                type="info"
+                showIcon
+                style={{ marginTop: token.marginSM }}
+                icon={<ExclamationCircleOutlined />}
+              />
+            </div>
+            <Switch
+              checked={useWindowFrame}
+              onChange={handleWindowFrameChange}
+              checkedChildren="系统框架"
+              unCheckedChildren="沉浸式"
+            />
+          </div>
         </div>
 
         <Divider />
@@ -490,6 +576,37 @@ export function AppearanceSection(): React.JSX.Element {
           ]}
         />
       </Space>
+
+      {/* 重启确认对话框 / Restart confirmation modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginXS }}>
+            <RestartOutlined style={{ color: token.colorPrimary }} />
+            <span>重启应用</span>
+          </div>
+        }
+        open={isRestartModalVisible}
+        onOk={handleConfirmRestart}
+        onCancel={handleCancelRestart}
+        okText="立即重启"
+        cancelText="稍后手动重启"
+        okButtonProps={{
+          icon: <RestartOutlined />,
+          type: 'primary'
+        }}
+        cancelButtonProps={{
+          type: 'default'
+        }}
+        centered
+        maskClosable={false}
+      >
+        <div style={{ padding: `${token.paddingSM}px 0` }}>
+          <Text>窗口框架设置已更新。为了使新设置生效，需要重启应用。</Text>
+          <br />
+          <br />
+          <Text type="secondary">您可以选择立即重启，或者稍后手动重启应用。</Text>
+        </div>
+      </Modal>
     </Card>
   )
 }

@@ -8,8 +8,44 @@
 .videoPlayerSection {
   flex: 1;
   min-height: 0;
+  position: relative; /* 为绝对定位的 bar 提供参考 */
 }
 
 .videoControlsSection {
   flex-shrink: 0;
+}
+
+/* 沉浸式顶部 Bar 样式 */
+.immersiveTopBar {
+  /* 默认鼠标穿透，只有在有内容时才启用交互 */
+  pointer-events: none;
+}
+
+.immersiveTopBar * {
+  /* 让子元素可以接收鼠标事件 */
+  pointer-events: auto;
+}
+
+/* 返回按钮的悬停效果 */
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: translateX(-2px);
+}
+
+.backButton:active {
+  transform: translateX(-1px);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .immersiveTopBar {
+    padding: 0 12px;
+    height: 48px;
+  }
+  
+  .backButton {
+    padding: 6px 10px;
+    height: 36px;
+    font-size: 13px;
+  }
 }

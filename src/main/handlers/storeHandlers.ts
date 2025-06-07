@@ -5,8 +5,17 @@ import type {
   StoreSchema,
   ApiResponse,
   ApiResponseWithCount,
-  VideoUIConfig
+  VideoUIConfig,
+  AppConfig
 } from '../../types/shared'
+
+// 默认应用配置 / Default application configuration
+const defaultAppConfig: AppConfig = {
+  useWindowFrame: false, // 默认使用自定义标题栏 / Default to custom title bar
+  appTheme: 'system', // 默认跟随系统主题 / Default to system theme
+  autoCheckUpdates: true, // 默认自动检查更新 / Default to auto check updates
+  language: 'zh-CN' // 默认语言为中文 / Default language is Chinese
+}
 
 // 创建 store 实例
 const store = new Conf({
@@ -27,8 +36,10 @@ const store = new Conf({
         autoUpdate: true,
         lastChecked: 0,
         updateChannel: 'stable'
-      }
-    }
+      },
+      app: defaultAppConfig // 添加应用配置 / Add application configuration
+    },
+    appConfig: defaultAppConfig // 单独的应用配置存储 / Separate application configuration storage
   }
 })
 
@@ -415,6 +426,61 @@ export function setupStoreHandlers(): void {
       return { success: false, error: error instanceof Error ? error.message : '未知错误' }
     }
   })
+
+  // 应用配置相关的 IPC 处理器 / Application configuration IPC handlers
+
+  // 获取应用配置
+  ipcMain.handle('app:get-config', (): AppConfig => {
+    try {
+      const config = store.get('appConfig', defaultAppConfig) as AppConfig
+      return { ...defaultAppConfig, ...config }
+    } catch (error) {
+      console.error('获取应用配置失败:', error)
+      return defaultAppConfig
+    }
+  })
+
+  // 更新应用配置
+  ipcMain.handle('app:update-config', (_, updates: Partial<AppConfig>): ApiResponse => {
+    try {
+      const currentConfig = store.get('appConfig', defaultAppConfig) as AppConfig
+      const newConfig = { ...currentConfig, ...updates }
+
+      console.log('🔄 更新应用配置:', { updates, newConfig })
+      store.set('appConfig', newConfig)
+
+      return { success: true }
+    } catch (error) {
+      console.error('更新应用配置失败:', error)
+      return { success: false, error: error instanceof Error ? error.message : '未知错误' }
+    }
+  })
+
+  // 重置应用配置为默认值
+  ipcMain.handle('app:reset-config', (): ApiResponse => {
+    try {
+      console.log('🔄 重置应用配置为默认值')
+      store.set('appConfig', defaultAppConfig)
+      return { success: true }
+    } catch (error) {
+      console.error('重置应用配置失败:', error)
+      return { success: false, error: error instanceof Error ? error.message : '未知错误' }
+    }
+  })
+}
+
+/**
+ * 获取应用配置的同步方法 / Synchronous method to get application configuration
+ * 这个方法可以在窗口创建时使用 / This method can be used during window creation
+ */
+export function getAppConfig(): AppConfig {
+  try {
+    const config = store.get('appConfig', defaultAppConfig) as AppConfig
+    return { ...defaultAppConfig, ...config }
+  } catch (error) {
+    console.error('获取应用配置失败:', error)
+    return defaultAppConfig
+  }
 }
 
 // 导出类型供其他模块使用

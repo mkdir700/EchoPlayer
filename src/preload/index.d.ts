@@ -4,7 +4,9 @@ import type {
   StoreSettings,
   ApiResponse,
   ApiResponseWithCount,
-  VideoUIConfig
+  VideoUIConfig,
+  AppConfig,
+  TitleBarOverlayOptions
 } from '../types/shared'
 
 interface FileSystemAPI {
@@ -112,6 +114,26 @@ interface StoreAPI {
   removeRawData: (key: string) => Promise<ApiResponse>
 }
 
+// 应用配置 API 接口 / Application configuration API interface
+interface AppConfigAPI {
+  getConfig: () => Promise<AppConfig>
+  updateConfig: (updates: Partial<AppConfig>) => Promise<ApiResponse>
+  resetConfig: () => Promise<ApiResponse>
+}
+
+// 窗口控制 API 接口 / Window control API interface
+interface WindowAPI {
+  setTitleBarOverlay: (overlay: TitleBarOverlayOptions) => Promise<void>
+  setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<void>
+  isAlwaysOnTop: () => Promise<boolean>
+  minimize: () => Promise<void>
+  maximize: () => Promise<void>
+  close: () => Promise<void>
+  restart: () => Promise<void>
+  getPlatform: () => Promise<string>
+  getVersion: () => Promise<string>
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI & {
@@ -126,6 +148,8 @@ declare global {
       dictionary: DictionaryAPI
       store: StoreAPI
       update: UpdateAPI
+      appConfig: AppConfigAPI // 应用配置 API / Application configuration API
+      window: WindowAPI // 窗口控制 API / Window control API
       log: (
         level: 'debug' | 'info' | 'warn' | 'error',
         message: string,

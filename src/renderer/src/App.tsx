@@ -3,6 +3,7 @@ import { Layout } from 'antd'
 
 // 导入组件
 import { AppSidebar } from '@renderer/components/AppSidebar/AppSidebar'
+import { TitleBar } from '@renderer/components/TitleBar/TitleBar'
 import { HomePage } from '@renderer/pages/HomePage'
 import { PlayPage } from '@renderer/pages/PlayPage'
 import { FavoritesPage } from '@renderer/pages/FavoritesPage'
@@ -16,6 +17,7 @@ import { SubtitleListProvider } from '@renderer/contexts/SubtitleListContext'
 import { VideoPlayerProvider } from '@renderer/contexts/VideoPlayerContext'
 import { useSubtitleReset } from '@renderer/hooks/useSubtitleReset'
 import { ThemeProvider } from '@renderer/contexts/ThemeContext'
+import { useAppConfig } from '@renderer/hooks/useAppConfig'
 
 // 导入类型
 import { PageType } from '@renderer/types'
@@ -35,6 +37,8 @@ function AppContent(): React.JSX.Element {
   useSubtitleReset()
   // 页面状态管理
   const [currentPage, setCurrentPage] = useState<PageType>('home')
+  // 应用配置管理
+  const { useWindowFrame } = useAppConfig()
 
   // 导航到播放页面
   const handleNavigateToPlay = useCallback(() => {
@@ -91,10 +95,24 @@ function AppContent(): React.JSX.Element {
     )
   }, [currentPage, handleNavigateToPlay, handleBackToHome])
 
+  // 处理设置页面导航 / Handle settings page navigation
+  const handleSettingsClick = useCallback(() => {
+    setCurrentPage('settings')
+  }, [])
+
   return (
     <PlayingVideoProvider>
       <VideoPlayerProvider>
         <Layout style={{ minHeight: '100vh' }}>
+          {/* 自定义标题栏 - 仅在非系统框架模式下显示 / Custom title bar - only show in non-system frame mode */}
+          {!useWindowFrame && (
+            <TitleBar
+              showWindowControls={true}
+              onSettingsClick={handleSettingsClick}
+              variant={currentPage === 'play' ? 'compact' : 'default'}
+            />
+          )}
+
           {currentPage !== 'play' ? (
             <>
               <AppSidebar currentPage={currentPage} onPageChange={setCurrentPage} />

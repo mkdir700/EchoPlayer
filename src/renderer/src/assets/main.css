@@ -38,3 +38,12 @@ html {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* 沉浸式窗口标题栏样式 / Immersive window title bar styles */
+.app-nodrag {
+  -webkit-app-region: none; /* 禁用拖拽，允许点击交互 / Disable dragging, allow click interaction */
+}
+
+.app-drag {
+  -webkit-app-region: drag; /* 启用拖拽，用于移动窗口 / Enable dragging for window movement */
+}

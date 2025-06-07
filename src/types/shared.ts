@@ -3,6 +3,21 @@
 // 导入electron-updater的UpdateInfo类型
 import { UpdateInfo } from 'electron-updater'
 
+// 标题栏覆盖选项 / Title bar overlay options
+export interface TitleBarOverlayOptions {
+  color?: string
+  symbolColor?: string
+  height?: number
+}
+
+// 应用配置接口 / Application configuration interface
+export interface AppConfig {
+  useWindowFrame?: boolean // 是否使用系统窗口框架 / Whether to use system window frame
+  appTheme?: 'system' | 'light' | 'dark' // 应用主题 / Application theme
+  autoCheckUpdates?: boolean // 是否自动检查更新 / Whether to auto check updates
+  language?: 'zh-CN' | 'en-US' // 应用语言 / Application language
+}
+
 // 字幕项接口
 export interface SubtitleItem {
   startTime: number
@@ -103,12 +118,14 @@ export interface StoreSettings {
   maxRecentItems: number
   playback: GlobalPlaybackSettings // 播放设置
   update: UpdateSettings // 更新设置
+  app?: AppConfig // 应用配置 / Application configuration
 }
 
 // 存储结构接口
 export interface StoreSchema {
   recentPlays: RecentPlayItem[]
   settings: StoreSettings
+  appConfig?: AppConfig // 单独的应用配置存储 / Separate application configuration storage
 }
 
 // API 响应类型

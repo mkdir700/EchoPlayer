@@ -2,8 +2,13 @@ import { BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import icon from '../../../resources/icon.png?asset'
+import { getAppConfig } from '../handlers/storeHandlers'
 
 export function createWindow(): BrowserWindow {
+  // 获取应用配置 / Get application configuration
+  const appConfig = getAppConfig()
+  const { useWindowFrame = false } = appConfig || {}
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 768,
@@ -12,6 +17,18 @@ export function createWindow(): BrowserWindow {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
+    frame: useWindowFrame, // 控制是否显示系统窗口框架 / Control whether to show system window frame
+    fullscreenable: false,
+    titleBarStyle: useWindowFrame
+      ? 'default'
+      : process.platform === 'darwin'
+        ? 'hiddenInset'
+        : 'hidden', // 在 macOS 上完全隐藏标题栏和交通灯 / Completely hide title bar and traffic lights on macOS
+    titleBarOverlay: useWindowFrame
+      ? false
+      : {
+          height: 49 // 自定义标题栏高度 / Custom title bar height
+        },
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

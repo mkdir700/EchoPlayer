@@ -6,7 +6,9 @@ import type {
   ApiResponse,
   ApiResponseWithCount,
   UpdateSettings,
-  VideoUIConfig
+  VideoUIConfig,
+  AppConfig,
+  TitleBarOverlayOptions
 } from '../types/shared'
 
 // 文件系统 API
@@ -205,12 +207,59 @@ const updateAPI = {
     ipcRenderer.invoke('set-update-channel', channel)
 }
 
+// 应用配置 API / Application configuration API
+const appConfigAPI = {
+  // 获取应用配置
+  getConfig: (): Promise<AppConfig> => ipcRenderer.invoke('app:get-config'),
+
+  // 更新应用配置
+  updateConfig: (updates: Partial<AppConfig>): Promise<ApiResponse> =>
+    ipcRenderer.invoke('app:update-config', updates),
+
+  // 重置应用配置
+  resetConfig: (): Promise<ApiResponse> => ipcRenderer.invoke('app:reset-config')
+}
+
+// 窗口控制 API / Window control API
+const windowAPI = {
+  // 设置标题栏覆盖样式
+  setTitleBarOverlay: (overlay: TitleBarOverlayOptions): Promise<void> =>
+    ipcRenderer.invoke('window:set-title-bar-overlay', overlay),
+
+  // 设置窗口置顶
+  setAlwaysOnTop: (alwaysOnTop: boolean): Promise<void> =>
+    ipcRenderer.invoke('window:set-always-on-top', alwaysOnTop),
+
+  // 获取窗口置顶状态
+  isAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke('window:is-always-on-top'),
+
+  // 最小化窗口
+  minimize: (): Promise<void> => ipcRenderer.invoke('window:minimize'),
+
+  // 最大化/恢复窗口
+  maximize: (): Promise<void> => ipcRenderer.invoke('window:maximize'),
+
+  // 关闭窗口
+  close: (): Promise<void> => ipcRenderer.invoke('window:close'),
+
+  // 重启应用
+  restart: (): Promise<void> => ipcRenderer.invoke('app:restart'),
+
+  // 获取平台信息
+  getPlatform: (): Promise<string> => ipcRenderer.invoke('app:get-platform'),
+
+  // 获取应用版本
+  getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version')
+}
+
 // Custom APIs for renderer
 const api = {
   fileSystem: fileSystemAPI,
   dictionary: dictionaryAPI,
   store: storeAPI,
   update: updateAPI,
+  appConfig: appConfigAPI, // 应用配置 API / Application configuration API
+  window: windowAPI, // 窗口控制 API / Window control API
   // 日志API
   log: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) =>
     ipcRenderer.invoke('log', level, message, data)
