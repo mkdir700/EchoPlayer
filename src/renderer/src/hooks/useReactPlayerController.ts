@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import ReactPlayer from 'react-player'
 import { useVideoPlayerContext } from './useVideoPlayerContext'
-import { useVideoPlaybackSettingsContext } from './useVideoPlaybackSettingsContext'
+import { useVideoConfig } from './useVideoConfig'
 
 interface PlayerControllerReturn {
   // 播放器引用（单例）
@@ -140,8 +140,12 @@ export const useReactPlayerController = (): PlayerControllerReturn => {
   } = useVideoPlayerContext()
 
   // 获取播放设置相关的状态和控制
-  const { playbackRateRef, volumeRef, updateVolume, updatePlaybackRate } =
-    useVideoPlaybackSettingsContext()
+  const {
+    playbackRate,
+    volume,
+    setVolume: updateVolume,
+    setPlaybackRate: updatePlaybackRate
+  } = useVideoConfig()
 
   // 缓存播放器实例检查，避免频繁访问 ref
   const isPlayerReady = useCallback((): boolean => {
@@ -231,11 +235,11 @@ export const useReactPlayerController = (): PlayerControllerReturn => {
 
   const adjustVolume = useCallback(
     (delta: number): void => {
-      const currentVolume = volumeRef.current
+      const currentVolume = volume
       const newVolume = Math.max(0, Math.min(1, currentVolume + delta))
       setVolume(newVolume)
     },
-    [volumeRef, setVolume]
+    [volume, setVolume]
   )
 
   // 播放速度控制
@@ -249,11 +253,11 @@ export const useReactPlayerController = (): PlayerControllerReturn => {
 
   const adjustPlaybackRate = useCallback(
     (delta: number): void => {
-      const currentRate = playbackRateRef.current
+      const currentRate = playbackRate
       const newRate = Math.max(0.25, Math.min(4, currentRate + delta))
       setPlaybackRate(newRate)
     },
-    [playbackRateRef, setPlaybackRate]
+    [playbackRate, setPlaybackRate]
   )
 
   // 获取当前播放器状态
@@ -264,8 +268,8 @@ export const useReactPlayerController = (): PlayerControllerReturn => {
       isPlaying: isPlayingRef.current,
       isLoaded: isVideoLoadedRef.current,
       error: videoErrorRef.current,
-      volume: volumeRef.current,
-      playbackRate: playbackRateRef.current,
+      volume: volume,
+      playbackRate: playbackRate,
       progress: durationRef.current > 0 ? currentTimeRef.current / durationRef.current : 0
     }
   }, [
@@ -274,8 +278,8 @@ export const useReactPlayerController = (): PlayerControllerReturn => {
     isPlayingRef,
     isVideoLoadedRef,
     videoErrorRef,
-    volumeRef,
-    playbackRateRef
+    volume,
+    playbackRate
   ])
 
   // ReactPlayer 的事件处理器工厂
@@ -424,8 +428,8 @@ export const useReactPlayerController = (): PlayerControllerReturn => {
       isPlaying: isPlayingRef,
       isLoaded: isVideoLoadedRef,
       error: videoErrorRef,
-      volume: volumeRef,
-      playbackRate: playbackRateRef
+      volume: { current: volume },
+      playbackRate: { current: playbackRate }
     }
   }
 }

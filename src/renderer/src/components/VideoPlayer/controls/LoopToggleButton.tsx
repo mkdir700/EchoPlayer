@@ -8,7 +8,7 @@ import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import type { SubtitleItem } from '@types_/shared'
 import RendererLogger from '@renderer/utils/logger'
-import { useIsSingleLoop } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
+import { useIsSingleLoop } from '@renderer/hooks/useVideoPlaybackHooks'
 
 interface LoopToggleButtonProps {
   isVideoLoaded: boolean

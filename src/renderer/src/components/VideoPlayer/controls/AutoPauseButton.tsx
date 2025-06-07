@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 import { Button, Tooltip } from 'antd'
 import { PauseCircleFilled } from '@ant-design/icons'
-import { useIsAutoPause } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
+import { useIsAutoPause } from '@renderer/hooks/useVideoPlaybackHooks'
 import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'

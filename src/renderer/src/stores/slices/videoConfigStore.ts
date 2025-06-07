@@ -2,10 +2,19 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { devtools, persist, createJSONStorage } from 'zustand/middleware'
 import { electronStorage } from '../customStorage'
+import { VideoPlaybackSettings, SubtitleDisplaySettings } from '@types_/shared'
+import { VOLUME_SETTINGS, PLAYBACK_RATES } from '../../constants'
 
 // 单个视频的配置接口 / Single video configuration interface
 export interface VideoConfig {
   isSubtitleLayoutLocked: boolean // 字幕布局锁定状态 / Subtitle layout lock state
+  // 播放设置 / Playback settings
+  displayMode: VideoPlaybackSettings['displayMode'] // 字幕显示模式 / Subtitle display mode
+  volume: VideoPlaybackSettings['volume'] // 音量设置 / Volume setting
+  playbackRate: VideoPlaybackSettings['playbackRate'] // 播放速度 / Playback rate
+  isSingleLoop: VideoPlaybackSettings['isSingleLoop'] // 单句循环 / Single loop
+  isAutoPause: VideoPlaybackSettings['isAutoPause'] // 自动暂停 / Auto pause
+  subtitleDisplay: SubtitleDisplaySettings // 字幕显示配置 / Subtitle display settings
 }
 
 // 视频配置状态接口 / Video config state interface
@@ -21,6 +30,20 @@ export interface VideoConfigActions {
   // 设置指定视频的字幕布局锁定状态 / Set subtitle layout lock state for specific video
   setSubtitleLayoutLocked: (fileId: string, locked: boolean) => void
 
+  // 播放设置相关操作 / Playback settings related actions
+  setDisplayMode: (fileId: string, mode: VideoPlaybackSettings['displayMode']) => void
+  setVolume: (fileId: string, volume: VideoPlaybackSettings['volume']) => void
+  setPlaybackRate: (fileId: string, rate: VideoPlaybackSettings['playbackRate']) => void
+  setIsSingleLoop: (fileId: string, loop: VideoPlaybackSettings['isSingleLoop']) => void
+  setIsAutoPause: (fileId: string, pause: VideoPlaybackSettings['isAutoPause']) => void
+  setSubtitleDisplay: (fileId: string, settings: SubtitleDisplaySettings) => void
+
+  // 批量设置播放配置 / Batch set playback settings
+  setPlaybackSettings: (
+    fileId: string,
+    settings: Partial<Omit<VideoConfig, 'isSubtitleLayoutLocked'>>
+  ) => void
+
   // 清除指定视频的配置 / Clear configuration for specific video
   clearVideoConfig: (fileId: string) => void
 
@@ -33,7 +56,28 @@ export type VideoConfigStore = VideoConfigState & VideoConfigActions
 
 // 默认配置 / Default configuration
 const defaultVideoConfig: VideoConfig = {
-  isSubtitleLayoutLocked: false
+  isSubtitleLayoutLocked: false,
+  displayMode: 'bilingual',
+  volume: VOLUME_SETTINGS.DEFAULT,
+  playbackRate: PLAYBACK_RATES.DEFAULT,
+  isSingleLoop: false,
+  isAutoPause: false,
+  subtitleDisplay: {
+    margins: {
+      left: 20,
+      top: 75,
+      right: 20,
+      bottom: 5
+    },
+    backgroundType: 'transparent',
+    isMaskMode: false,
+    maskFrame: {
+      left: 0,
+      top: 25,
+      width: 100,
+      height: 50
+    }
+  }
 }
 
 // 初始状态 / Initial state
@@ -71,6 +115,72 @@ export const useVideoConfigStore = create<VideoConfigStore>()(
             state.configs[fileId].isSubtitleLayoutLocked = locked
           }),
 
+        setDisplayMode: (fileId: string, mode: VideoPlaybackSettings['displayMode']) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            state.configs[fileId].displayMode = mode
+          }),
+
+        setVolume: (fileId: string, volume: VideoPlaybackSettings['volume']) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            state.configs[fileId].volume = volume
+          }),
+
+        setPlaybackRate: (fileId: string, rate: VideoPlaybackSettings['playbackRate']) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            state.configs[fileId].playbackRate = rate
+          }),
+
+        setIsSingleLoop: (fileId: string, loop: VideoPlaybackSettings['isSingleLoop']) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            state.configs[fileId].isSingleLoop = loop
+          }),
+
+        setIsAutoPause: (fileId: string, pause: VideoPlaybackSettings['isAutoPause']) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            state.configs[fileId].isAutoPause = pause
+          }),
+
+        setSubtitleDisplay: (fileId: string, settings: SubtitleDisplaySettings) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            state.configs[fileId].subtitleDisplay = settings
+          }),
+
+        setPlaybackSettings: (
+          fileId: string,
+          settings: Partial<Omit<VideoConfig, 'isSubtitleLayoutLocked'>>
+        ) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            const config = state.configs[fileId]
+            if (settings.displayMode !== undefined) config.displayMode = settings.displayMode
+            if (settings.volume !== undefined) config.volume = settings.volume
+            if (settings.playbackRate !== undefined) config.playbackRate = settings.playbackRate
+            if (settings.isSingleLoop !== undefined) config.isSingleLoop = settings.isSingleLoop
+            if (settings.isAutoPause !== undefined) config.isAutoPause = settings.isAutoPause
+            if (settings.subtitleDisplay !== undefined)
+              config.subtitleDisplay = settings.subtitleDisplay
+          }),
+
         clearVideoConfig: (fileId: string) =>
           set((state) => {
             delete state.configs[fileId]
@@ -87,14 +197,36 @@ export const useVideoConfigStore = create<VideoConfigStore>()(
         partialize: (state) => ({
           configs: state.configs // 只持久化配置数据，不持久化方法 / Only persist config data, not methods
         }),
-        version: 1, // 版本号，用于后续迁移 / Version number for future migrations
-        migrate: (persistedState, version) => {
+        version: 2, // 增加版本号，因为接口发生了变化 / Increment version due to interface changes
+        migrate: (persistedState: unknown, version) => {
           // 处理版本迁移 / Handle version migrations
-          if (version === 0) {
-            // 从版本 0 迁移到版本 1 的逻辑
-            console.log('🔄 执行视频配置存储从 v0 到 v1 的迁移')
+          if (version === 0 || version === 1) {
+            // 从版本 0/1 迁移到版本 2 的逻辑
+            console.log('🔄 执行视频配置存储从 v' + version + ' 到 v2 的迁移')
+            const newState: VideoConfigState = { configs: {} }
+
+            // 如果有旧的配置数据，尝试保留字幕布局锁定状态
+            if (
+              persistedState &&
+              typeof persistedState === 'object' &&
+              'configs' in persistedState
+            ) {
+              const oldState = persistedState as {
+                configs: Record<string, { isSubtitleLayoutLocked?: boolean }>
+              }
+              Object.keys(oldState.configs).forEach((fileId) => {
+                const oldConfig = oldState.configs[fileId]
+                newState.configs[fileId] = {
+                  ...defaultVideoConfig,
+                  // 保留旧的字幕布局锁定状态
+                  isSubtitleLayoutLocked: oldConfig.isSubtitleLayoutLocked || false
+                }
+              })
+            }
+
+            return newState
           }
-          return persistedState
+          return persistedState as VideoConfigState
         },
         onRehydrateStorage: () => {
           console.log('🔄 VideoConfig store hydration started')
@@ -123,3 +255,58 @@ export const useSubtitleLayoutLocked = (fileId: string): boolean =>
 // 选择器：获取设置字幕布局锁定状态的函数 / Selector: Get function to set subtitle layout lock state
 export const useSetSubtitleLayoutLocked = (): ((fileId: string, locked: boolean) => void) =>
   useVideoConfigStore((state) => state.setSubtitleLayoutLocked)
+
+// 播放设置相关选择器 / Playback settings related selectors
+export const useDisplayMode = (fileId: string): VideoPlaybackSettings['displayMode'] =>
+  useVideoConfigStore((state) => state.getVideoConfig(fileId).displayMode)
+
+export const useVolume = (fileId: string): VideoPlaybackSettings['volume'] =>
+  useVideoConfigStore((state) => state.getVideoConfig(fileId).volume)
+
+export const usePlaybackRate = (fileId: string): VideoPlaybackSettings['playbackRate'] =>
+  useVideoConfigStore((state) => state.getVideoConfig(fileId).playbackRate)
+
+export const useIsSingleLoop = (fileId: string): VideoPlaybackSettings['isSingleLoop'] =>
+  useVideoConfigStore((state) => state.getVideoConfig(fileId).isSingleLoop)
+
+export const useIsAutoPause = (fileId: string): VideoPlaybackSettings['isAutoPause'] =>
+  useVideoConfigStore((state) => state.getVideoConfig(fileId).isAutoPause)
+
+export const useSubtitleDisplay = (fileId: string): SubtitleDisplaySettings =>
+  useVideoConfigStore((state) => state.getVideoConfig(fileId).subtitleDisplay)
+
+// 设置函数选择器 / Setter function selectors
+export const useSetDisplayMode = (): ((
+  fileId: string,
+  mode: VideoPlaybackSettings['displayMode']
+) => void) => useVideoConfigStore((state) => state.setDisplayMode)
+
+export const useSetVolume = (): ((
+  fileId: string,
+  volume: VideoPlaybackSettings['volume']
+) => void) => useVideoConfigStore((state) => state.setVolume)
+
+export const useSetPlaybackRate = (): ((
+  fileId: string,
+  rate: VideoPlaybackSettings['playbackRate']
+) => void) => useVideoConfigStore((state) => state.setPlaybackRate)
+
+export const useSetIsSingleLoop = (): ((
+  fileId: string,
+  loop: VideoPlaybackSettings['isSingleLoop']
+) => void) => useVideoConfigStore((state) => state.setIsSingleLoop)
+
+export const useSetIsAutoPause = (): ((
+  fileId: string,
+  pause: VideoPlaybackSettings['isAutoPause']
+) => void) => useVideoConfigStore((state) => state.setIsAutoPause)
+
+export const useSetSubtitleDisplay = (): ((
+  fileId: string,
+  settings: SubtitleDisplaySettings
+) => void) => useVideoConfigStore((state) => state.setSubtitleDisplay)
+
+export const useSetPlaybackSettings = (): ((
+  fileId: string,
+  settings: Partial<Omit<VideoConfig, 'isSubtitleLayoutLocked'>>
+) => void) => useVideoConfigStore((state) => state.setPlaybackSettings)

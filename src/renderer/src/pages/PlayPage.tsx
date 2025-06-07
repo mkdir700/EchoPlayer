@@ -13,8 +13,6 @@ import { CurrentSubtitleDisplayProvider } from '@renderer/contexts/CurrentSubtit
 import { useUIStore, useFullscreenMode } from '@renderer/stores'
 import { FullscreenTestInfo } from '@renderer/components/VideoPlayer/FullscreenTestInfo'
 
-import { VideoPlaybackSettingsProvider } from '@renderer/contexts/VideoPlaybackSettingsContext'
-
 interface PlayPageProps {
   onBack: () => void
 }
@@ -142,44 +140,42 @@ const PlayPageMemo = React.memo<PlayPageProps>(
 
     return (
       <CurrentSubtitleDisplayProvider>
-        <VideoPlaybackSettingsProvider>
-          <div style={containerStyle}>
-            {/* 仅在开发模式下显示全屏测试信息 / Only show fullscreen test info in development mode */}
-            {process.env.NODE_ENV === 'development' && <FullscreenTestInfo />}
+        <div style={containerStyle}>
+          {/* 仅在开发模式下显示全屏测试信息 / Only show fullscreen test info in development mode */}
+          {process.env.NODE_ENV === 'development' && <FullscreenTestInfo />}
 
-            {/* 播放页面独立Header - 始终渲染，由组件内部控制显示/隐藏动画 */}
-            <PlayPageHeader onBack={handleBack} />
+          {/* 播放页面独立Header - 始终渲染，由组件内部控制显示/隐藏动画 */}
+          <PlayPageHeader onBack={handleBack} />
 
-            <div style={contentAreaStyle}>
-              {/* 🎬 视频播放区域 - 始终保持在固定位置，避免重新挂载 */}
-              <div
-                style={{
-                  display: 'flex',
-                  height: '100%',
-                  width: '100%'
-                }}
-              >
-                {/* 视频区域容器 - 根据全屏状态调整宽度 */}
-                <div style={videoContainerStyle}>
-                  <VideoSection key="main-video-section" />
-                </div>
-
-                {/* 侧边栏区域 - 使用动画控制显示/隐藏 */}
-                <>
-                  {/* 分割线 */}
-                  <div style={dividerStyle} />
-                  {/* 字幕列表区域 */}
-                  <div style={sidebarStyle}>
-                    <div style={styles.sidebarSection}>
-                      <div style={styles.sidebarDivider} />
-                      <SidebarSectionContainer />
-                    </div>
-                  </div>
-                </>
+          <div style={contentAreaStyle}>
+            {/* 🎬 视频播放区域 - 始终保持在固定位置，避免重新挂载 */}
+            <div
+              style={{
+                display: 'flex',
+                height: '100%',
+                width: '100%'
+              }}
+            >
+              {/* 视频区域容器 - 根据全屏状态调整宽度 */}
+              <div style={videoContainerStyle}>
+                <VideoSection key="main-video-section" />
               </div>
+
+              {/* 侧边栏区域 - 使用动画控制显示/隐藏 */}
+              <>
+                {/* 分割线 */}
+                <div style={dividerStyle} />
+                {/* 字幕列表区域 */}
+                <div style={sidebarStyle}>
+                  <div style={styles.sidebarSection}>
+                    <div style={styles.sidebarDivider} />
+                    <SidebarSectionContainer />
+                  </div>
+                </div>
+              </>
             </div>
           </div>
-        </VideoPlaybackSettingsProvider>
+        </div>
       </CurrentSubtitleDisplayProvider>
     )
   },

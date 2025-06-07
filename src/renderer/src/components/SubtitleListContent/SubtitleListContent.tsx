@@ -8,7 +8,7 @@ import { SubtitleListItem } from './SubtitleListItem'
 import { formatTime } from '@renderer/utils/helpers'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
+import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubtitleDisplayContext'
 import { AimButton } from './AimButton'
@@ -43,7 +43,7 @@ const getItemHeight = (): number => {
 export function SubtitleListContent(): React.JSX.Element {
   const { token, styles } = useTheme()
   const subtitleListContext = useSubtitleListContext()
-  const { volumeRef, playbackRateRef } = useVideoPlaybackSettingsContext()
+  const { volume, playbackRate } = useVideoConfig()
   const { restoreVideoState } = useVideoControls()
   const { currentTimeRef, subscribeToTime } = useVideoPlayerContext()
   const { setSubtitleByIndex } = useCurrentSubtitleDisplayContext()
@@ -82,9 +82,9 @@ export function SubtitleListContent(): React.JSX.Element {
       // 立即显示点击的字幕
       setSubtitleByIndex(index)
       // 恢复视频状态
-      restoreVideoState(time, playbackRateRef.current, volumeRef.current)
+      restoreVideoState(time, playbackRate, volume)
     },
-    [setSubtitleByIndex, restoreVideoState, playbackRateRef, volumeRef]
+    [setSubtitleByIndex, restoreVideoState, playbackRate, volume]
   )
 
   // 计算可视区域内的行数

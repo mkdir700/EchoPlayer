@@ -3,9 +3,8 @@ import { createPortal } from 'react-dom'
 import { Button, Tooltip, Checkbox, Space } from 'antd'
 import { ThunderboltOutlined } from '@ant-design/icons'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useTheme } from '@renderer/hooks/useTheme'
-import { usePlaybackRate } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
+import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 
 interface PlaybackRateSelectorProps {
   isVideoLoaded: boolean
@@ -50,8 +49,7 @@ export function PlaybackRateSelector({
 }: PlaybackRateSelectorProps): React.JSX.Element {
   const { styles } = useTheme()
   const { playerRef, isVideoLoadedRef } = useVideoPlayerContext()
-  const playbackRate = usePlaybackRate()
-  const { updatePlaybackRate } = useVideoPlaybackSettingsContext()
+  const { playbackRate, setPlaybackRate: updatePlaybackRate } = useVideoConfig()
 
   // Control dropdown panel visibility state - 控制下拉面板显示状态
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)

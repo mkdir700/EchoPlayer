@@ -5,7 +5,7 @@ import type { DisplayMode } from '@renderer/types'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useSubtitleDisplayModeControls } from '@renderer/hooks/useSubtitleDisplayMode'
 import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
-import { useSubtitleDisplayMode } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
+import { useSubtitleDisplayMode } from '@renderer/hooks/useVideoPlaybackHooks'
 import { RendererLogger } from '@renderer/utils/logger'
 
 // 字幕显示模式配置 - 遵循苹果设计美学

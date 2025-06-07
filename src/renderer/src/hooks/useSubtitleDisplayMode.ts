@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { DisplayMode } from '@renderer/types'
-import { useVideoPlaybackSettingsContext } from './useVideoPlaybackSettingsContext'
+import { useVideoConfig } from './useVideoConfig'
 
 // 需要控制字幕显示模式的组件使用这个
 export const useSubtitleDisplayModeControls = (): {
@@ -10,32 +10,32 @@ export const useSubtitleDisplayModeControls = (): {
   restoreDisplayMode: (mode: DisplayMode) => void
   displayMode: DisplayMode
 } => {
-  const { subtitleDisplayModeRef, updateSubtitleDisplayMode } = useVideoPlaybackSettingsContext()
+  const { displayMode, setDisplayMode } = useVideoConfig()
 
   const toggleDisplayMode = useCallback((): void => {
     const modes: DisplayMode[] = ['bilingual', 'english', 'chinese', 'none']
-    const currentIndex = modes.indexOf(subtitleDisplayModeRef.current)
+    const currentIndex = modes.indexOf(displayMode)
     const nextIndex = (currentIndex + 1) % modes.length
-    updateSubtitleDisplayMode(modes[nextIndex])
-  }, [subtitleDisplayModeRef, updateSubtitleDisplayMode])
+    setDisplayMode(modes[nextIndex])
+  }, [displayMode, setDisplayMode])
 
   const restoreDisplayMode = useCallback(
     (mode: DisplayMode): void => {
       console.log('🔄 恢复字幕显示模式:', mode)
-      updateSubtitleDisplayMode(mode)
+      setDisplayMode(mode)
     },
-    [updateSubtitleDisplayMode]
+    [setDisplayMode]
   )
 
   const getCurrentDisplayMode = useCallback((): DisplayMode => {
-    return subtitleDisplayModeRef.current
-  }, [subtitleDisplayModeRef])
+    return displayMode
+  }, [displayMode])
 
   return {
-    setDisplayMode: updateSubtitleDisplayMode,
+    setDisplayMode,
     toggleDisplayMode,
     getCurrentDisplayMode,
     restoreDisplayMode,
-    displayMode: subtitleDisplayModeRef.current
+    displayMode
   }
 }

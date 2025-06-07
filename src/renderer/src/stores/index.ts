@@ -3,7 +3,22 @@ export { useUIStore } from './slices/uiStore'
 export {
   useVideoConfigStore,
   useSubtitleLayoutLocked,
-  useSetSubtitleLayoutLocked
+  useSetSubtitleLayoutLocked,
+  // 播放设置相关选择器 / Playback settings related selectors
+  useDisplayMode,
+  useVolume,
+  usePlaybackRate,
+  useIsSingleLoop,
+  useIsAutoPause,
+  useSubtitleDisplay,
+  // 设置函数选择器 / Setter function selectors
+  useSetDisplayMode,
+  useSetVolume,
+  useSetPlaybackRate,
+  useSetIsSingleLoop,
+  useSetIsAutoPause,
+  useSetSubtitleDisplay,
+  useSetPlaybackSettings
 } from './slices/videoConfigStore'
 
 // Export store types

@@ -1,9 +1,8 @@
 import React, { useCallback, useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { Button, Tooltip, Typography } from 'antd'
 import { SoundOutlined, SoundFilled } from '@ant-design/icons'
-import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { usePlaybackVolume } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
+import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { VOLUME_SETTINGS } from '@renderer/constants'
@@ -218,8 +217,7 @@ export function VolumeControl({ variant = 'compact' }: VolumeControlProps = {}):
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
   const volumeControlRef = useRef<HTMLDivElement>(null)
   const sliderRef = useRef<HTMLDivElement>(null)
-  const { volumeRef, updateVolume } = useVideoPlaybackSettingsContext()
-  const volume = usePlaybackVolume()
+  const { volume, setVolume: updateVolume } = useVideoConfig()
   const { styles } = useTheme()
 
   // 点击音量按钮切换滑块显示状态
@@ -237,16 +235,16 @@ export function VolumeControl({ variant = 'compact' }: VolumeControlProps = {}):
       updateVolume(value)
       // 直接控制播放器的音量
       if (playerRef.current) {
-        console.log('设置音量:', volumeRef.current)
+        console.log('设置音量:', value)
         // ReactPlayer 的音量属性是只读的，但我们可以通过内部播放器来设置
         const internalPlayer = playerRef.current.getInternalPlayer()
         if (internalPlayer && 'volume' in internalPlayer) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ;(internalPlayer as any).volume = volumeRef.current
+          ;(internalPlayer as any).volume = value
         }
       }
     },
-    [playerRef, updateVolume, volumeRef]
+    [playerRef, updateVolume]
   )
 
   // Handle key point selection
@@ -259,10 +257,10 @@ export function VolumeControl({ variant = 'compact' }: VolumeControlProps = {}):
 
   // NOTE: 注册快捷键
   useShortcutCommand('volumeUp', () =>
-    handleVolumeChange(Math.min(VOLUME_SETTINGS.MAX, volumeRef.current + VOLUME_SETTINGS.STEP))
+    handleVolumeChange(Math.min(VOLUME_SETTINGS.MAX, volume + VOLUME_SETTINGS.STEP))
   )
   useShortcutCommand('volumeDown', () =>
-    handleVolumeChange(Math.max(VOLUME_SETTINGS.MIN, volumeRef.current - VOLUME_SETTINGS.STEP))
+    handleVolumeChange(Math.max(VOLUME_SETTINGS.MIN, volume - VOLUME_SETTINGS.STEP))
   )
 
   // 点击外部区域关闭音量滑块
@@ -342,11 +340,11 @@ export function VolumeControl({ variant = 'compact' }: VolumeControlProps = {}):
   return (
     <div style={styles.volumeControl} ref={volumeControlRef}>
       <Tooltip
-        title={showVolumeSlider ? '' : `音量: ${Math.round(volumeRef.current * 100)}%`}
+        title={showVolumeSlider ? '' : `音量: ${Math.round(volume * 100)}%`}
         open={showVolumeSlider ? false : undefined}
       >
         <Button
-          icon={volumeRef.current > 0 ? <SoundFilled /> : <SoundOutlined />}
+          icon={volume > 0 ? <SoundFilled /> : <SoundOutlined />}
           type="text"
           size="small"
           style={getButtonStyles()}

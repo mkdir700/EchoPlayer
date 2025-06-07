@@ -19,7 +19,7 @@ import { useReactPlayerController } from '@renderer/hooks/useReactPlayerControll
 import styles from './VideoPlayer.module.css'
 import RendererLogger from '@renderer/utils/logger'
 import { SubtitleOverlay } from '@renderer/components/VideoPlayer/SubtitleOverlay'
-import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
+import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 
 interface VideoPlayerProps {
   isVideoLoaded: boolean
@@ -41,8 +41,8 @@ function VideoPlayer({
   const isPlaying = useVideoPlayState()
   const videoError = useVideoError()
 
-  // 获取状态 Refs（用于不需要响应变化的逻辑）
-  const { playbackRateRef, volumeRef } = useVideoPlaybackSettingsContext()
+  // 获取播放设置（用于不需要响应变化的逻辑）
+  const { playbackRate, volume } = useVideoConfig()
 
   // 获取控制方法
   const { toggle } = useVideoControls()
@@ -235,8 +235,8 @@ function VideoPlayer({
               width="100%"
               height="100%"
               playing={isPlaying}
-              volume={volumeRef.current}
-              playbackRate={playbackRateRef.current}
+              volume={volume}
+              playbackRate={playbackRate}
               onProgress={eventHandlers.onProgress}
               onDuration={eventHandlers.onDuration}
               onReady={handleReactPlayerReady}
