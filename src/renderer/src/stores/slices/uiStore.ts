@@ -14,7 +14,8 @@ const initialState: UIState = {
   sidebarWidth: 400,
   showControls: false,
   isDragging: false,
-  isSubtitleLayoutLocked: false
+  isSubtitleLayoutLocked: false,
+  autoResumeAfterWordCard: true // 默认开启查词后自动恢复播放 / Default enabled auto resume after word card
 }
 
 /**
@@ -89,6 +90,11 @@ export const useUIStore = create<UIStore>()(
       setSubtitleLayoutLocked: (locked) =>
         set((state) => {
           state.isSubtitleLayoutLocked = locked
+        }),
+
+      setAutoResumeAfterWordCard: (enabled) =>
+        set((state) => {
+          state.autoResumeAfterWordCard = enabled
         })
     })),
     { name: 'ui-store' }

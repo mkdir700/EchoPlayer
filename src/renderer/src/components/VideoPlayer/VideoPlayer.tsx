@@ -68,7 +68,7 @@ function VideoPlayer({
   const mouseMoveThrottleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 全屏状态管理
-  const { isFullscreen, toggleFullscreen } = useFullscreenMode()
+  const { isFullscreen } = useFullscreenMode()
 
   // 监听全屏状态变化并通知父组件
   useEffect(() => {
@@ -88,6 +88,14 @@ function VideoPlayer({
       setIsPausedByHover(true)
     }
   }, [isPlaying, toggle])
+
+  // 处理鼠标离开单词时恢复播放 / Handle resuming playback when mouse leaves word
+  const handleResumeOnLeave = useCallback(() => {
+    if (isPausedByHover) {
+      toggle()
+      setIsPausedByHover(false)
+    }
+  }, [isPausedByHover, toggle])
 
   // 使用新控制器提供的事件处理器
   const eventHandlers = playerController.createEventHandlers()
@@ -266,6 +274,7 @@ function VideoPlayer({
             <SubtitleOverlay
               onWordHover={handleWordHoverForControls}
               onPauseOnHover={handlePauseOnHover}
+              onResumeOnLeave={handleResumeOnLeave}
             />
 
             {/* 视频控制组件 - 仅在全屏模式下显示 */}
@@ -279,7 +288,6 @@ function VideoPlayer({
                   showControls={showControls}
                   isVideoLoaded={isVideoLoaded}
                   videoError={videoError}
-                  onFullscreenToggle={toggleFullscreen}
                 />
               </div>
             )}

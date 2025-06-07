@@ -15,6 +15,7 @@ import RendererLogger from '@renderer/utils/logger'
 interface SubtitleV3Props {
   onWordHover: (isHovering: boolean) => void
   onPauseOnHover: () => void
+  onResumeOnLeave: () => void
 }
 
 // Split subcomponent: Mask overlay
@@ -78,10 +79,15 @@ ResizeHandle.displayName = 'ResizeHandle'
  * Provides word-level hover and click interactions, subtitle area drag and resize, mask mode with adjustable frame, and dynamic background styling. Integrates with video context for aspect ratio-aware layout and exposes callbacks for word hover and video pause events.
  *
  * @param onWordHover - Callback invoked when a word in the subtitle is hovered.
- * @param onPauseOnHover - Callback invoked to pause the video when a word is hovered.
+ * @param onPauseOnHover - Callback invoked to pause the video when a word card is shown.
+ * @param onResumeOnLeave - Callback invoked to resume the video when a word card is closed.
  * @returns The rendered subtitle UI with controls, mask overlay, and word card popup.
  */
-function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX.Element {
+function SubtitleV3({
+  onWordHover,
+  onPauseOnHover,
+  onResumeOnLeave
+}: SubtitleV3Props): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleV3',
     props: { onWordHover, onPauseOnHover }
@@ -222,7 +228,8 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     containerRef,
     dragAndResizeProps,
     onWordHover,
-    onPauseOnHover
+    onPauseOnHover,
+    onResumeOnLeave
   })
 
   // Global event listener management

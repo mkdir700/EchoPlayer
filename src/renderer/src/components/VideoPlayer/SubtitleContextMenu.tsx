@@ -1,12 +1,6 @@
 import React, { memo, useState } from 'react'
 import { Dropdown, Button, Tooltip, Slider, Switch } from 'antd'
-import {
-  EyeInvisibleOutlined,
-  EyeOutlined,
-  CloseOutlined,
-  LockOutlined,
-  UnlockOutlined
-} from '@ant-design/icons'
+import { EyeInvisibleOutlined, EyeOutlined, CloseOutlined } from '@ant-design/icons'
 import { BACKGROUND_TYPES } from '@renderer/hooks/useSubtitleState'
 import { useUIStore } from '@renderer/stores/slices/uiStore'
 
@@ -42,7 +36,12 @@ const SubtitleContextMenu = memo(
     const [mockFontScale, setMockFontScale] = useState(1.0)
 
     // Get UI store state and actions - 获取UI状态和操作
-    const { isSubtitleLayoutLocked, setSubtitleLayoutLocked } = useUIStore()
+    const {
+      isSubtitleLayoutLocked,
+      setSubtitleLayoutLocked,
+      autoResumeAfterWordCard,
+      setAutoResumeAfterWordCard
+    } = useUIStore()
 
     // Get current background config - 获取当前背景配置
     const currentBackgroundConfig =
@@ -148,13 +147,37 @@ const SubtitleContextMenu = memo(
                       gap: '4px'
                     }}
                   >
-                    {isSubtitleLayoutLocked ? <LockOutlined /> : <UnlockOutlined />}
                     锁定布局
                   </span>
                   <Switch
                     size="small"
                     checked={isSubtitleLayoutLocked}
                     onChange={setSubtitleLayoutLocked}
+                  />
+                </div>
+
+                {/* Auto resume after word card switch - 查词后自动恢复播放开关 */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span
+                    style={{
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontSize: '12px'
+                    }}
+                  >
+                    自动恢复播放
+                  </span>
+                  <Switch
+                    size="small"
+                    checked={autoResumeAfterWordCard}
+                    onChange={setAutoResumeAfterWordCard}
                   />
                 </div>
               </div>

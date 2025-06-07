@@ -5,16 +5,22 @@ import RendererLogger from '@renderer/utils/logger'
 interface SubtitleOverlayProps {
   onWordHover: (isHovering: boolean) => void
   onPauseOnHover: () => void
+  onResumeOnLeave: () => void
 }
 
 /**
  * Renders a full-area overlay for subtitles, forwarding hover and pause events to the underlying subtitle component.
  *
  * @param onWordHover - Callback invoked when a word in the subtitle is hovered or unhovered.
- * @param onPauseOnHover - Callback triggered when playback should pause due to subtitle hover.
+ * @param onPauseOnHover - Callback triggered when playback should pause (called when word card is shown).
+ * @param onResumeOnLeave - Callback triggered when playback should resume (called when word card is closed).
  * @returns A React element displaying the subtitle overlay.
  */
-function SubtitleOverlay({ onWordHover, onPauseOnHover }: SubtitleOverlayProps): React.JSX.Element {
+function SubtitleOverlay({
+  onWordHover,
+  onPauseOnHover,
+  onResumeOnLeave
+}: SubtitleOverlayProps): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleOverlay'
   })
@@ -33,7 +39,11 @@ function SubtitleOverlay({ onWordHover, onPauseOnHover }: SubtitleOverlayProps):
 
   return (
     <div style={subtitleOverlayStyle}>
-      <SubtitleV3 onWordHover={onWordHover} onPauseOnHover={onPauseOnHover} />
+      <SubtitleV3
+        onWordHover={onWordHover}
+        onPauseOnHover={onPauseOnHover}
+        onResumeOnLeave={onResumeOnLeave}
+      />
     </div>
   )
 }
