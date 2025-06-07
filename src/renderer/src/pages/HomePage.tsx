@@ -46,64 +46,75 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
   const playingVideoContext = usePlayingVideoContext()
   const { handleVideoFileSelect: selectVideoFile } = useVideoFileSelection()
 
+  // 添加 loading 状态 / Add loading state
+  const [isSelectingFile, setIsSelectingFile] = useState(false)
+
   // 处理视频文件选择(首次打开)
   const handleVideoFileSelect = useCallback(async (): Promise<boolean> => {
-    let selectedFileInfo: { url: string; fileName: string; filePath: string } | null = null
+    // 设置 loading 状态 / Set loading state
+    setIsSelectingFile(true)
 
-    // 使用拆分的视频选择hook，并暂存文件信息
-    const result = await selectVideoFile(
-      (_fileId: string, url: string, fileName: string, filePath: string) => {
-        // 暂存文件信息，等添加到最近播放记录后再设置
-        selectedFileInfo = { url, fileName, filePath }
-      },
-      videoControls.resetVideoState
-    )
+    try {
+      let selectedFileInfo: { url: string; fileName: string; filePath: string } | null = null
 
-    if (!result.success || !selectedFileInfo) {
-      console.error('❌ 无法选择视频文件')
-      return false
-    }
+      // 使用拆分的视频选择hook，并暂存文件信息
+      const result = await selectVideoFile(
+        (_fileId: string, url: string, fileName: string, filePath: string) => {
+          // 暂存文件信息，等添加到最近播放记录后再设置
+          selectedFileInfo = { url, fileName, filePath }
+        },
+        videoControls.resetVideoState
+      )
 
-    // 文件选择成功后，现在我们需要添加到最近播放记录
-    const { filePath, fileName } = result
-    const { url } = selectedFileInfo
-
-    console.log('🎬 文件选择成功:', { filePath, fileName })
-    if (filePath && fileName) {
-      // 更新最近播放记录
-      const { success, fileId } = await addRecentPlay({
-        filePath: filePath,
-        fileName: fileName,
-        duration: 0,
-        currentTime: 0,
-        subtitleFile: '',
-        subtitleItems: [],
-        videoPlaybackSettings: {
-          displayMode: 'bilingual',
-          volume: 1,
-          playbackRate: 1,
-          isSingleLoop: false,
-          isAutoPause: false
-        }
-      })
-      if (success && fileId) {
-        console.log('🎬 添加最近播放记录成功:', fileId)
-        // 现在用正确的 fileId 设置视频文件
-        playingVideoContext.setVideoFile(fileId, url, fileName, filePath)
-      } else {
-        console.error('❌ 添加最近播放记录失败')
+      if (!result.success || !selectedFileInfo) {
+        console.error('❌ 无法选择视频文件')
         return false
       }
+
+      // 文件选择成功后，现在我们需要添加到最近播放记录
+      const { filePath, fileName } = result
+      const { url } = selectedFileInfo
+
+      console.log('🎬 文件选择成功:', { filePath, fileName })
+      if (filePath && fileName) {
+        // 更新最近播放记录
+        const { success, fileId } = await addRecentPlay({
+          filePath: filePath,
+          fileName: fileName,
+          duration: 0,
+          currentTime: 0,
+          subtitleFile: '',
+          subtitleItems: [],
+          videoPlaybackSettings: {
+            displayMode: 'bilingual',
+            volume: 1,
+            playbackRate: 1,
+            isSingleLoop: false,
+            isAutoPause: false
+          }
+        })
+        if (success && fileId) {
+          console.log('🎬 添加最近播放记录成功:', fileId)
+          // 现在用正确的 fileId 设置视频文件
+          playingVideoContext.setVideoFile(fileId, url, fileName, filePath)
+        } else {
+          console.error('❌ 添加最近播放记录失败')
+          return false
+        }
+      }
+
+      console.log('🎬 导航前检查 playingVideoContext 状态:', {
+        videoFile: playingVideoContext.videoFile,
+        originalFilePath: playingVideoContext.originalFilePath,
+        videoFileName: playingVideoContext.videoFileName
+      })
+
+      onNavigateToPlay()
+      return result.success
+    } finally {
+      // 无论成功失败都清除 loading 状态 / Clear loading state regardless of success or failure
+      setIsSelectingFile(false)
     }
-
-    console.log('🎬 导航前检查 playingVideoContext 状态:', {
-      videoFile: playingVideoContext.videoFile,
-      originalFilePath: playingVideoContext.originalFilePath,
-      videoFileName: playingVideoContext.videoFileName
-    })
-
-    onNavigateToPlay()
-    return result.success
   }, [
     selectVideoFile,
     playingVideoContext,
@@ -198,14 +209,23 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
     [removeRecentPlay]
   )
 
-  // 处理清空最近文件列表
-  const handleClearResouces = useCallback(async () => {
-    await clearRecentPlays()
-  }, [clearRecentPlays])
-
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedFileId, setSelectedFileId] = useState('')
   const [selectedFileName, setSelectedFileName] = useState('')
+
+  // 添加清空确认弹窗状态 / Add clear confirmation modal state
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false)
+
+  // 处理清空最近文件列表 - 显示确认弹窗 / Handle clear recent files - show confirmation modal
+  const handleClearResouces = useCallback(() => {
+    setIsClearModalOpen(true)
+  }, [])
+
+  // 确认清空操作 / Confirm clear operation
+  const handleConfirmClear = useCallback(async () => {
+    await clearRecentPlays()
+    setIsClearModalOpen(false)
+  }, [clearRecentPlays])
 
   const handleRemove = (): void => {
     handleRemoveResouce(selectedFileId)
@@ -278,9 +298,11 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleVideoFileSelect}
+                loading={isSelectingFile}
+                disabled={isSelectingFile}
                 style={{ marginLeft: token.marginXS, borderRadius: token.borderRadiusLG }}
               >
-                添加视频
+                {isSelectingFile ? '选择视频中...' : '添加视频'}
               </Button>
             </div>
           </div>
@@ -329,9 +351,11 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleVideoFileSelect}
+                loading={isSelectingFile}
+                disabled={isSelectingFile}
                 style={{ borderRadius: token.borderRadiusLG }}
               >
-                立即添加
+                {isSelectingFile ? '选择视频中...' : '立即添加'}
               </Button>
             </div>
           ) : (
@@ -372,10 +396,16 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                           ...styles.cardContainer,
                           border: 'none',
                           overflow: 'hidden',
-                          height: '100%'
+                          height: isCompactMode ? 'auto' : '100%',
+                          minHeight: isCompactMode ? 200 : 280,
+                          display: 'flex',
+                          flexDirection: 'column'
                         }}
                         bodyStyle={{
-                          padding: isCompactMode ? token.paddingXS : token.paddingSM
+                          padding: isCompactMode ? token.paddingXS : token.paddingSM,
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column'
                         }}
                         cover={
                           <div
@@ -459,7 +489,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                               )}
 
                               {/* 进度条 */}
-                              {item.currentTime && item.duration && (
+                              {item.duration && item.duration > 0 && (
                                 <div
                                   style={{
                                     position: 'absolute',
@@ -473,9 +503,10 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                                   <div
                                     style={{
                                       height: '100%',
-                                      width: `${(item.currentTime / item.duration) * 100}%`,
+                                      width: `${Math.min(100, Math.max(0, ((item.currentTime || 0) / item.duration) * 100))}%`,
                                       background: `linear-gradient(90deg, ${token.colorPrimary}, ${token.colorSuccess})`,
-                                      borderRadius: `0 ${token.borderRadiusSM}px ${token.borderRadiusSM}px 0`
+                                      borderRadius: `0 ${token.borderRadiusSM}px ${token.borderRadiusSM}px 0`,
+                                      transition: 'width 0.3s ease'
                                     }}
                                   />
                                 </div>
@@ -486,81 +517,97 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                       >
                         <div
                           style={{
-                            padding: isCompactMode ? 0 : `${token.paddingXS}px 0`
+                            padding: isCompactMode ? 0 : `${token.paddingXS}px 0`,
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between'
                           }}
                         >
-                          <Tooltip title={item.fileName}>
-                            <Text
-                              strong
-                              ellipsis
-                              style={{
-                                display: 'block',
-                                fontSize: isCompactMode ? token.fontSizeSM : token.fontSize,
-                                fontWeight: FONT_WEIGHTS.SEMIBOLD,
-                                color: token.colorText,
-                                marginBottom: isCompactMode ? token.marginXXS : token.marginXS,
-                                lineHeight: 1.3
-                              }}
-                            >
-                              {item.fileName.replace(/\.[^/.]+$/, '')}
-                            </Text>
-                          </Tooltip>
+                          <div>
+                            <Tooltip title={item.fileName}>
+                              <Text
+                                strong
+                                ellipsis
+                                style={{
+                                  display: 'block',
+                                  fontSize: isCompactMode ? token.fontSizeSM : token.fontSize,
+                                  fontWeight: FONT_WEIGHTS.SEMIBOLD,
+                                  color: token.colorText,
+                                  marginBottom: isCompactMode ? token.marginXXS : token.marginXS,
+                                  lineHeight: 1.3
+                                }}
+                              >
+                                {item.fileName.replace(/\.[^/.]+$/, '')}
+                              </Text>
+                            </Tooltip>
 
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              fontSize: token.fontSizeSM
-                            }}
-                          >
-                            <Text
+                            <div
                               style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
                                 fontSize: token.fontSizeSM,
-                                color: token.colorTextDescription
+                                marginBottom: isCompactMode ? token.marginXS : token.marginSM
                               }}
                             >
-                              {utils.formatTimeAgo(item.lastOpenedAt)}
-                            </Text>
-                            {item.currentTime && item.duration && (
                               <Text
                                 style={{
                                   fontSize: token.fontSizeSM,
-                                  color: token.colorPrimary,
-                                  fontWeight: FONT_WEIGHTS.MEDIUM,
-                                  background: isCompactMode
-                                    ? 'transparent'
-                                    : utils.hexToRgba(token.colorPrimary, 0.1),
-                                  padding: isCompactMode
-                                    ? 0
-                                    : `${token.paddingXXS}px ${token.paddingXS}px`,
-                                  borderRadius: isCompactMode ? 0 : token.borderRadius
+                                  color: token.colorTextDescription
                                 }}
                               >
-                                {Math.round((item.currentTime / item.duration) * 100)}%
+                                {utils.formatTimeAgo(item.lastOpenedAt)}
                               </Text>
-                            )}
+                              {item.duration && item.duration > 0 && (
+                                <Text
+                                  style={{
+                                    fontSize: token.fontSizeSM,
+                                    color: token.colorPrimary,
+                                    fontWeight: FONT_WEIGHTS.MEDIUM,
+                                    background: isCompactMode
+                                      ? 'transparent'
+                                      : utils.hexToRgba(token.colorPrimary, 0.1),
+                                    padding: isCompactMode
+                                      ? 0
+                                      : `${token.paddingXXS}px ${token.paddingXS}px`,
+                                    borderRadius: isCompactMode ? 0 : token.borderRadius
+                                  }}
+                                >
+                                  {Math.round(((item.currentTime || 0) / item.duration) * 100)}%
+                                </Text>
+                              )}
+                            </div>
                           </div>
 
                           {/* 默认模式显示操作区域 */}
                           {!isCompactMode && (
                             <div
                               style={{
-                                marginTop: token.marginSM,
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center'
                               }}
                             >
                               <Space size="small">
-                                {item.currentTime && item.duration && (
+                                {item.duration && item.duration > 0 ? (
                                   <Text
                                     style={{
                                       fontSize: token.fontSizeSM,
                                       color: token.colorTextSecondary
                                     }}
                                   >
-                                    {formatTime(item.currentTime)} / {formatTime(item.duration)}
+                                    {formatTime(item.currentTime || 0)} /{' '}
+                                    {formatTime(item.duration)}
+                                  </Text>
+                                ) : (
+                                  <Text
+                                    style={{
+                                      fontSize: token.fontSizeSM,
+                                      color: token.colorTextTertiary
+                                    }}
+                                  >
+                                    未知时长
                                   </Text>
                                 )}
                               </Space>
@@ -673,6 +720,84 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
               }}
             >
               此操作将删除该视频的观看进度等所有相关数据，且无法恢复。
+            </p>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 清空确认模态框 / Clear confirmation modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: token.marginSM }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: utils.hexToRgba(token.colorWarning, 0.1),
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <DeleteOutlined style={{ color: token.colorWarning, fontSize: token.fontSize }} />
+            </div>
+            <span style={{ fontSize: token.fontSize, fontWeight: FONT_WEIGHTS.SEMIBOLD }}>
+              确认清空
+            </span>
+          </div>
+        }
+        open={isClearModalOpen}
+        onCancel={() => setIsClearModalOpen(false)}
+        onOk={handleConfirmClear}
+        okText="清空"
+        cancelText="取消"
+        okType="danger"
+        centered
+        width={480}
+        style={{
+          borderRadius: token.borderRadiusLG,
+          overflow: 'hidden'
+        }}
+        styles={{
+          content: {
+            borderRadius: token.borderRadiusLG,
+            background: styles.glassEffect.background,
+            backdropFilter: styles.glassEffect.backdropFilter,
+            WebkitBackdropFilter: styles.glassEffect.WebkitBackdropFilter,
+            border: `1px solid ${token.colorBorderSecondary}`
+          }
+        }}
+      >
+        <div style={{ padding: `${token.paddingSM}px 0` }}>
+          <p
+            style={{
+              fontSize: token.fontSize,
+              color: token.colorText,
+              margin: `0 0 ${token.marginSM}px 0`,
+              lineHeight: 1.5
+            }}
+          >
+            确定要清空所有最近观看记录吗？
+          </p>
+          <div
+            style={{
+              background: utils.hexToRgba(token.colorError, 0.08),
+              border: `1px solid ${utils.hexToRgba(token.colorError, 0.2)}`,
+              borderRadius: token.borderRadius,
+              padding: token.paddingXS
+            }}
+          >
+            <p
+              style={{
+                fontSize: token.fontSizeSM,
+                color: token.colorTextSecondary,
+                margin: 0,
+                lineHeight: 1.4
+              }}
+            >
+              此操作将删除所有视频的观看记录（共 {recentPlays.length}{' '}
+              个项目），包括观看进度等所有相关数据，且无法恢复。
             </p>
           </div>
         </div>

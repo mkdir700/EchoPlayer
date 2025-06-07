@@ -253,10 +253,9 @@ function buildStyles(token: GlobalToken): ThemeStyles {
     // 页面容器样式
     pageContainer: {
       minHeight: '100vh',
-      height: '100vh',
       background: `linear-gradient(180deg, ${token.colorBgContainer} 0%, ${token.colorBgLayout} 100%)`,
       padding: token.paddingLG,
-      overflow: 'hidden',
+      overflow: 'auto',
       boxSizing: 'border-box' as const
     },
 
