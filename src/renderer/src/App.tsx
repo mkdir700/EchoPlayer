@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Layout } from 'antd'
 
 // 导入组件
-import { AppHeader } from '@renderer/components/AppHeader/AppHeader'
+import { AppSidebar } from '@renderer/components/AppSidebar/AppSidebar'
 import { HomePage } from '@renderer/pages/HomePage'
 import { PlayPage } from '@renderer/pages/PlayPage'
 import { FavoritesPage } from '@renderer/pages/FavoritesPage'
@@ -94,11 +94,11 @@ function AppContent(): React.JSX.Element {
   return (
     <PlayingVideoProvider>
       <VideoPlayerProvider>
-        <Layout>
+        <Layout style={{ minHeight: '100vh' }}>
           {currentPage !== 'play' ? (
             <>
-              <AppHeader currentPage={currentPage} onPageChange={setCurrentPage} />
-              <Content>{renderPageContent}</Content>
+              <AppSidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+              <Content style={{ marginLeft: 80 }}>{renderPageContent}</Content>
             </>
           ) : (
             <div>{renderPageContent}</div>
