@@ -12,6 +12,7 @@ import { useIsSingleLoop } from '@renderer/hooks/useVideoPlaybackSettingsHooks'
 
 interface LoopToggleButtonProps {
   isVideoLoaded: boolean
+  variant?: 'compact' | 'fullscreen'
 }
 
 /**
@@ -20,9 +21,14 @@ interface LoopToggleButtonProps {
  * When enabled, the video will repeatedly loop the currently active subtitle segment. The button is disabled if the video is not loaded, and its appearance reflects the current loop state.
  *
  * @param isVideoLoaded - Indicates whether the video is loaded and ready for interaction.
+ * @param variant - Display variant: 'compact' for compact mode, 'fullscreen' for fullscreen mode.
+ * @param className - Optional CSS class name to override default styles.
  * @returns The loop toggle button component.
  */
-export function LoopToggleButton({ isVideoLoaded }: LoopToggleButtonProps): React.JSX.Element {
+export function LoopToggleButton({
+  isVideoLoaded,
+  variant = 'compact'
+}: LoopToggleButtonProps): React.JSX.Element {
   const { styles } = useTheme()
   const isLoopingDisplay = useIsSingleLoop()
   console.log('🔄 LoopToggleButton 渲染, isLoopingDisplay:', isLoopingDisplay)
@@ -123,9 +129,33 @@ export function LoopToggleButton({ isVideoLoaded }: LoopToggleButtonProps): Reac
     subtitleControl
   ])
 
+  // 根据变体类型选择样式 / Choose styles based on variant type
+  const getButtonStyles = (): React.CSSProperties => {
+    if (variant === 'fullscreen') {
+      // 全屏模式使用主题系统样式 / Fullscreen mode uses theme system styles
+      return {
+        ...styles.fullscreenControlBtn,
+        ...(isLoopingDisplay ? styles.fullscreenControlBtnActive : {})
+      }
+    }
+
+    // 默认紧凑模式样式 / Default compact mode styles
+    return {
+      ...styles.controlBtn,
+      ...(isLoopingDisplay ? styles.controlBtnActive : {})
+    }
+  }
+
+  // 获取按钮的CSS类名 / Get button CSS class name
+  const getButtonClassName = (): string => {
+    // 不再需要处理 className 和 active 类名，完全依赖主题系统
+    return ''
+  }
+
   RendererLogger.info('LoopToggleButton', {
     isLooping: isLoopingDisplay,
     isVideoLoaded,
+    variant,
     isPlaying: isPlayingRef.current,
     currentTime: currentTimeRef.current,
     subtitleItems: subtitleItemsRef.current
@@ -141,10 +171,8 @@ export function LoopToggleButton({ isVideoLoaded }: LoopToggleButtonProps): Reac
           e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
         }}
         type="text"
-        style={{
-          ...styles.controlBtn,
-          ...(isLoopingDisplay ? styles.controlBtnActive : {})
-        }}
+        style={getButtonStyles()}
+        className={getButtonClassName()}
         disabled={!isVideoLoaded}
         size="small"
       />

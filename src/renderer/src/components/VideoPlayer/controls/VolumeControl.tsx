@@ -18,6 +18,10 @@ const VOLUME_KEY_POINTS = [
   { value: 1, label: '100%' }
 ]
 
+interface VolumeControlProps {
+  variant?: 'compact' | 'fullscreen' // 新增：支持不同的显示模式
+}
+
 // Custom Volume Slider Component
 interface CustomVolumeSliderProps {
   value: number
@@ -206,9 +210,10 @@ function CustomVolumeSlider({
  *
  * Displays a button that toggles a horizontal slider popup for volume adjustment. The slider supports dragging and clicking on preset key points to set the volume. Volume changes are synchronized with the video player and playback settings context. Keyboard shortcuts for volume up and down are registered, and the slider popup closes automatically when clicking outside the control.
  *
+ * @param variant - Display variant: 'compact' for compact mode, 'fullscreen' for fullscreen mode.
  * @returns The volume control UI element.
  */
-export function VolumeControl(): React.JSX.Element {
+export function VolumeControl({ variant = 'compact' }: VolumeControlProps = {}): React.JSX.Element {
   const { playerRef } = useVideoPlayerContext()
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
   const volumeControlRef = useRef<HTMLDivElement>(null)
@@ -288,6 +293,17 @@ export function VolumeControl(): React.JSX.Element {
     }
   }, [showVolumeSlider])
 
+  // 根据变体类型选择样式 / Choose styles based on variant type
+  const getButtonStyles = (): React.CSSProperties => {
+    if (variant === 'fullscreen') {
+      // 全屏模式使用主题系统样式 / Fullscreen mode uses theme system styles
+      return styles.fullscreenControlBtn
+    }
+
+    // 默认紧凑模式样式 / Default compact mode styles
+    return styles.controlBtn
+  }
+
   return (
     <div style={styles.volumeControl} ref={volumeControlRef}>
       <Tooltip
@@ -298,7 +314,7 @@ export function VolumeControl(): React.JSX.Element {
           icon={volumeRef.current > 0 ? <SoundFilled /> : <SoundOutlined />}
           type="text"
           size="small"
-          style={styles.controlBtn}
+          style={getButtonStyles()}
           onClick={handleVolumeButtonClick}
         />
       </Tooltip>
@@ -314,7 +330,7 @@ export function VolumeControl(): React.JSX.Element {
           />
 
           {/* Volume percentage display */}
-          <Text style={styles.volumeText}>{Math.round(volume * 100)}%</Text>
+          <Text style={styles.fullscreenVolumeText}>{Math.round(volume * 100)}%</Text>
         </div>
       )}
     </div>

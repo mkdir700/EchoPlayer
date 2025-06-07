@@ -12,10 +12,8 @@ import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
 import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useReactPlayerController } from '@renderer/hooks/useReactPlayerController'
 import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
+import { useTheme } from '@renderer/hooks/useTheme'
 import type { VideoControlsProps } from '@renderer/types'
-
-// 导入样式
-import styles from './VideoControlsFullScreen.module.css'
 
 // 扩展接口以包含 showControls 属性（全屏模式特有）
 interface VideoControlsFullScreenProps extends VideoControlsProps {
@@ -32,17 +30,18 @@ function VideoControlsFullScreen({
   const isPlaying = useVideoPlayState()
   const { toggle, stepBackward, stepForward } = useVideoControls()
   const subtitleControl = useSubtitleControl()
-  const { playbackRateRef, volumeRef } = useVideoPlaybackSettingsContext()
+  const { volumeRef } = useVideoPlaybackSettingsContext()
   const playerController = useReactPlayerController()
   const { isFullscreen } = useFullscreenMode()
+  const { styles } = useTheme()
 
   // 获取当前值
-  const playbackRate = playbackRateRef.current
   const volume = volumeRef.current
 
-  // 定义空的回调函数避免每次渲染创建新函数
-  const handleLoopToggle = (): void => {}
-  const handleAutoSkipToggle = (): void => {}
+  const controlsBarStyle = {
+    ...styles.fullscreenControlsBar,
+    ...(showControls ? styles.fullscreenControlsBarVisible : {})
+  }
 
   return (
     <>
@@ -59,19 +58,11 @@ function VideoControlsFullScreen({
       />
 
       {/* 主控制栏 - 悬停时显示 */}
-      <div className={`${styles.videoControlsBar} ${showControls ? styles.visible : ''}`}>
-        {/* 左侧控制区 - 功能按钮 */}
-        <FullScreenLeftControls
-          isVideoLoaded={isVideoLoaded}
-          isLooping={false}
-          autoSkipSilence={false}
-          playbackRate={playbackRate}
-          onLoopToggle={handleLoopToggle}
-          onAutoSkipToggle={handleAutoSkipToggle}
-          onPlaybackRateChange={playerController.adjustPlaybackRate}
-        />
+      <div style={controlsBarStyle}>
+        {/* 左侧控制区 - 功能按钮（现在内部管理状态） */}
+        <FullScreenLeftControls isVideoLoaded={isVideoLoaded} />
 
-        {/* 中间控制区 - 播放控制 */}
+        {/* 中间控制区 - 播放控制（现在内部管理状态） */}
         <FullScreenCenterControls
           isVideoLoaded={isVideoLoaded}
           isPlaying={isPlaying}
@@ -83,7 +74,7 @@ function VideoControlsFullScreen({
           onNextSubtitle={subtitleControl.goToNextSubtitle}
         />
 
-        {/* 右侧控制区 - 系统控制 */}
+        {/* 右侧控制区 - 系统控制（现在内部管理状态） */}
         <FullScreenRightControls
           volume={volume}
           isFullscreen={isFullscreen}

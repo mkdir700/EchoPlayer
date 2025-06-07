@@ -83,12 +83,62 @@ const PlayPageMemo = React.memo<PlayPageProps>(
       onBack()
     }, [onBack, savePlayStateRef])
 
-    // 动态计算容器样式，全屏时移除可能的白色背景
-    const containerStyle = {
-      ...styles.playPageContainer,
-      // 全屏时使用黑色背景，避免白色区域
-      backgroundColor: showPlayPageHeader ? styles.playPageContainer?.backgroundColor : '#000000'
-    }
+    // 🚀 记忆化容器样式，避免全屏切换时重复计算
+    const containerStyle = useMemo(
+      () => ({
+        ...styles.playPageContainer,
+        // 全屏时使用黑色背景，避免白色区域
+        backgroundColor: showPlayPageHeader ? styles.playPageContainer?.backgroundColor : '#000000'
+      }),
+      [styles.playPageContainer, showPlayPageHeader]
+    )
+
+    // 🚀 记忆化内容区域样式
+    const contentAreaStyle = useMemo(
+      () => ({
+        ...styles.playPageContent,
+        // 全屏时确保内容区域也是黑色背景
+        backgroundColor: showPlayPageHeader ? styles.playPageContent?.backgroundColor : '#000000'
+      }),
+      [styles.playPageContent, showPlayPageHeader]
+    )
+
+    // 🚀 记忆化视频区域容器样式
+    const videoContainerStyle = useMemo(
+      () => ({
+        flex: showSubtitleList ? '1 1 70%' : '1 1 100%',
+        minWidth: showSubtitleList ? '50%' : '100%',
+        maxWidth: showSubtitleList ? '80%' : '100%',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        willChange: 'flex, min-width, max-width'
+      }),
+      [showSubtitleList]
+    )
+
+    // 🚀 记忆化分割线样式
+    const dividerStyle = useMemo(
+      () => ({
+        width: '1px',
+        backgroundColor: token.colorBorderSecondary,
+        cursor: 'col-resize',
+        opacity: showSubtitleList ? 1 : 0,
+        transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      }),
+      [token.colorBorderSecondary, showSubtitleList]
+    )
+
+    // 🚀 记忆化侧边栏样式
+    const sidebarStyle = useMemo(
+      () => ({
+        flex: showSubtitleList ? '1 1 30%' : '0 0 0%',
+        minWidth: showSubtitleList ? '20%' : '0%',
+        maxWidth: showSubtitleList ? '50%' : '0%',
+        overflow: 'hidden',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        willChange: 'flex, min-width, max-width'
+      }),
+      [showSubtitleList]
+    )
 
     return (
       <CurrentSubtitleDisplayProvider>
@@ -100,15 +150,7 @@ const PlayPageMemo = React.memo<PlayPageProps>(
             {/* 播放页面独立Header - 始终渲染，由组件内部控制显示/隐藏动画 */}
             <PlayPageHeader onBack={handleBack} />
 
-            <div
-              style={{
-                ...styles.playPageContent,
-                // 全屏时确保内容区域也是黑色背景
-                backgroundColor: showPlayPageHeader
-                  ? styles.playPageContent?.backgroundColor
-                  : '#000000'
-              }}
-            >
+            <div style={contentAreaStyle}>
               {/* 🎬 视频播放区域 - 始终保持在固定位置，避免重新挂载 */}
               <div
                 style={{
@@ -118,41 +160,16 @@ const PlayPageMemo = React.memo<PlayPageProps>(
                 }}
               >
                 {/* 视频区域容器 - 根据全屏状态调整宽度 */}
-                <div
-                  style={{
-                    flex: showSubtitleList ? '1 1 70%' : '1 1 100%',
-                    minWidth: showSubtitleList ? '50%' : '100%',
-                    maxWidth: showSubtitleList ? '80%' : '100%',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // 使用更流畅的缓动函数
-                    willChange: 'flex, min-width, max-width' // 优化性能
-                  }}
-                >
+                <div style={videoContainerStyle}>
                   <VideoSection key="main-video-section" />
                 </div>
 
                 {/* 侧边栏区域 - 使用动画控制显示/隐藏 */}
                 <>
                   {/* 分割线 */}
-                  <div
-                    style={{
-                      width: '1px',
-                      backgroundColor: token.colorBorderSecondary,
-                      cursor: 'col-resize',
-                      opacity: showSubtitleList ? 1 : 0,
-                      transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }}
-                  />
+                  <div style={dividerStyle} />
                   {/* 字幕列表区域 */}
-                  <div
-                    style={{
-                      flex: showSubtitleList ? '1 1 30%' : '0 0 0%',
-                      minWidth: showSubtitleList ? '20%' : '0%',
-                      maxWidth: showSubtitleList ? '50%' : '0%',
-                      overflow: 'hidden',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      willChange: 'flex, min-width, max-width'
-                    }}
-                  >
+                  <div style={sidebarStyle}>
                     <div style={styles.sidebarSection}>
                       <div style={styles.sidebarDivider} />
                       <SidebarSectionContainer />

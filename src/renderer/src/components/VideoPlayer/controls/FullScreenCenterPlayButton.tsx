@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button } from 'antd'
 import { PlayCircleOutlined } from '@ant-design/icons'
-import styles from '../VideoControlsFullScreen.module.css'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 interface FullScreenCenterPlayButtonProps {
   isPlaying: boolean
@@ -18,21 +18,24 @@ export function FullScreenCenterPlayButton({
   videoError,
   onPlayPause
 }: FullScreenCenterPlayButtonProps): React.JSX.Element | null {
-  // 只在暂停且控制条显示时显示中央播放按钮
-  // Only show center play button when paused and controls are visible
-  if (isPlaying || !showControls) {
+  const { styles } = useTheme()
+
+  // 只在暂停时且控制栏隐藏时显示中央播放按钮
+  if (isPlaying || showControls || !isVideoLoaded || videoError) {
     return null
   }
 
   return (
-    <div className={styles.centerPlayButton}>
+    <div style={styles.fullscreenCenterPlayButton}>
       <Button
         icon={<PlayCircleOutlined />}
-        onClick={onPlayPause}
-        size="large"
+        onClick={(e) => {
+          onPlayPause()
+          e.currentTarget.blur()
+        }}
         type="text"
-        className={styles.centerPlayBtn}
-        disabled={!isVideoLoaded && !videoError}
+        style={styles.fullscreenCenterPlayBtn}
+        size="large"
       />
     </div>
   )

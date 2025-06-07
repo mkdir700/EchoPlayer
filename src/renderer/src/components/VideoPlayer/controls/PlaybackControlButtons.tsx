@@ -9,6 +9,7 @@ import {
   RightOutlined
 } from '@ant-design/icons'
 import { useVideoPlayState } from '@renderer/hooks/useVideoPlayerHooks'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 interface PlaybackControlButtonsProps {
   isVideoLoaded: boolean
@@ -18,6 +19,7 @@ interface PlaybackControlButtonsProps {
   onPlayPause: () => void
   onStepForward: () => void
   onNextSubtitle: () => void
+  variant?: 'compact' | 'fullscreen'
   className?: string
   buttonClassName?: string
   playPauseClassName?: string
@@ -31,24 +33,73 @@ export function PlaybackControlButtons({
   onPlayPause,
   onStepForward,
   onNextSubtitle,
+  variant = 'compact',
   className = '',
   buttonClassName = '',
   playPauseClassName = ''
 }: PlaybackControlButtonsProps): React.JSX.Element {
   const isPlaying = useVideoPlayState()
+  const { styles } = useTheme()
+
+  const getButtonStyles = (): React.CSSProperties => {
+    if (buttonClassName) {
+      return {}
+    }
+
+    if (variant === 'fullscreen') {
+      return styles.fullscreenControlBtn
+    }
+
+    return styles.controlBtn
+  }
+
+  const getPlayPauseButtonStyles = (): React.CSSProperties => {
+    if (playPauseClassName || buttonClassName) {
+      return {}
+    }
+
+    if (variant === 'fullscreen') {
+      return styles.fullscreenPlayPauseBtn
+    }
+
+    return { ...styles.controlBtn, ...styles.playPauseBtn }
+  }
+
+  const getButtonClassName = (): string => {
+    if (buttonClassName) {
+      return buttonClassName
+    }
+    return ''
+  }
+
+  const getPlayPauseButtonClassName = (): string => {
+    if (playPauseClassName || buttonClassName) {
+      return `${buttonClassName} ${playPauseClassName}`
+    }
+    return ''
+  }
 
   return (
-    <div className={className}>
+    <div
+      className={className}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        ...({} as React.CSSProperties) // Allow className styles to override
+      }}
+    >
       {/* 上一句字幕 */}
       <Tooltip title="上一句字幕">
         <Button
           icon={<StepBackwardOutlined />}
           onClick={(e) => {
             onPreviousSubtitle()
-            e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
+            e.currentTarget.blur()
           }}
           type="text"
-          className={buttonClassName}
+          style={getButtonStyles()}
+          className={getButtonClassName()}
           disabled={!isVideoLoaded}
           size="small"
         />
@@ -60,10 +111,11 @@ export function PlaybackControlButtons({
           icon={<LeftOutlined />}
           onClick={(e) => {
             onStepBackward()
-            e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
+            e.currentTarget.blur()
           }}
           type="text"
-          className={buttonClassName}
+          style={getButtonStyles()}
+          className={getButtonClassName()}
           disabled={!isVideoLoaded}
           size="small"
         />
@@ -74,10 +126,11 @@ export function PlaybackControlButtons({
         icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
         onClick={(e) => {
           onPlayPause()
-          e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
+          e.currentTarget.blur()
         }}
         type="text"
-        className={`${buttonClassName} ${playPauseClassName}`}
+        style={getPlayPauseButtonStyles()}
+        className={getPlayPauseButtonClassName()}
         disabled={!isVideoLoaded && !videoError}
       />
 
@@ -87,10 +140,11 @@ export function PlaybackControlButtons({
           icon={<RightOutlined />}
           onClick={(e) => {
             onStepForward()
-            e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
+            e.currentTarget.blur()
           }}
           type="text"
-          className={buttonClassName}
+          style={getButtonStyles()}
+          className={getButtonClassName()}
           disabled={!isVideoLoaded}
           size="small"
         />
@@ -102,10 +156,11 @@ export function PlaybackControlButtons({
           icon={<StepForwardOutlined />}
           onClick={(e) => {
             onNextSubtitle()
-            e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
+            e.currentTarget.blur()
           }}
           type="text"
-          className={buttonClassName}
+          style={getButtonStyles()}
+          className={getButtonClassName()}
           disabled={!isVideoLoaded}
           size="small"
         />

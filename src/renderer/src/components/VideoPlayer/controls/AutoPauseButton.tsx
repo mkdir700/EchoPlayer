@@ -9,6 +9,7 @@ import { useTheme } from '@renderer/hooks/useTheme'
 
 interface AutoPauseButtonProps {
   isVideoLoaded: boolean
+  variant?: 'compact' | 'fullscreen'
 }
 
 /**
@@ -17,9 +18,14 @@ interface AutoPauseButtonProps {
  * When enabled, the video will automatically pause after each subtitle finishes displaying, allowing users to review subtitles at their own pace. The button is disabled if the video is not loaded and visually indicates whether auto-pause is active.
  *
  * @param isVideoLoaded - Indicates whether the video is currently loaded and ready for interaction.
+ * @param variant - Display variant: 'compact' for compact mode, 'fullscreen' for fullscreen mode.
+ * @param className - Optional CSS class name to override default styles.
  * @returns The rendered auto-pause toggle button component.
  */
-export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.JSX.Element {
+export function AutoPauseButton({
+  isVideoLoaded,
+  variant = 'compact'
+}: AutoPauseButtonProps): React.JSX.Element {
   const { styles } = useTheme()
   const isAutoPause = useIsAutoPause()
   const subtitleControl = useSubtitleControl()
@@ -125,6 +131,29 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
     return unsubscribe
   }, [subscribeToPlayState, isAutoPause])
 
+  // 根据变体类型选择样式 / Choose styles based on variant type
+  const getButtonStyles = (): React.CSSProperties => {
+    if (variant === 'fullscreen') {
+      // 全屏模式使用主题系统样式 / Fullscreen mode uses theme system styles
+      return {
+        ...styles.fullscreenControlBtn,
+        ...(isAutoPause ? styles.fullscreenControlBtnActive : {})
+      }
+    }
+
+    // 默认紧凑模式样式 / Default compact mode styles
+    return {
+      ...styles.controlBtn,
+      ...(isAutoPause ? styles.controlBtnActive : {})
+    }
+  }
+
+  // 获取按钮的CSS类名 / Get button CSS class name
+  const getButtonClassName = (): string => {
+    // 不再需要处理 className 和 active 类名，完全依赖主题系统
+    return ''
+  }
+
   return (
     <Tooltip title={isAutoPause ? '关闭自动暂停' : '开启自动暂停'}>
       <Button
@@ -134,10 +163,8 @@ export function AutoPauseButton({ isVideoLoaded }: AutoPauseButtonProps): React.
           e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
         }}
         type="text"
-        style={{
-          ...styles.controlBtn,
-          ...(isAutoPause ? styles.controlBtnActive : {})
-        }}
+        style={getButtonStyles()}
+        className={getButtonClassName()}
         disabled={!isVideoLoaded}
         size="small"
       />

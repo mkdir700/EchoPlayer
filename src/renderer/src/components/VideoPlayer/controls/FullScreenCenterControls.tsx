@@ -1,14 +1,6 @@
 import React from 'react'
-import { Button, Tooltip } from 'antd'
-import {
-  PlayCircleOutlined,
-  PauseCircleOutlined,
-  StepBackwardOutlined,
-  StepForwardOutlined,
-  LeftOutlined,
-  RightOutlined
-} from '@ant-design/icons'
-import styles from '../VideoControlsFullScreen.module.css'
+import { PlaybackControlButtons } from './index'
+import { useTheme } from '@renderer/hooks/useTheme'
 
 interface FullScreenCenterControlsProps {
   isVideoLoaded: boolean
@@ -23,7 +15,6 @@ interface FullScreenCenterControlsProps {
 
 export function FullScreenCenterControls({
   isVideoLoaded,
-  isPlaying,
   videoError,
   onStepBackward,
   onPlayPause,
@@ -31,64 +22,21 @@ export function FullScreenCenterControls({
   onPreviousSubtitle,
   onNextSubtitle
 }: FullScreenCenterControlsProps): React.JSX.Element {
+  const { styles } = useTheme()
+
   return (
-    <div className={styles.controlsCenter}>
-      <div className={styles.controlGroup}>
-        {/* 上一句字幕 Previous Subtitle */}
-        <Tooltip title="上一句字幕">
-          <Button
-            icon={<StepBackwardOutlined />}
-            onClick={onPreviousSubtitle}
-            type="text"
-            className={styles.controlBtn}
-            disabled={!isVideoLoaded}
-          />
-        </Tooltip>
-
-        {/* 后退10秒 Step Backward 10s */}
-        <Tooltip title="后退10秒">
-          <Button
-            icon={<LeftOutlined />}
-            onClick={onStepBackward}
-            type="text"
-            className={styles.controlBtn}
-            disabled={!isVideoLoaded}
-          />
-        </Tooltip>
-      </div>
-
-      {/* 播放/暂停 Play/Pause */}
-      <Button
-        icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-        onClick={onPlayPause}
-        type="text"
-        className={`${styles.controlBtn} ${styles.playPauseBtn}`}
-        disabled={!isVideoLoaded && !videoError}
+    <div style={styles.fullscreenControlsCenter}>
+      {/* 播放控制按钮 - 复用现有的PlaybackControlButtons组件 */}
+      <PlaybackControlButtons
+        isVideoLoaded={isVideoLoaded}
+        videoError={videoError}
+        onPreviousSubtitle={onPreviousSubtitle}
+        onStepBackward={onStepBackward}
+        onPlayPause={onPlayPause}
+        onStepForward={onStepForward}
+        onNextSubtitle={onNextSubtitle}
+        variant="fullscreen"
       />
-
-      <div className={styles.controlGroup}>
-        {/* 前进10秒 Step Forward 10s */}
-        <Tooltip title="前进10秒">
-          <Button
-            icon={<RightOutlined />}
-            onClick={onStepForward}
-            type="text"
-            className={styles.controlBtn}
-            disabled={!isVideoLoaded}
-          />
-        </Tooltip>
-
-        {/* 下一句字幕 Next Subtitle */}
-        <Tooltip title="下一句字幕">
-          <Button
-            icon={<StepForwardOutlined />}
-            onClick={onNextSubtitle}
-            type="text"
-            className={styles.controlBtn}
-            disabled={!isVideoLoaded}
-          />
-        </Tooltip>
-      </div>
     </div>
   )
 }
