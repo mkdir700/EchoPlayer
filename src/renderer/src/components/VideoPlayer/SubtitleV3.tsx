@@ -1,19 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react'
-import { Dropdown, Button, Tooltip, Slider, Switch } from 'antd'
-import { EyeInvisibleOutlined, EyeOutlined, CloseOutlined } from '@ant-design/icons'
 import { WordCard } from '@renderer/components/WordCard/WordCard'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
-import {
-  useSubtitleState,
-  createDefaultSubtitleState,
-  type SubtitleMarginsState,
-  BACKGROUND_TYPES
-} from '@renderer/hooks/useSubtitleState'
+import { useSubtitleState } from '@renderer/hooks/useSubtitleState'
 import { useSubtitleDragAndResize } from '@renderer/hooks/useSubtitleDragAndResize'
 import { useSubtitleStyles } from '@renderer/hooks/useSubtitleStyles'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { useSubtitleEventHandlers } from '@renderer/hooks/useSubtitleEventHandlers'
 import { SubtitleContent } from './SubtitleContent'
 import { MaskFrame } from './MaskFrame'
+import { SubtitleContextMenu } from './SubtitleContextMenu'
 import RendererLogger from '@renderer/utils/logger'
 
 interface SubtitleV3Props {
@@ -97,23 +92,6 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
   // Get theme
   const { styles } = useTheme()
 
-  // Local state
-  const [selectedWord, setSelectedWord] = useState<{
-    word: string
-    element: HTMLElement
-  } | null>(null)
-  const [isHovering, setIsHovering] = useState(false)
-  const [isControlsHovering, setIsControlsHovering] = useState(false)
-  const [isMaskFrameActive, setIsMaskFrameActive] = useState(false)
-
-  // Context menu state - 右键菜单状态
-  const [contextMenuVisible, setContextMenuVisible] = useState(false)
-  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
-
-  // Mock settings state for context menu - 右键菜单的模拟设置状态
-  const [mockFontScale, setMockFontScale] = useState(1.0)
-  const [mockAutoHide, setMockAutoHide] = useState(true)
-
   // Add window dimensions state to trigger re-renders when window size changes
   const [windowDimensions, setWindowDimensions] = useState({
     width: window.innerWidth,
@@ -122,24 +100,8 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
 
   // References
   const containerRef = useRef<HTMLDivElement>(null)
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const maskFrameCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const parentDimensionsRef = useRef({ width: 0, height: 0 })
   const renderCount = useRef(0)
-
-  // Stable callback functions - store latest values using useRef to keep function reference stable
-  const callbacksRef = useRef({
-    onWordHover,
-    onPauseOnHover
-  })
-
-  // Update callback references
-  useEffect(() => {
-    callbacksRef.current = {
-      onWordHover,
-      onPauseOnHover
-    }
-  }, [onWordHover, onPauseOnHover])
 
   // Add window resize listener to update dimensions and trigger re-renders
   useEffect(() => {
@@ -189,7 +151,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     }
     parentDimensionsRef.current = dimensions
     return dimensions
-  }, []) // Add windowDimensions as dependency
+  }, [windowDimensions]) // Add windowDimensions as dependency to trigger recalculation on resize
 
   // Get stable function for parent container bounds
   const getParentBounds = useMemo(() => {
@@ -246,309 +208,18 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
   const { dynamicTextStyle, dynamicEnglishTextStyle, dynamicChineseTextStyle, buttonSize } =
     useSubtitleStyles(currentLayoutWithWindowDimensions)
 
-  // Get current background config for context menu - 获取当前背景配置用于右键菜单
-  const currentBackgroundConfig = useMemo(() => {
-    return (
-      BACKGROUND_TYPES.find((bg) => bg.type === subtitleState.backgroundType) || BACKGROUND_TYPES[0]
-    )
-  }, [subtitleState.backgroundType])
-
-  // Stable event handlers
-  const stableHandlers = useMemo(
-    () => ({
-      // Handle word hover events
-      handleWordHover: (isHovering: boolean): void => {
-        callbacksRef.current.onWordHover(isHovering)
-        if (isHovering) {
-          console.log('Trigger video pause')
-          callbacksRef.current.onPauseOnHover()
-        }
-      },
-
-      // Handle word click events
-      handleWordClick: (word: string, event: React.MouseEvent): void => {
-        event.stopPropagation()
-        event.preventDefault()
-
-        const trimmedWord = word.trim()
-        if (trimmedWord === '') {
-          return
-        }
-
-        const wordElement = event.target as HTMLElement
-        setSelectedWord({
-          word: trimmedWord,
-          element: wordElement
-        })
-      },
-
-      // Check if element is a word element
-      isWordElement: (element: HTMLElement): boolean => {
-        if (
-          element.classList.contains('subtitleWord') ||
-          element.classList.contains('clickableWord')
-        ) {
-          return true
-        }
-
-        let parent = element.parentElement
-        let depth = 0
-        while (parent && depth < 3) {
-          if (
-            parent.classList.contains('subtitleWord') ||
-            parent.classList.contains('clickableWord')
-          ) {
-            return true
-          }
-          parent = parent.parentElement
-          depth++
-        }
-        return false
-      },
-
-      // Close word card
-      handleCloseWordCard: (): void => {
-        setSelectedWord(null)
-      },
-
-      // Update mask frame
-      updateMaskFrame: (maskFrame: SubtitleMarginsState['maskFrame']): void => {
-        updateSubtitleState({
-          ...subtitleState,
-          maskFrame
-        })
-      },
-
-      // Reset subtitle state
-      resetSubtitleState: (): void => {
-        const cleanState = createDefaultSubtitleState()
-        updateSubtitleState(cleanState)
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔄 Reset subtitle state to:', cleanState)
-        }
-      },
-
-      // One-click expand horizontally
-      expandHorizontally: (): void => {
-        const parent = containerRef.current?.parentElement
-        if (!parent) {
-          console.warn('⚠️ Cannot get parent container, using default margins')
-          updateSubtitleState({
-            ...subtitleState,
-            margins: {
-              ...subtitleState.margins,
-              left: 5,
-              right: 5
-            }
-          })
-          return
-        }
-
-        // Calculate actual display area of video in container
-        const containerWidth = parent.clientWidth
-        const containerHeight = parent.clientHeight
-        const containerAspectRatio = containerWidth / containerHeight
-
-        let videoDisplayWidth: number, videoLeft: number
-
-        if (displayAspectRatio > containerAspectRatio) {
-          // Video is wider than container, scale based on container width
-          videoDisplayWidth = containerWidth
-          videoLeft = 0
-        } else {
-          // Video is taller (or equal), scale based on container height
-          videoDisplayWidth = containerHeight * displayAspectRatio
-          videoLeft = (containerWidth - videoDisplayWidth) / 2
-        }
-
-        // Convert to percentages
-        const videoLeftPercent = (videoLeft / containerWidth) * 100
-        const videoRightPercent =
-          ((containerWidth - (videoLeft + videoDisplayWidth)) / containerWidth) * 100
-
-        // Set subtitle area margins to video display area boundaries, plus appropriate padding
-        const horizontalPadding = 2 // 2% padding to ensure subtitles don't stick to video edges
-        const leftMargin = Math.max(0, videoLeftPercent + horizontalPadding)
-        const rightMargin = Math.max(0, videoRightPercent + horizontalPadding)
-
-        updateSubtitleState({
-          ...subtitleState,
-          margins: {
-            ...subtitleState.margins,
-            left: leftMargin,
-            right: rightMargin
-          }
-        })
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log('↔ One-click expand horizontally - based on video display area:', {
-            displayAspectRatio,
-            containerAspectRatio,
-            videoDisplayArea: {
-              left: videoLeftPercent,
-              width: (videoDisplayWidth / containerWidth) * 100
-            },
-            calculatedMargins: {
-              left: leftMargin,
-              right: rightMargin
-            }
-          })
-        }
-      },
-
-      // Container mouse down event handler
-      handleContainerMouseDown: (e: React.MouseEvent): void => {
-        const target = e.target as HTMLElement
-        if (stableHandlers.isWordElement(target)) {
-          e.stopPropagation()
-          return
-        }
-        dragAndResizeProps.handleMouseDown(e, containerRef)
-      },
-
-      // Hover control
-      handleMouseEnter: (): void => {
-        if (hideTimeoutRef.current) {
-          clearTimeout(hideTimeoutRef.current)
-          hideTimeoutRef.current = null
-        }
-        setIsHovering(true)
-        // In mask mode, activate mask border when entering subtitle area
-        if (subtitleState.isMaskMode) {
-          setIsMaskFrameActive(true)
-        }
-      },
-
-      handleMouseLeave: (): void => {
-        hideTimeoutRef.current = setTimeout(() => {
-          if (!isControlsHovering) {
-            setIsHovering(false)
-          }
-          hideTimeoutRef.current = null
-        }, 100)
-
-        // Separate delayed check for mask border state
-        if (maskFrameCheckTimeoutRef.current) {
-          clearTimeout(maskFrameCheckTimeoutRef.current)
-        }
-        maskFrameCheckTimeoutRef.current = setTimeout(() => {
-          // Use DOM query to get real-time hover state
-          const subtitleHovering = containerRef.current?.matches(':hover') || false
-          const controlsHovering =
-            document.querySelector('.subtitle-controls-external:hover') !== null
-          const maskFrameHovering = document.querySelector('.mask-frame:hover') !== null
-
-          if (!subtitleHovering && !controlsHovering && !maskFrameHovering) {
-            setIsMaskFrameActive(false)
-          }
-        }, 150)
-      },
-
-      // Control button hover
-      handleControlsMouseEnter: (): void => {
-        setIsControlsHovering(true)
-        // In mask mode, activate mask border when entering control area
-        if (subtitleState.isMaskMode) {
-          setIsMaskFrameActive(true)
-        }
-      },
-
-      handleControlsMouseLeave: (): void => {
-        setIsControlsHovering(false)
-
-        // Delayed check for mask border state
-        if (maskFrameCheckTimeoutRef.current) {
-          clearTimeout(maskFrameCheckTimeoutRef.current)
-        }
-        maskFrameCheckTimeoutRef.current = setTimeout(() => {
-          const subtitleHovering = containerRef.current?.matches(':hover') || false
-          const controlsHovering =
-            document.querySelector('.subtitle-controls-external:hover') !== null
-          const maskFrameHovering = document.querySelector('.mask-frame:hover') !== null
-
-          if (!subtitleHovering && !controlsHovering && !maskFrameHovering) {
-            setIsMaskFrameActive(false)
-          }
-        }, 150)
-      },
-
-      // Mask frame hover handling
-      handleMaskFrameMouseEnter: (): void => {
-        setIsMaskFrameActive(true)
-      },
-
-      handleMaskFrameMouseLeave: (): void => {
-        // Delayed check for mask border state
-        if (maskFrameCheckTimeoutRef.current) {
-          clearTimeout(maskFrameCheckTimeoutRef.current)
-        }
-        maskFrameCheckTimeoutRef.current = setTimeout(() => {
-          const subtitleHovering = containerRef.current?.matches(':hover') || false
-          const controlsHovering =
-            document.querySelector('.subtitle-controls-external:hover') !== null
-          const maskFrameHovering = document.querySelector('.mask-frame:hover') !== null
-
-          if (!subtitleHovering && !controlsHovering && !maskFrameHovering) {
-            setIsMaskFrameActive(false)
-          }
-        }, 150)
-      },
-
-      // Resize handle
-      handleResizeMouseDown: (e: React.MouseEvent): void => {
-        dragAndResizeProps.handleResizeMouseDown(e, 'se')
-      },
-
-      // Context menu handlers - 右键菜单处理函数
-      handleContextMenu: (e: React.MouseEvent): void => {
-        const target = e.target as HTMLElement
-        // Only show context menu on non-word elements - 只在非单词元素上显示右键菜单
-        if (stableHandlers.isWordElement(target)) {
-          return
-        }
-
-        e.preventDefault()
-        e.stopPropagation()
-
-        setContextMenuPosition({ x: e.clientX, y: e.clientY })
-        setContextMenuVisible(true)
-      },
-
-      // Context menu action handlers - 右键菜单动作处理函数
-      handleMaskModeClick: (): void => {
-        toggleMaskMode()
-        setContextMenuVisible(false)
-      },
-
-      handleBackgroundTypeClick: (): void => {
-        toggleBackgroundType()
-        // Don't close menu to allow multiple background type switches - 不关闭菜单以允许多次切换背景类型
-      },
-
-      handleResetClick: (): void => {
-        stableHandlers.resetSubtitleState()
-        setContextMenuVisible(false)
-      },
-
-      handleExpandClick: (): void => {
-        stableHandlers.expandHorizontally()
-        setContextMenuVisible(false)
-      },
-
-      handleContextMenuClose: (): void => {
-        setContextMenuVisible(false)
-      }
-    }),
-    [
-      updateSubtitleState,
-      subtitleState,
-      displayAspectRatio,
-      dragAndResizeProps,
-      isControlsHovering,
-      toggleMaskMode,
-      toggleBackgroundType
-    ]
-  )
+  // Use event handlers hook
+  const eventHandlers = useSubtitleEventHandlers({
+    subtitleState,
+    updateSubtitleState,
+    toggleMaskMode,
+    toggleBackgroundType,
+    displayAspectRatio,
+    containerRef,
+    dragAndResizeProps,
+    onWordHover,
+    onPauseOnHover
+  })
 
   // Global event listener management
   useEffect(() => {
@@ -580,31 +251,14 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     dragAndResizeProps
   ])
 
-  // Clean up timers
-  useEffect(() => {
-    return () => {
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current)
-      }
-      if (maskFrameCheckTimeoutRef.current) {
-        clearTimeout(maskFrameCheckTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Listen for mask mode changes, reset related state when exiting
-  useEffect(() => {
-    if (!subtitleState.isMaskMode) {
-      setIsMaskFrameActive(false)
-    }
-  }, [subtitleState.isMaskMode])
+  // Note: Mask mode state changes are now handled in the event handlers hook
 
   // Handle clicks outside context menu to close it - 处理右键菜单外部点击关闭
   useEffect(() => {
-    if (!contextMenuVisible) return
+    if (!eventHandlers.contextMenuVisible) return
 
     const handleClickOutside = (): void => {
-      setContextMenuVisible(false)
+      eventHandlers.handleContextMenuClose()
     }
 
     document.addEventListener('click', handleClickOutside)
@@ -612,7 +266,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     return () => {
       document.removeEventListener('click', handleClickOutside)
     }
-  }, [contextMenuVisible])
+  }, [eventHandlers.contextMenuVisible, eventHandlers.handleContextMenuClose])
 
   // Calculate actual background type
   const actualBackgroundType = useMemo(() => {
@@ -647,7 +301,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
 
     // Merge with theme styles
     const baseStyle = styles.subtitleContainer
-    const hoverStyle = isHovering ? styles.subtitleContainerHover : {}
+    const hoverStyle = eventHandlers.isHovering ? styles.subtitleContainerHover : {}
     const draggingStyle = isDraggingOrResizing ? styles.subtitleContainerDragging : {}
 
     return {
@@ -668,7 +322,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     currentLayout,
     dragAndResizeProps.isDragging,
     dragAndResizeProps.isResizing,
-    isHovering,
+    eventHandlers.isHovering,
     styles
   ])
 
@@ -716,11 +370,11 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
           <MaskOverlay />
           <MaskFrame
             maskFrame={subtitleState.maskFrame}
-            updateMaskFrame={stableHandlers.updateMaskFrame}
+            updateMaskFrame={eventHandlers.updateMaskFrame}
             containerRef={containerRef}
-            isMaskFrameActive={isMaskFrameActive}
-            onMaskFrameMouseEnter={stableHandlers.handleMaskFrameMouseEnter}
-            onMaskFrameMouseLeave={stableHandlers.handleMaskFrameMouseLeave}
+            isMaskFrameActive={eventHandlers.isMaskFrameActive}
+            onMaskFrameMouseEnter={eventHandlers.handleMaskFrameMouseEnter}
+            onMaskFrameMouseLeave={eventHandlers.handleMaskFrameMouseLeave}
           />
         </>
       )}
@@ -729,10 +383,10 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
       <div
         ref={containerRef}
         style={containerStyle}
-        onMouseDown={stableHandlers.handleContainerMouseDown}
-        onMouseEnter={stableHandlers.handleMouseEnter}
-        onMouseLeave={stableHandlers.handleMouseLeave}
-        onContextMenu={stableHandlers.handleContextMenu}
+        onMouseDown={eventHandlers.handleContainerMouseDown}
+        onMouseEnter={eventHandlers.handleMouseEnter}
+        onMouseLeave={eventHandlers.handleMouseLeave}
+        onContextMenu={eventHandlers.handleContextMenu}
       >
         {/* Subtitle content area */}
         <div style={subtitleContentStyle}>
@@ -740,247 +394,40 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
             dynamicTextStyle={dynamicTextStyle}
             dynamicEnglishTextStyle={dynamicEnglishTextStyle}
             dynamicChineseTextStyle={dynamicChineseTextStyle}
-            onWordHover={stableHandlers.handleWordHover}
-            onWordClick={stableHandlers.handleWordClick}
+            onWordHover={eventHandlers.handleWordHover}
+            onWordClick={eventHandlers.handleWordClick}
           />
         </div>
 
         {/* Resize handle */}
         <ResizeHandle
-          visible={isHovering}
+          visible={eventHandlers.isHovering}
           buttonSize={buttonSize}
-          onMouseDown={stableHandlers.handleResizeMouseDown}
+          onMouseDown={eventHandlers.handleResizeMouseDown}
         />
       </div>
 
       {/* Word card */}
-      {selectedWord && (
+      {eventHandlers.selectedWord && (
         <WordCard
-          word={selectedWord.word}
-          targetElement={selectedWord.element}
-          onClose={stableHandlers.handleCloseWordCard}
+          word={eventHandlers.selectedWord.word}
+          targetElement={eventHandlers.selectedWord.element}
+          onClose={eventHandlers.handleCloseWordCard}
         />
       )}
 
       {/* Context menu - 右键菜单 */}
-      <Dropdown
-        open={contextMenuVisible}
-        onOpenChange={(open) => {
-          if (!open) {
-            stableHandlers.handleContextMenuClose()
-          }
-        }}
-        dropdownRender={() => (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {/* Main menu container - 主菜单容器 */}
-            <div
-              style={{
-                backgroundColor: 'rgba(20, 20, 20, 0.95)',
-                borderRadius: '8px',
-                padding: '12px',
-                minWidth: '200px',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(8px)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Settings section - 设置区域 */}
-              <div style={{ marginBottom: '12px' }}>
-                <div
-                  style={{
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontSize: '12px',
-                    marginBottom: '8px',
-                    fontWeight: 500
-                  }}
-                >
-                  字幕设置
-                </div>
-
-                {/* Font scale slider - 字体大小滑块 */}
-                <div style={{ marginBottom: '8px' }} onClick={(e) => e.stopPropagation()}>
-                  <div
-                    style={{
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      fontSize: '12px',
-                      marginBottom: '4px'
-                    }}
-                  >
-                    字体大小: {Math.round(mockFontScale * 100)}%
-                  </div>
-                  <Slider
-                    min={0.5}
-                    max={2.0}
-                    step={0.1}
-                    value={mockFontScale}
-                    onChange={setMockFontScale}
-                    trackStyle={{ backgroundColor: '#1890ff' }}
-                    handleStyle={{ borderColor: '#1890ff' }}
-                    railStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-                  />
-                </div>
-
-                {/* Auto hide switch - 自动隐藏开关 */}
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '8px'
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span
-                    style={{
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      fontSize: '12px'
-                    }}
-                  >
-                    自动隐藏控件
-                  </span>
-                  <Switch size="small" checked={mockAutoHide} onChange={setMockAutoHide} />
-                </div>
-              </div>
-
-              {/* Divider - 分隔线 */}
-              <div
-                style={{
-                  height: '1px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  margin: '8px 0'
-                }}
-              />
-
-              {/* Action buttons - 操作按钮 */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '8px'
-                }}
-              >
-                <Tooltip title={`遮罩模式: ${subtitleState.isMaskMode ? '开启' : '关闭'}`}>
-                  <Button
-                    type={subtitleState.isMaskMode ? 'primary' : 'text'}
-                    size="small"
-                    onClick={stableHandlers.handleMaskModeClick}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '32px',
-                      color: subtitleState.isMaskMode ? undefined : 'rgba(255, 255, 255, 0.9)',
-                      borderColor: subtitleState.isMaskMode ? undefined : 'rgba(255, 255, 255, 0.2)'
-                    }}
-                  >
-                    {subtitleState.isMaskMode ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-                  </Button>
-                </Tooltip>
-
-                <Tooltip title={`背景类型: ${currentBackgroundConfig.label}`}>
-                  <Button
-                    type="text"
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      stableHandlers.handleBackgroundTypeClick()
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '32px',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      borderColor: 'rgba(255, 255, 255, 0.2)'
-                    }}
-                  >
-                    <span>{currentBackgroundConfig.icon}</span>
-                  </Button>
-                </Tooltip>
-
-                <Tooltip title="重置位置和大小">
-                  <Button
-                    type="text"
-                    size="small"
-                    onClick={stableHandlers.handleResetClick}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '32px',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      borderColor: 'rgba(255, 255, 255, 0.2)'
-                    }}
-                  >
-                    <span>↺</span>
-                  </Button>
-                </Tooltip>
-
-                <Tooltip title="铺满左右区域">
-                  <Button
-                    type="text"
-                    size="small"
-                    onClick={stableHandlers.handleExpandClick}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '32px',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      borderColor: 'rgba(255, 255, 255, 0.2)'
-                    }}
-                  >
-                    <span>↔</span>
-                  </Button>
-                </Tooltip>
-              </div>
-            </div>
-
-            {/* Close button outside menu - 菜单外部的关闭按钮 */}
-            <div style={{ marginTop: '8px' }}>
-              <Tooltip>
-                <Button
-                  type="text"
-                  size="small"
-                  onClick={stableHandlers.handleContextMenuClose}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '28px',
-                    height: '28px',
-                    backgroundColor: 'rgba(20, 20, 20, 0.9)',
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '50%',
-                    fontSize: '12px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
-                  }}
-                >
-                  <CloseOutlined />
-                </Button>
-              </Tooltip>
-            </div>
-          </div>
-        )}
-        trigger={[]}
-      >
-        <div
-          style={{
-            position: 'fixed',
-            // Center the close button at the cursor position - 让关闭按钮居中对齐到光标位置
-            // Menu width is ~200px, close button is 28px, so offset by ~100px to center horizontally
-            // Menu height is ~180px, close button is 28px and 8px margin, so offset by ~180px to center vertically
-            left: contextMenuPosition.x - 100, // Offset to center horizontally - 水平居中偏移
-            top: contextMenuPosition.y - 194, // Offset to position close button at cursor - 垂直偏移让关闭按钮对齐光标
-            width: 1,
-            height: 1,
-            pointerEvents: 'none',
-            zIndex: 9999
-          }}
-        />
-      </Dropdown>
+      <SubtitleContextMenu
+        visible={eventHandlers.contextMenuVisible}
+        position={eventHandlers.contextMenuPosition}
+        isMaskMode={subtitleState.isMaskMode}
+        backgroundType={subtitleState.backgroundType}
+        onClose={eventHandlers.handleContextMenuClose}
+        onMaskModeToggle={eventHandlers.handleMaskModeClick}
+        onBackgroundTypeToggle={eventHandlers.handleBackgroundTypeClick}
+        onReset={eventHandlers.handleResetClick}
+        onExpand={eventHandlers.handleExpandClick}
+      />
     </>
   )
 }
