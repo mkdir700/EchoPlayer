@@ -889,7 +889,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       border: `1px solid ${token.colorBorderSecondary}`,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: 1000
+      zIndex: token.zIndexPopupBase // Use token zIndex instead of hardcoded value - 使用token中的zIndex而非硬编码值
     },
 
     playbackRateControl: {
@@ -1059,7 +1059,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       border: `1px solid ${token.colorBorderSecondary}`,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: 1000
+      zIndex: token.zIndexPopupBase // Use token zIndex instead of hardcoded value - 使用token中的zIndex而非硬编码值
     },
 
     fullscreenVolumeSliderVertical: {
@@ -1091,7 +1091,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       border: `1px solid ${token.colorBorderSecondary}`,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: 1000
+      zIndex: token.zIndexPopupBase // Use token zIndex instead of hardcoded value - 使用token中的zIndex而非硬编码值
     },
 
     fullscreenSettingsContent: {
@@ -1190,7 +1190,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       boxShadow: themeStyles.appleCardShadow.heavy,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: 9999,
+      zIndex: token.zIndexPopupBase, // Use token zIndex for popup layer - 使用token中的popup层级zIndex
       minWidth: '400px',
       maxWidth: '480px',
       padding: '12px 16px'
@@ -1204,7 +1204,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)', // 更深的阴影
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: 9999,
+      zIndex: token.zIndexPopupBase, // Use token zIndex for popup layer - 使用token中的popup层级zIndex
       minWidth: '400px',
       maxWidth: '480px',
       padding: '12px 16px',
@@ -1287,7 +1287,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       border: `1px solid ${token.colorBorderSecondary}`,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: 1000
+      zIndex: token.zIndexPopupBase // Use token zIndex instead of hardcoded value - 使用token中的zIndex而非硬编码值
     },
 
     volumeSliderVertical: {
@@ -1315,7 +1315,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       width: 180,
       height: 32,
       boxSizing: 'border-box' as const,
-      zIndex: 1000
+      zIndex: token.zIndexPopupBase // Use token zIndex instead of hardcoded value - 使用token中的zIndex而非硬编码值
     },
 
     volumeSliderHorizontalTrack: {
@@ -1444,7 +1444,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       boxShadow: themeStyles.appleCardShadow.heavy,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: 1000
+      zIndex: token.zIndexPopupBase // Use token zIndex instead of hardcoded value - 使用token中的zIndex而非硬编码值
     },
 
     compactLayoutContainer: {

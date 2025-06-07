@@ -17,14 +17,21 @@ const DISPLAY_MODE_CONFIG = {
   bilingual: { label: '双语' }
 }
 
+interface SubtitleModeSelectorProps {
+  variant?: 'compact' | 'fullscreen'
+}
+
 /**
  * Renders a subtitle mode selector that allows users to switch between different subtitle display modes with a UI styled according to Apple design principles and the application's theme.
  *
  * The selector provides options such as none, original, Chinese, English, and bilingual subtitles. It ensures accessibility, keyboard shortcut support, and robust handling of invalid display modes by defaulting to bilingual. The component manages focus and click-outside behavior for an optimal user experience.
  *
+ * @param variant - Display variant: 'compact' for compact mode, 'fullscreen' for fullscreen mode.
  * @returns The rendered subtitle mode selector component.
  */
-export function SubtitleModeSelector(): React.JSX.Element {
+export function SubtitleModeSelector({
+  variant = 'compact'
+}: SubtitleModeSelectorProps): React.JSX.Element {
   const { styles, token } = useTheme()
   // 使用新的订阅模式 hooks
   const { setDisplayMode, toggleDisplayMode } = useSubtitleDisplayModeControls()
@@ -71,13 +78,40 @@ export function SubtitleModeSelector(): React.JSX.Element {
     : 'bilingual'
   const currentModeConfig = DISPLAY_MODE_CONFIG[validDisplayMode]
 
+  // 根据变体类型选择样式 / Choose styles based on variant type
+  const getButtonStyles = (): React.CSSProperties => {
+    const baseStyles = {
+      fontSize: token.fontSizeLG,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+
+    if (variant === 'fullscreen') {
+      // 全屏模式使用主题系统样式 / Fullscreen mode uses theme system styles
+      return {
+        ...styles.fullscreenControlBtn,
+        ...(showSubtitleModeSelector ? styles.fullscreenControlBtnActive : {}),
+        ...baseStyles
+      }
+    }
+
+    // 默认紧凑模式样式 / Default compact mode styles
+    return {
+      ...styles.controlBtn,
+      ...(showSubtitleModeSelector ? styles.controlBtnActive : {}),
+      ...baseStyles
+    }
+  }
+
   // 记录组件状态和样式使用情况，便于调试
   RendererLogger.debug(
-    `SubtitleModeSelector: 当前显示模式=${displayMode}, 有效模式=${validDisplayMode}`
+    `SubtitleModeSelector: 当前显示模式=${displayMode}, 有效模式=${validDisplayMode}, variant=${variant}`
   )
   RendererLogger.debug(
     `SubtitleModeSelector: 样式使用情况 - subtitleModeControl=${!!styles.subtitleModeControl}, subtitleModeSelector=${!!styles.subtitleModeSelector}`
   )
+
   return (
     <div style={styles.subtitleModeControl}>
       {/* 字幕模式切换按钮 */}
@@ -91,14 +125,7 @@ export function SubtitleModeSelector(): React.JSX.Element {
           size="small"
           icon={<TranslationOutlined />}
           onClick={handleSubtitleModeSelectorClick}
-          style={{
-            ...styles.controlBtn,
-            ...(showSubtitleModeSelector ? styles.controlBtnActive : {}),
-            fontSize: token.fontSizeLG,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          style={getButtonStyles()}
         />
       </Tooltip>
 

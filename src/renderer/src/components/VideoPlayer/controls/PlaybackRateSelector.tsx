@@ -76,7 +76,8 @@ export function PlaybackRateSelector({
       const calculatePosition = (): void => {
         const buttonRect = buttonRef.current!.getBoundingClientRect()
         const dropdownHeight = 300 // Estimated dropdown height - 估算的弹窗高度
-        const dropdownWidth = 400 // Dropdown width - 弹窗宽度
+        // Use smaller width in fullscreen mode to prevent overflow - 全屏模式下使用更小的宽度以防止溢出
+        const dropdownWidth = variant === 'fullscreen' ? 320 : 400 // Dropdown width - 弹窗宽度
         const viewportHeight = window.innerHeight
         const viewportWidth = window.innerWidth
         const spaceAbove = buttonRect.top
@@ -85,14 +86,31 @@ export function PlaybackRateSelector({
         // Smart positioning logic - 智能选择弹出方向
         const shouldShowBelow = spaceAbove < dropdownHeight && spaceBelow > spaceAbove
 
-        // Horizontal position adjustment to prevent overflow - 水平位置调整，防止溢出屏幕
+        // Enhanced horizontal position adjustment for fullscreen mode - 增强的水平位置调整，特别针对全屏模式
         let adjustedLeft = buttonRect.left
-        if (adjustedLeft + dropdownWidth > viewportWidth) {
-          // If overflowing right, align to right - 如果右侧溢出，调整到右对齐
-          adjustedLeft = Math.max(0, viewportWidth - dropdownWidth - 16)
+
+        if (variant === 'fullscreen') {
+          // In fullscreen mode, prefer right alignment to avoid overflow - 全屏模式下优先使用右对齐以避免溢出
+          const spaceOnRight = viewportWidth - buttonRect.right
+          const spaceOnLeft = buttonRect.left
+
+          if (spaceOnRight < dropdownWidth && spaceOnLeft >= dropdownWidth) {
+            // Right align if insufficient space on right but enough on left - 如果右侧空间不足但左侧空间充足，则右对齐
+            adjustedLeft = buttonRect.right - dropdownWidth
+          } else if (buttonRect.left + dropdownWidth > viewportWidth) {
+            // Standard right overflow handling - 标准的右侧溢出处理
+            adjustedLeft = Math.max(16, viewportWidth - dropdownWidth - 16)
+          }
+        } else {
+          // Standard positioning for non-fullscreen mode - 非全屏模式的标准定位
+          if (adjustedLeft + dropdownWidth > viewportWidth) {
+            // If overflowing right, align to right - 如果右侧溢出，调整到右对齐
+            adjustedLeft = Math.max(0, viewportWidth - dropdownWidth - 16)
+          }
         }
-        if (adjustedLeft < 0) {
-          // If overflowing left, align to left - 如果左侧溢出，调整到左对齐
+
+        // Ensure left edge doesn't go off screen - 确保左边缘不会超出屏幕
+        if (adjustedLeft < 16) {
           adjustedLeft = 16
         }
 
@@ -119,7 +137,7 @@ export function PlaybackRateSelector({
         requestAnimationFrame(calculatePosition)
       }
     }
-  }, [isDropdownOpen])
+  }, [isDropdownOpen, variant])
 
   const handlePlaybackRateChange = useCallback(
     (value: number) => {
@@ -209,6 +227,8 @@ export function PlaybackRateSelector({
 
     return {
       ...baseStyle,
+      // Ensure width matches the width used in position calculation - 确保宽度与位置计算中使用的宽度匹配
+      width: variant === 'fullscreen' ? '320px' : baseStyle.width || '400px',
       left: `${dropdownPosition.left}px`,
       top: `${dropdownPosition.top}px`,
       transform: dropdownPosition.showBelow ? 'translateY(0)' : 'translateY(-100%)'

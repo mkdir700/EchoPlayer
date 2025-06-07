@@ -1,5 +1,5 @@
 import React from 'react'
-import { LoopToggleButton, AutoPauseButton, PlaybackRateSelector } from './index'
+import { LoopToggleButton, AutoPauseButton, SubtitleModeSelector } from './index'
 import { useTheme } from '@renderer/hooks/useTheme'
 
 interface FullScreenLeftControlsProps {
@@ -20,8 +20,7 @@ export function FullScreenLeftControls({
         {/* 自动暂停 - 使用全屏模式变体 */}
         <AutoPauseButton isVideoLoaded={isVideoLoaded} variant="fullscreen" />
 
-        {/* 播放倍数 - 使用全屏模式变体 */}
-        <PlaybackRateSelector isVideoLoaded={isVideoLoaded} variant="fullscreen" />
+        <SubtitleModeSelector variant="fullscreen" />
       </div>
     </div>
   )
