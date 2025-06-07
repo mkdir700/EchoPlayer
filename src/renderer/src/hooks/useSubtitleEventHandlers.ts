@@ -1,14 +1,14 @@
 import { useCallback, useRef, useState, useMemo } from 'react'
-import { createDefaultSubtitleState, type SubtitleMarginsState } from './useSubtitleState'
 import { useUIStore } from '@renderer/stores/slices/uiStore'
 import { useVideoConfig } from './useVideoConfig'
+import { SubtitleDisplaySettings } from '@types_/shared'
 
 interface DragAndResizeProps {
   isDragging: boolean
   isResizing: boolean
   dragOffset: { x: number; y: number }
   resizeStartState: {
-    margins: SubtitleMarginsState['margins']
+    margins: SubtitleDisplaySettings['margins']
     mouseX: number
     mouseY: number
     resizeDirection: 'se' | 'sw' | 'ne' | 'nw'
@@ -23,8 +23,8 @@ interface DragAndResizeProps {
 }
 
 interface UseSubtitleEventHandlersProps {
-  subtitleState: SubtitleMarginsState
-  updateSubtitleState: (state: SubtitleMarginsState) => void
+  subtitleState: SubtitleDisplaySettings
+  updateSubtitleState: (state: SubtitleDisplaySettings) => void
   toggleMaskMode: () => void
   toggleBackgroundType: () => void
   displayAspectRatio: number
@@ -43,7 +43,7 @@ interface UseSubtitleEventHandlersReturn {
   handleCloseWordCard: () => void
 
   // State update handlers - 状态更新处理函数
-  updateMaskFrame: (maskFrame: SubtitleMarginsState['maskFrame']) => void
+  updateMaskFrame: (maskFrame: SubtitleDisplaySettings['maskFrame']) => void
   resetSubtitleState: () => void
   expandHorizontally: () => void
 
@@ -178,7 +178,7 @@ export const useSubtitleEventHandlers = ({
 
   // State update handlers - 状态更新处理函数
   const updateMaskFrame = useCallback(
-    (maskFrame: SubtitleMarginsState['maskFrame']): void => {
+    (maskFrame: SubtitleDisplaySettings['maskFrame']): void => {
       updateSubtitleState({
         ...subtitleState,
         maskFrame
@@ -188,7 +188,22 @@ export const useSubtitleEventHandlers = ({
   )
 
   const resetSubtitleState = useCallback((): void => {
-    const cleanState = createDefaultSubtitleState()
+    const cleanState: SubtitleDisplaySettings = {
+      margins: {
+        left: 20,
+        top: 75,
+        right: 20,
+        bottom: 5
+      },
+      backgroundType: 'transparent',
+      isMaskMode: false,
+      maskFrame: {
+        left: 0,
+        top: 25,
+        width: 100,
+        height: 50
+      }
+    }
     updateSubtitleState(cleanState)
     if (process.env.NODE_ENV === 'development') {
       console.log('🔄 Reset subtitle state to:', cleanState)

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react'
 import { WordCard } from '@renderer/components/WordCard/WordCard'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
-import { useSubtitleState } from '@renderer/hooks/useSubtitleState'
+import { useVideoSubtitleState } from '@renderer/hooks/useVideoSubtitleState'
 import { useSubtitleDragAndResize } from '@renderer/hooks/useSubtitleDragAndResize'
 import { useSubtitleStyles } from '@renderer/hooks/useSubtitleStyles'
 import { useTheme } from '@renderer/hooks/useTheme'
@@ -181,7 +181,7 @@ function SubtitleV3({
 
   // Use state management hook
   const { subtitleState, updateSubtitleState, toggleBackgroundType, toggleMaskMode } =
-    useSubtitleState(parentDimensions.width, parentDimensions.height, displayAspectRatio)
+    useVideoSubtitleState(parentDimensions.width, parentDimensions.height, displayAspectRatio)
 
   // Calculate current layout - only depends on necessary state
   const currentLayout = useMemo(() => {

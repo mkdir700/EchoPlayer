@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react'
-import { SubtitleMarginsState, MARGIN_LIMITS } from './useSubtitleState'
+import { MARGIN_LIMITS } from './useSubtitleState'
+import { SubtitleDisplaySettings } from '@types_/shared'
 import { useVideoConfig } from './useVideoConfig'
 
 interface DragAndResizeState {
@@ -7,7 +8,7 @@ interface DragAndResizeState {
   isResizing: boolean
   dragOffset: { x: number; y: number }
   resizeStartState: {
-    margins: SubtitleMarginsState['margins']
+    margins: SubtitleDisplaySettings['margins']
     mouseX: number
     mouseY: number
     resizeDirection: 'se' | 'sw' | 'ne' | 'nw'
@@ -15,8 +16,8 @@ interface DragAndResizeState {
 }
 
 export const useSubtitleDragAndResize = (
-  subtitleState: SubtitleMarginsState,
-  updateSubtitleState: (state: SubtitleMarginsState) => void,
+  subtitleState: SubtitleDisplaySettings,
+  updateSubtitleState: (state: SubtitleDisplaySettings) => void,
   getParentBounds: () => { width: number; height: number },
   currentLayout: { left: number; top: number; width: number; height: number }
 ): {
@@ -24,7 +25,7 @@ export const useSubtitleDragAndResize = (
   isResizing: boolean
   dragOffset: { x: number; y: number }
   resizeStartState: {
-    margins: SubtitleMarginsState['margins']
+    margins: SubtitleDisplaySettings['margins']
     mouseX: number
     mouseY: number
     resizeDirection: 'se' | 'sw' | 'ne' | 'nw'
@@ -49,7 +50,7 @@ export const useSubtitleDragAndResize = (
 
   // 简单验证边距值（用于拖拽，不强制调整宽高）
   const validateMarginsForDrag = useCallback(
-    (margins: SubtitleMarginsState['margins']): SubtitleMarginsState['margins'] => {
+    (margins: SubtitleDisplaySettings['margins']): SubtitleDisplaySettings['margins'] => {
       let { left, top, right, bottom } = margins
 
       // 确保所有边距都不为负数，并进行精度舍入
@@ -86,7 +87,7 @@ export const useSubtitleDragAndResize = (
 
   // 完整验证并修正边距值（用于调整大小）
   const validateMargins = useCallback(
-    (margins: SubtitleMarginsState['margins']): SubtitleMarginsState['margins'] => {
+    (margins: SubtitleDisplaySettings['margins']): SubtitleDisplaySettings['margins'] => {
       let { left, top, right, bottom } = margins
 
       // 确保所有边距都不为负数，并进行精度舍入
