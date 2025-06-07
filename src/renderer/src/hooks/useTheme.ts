@@ -1226,7 +1226,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: '4px',
-      width: '80px',
+      width: '60px',
       height: '30px',
       fontSize: token.fontSizeSM,
       padding: '0 8px',
