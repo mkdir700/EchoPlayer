@@ -9,14 +9,14 @@ interface SettingsNavigationProps {
 }
 
 /**
- * Renders a themed navigation menu for selecting settings sections.
+ * Renders a horizontal themed navigation menu for selecting settings sections.
  *
- * Displays a list of settings sections with interactive highlighting for the active and hovered items. Invokes a callback when a section is selected.
+ * Displays a horizontal list of settings sections with icons and labels, with interactive highlighting for the active and hovered items. Invokes a callback when a section is selected.
  *
  * @param activeSection - The key of the currently active settings section.
  * @param onSectionChange - Callback invoked with the key of the selected section when a navigation item is clicked.
  * @param className - Optional additional CSS class for the root navigation element.
- * @returns The rendered navigation menu as a React element.
+ * @returns The rendered horizontal navigation menu as a React element.
  */
 export function SettingsNavigation({
   activeSection,
@@ -24,7 +24,7 @@ export function SettingsNavigation({
   className
 }: SettingsNavigationProps): React.JSX.Element {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
-  const { token, styles } = useTheme()
+  const { styles } = useTheme()
 
   // 优化事件处理函数，避免重新创建
   const handleMouseEnter = useCallback((key: string) => {
@@ -43,32 +43,20 @@ export function SettingsNavigation({
   )
 
   return (
-    <nav className={className}>
+    <nav className={className} style={styles.horizontalNavContainer}>
       {SETTINGS_SECTIONS.map((item) => {
         const isActive = activeSection === item.key
         const isHovered = hoveredItem === item.key && !isActive
 
         // 预计算样式，避免在每次渲染时重新计算
         const itemStyle = {
-          ...styles.sidebarItem,
-          ...(isActive ? styles.sidebarItemActive : {}),
-          ...(isHovered
-            ? {
-                backgroundColor: token.colorFillQuaternary
-              }
-            : {})
+          ...styles.horizontalNavItem,
+          ...(isActive ? styles.horizontalNavItemActive : {}),
+          ...(isHovered ? styles.horizontalNavItemHover : {})
         }
 
-        const iconStyle = {
-          ...styles.sidebarIcon,
-          color: isActive ? token.colorWhite : token.colorTextSecondary
-        }
-
-        const labelStyle = {
-          ...styles.sidebarLabel,
-          color: isActive ? token.colorWhite : token.colorText,
-          fontWeight: isActive ? 600 : 500
-        }
+        const iconStyle = styles.horizontalNavIcon
+        const labelStyle = styles.horizontalNavLabel
 
         return (
           <div
