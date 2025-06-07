@@ -12,6 +12,8 @@ import {
   useVideoControls
 } from '@renderer/hooks/useVideoPlayerHooks'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
+// 导入新的统一控制器
+import { useReactPlayerController } from '@renderer/hooks/useReactPlayerController'
 
 // 导入样式
 import styles from './VideoPlayer.module.css'
@@ -30,6 +32,9 @@ function VideoPlayer({
   onFullscreenToggle,
   onVideoReady
 }: VideoPlayerProps): React.JSX.Element {
+  // 使用新的统一 ReactPlayer 控制器
+  const playerController = useReactPlayerController()
+
   // 使用 Context 获取状态和控制方法，避免 props 传递
   const playingVideoContext = usePlayingVideoContext()
   const playerRef = useVideoPlayerRef()
@@ -37,20 +42,10 @@ function VideoPlayer({
   const videoError = useVideoError()
 
   // 获取状态 Refs（用于不需要响应变化的逻辑）
-  const { playbackRateRef, volumeRef, updateVolume, updatePlaybackRate } =
-    useVideoPlaybackSettingsContext()
+  const { playbackRateRef, volumeRef } = useVideoPlaybackSettingsContext()
 
   // 获取控制方法
-  const {
-    updateTime,
-    setDuration,
-    setVideoLoaded,
-    setVideoError,
-    toggle,
-    stepBackward,
-    stepForward,
-    setPlaying
-  } = useVideoControls()
+  const { toggle, stepBackward, stepForward } = useVideoControls()
 
   RendererLogger.componentRender({
     component: 'VideoPlayer',
@@ -80,11 +75,6 @@ function VideoPlayer({
     onFullscreenToggle?.(isFullscreen)
   }, [isFullscreen, onFullscreenToggle])
 
-  // // 将全屏切换函数传递给父组件
-  // useEffect(() => {
-  //   onFullscreenToggleReady?.(toggleFullscreen)
-  // }, [toggleFullscreen, onFullscreenToggleReady])
-
   // 定义空的回调函数避免每次渲染创建新函数
   const emptyCallback = useCallback(() => {}, [])
   const handleLoopToggle = emptyCallback
@@ -106,67 +96,15 @@ function VideoPlayer({
     }
   }, [isPlaying, toggle])
 
-  // ReactPlayer 的回调函数
+  // 使用新控制器提供的事件处理器
+  const eventHandlers = playerController.createEventHandlers()
+
+  // 重写 onReady 回调以添加自定义逻辑
   const handleReactPlayerReady = useCallback(() => {
     console.log('🎬 ReactPlayer onReady 触发')
     onVideoReady?.()
-    setVideoLoaded(true)
-    setVideoError(null)
-  }, [setVideoLoaded, setVideoError, onVideoReady])
-
-  const handleReactPlayerError = useCallback(
-    (error: Error | string) => {
-      console.error('🚨 ReactPlayer onError 触发:', error)
-      const errorMessage = typeof error === 'string' ? error : error.message
-      setVideoError(errorMessage)
-      setVideoLoaded(false)
-    },
-    [setVideoError, setVideoLoaded]
-  )
-
-  const handleReactPlayerLoadStart = useCallback(() => {
-    console.log('🔄 视频开始加载...')
-  }, [])
-
-  // ReactPlayer 进度回调
-  const handleProgress = useCallback(
-    (progress: {
-      played: number
-      playedSeconds: number
-      loaded: number
-      loadedSeconds: number
-    }) => {
-      updateTime(progress.playedSeconds)
-    },
-    [updateTime]
-  )
-
-  // ReactPlayer 时长回调
-  const handleDuration = useCallback(
-    (duration: number) => {
-      setDuration(duration)
-      if (duration > 0) {
-        setVideoLoaded(true)
-      }
-    },
-    [setDuration, setVideoLoaded]
-  )
-
-  // 播放速度变化处理
-  const handlePlaybackRateChange = useCallback(
-    (rate: number) => {
-      updatePlaybackRate(rate)
-    },
-    [updatePlaybackRate]
-  )
-
-  // 音量变化处理
-  const handleVolumeChange = useCallback(
-    (volume: number) => {
-      updateVolume(volume)
-    },
-    [updateVolume]
-  )
+    eventHandlers.onReady()
+  }, [eventHandlers, onVideoReady])
 
   // 优化：提取控制栏显示逻辑，避免重复代码
   const showControlsWithTimeout = useCallback(
@@ -279,22 +217,6 @@ function VideoPlayer({
     }
   }, [isPlaying, isUserInteracting, isPausedByHover])
 
-  // ReactPlayer 播放状态同步回调
-  const handleReactPlayerPlay = useCallback(() => {
-    console.log('🎬 ReactPlayer onPlay 触发 - 同步播放状态')
-    setPlaying(true)
-  }, [setPlaying])
-
-  const handleReactPlayerPause = useCallback(() => {
-    console.log('⏸️ ReactPlayer onPause 触发 - 同步暂停状态')
-    setPlaying(false)
-  }, [setPlaying])
-
-  const handleReactPlayerEnded = useCallback(() => {
-    console.log('🏁 ReactPlayer onEnded 触发 - 视频播放结束')
-    setPlaying(false)
-  }, [setPlaying])
-
   return (
     <div className={styles.videoSection}>
       <div
@@ -314,11 +236,11 @@ function VideoPlayer({
               playing={isPlaying}
               volume={volumeRef.current}
               playbackRate={playbackRateRef.current}
-              onProgress={handleProgress}
-              onDuration={handleDuration}
+              onProgress={eventHandlers.onProgress}
+              onDuration={eventHandlers.onDuration}
               onReady={handleReactPlayerReady}
-              onError={handleReactPlayerError}
-              onLoadStart={handleReactPlayerLoadStart}
+              onError={eventHandlers.onError}
+              onLoadStart={eventHandlers.onLoadStart}
               onClick={handleVideoClick}
               controls={false}
               progressInterval={300}
@@ -336,9 +258,9 @@ function VideoPlayer({
                   forceVideo: true
                 }
               }}
-              onPlay={handleReactPlayerPlay}
-              onPause={handleReactPlayerPause}
-              onEnded={handleReactPlayerEnded}
+              onPlay={eventHandlers.onPlay}
+              onPause={eventHandlers.onPause}
+              onEnded={eventHandlers.onEnded}
             />
 
             {/* 加载状态提示 */}
@@ -373,8 +295,8 @@ function VideoPlayer({
                   onStepBackward={stepBackward}
                   onPlayPause={toggle}
                   onStepForward={stepForward}
-                  onPlaybackRateChange={handlePlaybackRateChange}
-                  onVolumeChange={handleVolumeChange}
+                  onPlaybackRateChange={playerController.adjustPlaybackRate}
+                  onVolumeChange={playerController.adjustVolume}
                   onLoopToggle={handleLoopToggle}
                   onAutoSkipToggle={handleAutoSkipToggle}
                   onFullscreenToggle={toggleFullscreen}
