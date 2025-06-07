@@ -105,9 +105,14 @@ export const TitleBar: React.FC<TitleBarProps> = ({
 
   const handleMaximize = async (): Promise<void> => {
     try {
-      await window.api.window.maximize()
+      // macOS 上使用全屏模式，其他平台使用最大化 / Use fullscreen on macOS, maximize on other platforms
+      if (platform === 'darwin') {
+        await window.api.window.toggleFullScreen()
+      } else {
+        await window.api.window.maximize()
+      }
     } catch (error) {
-      console.error('最大化窗口失败:', error)
+      console.error('最大化/全屏失败:', error)
     }
   }
 
@@ -130,8 +135,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   }
 
   // 计算样式 / Calculate styles
-  const titleBarStyle = useMemo(
-    () => ({
+  const titleBarStyle = useMemo(() => {
+    const style = {
       height: platform === 'darwin' ? 32 : variant === 'compact' ? 40 : 49,
       display: 'flex',
       alignItems: 'center',
@@ -149,9 +154,17 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         platform === 'win32' && windowControlsOverlayWidth > 0
           ? windowControlsOverlayWidth + token.paddingSM
           : token.paddingSM
-    }),
-    [token, platform, windowControlsOverlayWidth, variant]
-  )
+    }
+
+    // 调试信息 / Debug info
+    if (platform === 'darwin') {
+      console.log('🚦 TitleBar样式配置 / TitleBar Style Config:')
+      console.log('  - height:', style.height)
+      console.log('  - paddingLeft (为交通灯预留):', style.paddingLeft)
+    }
+
+    return style
+  }, [token, platform, windowControlsOverlayWidth, variant])
 
   const controlButtonStyle = useMemo(
     () => ({
@@ -170,6 +183,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
 
   return (
     <div className={`app-drag ${className}`} style={titleBarStyle}>
+      {/* macOS 上不显示自定义窗口控制按钮，因为系统会提供原生的交通灯按钮 */}
+      {/* Don't show custom window controls on macOS, as the system provides native traffic light buttons */}
       {showWindowControls && platform !== 'darwin' && (
         <Space size={token.marginXXS}>
           <Tooltip title={isAlwaysOnTop ? '取消置顶' : '窗口置顶'}>

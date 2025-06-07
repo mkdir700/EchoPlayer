@@ -249,7 +249,17 @@ const windowAPI = {
   getPlatform: (): Promise<string> => ipcRenderer.invoke('app:get-platform'),
 
   // 获取应用版本
-  getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version')
+  getVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
+
+  // 设置全屏模式
+  setFullScreen: (fullscreen: boolean): Promise<void> =>
+    ipcRenderer.invoke('window:set-fullscreen', fullscreen),
+
+  // 获取全屏状态
+  isFullScreen: (): Promise<boolean> => ipcRenderer.invoke('window:is-fullscreen'),
+
+  // 切换全屏模式
+  toggleFullScreen: (): Promise<boolean> => ipcRenderer.invoke('window:toggle-fullscreen')
 }
 
 // Custom APIs for renderer

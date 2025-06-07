@@ -117,4 +117,42 @@ export function setupWindowHandlers(): void {
   ipcMain.handle('app:get-version', () => {
     return app.getVersion()
   })
+
+  // 进入/退出全屏模式 / Enter/exit fullscreen mode
+  ipcMain.handle('window:set-fullscreen', (_, fullscreen: boolean) => {
+    try {
+      if (mainWindow) {
+        mainWindow.setFullScreen(fullscreen)
+        console.log('🖥️ 设置全屏模式:', fullscreen)
+      }
+    } catch (error) {
+      console.error('设置全屏模式失败:', error)
+    }
+  })
+
+  // 获取全屏状态 / Get fullscreen status
+  ipcMain.handle('window:is-fullscreen', () => {
+    try {
+      return mainWindow?.isFullScreen() || false
+    } catch (error) {
+      console.error('获取全屏状态失败:', error)
+      return false
+    }
+  })
+
+  // 切换全屏模式 / Toggle fullscreen mode
+  ipcMain.handle('window:toggle-fullscreen', () => {
+    try {
+      if (mainWindow) {
+        const currentState = mainWindow.isFullScreen()
+        mainWindow.setFullScreen(!currentState)
+        console.log('🔄 切换全屏模式:', !currentState)
+        return !currentState
+      }
+      return false
+    } catch (error) {
+      console.error('切换全屏模式失败:', error)
+      return false
+    }
+  })
 }

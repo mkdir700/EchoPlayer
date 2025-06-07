@@ -132,6 +132,9 @@ interface WindowAPI {
   restart: () => Promise<void>
   getPlatform: () => Promise<string>
   getVersion: () => Promise<string>
+  setFullScreen: (fullscreen: boolean) => Promise<void>
+  isFullScreen: () => Promise<boolean>
+  toggleFullScreen: () => Promise<boolean>
 }
 
 declare global {
