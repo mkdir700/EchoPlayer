@@ -3,7 +3,8 @@ import type {
   RecentPlayItem,
   StoreSettings,
   ApiResponse,
-  ApiResponseWithCount
+  ApiResponseWithCount,
+  VideoUIConfig
 } from '../types/shared'
 
 interface FileSystemAPI {
@@ -103,6 +104,12 @@ interface StoreAPI {
   updateSettings: (settings: Partial<StoreSettings>) => Promise<ApiResponse>
   removeMultipleRecentPlays: (fileIds: string[]) => Promise<ApiResponseWithCount>
   searchRecentPlays: (query: string) => Promise<RecentPlayItem[]>
+  getVideoUIConfig: (fileId: string) => Promise<VideoUIConfig>
+  updateVideoUIConfig: (fileId: string, config: Partial<VideoUIConfig>) => Promise<ApiResponse>
+  // 通用存储方法 - 支持 Zustand persist 中间件
+  getRawData: (key: string) => Promise<string | null>
+  setRawData: (key: string, value: string) => Promise<ApiResponse>
+  removeRawData: (key: string) => Promise<ApiResponse>
 }
 
 declare global {

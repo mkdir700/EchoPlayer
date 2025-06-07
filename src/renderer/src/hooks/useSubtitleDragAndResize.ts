@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { SubtitleMarginsState, MARGIN_LIMITS } from './useSubtitleState'
+import { useVideoConfig } from './useVideoConfig'
 
 interface DragAndResizeState {
   isDragging: boolean
@@ -36,6 +37,9 @@ export const useSubtitleDragAndResize = (
   handleMouseMove: (e: MouseEvent, containerRef: React.RefObject<HTMLDivElement | null>) => void
   handleMouseUp: () => void
 } => {
+  // Get subtitle layout lock state - 获取字幕布局锁定状态
+  const { isSubtitleLayoutLocked } = useVideoConfig()
+
   const [dragState, setDragState] = useState<DragAndResizeState>({
     isDragging: false,
     isResizing: false,
@@ -143,6 +147,13 @@ export const useSubtitleDragAndResize = (
     (e: React.MouseEvent, containerRef: React.RefObject<HTMLDivElement | null>) => {
       if (e.button !== 0) return
 
+      // When subtitle layout is locked, don't allow dragging - 锁定布局时不允许拖拽
+      if (isSubtitleLayoutLocked) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
+
       // 检查点击的目标是否是可点击的单词
       const target = e.target as HTMLElement
       const isClickableWord = target.closest('.clickableWord') !== null
@@ -168,13 +179,20 @@ export const useSubtitleDragAndResize = (
         }
       }))
     },
-    [getParentBounds]
+    [getParentBounds, isSubtitleLayoutLocked]
   )
 
   // 开始调整大小
   const handleResizeMouseDown = useCallback(
     (e: React.MouseEvent, direction: 'se' | 'sw' | 'ne' | 'nw') => {
       if (e.button !== 0) return
+
+      // When subtitle layout is locked, don't allow resizing - 锁定布局时不允许调整大小
+      if (isSubtitleLayoutLocked) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
 
       e.preventDefault()
       e.stopPropagation()
@@ -190,7 +208,7 @@ export const useSubtitleDragAndResize = (
         }
       }))
     },
-    [subtitleState.margins]
+    [subtitleState.margins, isSubtitleLayoutLocked]
   )
 
   // 拖拽过程中

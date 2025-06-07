@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, useMemo } from 'react'
 import { createDefaultSubtitleState, type SubtitleMarginsState } from './useSubtitleState'
 import { useUIStore } from '@renderer/stores/slices/uiStore'
+import { useVideoConfig } from './useVideoConfig'
 
 interface DragAndResizeProps {
   isDragging: boolean
@@ -90,7 +91,8 @@ export const useSubtitleEventHandlers = ({
   onResumeOnLeave
 }: UseSubtitleEventHandlersProps): UseSubtitleEventHandlersReturn => {
   // Get subtitle layout lock state and auto resume setting - 获取字幕布局锁定状态和自动恢复设置
-  const { isSubtitleLayoutLocked, autoResumeAfterWordCard } = useUIStore()
+  const { autoResumeAfterWordCard } = useUIStore()
+  const { isSubtitleLayoutLocked } = useVideoConfig()
 
   // Local state
   const [selectedWord, setSelectedWord] = useState<{

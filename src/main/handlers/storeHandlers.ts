@@ -4,7 +4,8 @@ import type {
   RecentPlayItem,
   StoreSchema,
   ApiResponse,
-  ApiResponseWithCount
+  ApiResponseWithCount,
+  VideoUIConfig
 } from '../../types/shared'
 
 // 创建 store 实例
@@ -309,6 +310,109 @@ export function setupStoreHandlers(): void {
     } catch (error) {
       console.error('搜索最近播放项失败:', error)
       return []
+    }
+  })
+
+  // 获取视频UI配置
+  ipcMain.handle('store:get-video-ui-config', (_, fileId: string) => {
+    try {
+      const recentPlays = store.get('recentPlays', []) as RecentPlayItem[]
+      const playItem = recentPlays.find((play) => play.fileId === fileId)
+
+      if (!playItem) {
+        // 返回默认配置
+        return {
+          isSubtitleLayoutLocked: false
+        }
+      }
+
+      return (
+        playItem.videoUIConfig || {
+          isSubtitleLayoutLocked: false
+        }
+      )
+    } catch (error) {
+      console.error('获取视频UI配置失败:', error)
+      return {
+        isSubtitleLayoutLocked: false
+      }
+    }
+  })
+
+  // 更新视频UI配置
+  ipcMain.handle(
+    'store:update-video-ui-config',
+    (_, fileId: string, config: Partial<VideoUIConfig>): ApiResponse => {
+      try {
+        const recentPlays = store.get('recentPlays', []) as RecentPlayItem[]
+        const index = recentPlays.findIndex((play) => play.fileId === fileId)
+
+        if (index === -1) {
+          return { success: false, error: '未找到指定的播放项' }
+        }
+
+        console.log('🔄 更新视频UI配置:', {
+          fileId,
+          config
+        })
+
+        // 更新UI配置
+        const currentConfig = recentPlays[index].videoUIConfig || {
+          isSubtitleLayoutLocked: false
+        }
+
+        recentPlays[index] = {
+          ...recentPlays[index],
+          videoUIConfig: {
+            ...currentConfig,
+            ...config
+          }
+        }
+
+        store.set('recentPlays', recentPlays)
+        return { success: true }
+      } catch (error) {
+        console.error('更新视频UI配置失败:', error)
+        return { success: false, error: error instanceof Error ? error.message : '未知错误' }
+      }
+    }
+  )
+
+  // 通用存储方法 - 支持 Zustand persist 中间件
+  // Generic storage methods - support Zustand persist middleware
+
+  // 获取通用存储数据
+  ipcMain.handle('store:get-raw-data', (_, key: string): string | null => {
+    try {
+      console.log(`📖 获取通用存储数据: ${key}`)
+      return store.get(key, null) as string | null
+    } catch (error) {
+      console.error('获取通用存储数据失败:', error)
+      return null
+    }
+  })
+
+  // 设置通用存储数据
+  ipcMain.handle('store:set-raw-data', (_, key: string, value: string): ApiResponse => {
+    try {
+      console.log(`💾 设置通用存储数据: ${key}`, value.length, 'characters')
+      store.set(key, value)
+      return { success: true }
+    } catch (error) {
+      console.error('设置通用存储数据失败:', error)
+      return { success: false, error: error instanceof Error ? error.message : '未知错误' }
+    }
+  })
+
+  // 删除通用存储数据
+  ipcMain.handle('store:remove-raw-data', (_, key: string): ApiResponse => {
+    try {
+      console.log(`🗑️ 删除通用存储数据: ${key}`)
+      store.delete(key)
+      return { success: true }
+    } catch (error) {
+      console.error('删除通用存储数据失败:', error)
+      return { success: false, error: error instanceof Error ? error.message : '未知错误' }
     }
   })
 }

@@ -3,8 +3,8 @@ import type { SubtitleMarginsState } from '@renderer/hooks/useSubtitleState'
 import { useMaskFrame } from '@renderer/hooks/useMaskFrame'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useTheme } from '@renderer/hooks/useTheme'
-import { useUIStore } from '@renderer/stores/slices/uiStore'
 import RendererLogger from '@renderer/utils/logger'
+import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 
 interface MaskFrameProps {
   maskFrame: SubtitleMarginsState['maskFrame']
@@ -47,7 +47,7 @@ function MaskFrame({
   const { token } = useTheme()
 
   // Get subtitle layout lock state - 获取字幕布局锁定状态
-  const { isSubtitleLayoutLocked } = useUIStore()
+  const { isSubtitleLayoutLocked } = useVideoConfig()
 
   // 添加全局事件监听
   useEffect(() => {

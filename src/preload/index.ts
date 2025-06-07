@@ -5,7 +5,8 @@ import type {
   StoreSettings,
   ApiResponse,
   ApiResponseWithCount,
-  UpdateSettings
+  UpdateSettings,
+  VideoUIConfig
 } from '../types/shared'
 
 // 文件系统 API
@@ -135,7 +136,24 @@ const storeAPI = {
 
   // 搜索最近播放项
   searchRecentPlays: (query: string): Promise<RecentPlayItem[]> =>
-    ipcRenderer.invoke('store:search-recent-plays', query)
+    ipcRenderer.invoke('store:search-recent-plays', query),
+
+  // 获取视频UI配置
+  getVideoUIConfig: (fileId: string): Promise<VideoUIConfig> =>
+    ipcRenderer.invoke('store:get-video-ui-config', fileId),
+
+  // 更新视频UI配置
+  updateVideoUIConfig: (fileId: string, config: Partial<VideoUIConfig>): Promise<ApiResponse> =>
+    ipcRenderer.invoke('store:update-video-ui-config', fileId, config),
+
+  // 通用存储方法 - 支持 Zustand persist 中间件
+  // Generic storage methods - support Zustand persist middleware
+  getRawData: (key: string): Promise<string | null> =>
+    ipcRenderer.invoke('store:get-raw-data', key),
+  setRawData: (key: string, value: string): Promise<ApiResponse> =>
+    ipcRenderer.invoke('store:set-raw-data', key, value),
+  removeRawData: (key: string): Promise<ApiResponse> =>
+    ipcRenderer.invoke('store:remove-raw-data', key)
 }
 
 // 更新API

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { SubtitleMarginsState } from './useSubtitleState'
 import { usePlayingVideoContext } from './usePlayingVideoContext'
-import { useUIStore } from '@renderer/stores/slices/uiStore'
+import { useVideoConfig } from './useVideoConfig'
 
 interface MaskFrameState {
   isHovering: boolean
@@ -79,7 +79,7 @@ export const useMaskFrame = (
   const { displayAspectRatio } = usePlayingVideoContext()
 
   // Get subtitle layout lock state - 获取字幕布局锁定状态
-  const { isSubtitleLayoutLocked } = useUIStore()
+  const { isSubtitleLayoutLocked } = useVideoConfig()
 
   const [state, setState] = useState<MaskFrameState>({
     isHovering: false,

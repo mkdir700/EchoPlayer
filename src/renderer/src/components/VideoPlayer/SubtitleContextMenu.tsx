@@ -3,6 +3,7 @@ import { Dropdown, Button, Tooltip, Slider, Switch } from 'antd'
 import { EyeInvisibleOutlined, EyeOutlined, CloseOutlined } from '@ant-design/icons'
 import { BACKGROUND_TYPES } from '@renderer/hooks/useSubtitleState'
 import { useUIStore } from '@renderer/stores/slices/uiStore'
+import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 
 interface SubtitleContextMenuProps {
   visible: boolean
@@ -36,12 +37,8 @@ const SubtitleContextMenu = memo(
     const [mockFontScale, setMockFontScale] = useState(1.0)
 
     // Get UI store state and actions - 获取UI状态和操作
-    const {
-      isSubtitleLayoutLocked,
-      setSubtitleLayoutLocked,
-      autoResumeAfterWordCard,
-      setAutoResumeAfterWordCard
-    } = useUIStore()
+    const { autoResumeAfterWordCard, setAutoResumeAfterWordCard } = useUIStore()
+    const { isSubtitleLayoutLocked, setSubtitleLayoutLocked } = useVideoConfig()
 
     // Get current background config - 获取当前背景配置
     const currentBackgroundConfig =

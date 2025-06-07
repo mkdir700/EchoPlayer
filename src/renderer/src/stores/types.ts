@@ -19,7 +19,6 @@ export interface UIState {
   sidebarWidth: number
   showControls: boolean
   isDragging: boolean
-  isSubtitleLayoutLocked: boolean
 
   // Subtitle interaction settings - 字幕交互设置
   autoResumeAfterWordCard: boolean // 查词后自动恢复播放 / Auto resume playback after word card closes
@@ -39,7 +38,6 @@ export interface UIActions {
   setSidebarWidth: (width: number) => void
   setShowControls: (show: boolean) => void
   setIsDragging: (isDragging: boolean) => void
-  setSubtitleLayoutLocked: (locked: boolean) => void
 
   // Subtitle interaction actions - 字幕交互操作
   setAutoResumeAfterWordCard: (enabled: boolean) => void

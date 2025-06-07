@@ -6,11 +6,11 @@ import { useSubtitleDragAndResize } from '@renderer/hooks/useSubtitleDragAndResi
 import { useSubtitleStyles } from '@renderer/hooks/useSubtitleStyles'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useSubtitleEventHandlers } from '@renderer/hooks/useSubtitleEventHandlers'
-import { useUIStore } from '@renderer/stores/slices/uiStore'
 import { SubtitleContent } from './SubtitleContent'
 import { MaskFrame } from './MaskFrame'
 import { SubtitleContextMenu } from './SubtitleContextMenu'
 import RendererLogger from '@renderer/utils/logger'
+import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 
 interface SubtitleV3Props {
   onWordHover: (isHovering: boolean) => void
@@ -100,7 +100,7 @@ function SubtitleV3({
   const { styles } = useTheme()
 
   // Get subtitle layout lock state - 获取字幕布局锁定状态
-  const { isSubtitleLayoutLocked } = useUIStore()
+  const { isSubtitleLayoutLocked } = useVideoConfig()
 
   // Add window dimensions state to trigger re-renders when window size changes
   const [windowDimensions, setWindowDimensions] = useState({
@@ -288,11 +288,14 @@ function SubtitleV3({
   // Container style
   const containerStyle = useMemo((): React.CSSProperties => {
     const isDraggingOrResizing = dragAndResizeProps.isDragging || dragAndResizeProps.isResizing
-    const cursor = dragAndResizeProps.isDragging
-      ? 'grabbing'
-      : dragAndResizeProps.isResizing
-        ? 'se-resize'
-        : 'grab'
+    // In locked mode, use default cursor instead of grab/grabbing - 锁定模式下使用默认鼠标样式而非抓取手势
+    const cursor = isSubtitleLayoutLocked
+      ? 'default'
+      : dragAndResizeProps.isDragging
+        ? 'grabbing'
+        : dragAndResizeProps.isResizing
+          ? 'se-resize'
+          : 'grab'
 
     const left = subtitleState.isMaskMode
       ? `${subtitleState.maskFrame.left + (currentLayout.left * subtitleState.maskFrame.width) / 100}%`
@@ -312,7 +315,9 @@ function SubtitleV3({
 
     // Merge with theme styles
     const baseStyle = styles.subtitleContainer
-    const hoverStyle = eventHandlers.isHovering ? styles.subtitleContainerHover : {}
+    // In locked mode, don't show hover style even if isHovering is true - 锁定模式下即使悬停也不显示悬停样式
+    const hoverStyle =
+      eventHandlers.isHovering && !isSubtitleLayoutLocked ? styles.subtitleContainerHover : {}
     const draggingStyle = isDraggingOrResizing ? styles.subtitleContainerDragging : {}
 
     return {
@@ -334,6 +339,7 @@ function SubtitleV3({
     dragAndResizeProps.isDragging,
     dragAndResizeProps.isResizing,
     eventHandlers.isHovering,
+    isSubtitleLayoutLocked,
     styles
   ])
 

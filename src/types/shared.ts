@@ -49,6 +49,11 @@ export interface VideoPlaybackSettings {
   subtitleDisplay?: SubtitleDisplaySettings // 字幕显示配置
 }
 
+// 视频级别的UI配置接口 - Video-level UI configuration interface
+export interface VideoUIConfig {
+  isSubtitleLayoutLocked: boolean // 字幕布局锁定状态 / Subtitle layout lock state
+}
+
 // 播放项接口
 export interface RecentPlayItem {
   fileId: string // 文件ID
@@ -60,6 +65,7 @@ export interface RecentPlayItem {
   subtitleFile?: string // 字幕文件路径
   subtitleItems?: SubtitleItem[] // 字幕数据
   videoPlaybackSettings: VideoPlaybackSettings // 视频级别的播放设置
+  videoUIConfig?: VideoUIConfig // 视频级别的UI配置 / Video-level UI configuration
 }
 
 // 全局播放设置接口（保持向后兼容）， 和单视频的配置区分开的
