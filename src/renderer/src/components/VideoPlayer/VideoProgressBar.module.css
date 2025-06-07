@@ -2,7 +2,7 @@
 
 .progressContainer {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   height: 4px;
@@ -62,7 +62,7 @@
 
 .timeTooltip {
   position: absolute;
-  top: 12px;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.9);
@@ -72,7 +72,7 @@
   font-size: 12px;
   white-space: nowrap;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-  animation: fadeInDown 0.2s ease-out;
+  animation: fadeInUp 0.2s ease-out;
 }
 
 .timeText {
@@ -82,10 +82,10 @@
   font-weight: 500;
 }
 
-@keyframes fadeInDown {
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
+    transform: translateX(-50%) translateY(8px);
   }
   to {
     opacity: 1;

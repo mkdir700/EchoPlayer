@@ -35,9 +35,6 @@ function VideoControlsFullScreen({
 
   return (
     <>
-      {/* 顶部进度条 - 独立组件 */}
-      <FullScreenVideoProgressBar />
-
       {/* 中央播放按钮 - 仅在暂停时显示 */}
       <FullScreenCenterPlayButton
         isPlaying={isPlaying}
@@ -67,6 +64,9 @@ function VideoControlsFullScreen({
         {/* 右侧控制区 - 系统控制（现在内部管理状态） */}
         <FullScreenRightControls />
       </div>
+
+      {/* 底部进度条 - 独立组件 */}
+      <FullScreenVideoProgressBar />
     </>
   )
 }
