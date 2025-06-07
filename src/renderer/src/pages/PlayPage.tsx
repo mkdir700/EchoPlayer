@@ -144,8 +144,8 @@ const PlayPageMemo = React.memo<PlayPageProps>(
       <CurrentSubtitleDisplayProvider>
         <VideoPlaybackSettingsProvider>
           <div style={containerStyle}>
-            {/* Debug信息组件 - 仅开发环境显示 */}
-            <FullscreenTestInfo />
+            {/* 仅在开发模式下显示全屏测试信息 / Only show fullscreen test info in development mode */}
+            {process.env.NODE_ENV === 'development' && <FullscreenTestInfo />}
 
             {/* 播放页面独立Header - 始终渲染，由组件内部控制显示/隐藏动画 */}
             <PlayPageHeader onBack={handleBack} />

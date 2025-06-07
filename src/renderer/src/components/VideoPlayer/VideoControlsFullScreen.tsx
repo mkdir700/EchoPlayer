@@ -9,9 +9,6 @@ import {
 // 导入必要的 hooks
 import { useVideoPlayState, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
-import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
-import { useReactPlayerController } from '@renderer/hooks/useReactPlayerController'
-import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
 import { useTheme } from '@renderer/hooks/useTheme'
 import type { VideoControlsProps } from '@renderer/types'
 
@@ -23,20 +20,13 @@ interface VideoControlsFullScreenProps extends VideoControlsProps {
 function VideoControlsFullScreen({
   showControls,
   isVideoLoaded,
-  videoError,
-  onFullscreenToggle
+  videoError
 }: VideoControlsFullScreenProps): React.JSX.Element {
   // 使用 hooks 获取状态和控制方法，避免通过 props 传递
   const isPlaying = useVideoPlayState()
   const { toggle, stepBackward, stepForward } = useVideoControls()
   const subtitleControl = useSubtitleControl()
-  const { volumeRef } = useVideoPlaybackSettingsContext()
-  const playerController = useReactPlayerController()
-  const { isFullscreen } = useFullscreenMode()
   const { styles } = useTheme()
-
-  // 获取当前值
-  const volume = volumeRef.current
 
   const controlsBarStyle = {
     ...styles.fullscreenControlsBar,
@@ -75,13 +65,7 @@ function VideoControlsFullScreen({
         />
 
         {/* 右侧控制区 - 系统控制（现在内部管理状态） */}
-        <FullScreenRightControls
-          volume={volume}
-          isFullscreen={isFullscreen}
-          showControls={showControls}
-          onVolumeChange={playerController.adjustVolume}
-          onFullscreenToggle={onFullscreenToggle}
-        />
+        <FullScreenRightControls />
       </div>
     </>
   )

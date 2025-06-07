@@ -95,6 +95,13 @@ export const DEFAULT_SHORTCUTS: Record<string, ShortcutConfig> = {
     description: '在应用内切换全屏/窗口模式',
     defaultKey: 'F',
     category: 'appearance'
+  },
+  escapeFullscreen: {
+    key: 'escapeFullscreen',
+    name: '退出全屏模式',
+    description: '在全屏模式下按 ESC 键退出全屏',
+    defaultKey: 'Escape',
+    category: 'appearance'
   }
 }
 

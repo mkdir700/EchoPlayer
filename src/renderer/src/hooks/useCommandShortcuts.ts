@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useLayoutEffect } from 'react'
 import { useShortcuts } from './useShortcuts'
 import { matchesShortcut as matchesShortcutUtil } from '../utils/shortcutMatcher'
 import { ReactCallback } from '@renderer/types/shared'
@@ -15,6 +15,7 @@ export interface Command {
 class ShortcutCommandRegistry {
   private commands = new Map<string, Command>()
   private shortcuts: Record<string, string> = {}
+  private isListenerAttached = false
 
   registerCommand(shortcutKey: string, command: Command): void {
     this.commands.set(shortcutKey, command)
@@ -46,6 +47,23 @@ class ShortcutCommandRegistry {
     return false
   }
 
+  attachListener(): (() => void) | void {
+    if (this.isListenerAttached) return
+
+    const handleKeyPress = (event: KeyboardEvent): void => {
+      this.handleKeyEvent(event)
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    this.isListenerAttached = true
+
+    // 返回清理函数
+    return (): void => {
+      window.removeEventListener('keydown', handleKeyPress)
+      this.isListenerAttached = false
+    }
+  }
+
   clear(): void {
     this.commands.clear()
   }
@@ -61,20 +79,15 @@ export function useCommandShortcuts(): {
   const { shortcuts } = useShortcuts()
   const registryRef = useRef(globalRegistry)
 
+  // 使用 useLayoutEffect 确保在第一次渲染时同步设置监听器
+  useLayoutEffect(() => {
+    const cleanup = registryRef.current.attachListener()
+    return cleanup
+  }, [])
+
   useEffect(() => {
     registryRef.current.updateShortcuts(shortcuts)
   }, [shortcuts])
-
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent): void => {
-      registryRef.current.handleKeyEvent(event)
-    }
-
-    window.addEventListener('keydown', handleKeyPress)
-    return (): void => {
-      window.removeEventListener('keydown', handleKeyPress)
-    }
-  }, [])
 
   const registerCommand = (shortcutKey: string, command: Command): (() => void) => {
     registryRef.current.registerCommand(shortcutKey, command)
