@@ -506,24 +506,6 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                             </Text>
                           </Tooltip>
 
-                          {/* 默认模式显示更多信息 */}
-                          {!isCompactMode && (
-                            <div style={{ marginBottom: token.marginXS }}>
-                              <Text
-                                style={{
-                                  fontSize: token.fontSizeSM,
-                                  color: token.colorTextTertiary,
-                                  display: 'block',
-                                  lineHeight: 1.2
-                                }}
-                              >
-                                {item.subtitleFile
-                                  ? `字幕: ${item.subtitleFile.split('/').pop()}`
-                                  : '暂无字幕'}
-                              </Text>
-                            </div>
-                          )}
-
                           <div
                             style={{
                               display: 'flex',

@@ -136,16 +136,29 @@ export function AppSidebar({ currentPage, onPageChange }: AppHeaderProps): React
       {/* 导航菜单区域 */}
       <div style={navigationSectionStyle}>
         <Space direction="vertical" size={token.marginMD}>
-          {navigationItems.map((item) => (
-            <Tooltip key={item.key} title={item.label} placement="right" mouseEnterDelay={0.5}>
-              <Button
-                type="text"
-                icon={item.icon}
-                onClick={() => onPageChange(item.key as PageType)}
-                style={getNavigationButtonStyle(currentPage === item.key)}
-              />
-            </Tooltip>
-          ))}
+          {navigationItems.map((item) => {
+            // 收藏夹功能正在开发中 - Favorites feature is under development
+            const isDisabled = item.key === 'favorites'
+            const tooltipTitle = isDisabled ? '积极开发中^_^' : item.label
+
+            return (
+              <Tooltip key={item.key} title={tooltipTitle} placement="right" mouseEnterDelay={0.5}>
+                <Button
+                  type="text"
+                  icon={item.icon}
+                  disabled={isDisabled}
+                  onClick={isDisabled ? undefined : () => onPageChange(item.key as PageType)}
+                  style={{
+                    ...getNavigationButtonStyle(currentPage === item.key),
+                    ...(isDisabled && {
+                      opacity: 0.5,
+                      cursor: 'not-allowed'
+                    })
+                  }}
+                />
+              </Tooltip>
+            )
+          })}
         </Space>
       </div>
 
