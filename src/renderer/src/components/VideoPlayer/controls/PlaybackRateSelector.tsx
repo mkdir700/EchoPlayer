@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Tooltip, Checkbox, Space } from 'antd'
-import { ThunderboltOutlined, DownOutlined, UpOutlined } from '@ant-design/icons'
+import { ThunderboltOutlined } from '@ant-design/icons'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useVideoPlaybackSettingsContext } from '@renderer/hooks/useVideoPlaybackSettingsContext'
 import { useTheme } from '@renderer/hooks/useTheme'
@@ -293,11 +293,6 @@ export function PlaybackRateSelector({
           >
             {currentOption?.label || '1x'}
           </span>
-          {isDropdownOpen ? (
-            <DownOutlined style={{ fontSize: '10px', flexShrink: 0, color: getTextColor() }} />
-          ) : (
-            <UpOutlined style={{ fontSize: '10px', flexShrink: 0, color: getTextColor() }} />
-          )}
         </Button>
       </Tooltip>
 
