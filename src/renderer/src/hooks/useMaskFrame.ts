@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { SubtitleMarginsState } from './useSubtitleState'
 import { usePlayingVideoContext } from './usePlayingVideoContext'
+import { useUIStore } from '@renderer/stores/slices/uiStore'
 
 interface MaskFrameState {
   isHovering: boolean
@@ -76,6 +77,10 @@ export const useMaskFrame = (
   resetInteractionState: () => void
 } => {
   const { displayAspectRatio } = usePlayingVideoContext()
+
+  // Get subtitle layout lock state - 获取字幕布局锁定状态
+  const { isSubtitleLayoutLocked } = useUIStore()
+
   const [state, setState] = useState<MaskFrameState>({
     isHovering: false,
     isDragging: false,
@@ -192,6 +197,13 @@ export const useMaskFrame = (
     (e: React.MouseEvent) => {
       if (e.button !== 0) return // 只响应左键
 
+      // When subtitle layout is locked, don't allow dragging - 锁定布局时不允许拖拽
+      if (isSubtitleLayoutLocked) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
+
       e.preventDefault()
       e.stopPropagation()
 
@@ -217,13 +229,20 @@ export const useMaskFrame = (
         }
       }))
     },
-    [containerRef, maskFrame]
+    [containerRef, maskFrame, isSubtitleLayoutLocked]
   )
 
   // 开始调整大小
   const handleResizeMouseDown = useCallback(
     (e: React.MouseEvent, direction: 'se' | 'sw' | 'ne' | 'nw') => {
       if (e.button !== 0) return // 只响应左键
+
+      // When subtitle layout is locked, don't allow resizing - 锁定布局时不允许调整大小
+      if (isSubtitleLayoutLocked) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
 
       e.preventDefault()
       e.stopPropagation()
@@ -242,7 +261,7 @@ export const useMaskFrame = (
         }
       }))
     },
-    [maskFrame]
+    [maskFrame, isSubtitleLayoutLocked]
   )
 
   // 拖拽和调整大小过程中

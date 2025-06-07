@@ -19,6 +19,7 @@ export interface UIState {
   sidebarWidth: number
   showControls: boolean
   isDragging: boolean
+  isSubtitleLayoutLocked: boolean
 }
 
 // UI Actions interface
@@ -35,6 +36,7 @@ export interface UIActions {
   setSidebarWidth: (width: number) => void
   setShowControls: (show: boolean) => void
   setIsDragging: (isDragging: boolean) => void
+  setSubtitleLayoutLocked: (locked: boolean) => void
 }
 
 // Combined UI store type

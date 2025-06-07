@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useMemo } from 'react'
 import { createDefaultSubtitleState, type SubtitleMarginsState } from './useSubtitleState'
+import { useUIStore } from '@renderer/stores/slices/uiStore'
 
 interface DragAndResizeProps {
   isDragging: boolean
@@ -86,6 +87,9 @@ export const useSubtitleEventHandlers = ({
   onWordHover,
   onPauseOnHover
 }: UseSubtitleEventHandlersProps): UseSubtitleEventHandlersReturn => {
+  // Get subtitle layout lock state - 获取字幕布局锁定状态
+  const { isSubtitleLayoutLocked } = useUIStore()
+
   // Local state
   const [selectedWord, setSelectedWord] = useState<{
     word: string
@@ -250,9 +254,16 @@ export const useSubtitleEventHandlers = ({
         e.stopPropagation()
         return
       }
+
+      // When subtitle layout is locked, don't allow dragging - 锁定布局时不允许拖拽
+      if (isSubtitleLayoutLocked) {
+        e.stopPropagation()
+        return
+      }
+
       dragAndResizeProps.handleMouseDown(e, containerRef)
     },
-    [isWordElement, dragAndResizeProps, containerRef]
+    [isWordElement, dragAndResizeProps, containerRef, isSubtitleLayoutLocked]
   )
 
   const handleMouseEnter = useCallback((): void => {
@@ -260,12 +271,18 @@ export const useSubtitleEventHandlers = ({
       clearTimeout(hideTimeoutRef.current)
       hideTimeoutRef.current = null
     }
-    setIsHovering(true)
-    // In mask mode, activate mask border when entering subtitle area
-    if (subtitleState.isMaskMode) {
+
+    // When subtitle layout is locked, don't show border - 锁定布局时不显示边框
+    if (!isSubtitleLayoutLocked) {
+      setIsHovering(true)
+    }
+
+    // In mask mode, activate mask border when entering subtitle area (only if not locked)
+    // 在遮罩模式下，进入字幕区域时激活遮罩边框（仅在未锁定时）
+    if (subtitleState.isMaskMode && !isSubtitleLayoutLocked) {
       setIsMaskFrameActive(true)
     }
-  }, [subtitleState.isMaskMode])
+  }, [subtitleState.isMaskMode, isSubtitleLayoutLocked])
 
   const handleMouseLeave = useCallback((): void => {
     hideTimeoutRef.current = setTimeout(() => {
@@ -293,11 +310,12 @@ export const useSubtitleEventHandlers = ({
 
   const handleControlsMouseEnter = useCallback((): void => {
     setIsControlsHovering(true)
-    // In mask mode, activate mask border when entering control area
-    if (subtitleState.isMaskMode) {
+    // In mask mode, activate mask border when entering control area (only if not locked)
+    // 在遮罩模式下，进入控制区域时激活遮罩边框（仅在未锁定时）
+    if (subtitleState.isMaskMode && !isSubtitleLayoutLocked) {
       setIsMaskFrameActive(true)
     }
-  }, [subtitleState.isMaskMode])
+  }, [subtitleState.isMaskMode, isSubtitleLayoutLocked])
 
   const handleControlsMouseLeave = useCallback((): void => {
     setIsControlsHovering(false)
@@ -339,9 +357,15 @@ export const useSubtitleEventHandlers = ({
 
   const handleResizeMouseDown = useCallback(
     (e: React.MouseEvent): void => {
+      // When subtitle layout is locked, don't allow resizing - 锁定布局时不允许调整大小
+      if (isSubtitleLayoutLocked) {
+        e.stopPropagation()
+        return
+      }
+
       dragAndResizeProps.handleResizeMouseDown(e, 'se')
     },
-    [dragAndResizeProps]
+    [dragAndResizeProps, isSubtitleLayoutLocked]
   )
 
   // Context menu handlers - 右键菜单处理函数

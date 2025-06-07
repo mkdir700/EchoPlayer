@@ -6,6 +6,7 @@ import { useSubtitleDragAndResize } from '@renderer/hooks/useSubtitleDragAndResi
 import { useSubtitleStyles } from '@renderer/hooks/useSubtitleStyles'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useSubtitleEventHandlers } from '@renderer/hooks/useSubtitleEventHandlers'
+import { useUIStore } from '@renderer/stores/slices/uiStore'
 import { SubtitleContent } from './SubtitleContent'
 import { MaskFrame } from './MaskFrame'
 import { SubtitleContextMenu } from './SubtitleContextMenu'
@@ -91,6 +92,9 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
 
   // Get theme
   const { styles } = useTheme()
+
+  // Get subtitle layout lock state - 获取字幕布局锁定状态
+  const { isSubtitleLayoutLocked } = useUIStore()
 
   // Add window dimensions state to trigger re-renders when window size changes
   const [windowDimensions, setWindowDimensions] = useState({
@@ -401,7 +405,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
 
         {/* Resize handle */}
         <ResizeHandle
-          visible={eventHandlers.isHovering}
+          visible={eventHandlers.isHovering && !isSubtitleLayoutLocked}
           buttonSize={buttonSize}
           onMouseDown={eventHandlers.handleResizeMouseDown}
         />

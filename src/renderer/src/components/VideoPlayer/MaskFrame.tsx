@@ -3,6 +3,7 @@ import type { SubtitleMarginsState } from '@renderer/hooks/useSubtitleState'
 import { useMaskFrame } from '@renderer/hooks/useMaskFrame'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { useUIStore } from '@renderer/stores/slices/uiStore'
 import RendererLogger from '@renderer/utils/logger'
 
 interface MaskFrameProps {
@@ -44,6 +45,9 @@ function MaskFrame({
   const { displayAspectRatio } = usePlayingVideoContext()
   const maskFrameController = useMaskFrame(maskFrame, updateMaskFrame, containerRef)
   const { token } = useTheme()
+
+  // Get subtitle layout lock state - 获取字幕布局锁定状态
+  const { isSubtitleLayoutLocked } = useUIStore()
 
   // 添加全局事件监听
   useEffect(() => {
@@ -113,12 +117,14 @@ function MaskFrame({
     }
   }, [displayAspectRatio, updateMaskFrame, maskFrameController, onResetToVideo, containerRef])
 
-  // 计算最终的边框显示状态：内部hover状态 或 外部激活状态
+  // 计算最终的边框显示状态：内部hover状态 或 外部激活状态（锁定时不显示）
+  // Calculate final border display state: internal hover state or external active state (not shown when locked)
   const shouldShowBorder =
-    maskFrameController.isHovering ||
-    maskFrameController.isDragging ||
-    maskFrameController.isResizing ||
-    isMaskFrameActive
+    !isSubtitleLayoutLocked &&
+    (maskFrameController.isHovering ||
+      maskFrameController.isDragging ||
+      maskFrameController.isResizing ||
+      isMaskFrameActive)
 
   // 处理鼠标进入事件
   const handleMouseEnter = (): void => {
@@ -221,81 +227,86 @@ function MaskFrame({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* 提示文字 - 只在悬停时显示 */}
-      {(maskFrameController.isHovering || shouldShowBorder) && (
-        <div style={tooltipStyle}>定位框 - 可拖拽和调整大小</div>
-      )}
-
-      {/* 重置按钮 */}
-      {(maskFrameController.isHovering || shouldShowBorder) && (
-        <button
-          onClick={handleResetToVideo}
-          style={resetButtonStyle}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = token.colorPrimary
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = `rgba(${token.colorPrimary
-              .slice(1)
-              .match(/.{2}/g)
-              ?.map((hex) => parseInt(hex, 16))
-              .join(', ')}, 0.8)`
-          }}
-          onMouseDown={(e) => {
-            e.stopPropagation() // 防止触发拖拽
-          }}
-        >
-          重置到视频
-        </button>
-      )}
-
-      {/* 调整大小控制点 - 四个角 */}
-      {(maskFrameController.isHovering || shouldShowBorder) && (
+      {/* 锁定布局时不展示任何控制元素 - When layout is locked, don't show any control elements */}
+      {!isSubtitleLayoutLocked && (
         <>
-          {/* 右下角 */}
-          <div
-            style={{
-              ...resizeHandleBaseStyle,
-              bottom: 0,
-              right: 0,
-              cursor: 'se-resize',
-              borderRadius: '3px 0 8px 0'
-            }}
-            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'se')}
-          />
-          {/* 左下角 */}
-          <div
-            style={{
-              ...resizeHandleBaseStyle,
-              bottom: 0,
-              left: 0,
-              cursor: 'sw-resize',
-              borderRadius: '0 3px 8px 0'
-            }}
-            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'sw')}
-          />
-          {/* 右上角 */}
-          <div
-            style={{
-              ...resizeHandleBaseStyle,
-              top: 0,
-              right: 0,
-              cursor: 'ne-resize',
-              borderRadius: '3px 0 0 8px'
-            }}
-            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'ne')}
-          />
-          {/* 左上角 */}
-          <div
-            style={{
-              ...resizeHandleBaseStyle,
-              top: 0,
-              left: 0,
-              cursor: 'nw-resize',
-              borderRadius: '0 3px 0 8px'
-            }}
-            onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'nw')}
-          />
+          {/* 提示文字 - 只在悬停时显示 */}
+          {maskFrameController.isHovering && (
+            <div style={tooltipStyle}>定位框 - 可拖拽和调整大小</div>
+          )}
+
+          {/* 重置按钮 */}
+          {maskFrameController.isHovering && (
+            <button
+              onClick={handleResetToVideo}
+              style={resetButtonStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = token.colorPrimary
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = `rgba(${token.colorPrimary
+                  .slice(1)
+                  .match(/.{2}/g)
+                  ?.map((hex) => parseInt(hex, 16))
+                  .join(', ')}, 0.8)`
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation() // 防止触发拖拽
+              }}
+            >
+              重置到视频
+            </button>
+          )}
+
+          {/* 调整大小控制点 - 四个角 */}
+          {maskFrameController.isHovering && (
+            <>
+              {/* 右下角 */}
+              <div
+                style={{
+                  ...resizeHandleBaseStyle,
+                  bottom: 0,
+                  right: 0,
+                  cursor: 'se-resize',
+                  borderRadius: '3px 0 8px 0'
+                }}
+                onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'se')}
+              />
+              {/* 左下角 */}
+              <div
+                style={{
+                  ...resizeHandleBaseStyle,
+                  bottom: 0,
+                  left: 0,
+                  cursor: 'sw-resize',
+                  borderRadius: '0 3px 8px 0'
+                }}
+                onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'sw')}
+              />
+              {/* 右上角 */}
+              <div
+                style={{
+                  ...resizeHandleBaseStyle,
+                  top: 0,
+                  right: 0,
+                  cursor: 'ne-resize',
+                  borderRadius: '3px 0 0 8px'
+                }}
+                onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'ne')}
+              />
+              {/* 左上角 */}
+              <div
+                style={{
+                  ...resizeHandleBaseStyle,
+                  top: 0,
+                  left: 0,
+                  cursor: 'nw-resize',
+                  borderRadius: '0 3px 0 8px'
+                }}
+                onMouseDown={(e) => maskFrameController.handleResizeMouseDown(e, 'nw')}
+              />
+            </>
+          )}
         </>
       )}
     </div>

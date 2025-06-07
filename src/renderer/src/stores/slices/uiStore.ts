@@ -13,7 +13,8 @@ const initialState: UIState = {
   showSubtitleList: true,
   sidebarWidth: 400,
   showControls: false,
-  isDragging: false
+  isDragging: false,
+  isSubtitleLayoutLocked: false
 }
 
 /**
@@ -83,8 +84,17 @@ export const useUIStore = create<UIStore>()(
       setIsDragging: (isDragging) =>
         set((state) => {
           state.isDragging = isDragging
+        }),
+
+      setSubtitleLayoutLocked: (locked) =>
+        set((state) => {
+          state.isSubtitleLayoutLocked = locked
         })
     })),
     { name: 'ui-store' }
   )
 )
+
+// Selector for subtitle layout lock state - 字幕布局锁定状态选择器
+export const useSubtitleLayoutLocked = (): boolean =>
+  useUIStore((state) => state.isSubtitleLayoutLocked)

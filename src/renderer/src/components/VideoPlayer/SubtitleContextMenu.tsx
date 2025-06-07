@@ -1,7 +1,14 @@
 import React, { memo, useState } from 'react'
 import { Dropdown, Button, Tooltip, Slider, Switch } from 'antd'
-import { EyeInvisibleOutlined, EyeOutlined, CloseOutlined } from '@ant-design/icons'
+import {
+  EyeInvisibleOutlined,
+  EyeOutlined,
+  CloseOutlined,
+  LockOutlined,
+  UnlockOutlined
+} from '@ant-design/icons'
 import { BACKGROUND_TYPES } from '@renderer/hooks/useSubtitleState'
+import { useUIStore } from '@renderer/stores/slices/uiStore'
 
 interface SubtitleContextMenuProps {
   visible: boolean
@@ -33,7 +40,9 @@ const SubtitleContextMenu = memo(
   }: SubtitleContextMenuProps): React.JSX.Element => {
     // Mock settings state for context menu - 右键菜单的模拟设置状态
     const [mockFontScale, setMockFontScale] = useState(1.0)
-    const [mockAutoHide, setMockAutoHide] = useState(true)
+
+    // Get UI store state and actions - 获取UI状态和操作
+    const { isSubtitleLayoutLocked, setSubtitleLayoutLocked } = useUIStore()
 
     // Get current background config - 获取当前背景配置
     const currentBackgroundConfig =
@@ -120,7 +129,7 @@ const SubtitleContextMenu = memo(
                   />
                 </div>
 
-                {/* Auto hide switch - 自动隐藏开关 */}
+                {/* Subtitle layout lock switch - 锁定字幕布局开关 */}
                 <div
                   style={{
                     display: 'flex',
@@ -133,12 +142,20 @@ const SubtitleContextMenu = memo(
                   <span
                     style={{
                       color: 'rgba(255, 255, 255, 0.9)',
-                      fontSize: '12px'
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
                     }}
                   >
-                    自动隐藏控件
+                    {isSubtitleLayoutLocked ? <LockOutlined /> : <UnlockOutlined />}
+                    锁定布局
                   </span>
-                  <Switch size="small" checked={mockAutoHide} onChange={setMockAutoHide} />
+                  <Switch
+                    size="small"
+                    checked={isSubtitleLayoutLocked}
+                    onChange={setSubtitleLayoutLocked}
+                  />
                 </div>
               </div>
 
