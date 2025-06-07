@@ -115,14 +115,24 @@ interface ThemeStyles {
   playbackRatePopup: CSSProperties
   playbackRatePopupFullscreen: CSSProperties
   playbackRateConfigSection: CSSProperties
+  playbackRateConfigSectionTitle: CSSProperties
+  playbackRateConfigSectionTitleFullscreen: CSSProperties
   playbackRateConfigGrid: CSSProperties
   playbackRateConfigItem: CSSProperties
+  playbackRateConfigItemFullscreen: CSSProperties
   playbackRateConfigItemSelected: CSSProperties
+  playbackRateConfigItemSelectedFullscreen: CSSProperties
   playbackRateConfigItemCurrent: CSSProperties
+  playbackRateConfigItemCurrentFullscreen: CSSProperties
+  playbackRateConfigItemText: CSSProperties
   playbackRateQuickSection: CSSProperties
+  playbackRateQuickSectionTitle: CSSProperties
+  playbackRateQuickSectionTitleFullscreen: CSSProperties
   playbackRateQuickButton: CSSProperties
   playbackRateQuickButtonActive: CSSProperties
   playbackRateDivider: CSSProperties
+  playbackRateSpanText: CSSProperties
+  playbackRateSpanTextFullscreen: CSSProperties
   volumeControl: CSSProperties
   volumeSliderPopup: CSSProperties
   volumeSliderVertical: CSSProperties
@@ -767,7 +777,6 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       padding: `${token.paddingSM}px ${token.paddingMD}px`,
       display: 'flex',
       flexDirection: 'column' as const,
-      gap: token.marginSM,
       borderRadius: 0,
       transition: `all ${token.motionDurationSlow} ${themeStyles.easing.apple}`
     },
@@ -1193,7 +1202,8 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       zIndex: token.zIndexPopupBase, // Use token zIndex for popup layer - 使用token中的popup层级zIndex
       minWidth: '400px',
       maxWidth: '480px',
-      padding: '12px 16px'
+      padding: '12px 16px',
+      color: token.colorText
     },
 
     playbackRatePopupFullscreen: {
@@ -1215,6 +1225,20 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       marginBottom: token.marginSM
     },
 
+    playbackRateConfigSectionTitle: {
+      fontSize: token.fontSizeSM,
+      fontWeight: 500,
+      marginBottom: token.marginXS,
+      color: token.colorTextSecondary
+    },
+
+    playbackRateConfigSectionTitleFullscreen: {
+      fontSize: token.fontSizeSM,
+      fontWeight: 500,
+      marginBottom: token.marginXS,
+      color: 'rgba(255, 255, 255, 0.7)'
+    },
+
     playbackRateConfigGrid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(4, 1fr)',
@@ -1231,12 +1255,34 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       border: `1px solid ${token.colorBorder}`,
       background: token.colorBgContainer,
       transition: 'all 0.15s ease',
-      minHeight: '32px'
+      minHeight: '32px',
+      color: token.colorText
+    },
+
+    playbackRateConfigItemFullscreen: {
+      padding: '6px 8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      cursor: 'pointer',
+      borderRadius: '4px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      background: 'rgba(255, 255, 255, 0.05)',
+      transition: 'all 0.15s ease',
+      minHeight: '32px',
+      color: 'rgba(255, 255, 255, 0.9)'
     },
 
     playbackRateConfigItemSelected: {
       border: `1px solid ${token.colorPrimary}`,
-      background: token.colorPrimaryBg
+      background: token.colorPrimaryBg,
+      color: token.colorText
+    },
+
+    playbackRateConfigItemSelectedFullscreen: {
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      background: 'rgba(255, 255, 255, 0.2)',
+      color: 'rgba(255, 255, 255, 0.9)'
     },
 
     playbackRateConfigItemCurrent: {
@@ -1244,8 +1290,35 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       color: token.colorPrimary
     },
 
+    playbackRateConfigItemCurrentFullscreen: {
+      fontWeight: 600,
+      color: '#007AFF' // 即使在全屏模式也使用主色
+    },
+
+    playbackRateConfigItemText: {
+      fontSize: token.fontSizeSM,
+      fontWeight: 500,
+      flex: 1,
+      userSelect: 'none' as const,
+      color: 'inherit'
+    },
+
     playbackRateQuickSection: {
       marginTop: token.marginSM
+    },
+
+    playbackRateQuickSectionTitle: {
+      fontSize: token.fontSizeSM,
+      fontWeight: 500,
+      marginBottom: token.marginXS,
+      color: token.colorTextSecondary
+    },
+
+    playbackRateQuickSectionTitleFullscreen: {
+      fontSize: token.fontSizeSM,
+      fontWeight: 500,
+      marginBottom: token.marginXS,
+      color: 'rgba(255, 255, 255, 0.7)'
     },
 
     playbackRateQuickButton: {
@@ -1264,6 +1337,20 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       height: '1px',
       background: token.colorBorderSecondary,
       margin: `0 0 ${token.marginSM}px`
+    },
+
+    playbackRateSpanText: {
+      flex: 1,
+      textAlign: 'center' as const,
+      fontSize: '12px',
+      color: token.colorText
+    },
+
+    playbackRateSpanTextFullscreen: {
+      flex: 1,
+      textAlign: 'center' as const,
+      fontSize: '12px',
+      color: 'rgba(255, 255, 255, 0.9)'
     },
 
     volumeControl: {

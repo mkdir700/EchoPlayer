@@ -15,14 +15,14 @@ interface PlaybackRateSelectorProps {
 
 // Predefined playback speed options - 预定义的播放速度选项
 const SPEED_OPTIONS = [
-  { value: 0.25, label: '0.25x' },
-  { value: 0.5, label: '0.5x' },
-  { value: 0.75, label: '0.75x' },
-  { value: 1, label: '1x' },
-  { value: 1.25, label: '1.25x' },
-  { value: 1.5, label: '1.5x' },
-  { value: 1.75, label: '1.75x' },
-  { value: 2, label: '2x' }
+  { value: 0.25, label: '0.25' },
+  { value: 0.5, label: '0.5' },
+  { value: 0.75, label: '0.75' },
+  { value: 1, label: '1' },
+  { value: 1.25, label: '1.25' },
+  { value: 1.5, label: '1.5' },
+  { value: 1.75, label: '1.75' },
+  { value: 2, label: '2' }
 ]
 
 interface DropdownPosition {
@@ -48,7 +48,7 @@ export function PlaybackRateSelector({
   variant = 'compact',
   className
 }: PlaybackRateSelectorProps): React.JSX.Element {
-  const { styles, token } = useTheme()
+  const { styles } = useTheme()
   const { playerRef, isVideoLoadedRef } = useVideoPlayerContext()
   const playbackRate = usePlaybackRate()
   const { updatePlaybackRate } = useVideoPlaybackSettingsContext()
@@ -235,34 +235,30 @@ export function PlaybackRateSelector({
     }
   }
 
-  // Get text color based on variant - 根据变体获取文本颜色
-  const getTextColor = (): string => {
-    if (variant === 'fullscreen') {
-      return 'rgba(255, 255, 255, 0.9)' // Fullscreen mode forced white text - 全屏模式强制白色文字
-    }
-    return token.colorText
-  }
-
   // Get config item style with fullscreen support - 获取配置项样式并支持全屏模式
   const getConfigItemStyle = (
     option: (typeof SPEED_OPTIONS)[0],
     isSelected: boolean
   ): React.CSSProperties => {
-    const baseStyle = { ...styles.playbackRateConfigItem }
-
+    // Base style based on variant - 根据变体选择基础样式
+    let baseStyle: React.CSSProperties
     if (variant === 'fullscreen') {
-      baseStyle.background = isSelected ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)'
-      baseStyle.border = `1px solid ${isSelected ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`
-      baseStyle.color = 'rgba(255, 255, 255, 0.9)'
-    } else if (isSelected) {
-      return { ...baseStyle, ...styles.playbackRateConfigItemSelected }
+      baseStyle = isSelected
+        ? {
+            ...styles.playbackRateConfigItemFullscreen,
+            ...styles.playbackRateConfigItemSelectedFullscreen
+          }
+        : { ...styles.playbackRateConfigItemFullscreen }
+    } else {
+      baseStyle = isSelected
+        ? { ...styles.playbackRateConfigItem, ...styles.playbackRateConfigItemSelected }
+        : { ...styles.playbackRateConfigItem }
     }
 
     // Highlight current rate - 高亮当前速度
     if (option.value === playbackRate) {
       if (variant === 'fullscreen') {
-        baseStyle.fontWeight = 600
-        baseStyle.color = '#007AFF' // Use primary color even in fullscreen - 即使在全屏模式也使用主色
+        return { ...baseStyle, ...styles.playbackRateConfigItemCurrentFullscreen }
       } else {
         return { ...baseStyle, ...styles.playbackRateConfigItemCurrent }
       }
@@ -273,7 +269,7 @@ export function PlaybackRateSelector({
 
   return (
     <div style={{ ...styles.playbackRateControl, zIndex: 'auto' }} data-playback-rate-selector>
-      <Tooltip title="播放速度设置">
+      <Tooltip title="播放速度设置" open={!isDropdownOpen && undefined}>
         <Button
           ref={buttonRef}
           size="small"
@@ -284,12 +280,11 @@ export function PlaybackRateSelector({
           className={className}
         >
           <span
-            style={{
-              flex: 1,
-              textAlign: 'center',
-              fontSize: '12px',
-              color: getTextColor()
-            }}
+            style={
+              variant === 'fullscreen'
+                ? styles.playbackRateSpanTextFullscreen
+                : styles.playbackRateSpanText
+            }
           >
             {currentOption?.label || '1x'}
           </span>
@@ -309,15 +304,11 @@ export function PlaybackRateSelector({
             {/* All options configuration area - horizontal grid layout - 所有选项配置区域 - 横向网格布局 */}
             <div style={styles.playbackRateConfigSection}>
               <div
-                style={{
-                  fontSize: token.fontSizeSM,
-                  color:
-                    variant === 'fullscreen'
-                      ? 'rgba(255, 255, 255, 0.7)'
-                      : token.colorTextSecondary,
-                  marginBottom: token.marginXS,
-                  fontWeight: 500
-                }}
+                style={
+                  variant === 'fullscreen'
+                    ? styles.playbackRateConfigSectionTitleFullscreen
+                    : styles.playbackRateConfigSectionTitle
+                }
               >
                 选择可用速度:
               </div>
@@ -332,10 +323,8 @@ export function PlaybackRateSelector({
                   >
                     <span
                       style={{
-                        fontSize: token.fontSizeSM,
-                        fontWeight: option.value === playbackRate ? 600 : 500,
-                        flex: 1,
-                        userSelect: 'none'
+                        ...styles.playbackRateConfigItemText,
+                        fontWeight: option.value === playbackRate ? 600 : 500
                       }}
                     >
                       {option.label}
@@ -360,15 +349,11 @@ export function PlaybackRateSelector({
             {selectedOptions.length > 0 && (
               <div style={styles.playbackRateQuickSection}>
                 <div
-                  style={{
-                    fontSize: token.fontSizeSM,
-                    color:
-                      variant === 'fullscreen'
-                        ? 'rgba(255, 255, 255, 0.7)'
-                        : token.colorTextSecondary,
-                    marginBottom: token.marginXS,
-                    fontWeight: 500
-                  }}
+                  style={
+                    variant === 'fullscreen'
+                      ? styles.playbackRateQuickSectionTitleFullscreen
+                      : styles.playbackRateQuickSectionTitle
+                  }
                 >
                   快速选择:
                 </div>
