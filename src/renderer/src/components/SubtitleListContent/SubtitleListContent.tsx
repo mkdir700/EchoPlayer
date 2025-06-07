@@ -34,7 +34,9 @@ const getItemHeight = (): number => {
 /**
  * Renders a virtualized, auto-scrolling list of subtitle items synchronized with video playback.
  *
- * Displays subtitle items in a scrollable list, automatically keeping the active subtitle centered as the video plays. Handles user-initiated scrolling by temporarily disabling auto-scroll, and provides instant or smooth scrolling based on context. Shows an empty state when no subtitles are loaded.
+ * Displays subtitle items in a scrollable list, automatically keeping the active subtitle visible as the video plays.
+ * The list scrolls naturally when the current subtitle approaches the edges of the visible area, maintaining
+ * a more natural scrolling experience instead of always centering the active subtitle.
  *
  * @returns The rendered subtitle list content as a React element.
  */
@@ -67,6 +69,9 @@ export function SubtitleListContent(): React.JSX.Element {
   const hasScrolledOnceRef = useRef(false)
   // 新增：标记程序是否正在执行自动滚动
   const isProgrammaticScrollingRef = useRef(false)
+  // 动画相关的引用
+  const animationFrameRef = useRef<number | null>(null)
+  const isAnimatingRef = useRef(false)
 
   // 添加状态来跟踪当前激活的字幕索引，确保重新渲染
   const [activeSubtitleIndex, setActiveSubtitleIndex] = useState(-1)
@@ -82,7 +87,163 @@ export function SubtitleListContent(): React.JSX.Element {
     [setSubtitleByIndex, restoreVideoState, playbackRateRef, volumeRef]
   )
 
-  // 立即滚动到指定位置（无动画）
+  // 计算可视区域内的行数
+  const getVisibleRowCount = useCallback((): number => {
+    if (!virtualListRef.current) return 0
+    const { height } = virtualListRef.current.props
+    return Math.floor(height / getItemHeight())
+  }, [])
+
+  // 获取当前滚动位置的第一个可见行索引
+  const getFirstVisibleIndex = useCallback((): number => {
+    if (!virtualListRef.current) return 0
+    // 通过 Grid 实例获取滚动信息
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const grid = (virtualListRef.current as any).Grid
+    if (!grid) return 0
+
+    const scrollTop = grid.state?.scrollTop || 0
+    return Math.floor(scrollTop / getItemHeight())
+  }, [])
+
+  // 获取当前滚动位置
+  const getCurrentScrollTop = useCallback((): number => {
+    if (!virtualListRef.current) return 0
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const grid = (virtualListRef.current as any).Grid
+    if (!grid) return 0
+    return grid.state?.scrollTop || 0
+  }, [])
+
+  // 设置滚动位置
+  const setScrollTop = useCallback((scrollTop: number): void => {
+    if (!virtualListRef.current) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const grid = (virtualListRef.current as any).Grid
+    if (grid && grid.scrollToPosition) {
+      grid.scrollToPosition({ scrollTop })
+    }
+  }, [])
+
+  // 缓动函数（ease-out）
+  const easeOutQuart = useCallback((t: number): number => {
+    return 1 - Math.pow(1 - t, 4)
+  }, [])
+
+  // 平滑滚动到指定位置
+  const smoothScrollTo = useCallback(
+    (targetScrollTop: number, duration: number = 300): Promise<void> => {
+      return new Promise((resolve) => {
+        // 取消之前的动画
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current)
+        }
+
+        const startScrollTop = getCurrentScrollTop()
+        const distance = targetScrollTop - startScrollTop
+        const startTime = Date.now()
+
+        // 如果距离很小，直接跳转
+        if (Math.abs(distance) < 5) {
+          setScrollTop(targetScrollTop)
+          resolve()
+          return
+        }
+
+        isAnimatingRef.current = true
+        isProgrammaticScrollingRef.current = true
+
+        const animate = (): void => {
+          const currentTime = Date.now()
+          const elapsed = currentTime - startTime
+          const progress = Math.min(elapsed / duration, 1)
+
+          const easedProgress = easeOutQuart(progress)
+          const currentScrollTop = startScrollTop + distance * easedProgress
+
+          setScrollTop(currentScrollTop)
+
+          if (progress < 1) {
+            animationFrameRef.current = requestAnimationFrame(animate)
+          } else {
+            isAnimatingRef.current = false
+            // 延迟清除程序滚动标记，确保滚动事件处理完成
+            setTimeout(() => {
+              isProgrammaticScrollingRef.current = false
+            }, 50)
+            resolve()
+          }
+        }
+
+        animationFrameRef.current = requestAnimationFrame(animate)
+      })
+    },
+    [getCurrentScrollTop, setScrollTop, easeOutQuart]
+  )
+
+  // 智能滚动：只有当字幕接近边缘时才滚动
+  const scrollToIndexSmart = useCallback(
+    async (index: number, isFirstTime: boolean = false): Promise<boolean> => {
+      if (!virtualListRef.current || index < 0 || index >= subtitleItemsRef.current.length) {
+        return false
+      }
+
+      try {
+        const itemHeight = getItemHeight()
+
+        if (isFirstTime) {
+          // 首次滚动：将字幕显示在列表上部1/3位置，使用平滑滚动
+          const visibleCount = getVisibleRowCount()
+          const targetPosition = Math.max(0, index - Math.floor(visibleCount / 3))
+          const targetScrollTop = targetPosition * itemHeight
+
+          console.log(`🎯 首次定位: 字幕索引 ${index}, 滚动到位置 ${targetPosition}`)
+          await smoothScrollTo(targetScrollTop, 400) // 首次滚动稍慢一些
+        } else {
+          // 常规滚动：检查是否需要滚动
+          const firstVisibleIndex = getFirstVisibleIndex()
+          const visibleCount = getVisibleRowCount()
+          const lastVisibleIndex = firstVisibleIndex + visibleCount - 1
+
+          // 定义滚动的触发区域（可视区域的上下边缘各留出一些空间）
+          const scrollMargin = Math.max(2, Math.floor(visibleCount * 0.2)) // 20%的边距
+          const scrollTriggerTop = firstVisibleIndex + scrollMargin
+          const scrollTriggerBottom = lastVisibleIndex - scrollMargin
+
+          console.log(
+            `📊 滚动检查: 当前字幕=${index}, 可视范围=[${firstVisibleIndex}, ${lastVisibleIndex}], 触发区域=[${scrollTriggerTop}, ${scrollTriggerBottom}]`
+          )
+
+          if (index < scrollTriggerTop) {
+            // 字幕在上方触发区域，向上滚动
+            const targetPosition = Math.max(0, index - Math.floor(visibleCount / 3))
+            const targetScrollTop = targetPosition * itemHeight
+            console.log(`⬆️ 向上滚动: 目标位置 ${targetPosition}`)
+            await smoothScrollTo(targetScrollTop, 250) // 常规滚动稍快
+          } else if (index > scrollTriggerBottom) {
+            // 字幕在下方触发区域，向下滚动
+            const targetPosition = Math.max(0, index - Math.floor((visibleCount * 2) / 3))
+            const targetScrollTop = targetPosition * itemHeight
+            console.log(`⬇️ 向下滚动: 目标位置 ${targetPosition}`)
+            await smoothScrollTo(targetScrollTop, 250) // 常规滚动稍快
+          } else {
+            // 字幕在安全区域内，不需要滚动
+            console.log(`✅ 字幕在可视区域内，无需滚动`)
+            return true
+          }
+        }
+
+        return true
+      } catch (error) {
+        console.warn('智能滚动失败:', error)
+        isProgrammaticScrollingRef.current = false
+        return false
+      }
+    },
+    [subtitleItemsRef, getVisibleRowCount, getFirstVisibleIndex, smoothScrollTo]
+  )
+
+  // 立即滚动到指定位置（用于大幅度跳转）
   const scrollToIndexInstantly = useCallback(
     (index: number) => {
       if (!virtualListRef.current || index < 0 || index >= subtitleItemsRef.current.length) {
@@ -93,8 +254,12 @@ export function SubtitleListContent(): React.JSX.Element {
         // 标记为程序滚动
         isProgrammaticScrollingRef.current = true
 
-        // 使用 center 对齐方式，让字幕显示在列表中间
-        virtualListRef.current.scrollToRow(index)
+        // 大幅度跳转时，将字幕显示在列表中上部
+        const visibleCount = getVisibleRowCount()
+        const targetPosition = Math.max(0, index - Math.floor(visibleCount / 3))
+
+        virtualListRef.current.scrollToRow(targetPosition)
+        console.log(`🚀 立即滚动: 字幕索引 ${index}, 滚动到位置 ${targetPosition}`)
 
         // 延迟清除标记，确保滚动事件处理完成
         setTimeout(() => {
@@ -108,41 +273,7 @@ export function SubtitleListContent(): React.JSX.Element {
         return false
       }
     },
-    [subtitleItemsRef]
-  )
-
-  // 平滑滚动到指定位置（带动画）
-  const scrollToIndexSmoothly = useCallback(
-    (index: number) => {
-      if (!virtualListRef.current || index < 0 || index >= subtitleItemsRef.current.length) {
-        return false
-      }
-
-      try {
-        // 标记为程序滚动
-        isProgrammaticScrollingRef.current = true
-
-        // 使用 requestAnimationFrame 确保平滑效果
-        requestAnimationFrame(() => {
-          if (virtualListRef.current) {
-            // 使用 center 对齐方式，让字幕显示在列表中间
-            virtualListRef.current.scrollToRow(index)
-
-            // 延迟清除标记，确保滚动事件处理完成
-            setTimeout(() => {
-              isProgrammaticScrollingRef.current = false
-            }, 100)
-          }
-        })
-
-        return true
-      } catch (error) {
-        console.warn('平滑滚动失败:', error)
-        isProgrammaticScrollingRef.current = false
-        return false
-      }
-    },
-    [subtitleItemsRef]
+    [subtitleItemsRef, getVisibleRowCount]
   )
 
   // 渲染单个字幕项
@@ -214,22 +345,28 @@ export function SubtitleListContent(): React.JSX.Element {
         const isFirstTime = !hasScrolledOnceRef.current && newSubtitleIndex >= 0
 
         if (isFirstTime) {
-          // 首次渲染：立即定位，无动画
+          // 首次渲染：使用智能滚动
           console.log('🎯 首次定位到字幕:', newSubtitleIndex)
 
-          const scrollWithDelay = (): void => {
+          const scrollWithDelay = async (): Promise<void> => {
             // 再次检查用户是否开始滚动
             if (isScrollingByUser.current) {
               console.log('🚫 用户开始滚动，取消首次定位')
               return
             }
 
-            if (scrollToIndexInstantly(newSubtitleIndex)) {
-              hasScrolledOnceRef.current = true
-              lastSubtitleIndexRef.current = newSubtitleIndex
-              isInitializedRef.current = true
-            } else {
-              // 如果失败，稍后重试
+            try {
+              const success = await scrollToIndexSmart(newSubtitleIndex, true)
+              if (success) {
+                hasScrolledOnceRef.current = true
+                lastSubtitleIndexRef.current = newSubtitleIndex
+                isInitializedRef.current = true
+              } else {
+                // 如果失败，稍后重试
+                setTimeout(scrollWithDelay, 50)
+              }
+            } catch (error) {
+              console.warn('首次滚动失败:', error)
               setTimeout(scrollWithDelay, 50)
             }
           }
@@ -242,9 +379,13 @@ export function SubtitleListContent(): React.JSX.Element {
           if (scrollToIndexInstantly(newSubtitleIndex)) {
             lastSubtitleIndexRef.current = newSubtitleIndex
           }
-        } else {
-          // 小幅度变化：平滑滚动
-          scrollToIndexSmoothly(newSubtitleIndex)
+        } else if (newSubtitleIndex !== lastIndex) {
+          // 小幅度变化：使用智能滚动
+          console.log(`📱 字幕切换: ${lastIndex} -> ${newSubtitleIndex}`)
+          // 异步调用但不等待，让滚动在后台进行
+          scrollToIndexSmart(newSubtitleIndex, false).catch((error) => {
+            console.warn('智能滚动失败:', error)
+          })
           lastSubtitleIndexRef.current = newSubtitleIndex
         }
       } else if (newSubtitleIndex >= 0) {
@@ -258,8 +399,8 @@ export function SubtitleListContent(): React.JSX.Element {
     subscribeToTime,
     getSubtitleIndexForTime,
     setCurrentSubtitleIndex,
+    scrollToIndexSmart,
     scrollToIndexInstantly,
-    scrollToIndexSmoothly,
     subtitleItemsRef,
     isAutoScrollEnabledRef
   ])
@@ -312,11 +453,14 @@ export function SubtitleListContent(): React.JSX.Element {
     }
   }, [subtitleItemsRef, getSubtitleIndexForTime, currentTimeRef])
 
-  // 清理定时器
+  // 清理定时器和动画
   useEffect(() => {
     return () => {
       if (userScrollTimerRef.current) {
         clearTimeout(userScrollTimerRef.current)
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
       }
     }
   }, [])
@@ -333,7 +477,7 @@ export function SubtitleListContent(): React.JSX.Element {
       )}
       <div style={styles.subtitleListContent}>
         {showSubtitlePrompt ? (
-          // 简化的字幕提示界面
+          // 簡化的字幕提示界面
           <div
             style={{
               display: 'flex',
@@ -420,7 +564,7 @@ export function SubtitleListContent(): React.JSX.Element {
                 rowRenderer={rowRenderer}
                 onScroll={handleScroll}
                 overscanRowCount={10} // 预渲染额外的行以提高滚动体验
-                scrollToAlignment="center" // 改为居中对齐，让当前字幕显示在列表中间
+                scrollToAlignment="start" // 改为从顶部开始对齐，让滚动更自然
                 style={{
                   ...styles.subtitleListVirtualizedList,
                   // 额外确保没有意外的边框
