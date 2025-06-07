@@ -60,27 +60,214 @@ const segmentText = (text: string): string[] => {
   // 如果文本较短，不需要分段
   if (text.length <= 50) return [text]
 
-  // 尝试按句子分段（中文句号、英文句号、问号、感叹号等）
-  const sentenceSegments = text.split(/(?<=[。.!?！？])\s*/)
-  if (sentenceSegments.length > 1) {
-    return sentenceSegments.filter((segment) => segment.trim().length > 0)
+  // 预处理：保护需要避免分割的内容
+  const protectedPatterns: Array<{ pattern: RegExp; placeholder: string }> = [
+    // 保护省略号（各种形式）- 必须在其他模式之前
+    { pattern: /\.{2,}/g, placeholder: '___ELLIPSIS___' },
+    { pattern: /…+/g, placeholder: '___HELLIP___' },
+
+    // 保护英文缩写
+    {
+      pattern: /\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|vs|etc|Inc|Ltd|Corp|Co|LLC)\./gi,
+      placeholder: '___ABBREV___'
+    },
+
+    // 保护数字和小数点
+    { pattern: /\b\d+\.\d+\b/g, placeholder: '___DECIMAL___' },
+
+    // 保护时间格式
+    { pattern: /\b\d{1,2}[:：.]\d{2}\b/g, placeholder: '___TIME___' },
+
+    // 保护网址和邮箱
+    { pattern: /\b(?:https?:\/\/|www\.|ftp:\/\/)[^\s]+/gi, placeholder: '___URL___' },
+    { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, placeholder: '___EMAIL___' },
+
+    // 保护文件路径和扩展名
+    { pattern: /\b[\w\-.]+\.[a-zA-Z]{2,4}\b/g, placeholder: '___FILE___' },
+
+    // 保护特殊标点组合
+    { pattern: /[!?]{2,}/g, placeholder: '___MULTIMARK___' },
+
+    // 保护引号内容（避免在引号内分割）
+    { pattern: /"[^"]*"/g, placeholder: '___QUOTED___' },
+    { pattern: /'[^']*'/g, placeholder: '___SQUOTED___' },
+    { pattern: /「[^」]*」/g, placeholder: '___CNQUOTED___' },
+    { pattern: /『[^』]*』/g, placeholder: '___CNQUOTED2___' }
+  ]
+
+  // 应用保护模式
+  let processedText = text
+  const protectedValues: string[] = []
+
+  protectedPatterns.forEach(({ pattern, placeholder }) => {
+    processedText = processedText.replace(pattern, (match) => {
+      const index = protectedValues.length
+      protectedValues.push(match)
+      return `${placeholder}${index}`
+    })
+  })
+
+  // 恢复函数
+  const restoreProtectedContent = (segment: string): string => {
+    let restored = segment
+    protectedPatterns.forEach(({ placeholder }) => {
+      const regex = new RegExp(`${placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)`, 'g')
+      restored = restored.replace(regex, (match, index) => {
+        return protectedValues[parseInt(index)] || match
+      })
+    })
+    return restored
   }
 
-  // 如果没有句子分隔符，尝试按逗号、分号等分段
-  const phraseSegments = text.split(/(?<=[,，;；])\s*/)
-  if (phraseSegments.length > 1) {
-    return phraseSegments.filter((segment) => segment.trim().length > 0)
+  // 智能句子分割
+  const splitBySentences = (text: string): string[] => {
+    // 中文句子分割（句号、感叹号、问号）
+    const chineseSentencePattern = /(?<=[。！？])\s*/
+
+    // 英文句子分割（更精确的模式）
+    // 匹配句号后跟空格和大写字母，但不匹配缩写后的点
+    const englishSentencePattern = /(?<=[^A-Z][.!?])\s+(?=[A-Z])/
+
+    // 先尝试中文分割
+    let segments = text.split(chineseSentencePattern).filter((seg) => seg && seg.trim())
+    if (segments.length > 1) {
+      return segments
+    }
+
+    // 再尝试英文分割
+    segments = text.split(englishSentencePattern).filter((seg) => seg && seg.trim())
+    if (segments.length > 1) {
+      return segments
+    }
+
+    return [text]
   }
 
-  // 如果没有标点符号，按固定长度分段
-  const segments: string[] = []
-  const maxSegmentLength = 30
+  // 智能短语分割（增加长度检查）
+  const splitByPhrases = (text: string): string[] => {
+    // 按逗号、分号、冒号等分割，但要考虑上下文
+    const phrasePattern = /(?<=[,，;；:：])\s*/
+    const segments = text.split(phrasePattern).filter((seg) => seg && seg.trim())
 
-  for (let i = 0; i < text.length; i += maxSegmentLength) {
-    segments.push(text.substring(i, Math.min(i + maxSegmentLength, text.length)))
+    // 如果分割后段数过多或平均长度太短，则不分割
+    if (segments.length > 2 && segments.some((seg) => seg.trim().length < 15)) {
+      return [text]
+    }
+
+    return segments.length > 1 ? segments : [text]
   }
 
-  return segments
+  // 智能单词分割（处理超长文本）
+  const splitByWords = (text: string): string[] => {
+    const maxSegmentLength = 40
+    const segments: string[] = []
+
+    // 尝试按空格分割
+    const words = text.split(/\s+/)
+    let currentSegment = ''
+
+    for (const word of words) {
+      const testSegment = currentSegment ? `${currentSegment} ${word}` : word
+
+      if (testSegment.length <= maxSegmentLength) {
+        currentSegment = testSegment
+      } else {
+        if (currentSegment) {
+          segments.push(currentSegment)
+          currentSegment = word
+        } else {
+          // 单个词太长，强制分割
+          for (let i = 0; i < word.length; i += maxSegmentLength) {
+            segments.push(word.substring(i, Math.min(i + maxSegmentLength, word.length)))
+          }
+          currentSegment = ''
+        }
+      }
+    }
+
+    if (currentSegment) {
+      segments.push(currentSegment)
+    }
+
+    return segments.length > 1 ? segments : [text]
+  }
+
+  // 分割质量评估（增强版）
+  const evaluateSegmentation = (segments: string[]): boolean => {
+    // 如果只有一个片段，不需要评估
+    if (segments.length <= 1) return true
+
+    // 限制最大行数为2行（字幕通常不应超过2行）
+    if (segments.length > 2) {
+      return false
+    }
+
+    // 检查是否有太多短片段（可能是过度分割）
+    const shortSegments = segments.filter((seg) => seg.trim().length < 8)
+    if (shortSegments.length > segments.length * 0.3) {
+      return false
+    }
+
+    // 检查是否有空片段
+    if (segments.some((seg) => !seg.trim())) {
+      return false
+    }
+
+    // 检查分割是否有意义（避免在单词中间分割）
+    const hasWordBreaks = segments.some((seg) => {
+      const trimmed = seg.trim()
+      return trimmed.endsWith('-') || trimmed.startsWith('-')
+    })
+
+    if (hasWordBreaks) {
+      return false
+    }
+
+    // 检查分割后的长度平衡性
+    const avgLength = segments.reduce((sum, seg) => sum + seg.length, 0) / segments.length
+    const hasUnbalancedSegments = segments.some(
+      (seg) => seg.length < avgLength * 0.3 || seg.length > avgLength * 2
+    )
+
+    if (hasUnbalancedSegments) {
+      return false
+    }
+
+    return true
+  }
+
+  // 主分割逻辑
+  try {
+    // 1. 首先尝试句子分割
+    let segments = splitBySentences(processedText)
+
+    if (segments.length > 1 && evaluateSegmentation(segments)) {
+      return segments.map(restoreProtectedContent).filter((seg) => seg.trim())
+    }
+
+    // 2. 尝试短语分割（更严格的条件）
+    segments = splitByPhrases(processedText)
+
+    if (segments.length > 1 && evaluateSegmentation(segments)) {
+      return segments.map(restoreProtectedContent).filter((seg) => seg.trim())
+    }
+
+    // 3. 最后尝试单词分割（仅在文本过长时）
+    if (processedText.length > 80) {
+      segments = splitByWords(processedText)
+
+      if (segments.length > 1 && evaluateSegmentation(segments)) {
+        return segments.map(restoreProtectedContent).filter((seg) => seg.trim())
+      }
+    }
+
+    // 4. 如果所有分割都失败，返回原文本
+    return [restoreProtectedContent(processedText)]
+  } catch (error) {
+    // 如果分割过程中出现错误，返回原文本
+    console.warn('智能分段出现错误:', error)
+    return [text]
+  }
 }
 
 // Enhanced text splitting function with theme integration
