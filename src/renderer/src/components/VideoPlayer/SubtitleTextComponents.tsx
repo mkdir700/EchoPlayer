@@ -78,13 +78,6 @@ const segmentText = (text: string): string[] => {
     // 保护时间格式
     { pattern: /\b\d{1,2}[:：.]\d{2}\b/g, placeholder: '___TIME___' },
 
-    // 保护网址和邮箱
-    { pattern: /\b(?:https?:\/\/|www\.|ftp:\/\/)[^\s]+/gi, placeholder: '___URL___' },
-    { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, placeholder: '___EMAIL___' },
-
-    // 保护文件路径和扩展名
-    { pattern: /\b[\w\-.]+\.[a-zA-Z]{2,4}\b/g, placeholder: '___FILE___' },
-
     // 保护特殊标点组合
     { pattern: /[!?]{2,}/g, placeholder: '___MULTIMARK___' },
 
