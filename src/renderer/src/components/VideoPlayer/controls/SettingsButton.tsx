@@ -26,7 +26,14 @@ export function SettingsButton({ variant = 'compact' }: SettingsButtonProps): Re
 
   const getPopupStyles = (): React.CSSProperties => {
     if (variant === 'fullscreen') {
-      return styles.fullscreenSettingsPopup
+      // 全屏模式强制使用暗黑主题
+      return {
+        ...styles.fullscreenSettingsPopup,
+        background: 'rgba(20, 20, 20, 0.95)', // 强制使用暗色背景
+        border: '1px solid rgba(255, 255, 255, 0.1)', // 暗色边框
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)', // 更深的阴影
+        color: 'rgba(255, 255, 255, 0.9)' // 强制使用白色文字
+      }
     }
     return {}
   }
@@ -36,6 +43,28 @@ export function SettingsButton({ variant = 'compact' }: SettingsButtonProps): Re
       return styles.fullscreenSettingsContent
     }
     return {}
+  }
+
+  const getTitleStyles = (): React.CSSProperties => {
+    if (variant === 'fullscreen') {
+      // 全屏模式强制使用白色文字
+      return {
+        ...styles.fullscreenSettingsTitle,
+        color: 'rgba(255, 255, 255, 0.9)' // 强制使用白色文字
+      }
+    }
+    return styles.fullscreenSettingsTitle
+  }
+
+  const getLabelStyles = (): React.CSSProperties => {
+    if (variant === 'fullscreen') {
+      // 全屏模式强制使用白色文字
+      return {
+        ...styles.fullscreenSettingsLabel,
+        color: 'rgba(255, 255, 255, 0.7)' // 强制使用较透明的白色文字
+      }
+    }
+    return styles.fullscreenSettingsLabel
   }
 
   return (
@@ -56,9 +85,9 @@ export function SettingsButton({ variant = 'compact' }: SettingsButtonProps): Re
       {showSettings && (
         <div style={getPopupStyles()}>
           <div style={getContentStyles()}>
-            <Text style={styles.fullscreenSettingsTitle}>播放设置</Text>
+            <Text style={getTitleStyles()}>播放设置</Text>
             <div style={styles.fullscreenSettingsItem}>
-              <Text style={styles.fullscreenSettingsLabel}>更多功能即将推出...</Text>
+              <Text style={getLabelStyles()}>更多功能即将推出...</Text>
             </div>
           </div>
         </div>

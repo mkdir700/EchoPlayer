@@ -304,6 +304,41 @@ export function VolumeControl({ variant = 'compact' }: VolumeControlProps = {}):
     return styles.controlBtn
   }
 
+  // 获取音量滑块容器样式 - 在全屏模式下强制使用暗黑主题
+  const getVolumeSliderStyles = (): React.CSSProperties => {
+    const baseStyles = styles.volumeSliderHorizontalContainer
+
+    if (variant === 'fullscreen') {
+      // 全屏模式强制使用暗黑主题
+      return {
+        ...baseStyles,
+        background: 'rgba(20, 20, 20, 0.95)', // 强制使用暗色背景
+        border: '1px solid rgba(255, 255, 255, 0.1)', // 暗色边框
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)', // 更深的阴影
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        color: 'rgba(255, 255, 255, 0.9)' // 强制使用白色文字
+      }
+    }
+
+    // 默认主题色
+    return baseStyles
+  }
+
+  // 获取音量文字样式 - 在全屏模式下强制使用暗黑主题
+  const getVolumeTextStyles = (): React.CSSProperties => {
+    if (variant === 'fullscreen') {
+      // 全屏模式强制使用白色文字
+      return {
+        ...styles.fullscreenVolumeText,
+        color: 'rgba(255, 255, 255, 0.9)' // 强制使用白色文字
+      }
+    }
+
+    // 默认主题色
+    return styles.fullscreenVolumeText
+  }
+
   return (
     <div style={styles.volumeControl} ref={volumeControlRef}>
       <Tooltip
@@ -320,7 +355,7 @@ export function VolumeControl({ variant = 'compact' }: VolumeControlProps = {}):
       </Tooltip>
 
       {showVolumeSlider && (
-        <div style={styles.volumeSliderHorizontalContainer} ref={sliderRef}>
+        <div style={getVolumeSliderStyles()} ref={sliderRef}>
           {/* Custom Volume Slider with embedded key points */}
           <CustomVolumeSlider
             value={volume}
@@ -330,7 +365,7 @@ export function VolumeControl({ variant = 'compact' }: VolumeControlProps = {}):
           />
 
           {/* Volume percentage display */}
-          <Text style={styles.fullscreenVolumeText}>{Math.round(volume * 100)}%</Text>
+          <Text style={getVolumeTextStyles()}>{Math.round(volume * 100)}%</Text>
         </div>
       )}
     </div>

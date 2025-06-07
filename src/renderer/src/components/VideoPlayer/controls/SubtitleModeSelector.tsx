@@ -41,23 +41,21 @@ export function SubtitleModeSelector({
 
   const [showSubtitleModeSelector, setShowSubtitleModeSelector] = useState(false)
   const subtitleModeSelectorRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const handleSubtitleModeSelectorClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      setShowSubtitleModeSelector(!showSubtitleModeSelector)
+      setShowSubtitleModeSelector((prev) => !prev)
       e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
     },
-    [showSubtitleModeSelector]
+    [] // 移除依赖，使用函数式更新
   )
 
   // 点击外部关闭字幕模式选择器 - 增强用户体验的交互设计
   // 遵循苹果设计指南中的即时反馈原则
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
-      if (
-        subtitleModeSelectorRef.current &&
-        !subtitleModeSelectorRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowSubtitleModeSelector(false)
       }
     }
@@ -68,7 +66,6 @@ export function SubtitleModeSelector({
         document.removeEventListener('mousedown', handleClickOutside)
       }
     }
-    return undefined
   }, [showSubtitleModeSelector])
 
   // 获取当前模式的配置 - 确保即使遇到无效模式也能提供合理的默认值
@@ -104,6 +101,70 @@ export function SubtitleModeSelector({
     }
   }
 
+  // 获取弹出窗口样式 - 在全屏模式下强制使用暗黑主题
+  const getSelectorStyles = (): React.CSSProperties => {
+    const baseStyles = {
+      ...styles.subtitleModeSelector,
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      animation: `${token.motionDurationMid} ${token.motionEaseOut} fadeIn`,
+      transform: 'translateY(0)',
+      opacity: 1,
+      transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`
+    }
+
+    if (variant === 'fullscreen') {
+      // 全屏模式强制使用暗黑主题
+      return {
+        ...baseStyles,
+        background: 'rgba(20, 20, 20, 0.95)', // 强制使用暗色背景
+        border: '1px solid rgba(255, 255, 255, 0.1)', // 暗色边框
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)', // 更深的阴影
+        color: 'rgba(255, 255, 255, 0.9)' // 强制使用白色文字
+      }
+    }
+
+    // 默认主题色
+    return {
+      ...baseStyles,
+      boxShadow: `0 8px 24px rgba(0, 0, 0, 0.12)`,
+      border: `1px solid ${token.colorBorderSecondary}`
+    }
+  }
+
+  // 获取选项按钮样式 - 在全屏模式下强制使用暗黑主题
+  const getOptionButtonStyles = (mode: string): React.CSSProperties => {
+    const isActive = displayMode === mode
+
+    const baseStyles = {
+      width: '100%',
+      textAlign: 'left' as const,
+      marginBottom: token.marginXXS,
+      padding: `${token.paddingXS}px ${token.paddingSM}px`,
+      borderRadius: token.borderRadiusSM,
+      fontSize: token.fontSizeSM,
+      fontWeight: isActive ? 600 : 400,
+      transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`
+    }
+
+    if (variant === 'fullscreen') {
+      // 全屏模式强制使用暗黑主题
+      return {
+        ...baseStyles,
+        background: isActive ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+        border: `1px solid ${isActive ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+        color: 'rgba(255, 255, 255, 0.9)',
+        boxShadow: isActive ? '0 2px 8px rgba(255, 255, 255, 0.3)' : 'none'
+      }
+    }
+
+    // 默认主题色
+    return {
+      ...baseStyles,
+      boxShadow: isActive ? `0 2px 8px ${token.colorPrimary}30` : 'none'
+    }
+  }
+
   // 记录组件状态和样式使用情况，便于调试
   RendererLogger.debug(
     `SubtitleModeSelector: 当前显示模式=${displayMode}, 有效模式=${validDisplayMode}, variant=${variant}`
@@ -113,7 +174,7 @@ export function SubtitleModeSelector({
   )
 
   return (
-    <div style={styles.subtitleModeControl}>
+    <div style={styles.subtitleModeControl} ref={containerRef}>
       {/* 字幕模式切换按钮 */}
       <Tooltip
         title={`字幕模式: ${currentModeConfig.label}`}
@@ -133,17 +194,7 @@ export function SubtitleModeSelector({
       {showSubtitleModeSelector && (
         <div
           // 响应式设计 - 确保在不同屏幕尺寸下的良好表现
-          style={{
-            ...styles.subtitleModeSelector,
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            boxShadow: `0 8px 24px rgba(0, 0, 0, 0.12)`,
-            border: `1px solid ${token.colorBorderSecondary}`,
-            animation: `${token.motionDurationMid} ${token.motionEaseOut} fadeIn`,
-            transform: 'translateY(0)',
-            opacity: 1,
-            transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`
-          }}
+          style={getSelectorStyles()}
           ref={subtitleModeSelectorRef}
         >
           {Object.entries(DISPLAY_MODE_CONFIG).map(([mode, config]) => {
@@ -157,17 +208,7 @@ export function SubtitleModeSelector({
                   setDisplayMode(mode as DisplayMode)
                   setShowSubtitleModeSelector(false)
                 }}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  marginBottom: token.marginXXS,
-                  padding: `${token.paddingXS}px ${token.paddingSM}px`,
-                  borderRadius: token.borderRadiusSM,
-                  fontSize: token.fontSizeSM,
-                  fontWeight: isActive ? 600 : 400,
-                  transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
-                  boxShadow: isActive ? `0 2px 8px ${token.colorPrimary}30` : 'none'
-                }}
+                style={getOptionButtonStyles(mode)}
               >
                 {config.label}
               </Button>
