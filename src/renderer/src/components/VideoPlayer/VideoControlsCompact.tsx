@@ -78,14 +78,12 @@ ProgressSection.displayName = 'ProgressSection'
  *
  * @param isVideoLoaded - Indicates whether the video is loaded and controls should be enabled.
  * @param videoError - Error state of the video, used to disable or adjust controls as needed.
- * @param onFullscreenToggle - Callback invoked when the fullscreen button is toggled.
  *
  * @returns The compact video controls UI as a React element.
  */
 export function VideoControlsCompact({
   isVideoLoaded,
-  videoError,
-  onFullscreenToggle
+  videoError
 }: VideoControlsProps): React.JSX.Element {
   const { styles } = useTheme()
   const { toggle, seekTo, stepBackward, stepForward } = useVideoControls()
@@ -129,7 +127,7 @@ export function VideoControlsCompact({
         <div style={styles.rightControls}>
           <PlaybackRateSelector isVideoLoaded={isVideoLoaded} />
           <VolumeControl />
-          <FullscreenButton onFullscreenToggle={onFullscreenToggle} />
+          <FullscreenButton />
           <SettingsButton />
         </div>
       </div>

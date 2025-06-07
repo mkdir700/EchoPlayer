@@ -27,7 +27,6 @@ export type DisplayMode = 'none' | 'original' | 'chinese' | 'english' | 'bilingu
 export interface VideoControlsProps {
   isVideoLoaded: boolean
   videoError: string | null
-  onFullscreenToggle: () => void
 }
 
 export interface VideoPlayerProps {

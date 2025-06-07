@@ -5,12 +5,10 @@ import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
 import { useTheme } from '@renderer/hooks/useTheme'
 
 interface FullscreenButtonProps {
-  onFullscreenToggle?: () => void // 保持向后兼容，但已可选
   variant?: 'compact' | 'fullscreen' // 新增：支持不同的显示模式
 }
 
 export function FullscreenButton({
-  onFullscreenToggle,
   variant = 'compact'
 }: FullscreenButtonProps): React.JSX.Element {
   const { isFullscreen, toggleFullscreen } = useFullscreenMode()
@@ -21,11 +19,6 @@ export function FullscreenButton({
 
     // 优先使用新的状态管理，如果没有则回退到传入的回调
     toggleFullscreen()
-
-    // 如果有传入的回调也调用它（向后兼容）
-    if (onFullscreenToggle) {
-      onFullscreenToggle()
-    }
   }
 
   // 根据变体类型选择样式 / Choose styles based on variant type
