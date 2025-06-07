@@ -1,16 +1,17 @@
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react'
+import { Dropdown, Button, Tooltip, Slider, Switch } from 'antd'
+import { EyeInvisibleOutlined, EyeOutlined, CloseOutlined } from '@ant-design/icons'
 import { WordCard } from '@renderer/components/WordCard/WordCard'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import {
   useSubtitleState,
   createDefaultSubtitleState,
   type SubtitleMarginsState,
-  type BackgroundType
+  BACKGROUND_TYPES
 } from '@renderer/hooks/useSubtitleState'
 import { useSubtitleDragAndResize } from '@renderer/hooks/useSubtitleDragAndResize'
 import { useSubtitleStyles } from '@renderer/hooks/useSubtitleStyles'
 import { useTheme } from '@renderer/hooks/useTheme'
-import { SubtitleControls } from './SubtitleControls'
 import { SubtitleContent } from './SubtitleContent'
 import { MaskFrame } from './MaskFrame'
 import RendererLogger from '@renderer/utils/logger'
@@ -41,64 +42,6 @@ const MaskOverlay = memo((): React.JSX.Element => {
   return <div style={style} />
 })
 MaskOverlay.displayName = 'MaskOverlay'
-
-// Split subcomponent: Control buttons
-const SubtitleControlsWrapper = memo(
-  ({
-    visible,
-    currentLayout,
-    subtitleState,
-    buttonSize,
-    iconSize,
-    onToggleMaskMode,
-    onToggleBackgroundType,
-    onReset,
-    onExpandHorizontally,
-    onMouseEnter,
-    onMouseLeave
-  }: {
-    visible: boolean
-    currentLayout: { left: number; top: number; width: number; height: number }
-    subtitleState: { isMaskMode: boolean; backgroundType: BackgroundType }
-    buttonSize: number
-    iconSize: number
-    onToggleMaskMode: () => void
-    onToggleBackgroundType: () => void
-    onReset: () => void
-    onExpandHorizontally: () => void
-    onMouseEnter: () => void
-    onMouseLeave: () => void
-  }): React.JSX.Element | null => {
-    const controlsStyle = useMemo(
-      (): React.CSSProperties => ({
-        position: 'absolute',
-        left: `${Math.min(95, currentLayout.left + currentLayout.width)}%`,
-        top: `${Math.max(5, currentLayout.top - 2)}%`,
-        transform: 'translate(-100%, -100%)',
-        zIndex: 150
-      }),
-      [currentLayout.left, currentLayout.top, currentLayout.width]
-    )
-
-    if (!visible) return null
-
-    return (
-      <div style={controlsStyle} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-        <SubtitleControls
-          isMaskMode={subtitleState.isMaskMode}
-          backgroundType={subtitleState.backgroundType}
-          buttonSize={buttonSize}
-          iconSize={iconSize}
-          onToggleMaskMode={onToggleMaskMode}
-          onToggleBackgroundType={onToggleBackgroundType}
-          onReset={onReset}
-          onExpandHorizontally={onExpandHorizontally}
-        />
-      </div>
-    )
-  }
-)
-SubtitleControlsWrapper.displayName = 'SubtitleControlsWrapper'
 
 // Split subcomponent: Resize handle
 const ResizeHandle = memo(
@@ -162,6 +105,14 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
   const [isHovering, setIsHovering] = useState(false)
   const [isControlsHovering, setIsControlsHovering] = useState(false)
   const [isMaskFrameActive, setIsMaskFrameActive] = useState(false)
+
+  // Context menu state - 右键菜单状态
+  const [contextMenuVisible, setContextMenuVisible] = useState(false)
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
+
+  // Mock settings state for context menu - 右键菜单的模拟设置状态
+  const [mockFontScale, setMockFontScale] = useState(1.0)
+  const [mockAutoHide, setMockAutoHide] = useState(true)
 
   // Add window dimensions state to trigger re-renders when window size changes
   const [windowDimensions, setWindowDimensions] = useState({
@@ -292,13 +243,15 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
     }
   }, [currentLayout, windowDimensions])
 
-  const {
-    dynamicTextStyle,
-    dynamicEnglishTextStyle,
-    dynamicChineseTextStyle,
-    buttonSize,
-    iconSize
-  } = useSubtitleStyles(currentLayoutWithWindowDimensions)
+  const { dynamicTextStyle, dynamicEnglishTextStyle, dynamicChineseTextStyle, buttonSize } =
+    useSubtitleStyles(currentLayoutWithWindowDimensions)
+
+  // Get current background config for context menu - 获取当前背景配置用于右键菜单
+  const currentBackgroundConfig = useMemo(() => {
+    return (
+      BACKGROUND_TYPES.find((bg) => bg.type === subtitleState.backgroundType) || BACKGROUND_TYPES[0]
+    )
+  }, [subtitleState.backgroundType])
 
   // Stable event handlers
   const stableHandlers = useMemo(
@@ -544,9 +497,57 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
       // Resize handle
       handleResizeMouseDown: (e: React.MouseEvent): void => {
         dragAndResizeProps.handleResizeMouseDown(e, 'se')
+      },
+
+      // Context menu handlers - 右键菜单处理函数
+      handleContextMenu: (e: React.MouseEvent): void => {
+        const target = e.target as HTMLElement
+        // Only show context menu on non-word elements - 只在非单词元素上显示右键菜单
+        if (stableHandlers.isWordElement(target)) {
+          return
+        }
+
+        e.preventDefault()
+        e.stopPropagation()
+
+        setContextMenuPosition({ x: e.clientX, y: e.clientY })
+        setContextMenuVisible(true)
+      },
+
+      // Context menu action handlers - 右键菜单动作处理函数
+      handleMaskModeClick: (): void => {
+        toggleMaskMode()
+        setContextMenuVisible(false)
+      },
+
+      handleBackgroundTypeClick: (): void => {
+        toggleBackgroundType()
+        // Don't close menu to allow multiple background type switches - 不关闭菜单以允许多次切换背景类型
+      },
+
+      handleResetClick: (): void => {
+        stableHandlers.resetSubtitleState()
+        setContextMenuVisible(false)
+      },
+
+      handleExpandClick: (): void => {
+        stableHandlers.expandHorizontally()
+        setContextMenuVisible(false)
+      },
+
+      handleContextMenuClose: (): void => {
+        setContextMenuVisible(false)
       }
     }),
-    [updateSubtitleState, subtitleState, displayAspectRatio, dragAndResizeProps, isControlsHovering]
+    [
+      updateSubtitleState,
+      subtitleState,
+      displayAspectRatio,
+      dragAndResizeProps,
+      isControlsHovering,
+      toggleMaskMode,
+      toggleBackgroundType
+    ]
   )
 
   // Global event listener management
@@ -597,6 +598,21 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
       setIsMaskFrameActive(false)
     }
   }, [subtitleState.isMaskMode])
+
+  // Handle clicks outside context menu to close it - 处理右键菜单外部点击关闭
+  useEffect(() => {
+    if (!contextMenuVisible) return
+
+    const handleClickOutside = (): void => {
+      setContextMenuVisible(false)
+    }
+
+    document.addEventListener('click', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [contextMenuVisible])
 
   // Calculate actual background type
   const actualBackgroundType = useMemo(() => {
@@ -709,21 +725,6 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
         </>
       )}
 
-      {/* Control buttons */}
-      <SubtitleControlsWrapper
-        visible={!dragAndResizeProps.isDragging && (isHovering || isControlsHovering)}
-        currentLayout={currentLayout}
-        subtitleState={subtitleState}
-        buttonSize={buttonSize}
-        iconSize={iconSize}
-        onToggleMaskMode={toggleMaskMode}
-        onToggleBackgroundType={toggleBackgroundType}
-        onReset={stableHandlers.resetSubtitleState}
-        onExpandHorizontally={stableHandlers.expandHorizontally}
-        onMouseEnter={stableHandlers.handleControlsMouseEnter}
-        onMouseLeave={stableHandlers.handleControlsMouseLeave}
-      />
-
       {/* Subtitle container */}
       <div
         ref={containerRef}
@@ -731,6 +732,7 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
         onMouseDown={stableHandlers.handleContainerMouseDown}
         onMouseEnter={stableHandlers.handleMouseEnter}
         onMouseLeave={stableHandlers.handleMouseLeave}
+        onContextMenu={stableHandlers.handleContextMenu}
       >
         {/* Subtitle content area */}
         <div style={subtitleContentStyle}>
@@ -759,6 +761,226 @@ function SubtitleV3({ onWordHover, onPauseOnHover }: SubtitleV3Props): React.JSX
           onClose={stableHandlers.handleCloseWordCard}
         />
       )}
+
+      {/* Context menu - 右键菜单 */}
+      <Dropdown
+        open={contextMenuVisible}
+        onOpenChange={(open) => {
+          if (!open) {
+            stableHandlers.handleContextMenuClose()
+          }
+        }}
+        dropdownRender={() => (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {/* Main menu container - 主菜单容器 */}
+            <div
+              style={{
+                backgroundColor: 'rgba(20, 20, 20, 0.95)',
+                borderRadius: '8px',
+                padding: '12px',
+                minWidth: '200px',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(8px)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Settings section - 设置区域 */}
+              <div style={{ marginBottom: '12px' }}>
+                <div
+                  style={{
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    fontSize: '12px',
+                    marginBottom: '8px',
+                    fontWeight: 500
+                  }}
+                >
+                  字幕设置
+                </div>
+
+                {/* Font scale slider - 字体大小滑块 */}
+                <div style={{ marginBottom: '8px' }} onClick={(e) => e.stopPropagation()}>
+                  <div
+                    style={{
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontSize: '12px',
+                      marginBottom: '4px'
+                    }}
+                  >
+                    字体大小: {Math.round(mockFontScale * 100)}%
+                  </div>
+                  <Slider
+                    min={0.5}
+                    max={2.0}
+                    step={0.1}
+                    value={mockFontScale}
+                    onChange={setMockFontScale}
+                    trackStyle={{ backgroundColor: '#1890ff' }}
+                    handleStyle={{ borderColor: '#1890ff' }}
+                    railStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                  />
+                </div>
+
+                {/* Auto hide switch - 自动隐藏开关 */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span
+                    style={{
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontSize: '12px'
+                    }}
+                  >
+                    自动隐藏控件
+                  </span>
+                  <Switch size="small" checked={mockAutoHide} onChange={setMockAutoHide} />
+                </div>
+              </div>
+
+              {/* Divider - 分隔线 */}
+              <div
+                style={{
+                  height: '1px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  margin: '8px 0'
+                }}
+              />
+
+              {/* Action buttons - 操作按钮 */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '8px'
+                }}
+              >
+                <Tooltip title={`遮罩模式: ${subtitleState.isMaskMode ? '开启' : '关闭'}`}>
+                  <Button
+                    type={subtitleState.isMaskMode ? 'primary' : 'text'}
+                    size="small"
+                    onClick={stableHandlers.handleMaskModeClick}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '32px',
+                      color: subtitleState.isMaskMode ? undefined : 'rgba(255, 255, 255, 0.9)',
+                      borderColor: subtitleState.isMaskMode ? undefined : 'rgba(255, 255, 255, 0.2)'
+                    }}
+                  >
+                    {subtitleState.isMaskMode ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                  </Button>
+                </Tooltip>
+
+                <Tooltip title={`背景类型: ${currentBackgroundConfig.label}`}>
+                  <Button
+                    type="text"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      stableHandlers.handleBackgroundTypeClick()
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '32px',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      borderColor: 'rgba(255, 255, 255, 0.2)'
+                    }}
+                  >
+                    <span>{currentBackgroundConfig.icon}</span>
+                  </Button>
+                </Tooltip>
+
+                <Tooltip title="重置位置和大小">
+                  <Button
+                    type="text"
+                    size="small"
+                    onClick={stableHandlers.handleResetClick}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '32px',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      borderColor: 'rgba(255, 255, 255, 0.2)'
+                    }}
+                  >
+                    <span>↺</span>
+                  </Button>
+                </Tooltip>
+
+                <Tooltip title="铺满左右区域">
+                  <Button
+                    type="text"
+                    size="small"
+                    onClick={stableHandlers.handleExpandClick}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '32px',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      borderColor: 'rgba(255, 255, 255, 0.2)'
+                    }}
+                  >
+                    <span>↔</span>
+                  </Button>
+                </Tooltip>
+              </div>
+            </div>
+
+            {/* Close button outside menu - 菜单外部的关闭按钮 */}
+            <div style={{ marginTop: '8px' }}>
+              <Tooltip>
+                <Button
+                  type="text"
+                  size="small"
+                  onClick={stableHandlers.handleContextMenuClose}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '28px',
+                    height: '28px',
+                    backgroundColor: 'rgba(20, 20, 20, 0.9)',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '50%',
+                    fontSize: '12px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  }}
+                >
+                  <CloseOutlined />
+                </Button>
+              </Tooltip>
+            </div>
+          </div>
+        )}
+        trigger={[]}
+      >
+        <div
+          style={{
+            position: 'fixed',
+            // Center the close button at the cursor position - 让关闭按钮居中对齐到光标位置
+            // Menu width is ~200px, close button is 28px, so offset by ~100px to center horizontally
+            // Menu height is ~180px, close button is 28px and 8px margin, so offset by ~180px to center vertically
+            left: contextMenuPosition.x - 100, // Offset to center horizontally - 水平居中偏移
+            top: contextMenuPosition.y - 194, // Offset to position close button at cursor - 垂直偏移让关闭按钮对齐光标
+            width: 1,
+            height: 1,
+            pointerEvents: 'none',
+            zIndex: 9999
+          }}
+        />
+      </Dropdown>
     </>
   )
 }
