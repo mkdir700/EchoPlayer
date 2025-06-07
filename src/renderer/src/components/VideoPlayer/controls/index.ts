@@ -6,3 +6,10 @@ export { PlaybackRateSelector } from './PlaybackRateSelector'
 export { VolumeControl } from './VolumeControl'
 export { FullscreenButton } from './FullscreenButton'
 export { SettingsButton } from './SettingsButton'
+
+// 全屏模式控制组件 Fullscreen mode control components
+export { FullScreenLeftControls } from './FullScreenLeftControls'
+export { FullScreenCenterControls } from './FullScreenCenterControls'
+export { FullScreenRightControls } from './FullScreenRightControls'
+export { FullScreenCenterPlayButton } from './FullScreenCenterPlayButton'
+export { FullScreenSettingsPanel } from './FullScreenSettingsPanel'

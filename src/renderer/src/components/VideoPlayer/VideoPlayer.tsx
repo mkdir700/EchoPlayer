@@ -4,7 +4,7 @@ import { VideoPlaceholder } from './VideoPlaceholder'
 import { LoadingIndicator } from '../LoadingIndicator'
 import { ErrorIndicator } from '../ErrorIndicator'
 import { VideoControlsFullScreen } from './VideoControlsFullScreen'
-import { useFullscreen } from '@renderer/hooks/useFullscreen'
+import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
 import {
   useVideoPlayerRef,
   useVideoPlayState,
@@ -45,7 +45,7 @@ function VideoPlayer({
   const { playbackRateRef, volumeRef } = useVideoPlaybackSettingsContext()
 
   // 获取控制方法
-  const { toggle, stepBackward, stepForward } = useVideoControls()
+  const { toggle } = useVideoControls()
 
   RendererLogger.componentRender({
     component: 'VideoPlayer',
@@ -68,19 +68,12 @@ function VideoPlayer({
   const mouseMoveThrottleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 全屏状态管理
-  const { isFullscreen, toggleFullscreen } = useFullscreen()
+  const { isFullscreen, toggleFullscreen } = useFullscreenMode()
 
   // 监听全屏状态变化并通知父组件
   useEffect(() => {
     onFullscreenToggle?.(isFullscreen)
   }, [isFullscreen, onFullscreenToggle])
-
-  // 定义空的回调函数避免每次渲染创建新函数
-  const emptyCallback = useCallback(() => {}, [])
-  const handleLoopToggle = emptyCallback
-  const handleAutoSkipToggle = emptyCallback
-  const handlePreviousSubtitle = emptyCallback
-  const handleNextSubtitle = emptyCallback
 
   // 字幕相关的回调函数
   const handleWordHoverForControls = useCallback((isHovering: boolean) => {
@@ -285,23 +278,8 @@ function VideoPlayer({
                 <VideoControlsFullScreen
                   showControls={showControls}
                   isVideoLoaded={isVideoLoaded}
-                  isPlaying={isPlaying}
                   videoError={videoError}
-                  isLooping={false}
-                  autoSkipSilence={false}
-                  isFullscreen={isFullscreen}
-                  playbackRate={playbackRateRef.current}
-                  volume={volumeRef.current}
-                  onStepBackward={stepBackward}
-                  onPlayPause={toggle}
-                  onStepForward={stepForward}
-                  onPlaybackRateChange={playerController.adjustPlaybackRate}
-                  onVolumeChange={playerController.adjustVolume}
-                  onLoopToggle={handleLoopToggle}
-                  onAutoSkipToggle={handleAutoSkipToggle}
                   onFullscreenToggle={toggleFullscreen}
-                  onPreviousSubtitle={handlePreviousSubtitle}
-                  onNextSubtitle={handleNextSubtitle}
                 />
               </div>
             )}
