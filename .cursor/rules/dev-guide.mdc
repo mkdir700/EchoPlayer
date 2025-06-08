@@ -3097,3 +3097,166 @@ A: 使用 Ant Design 的断点系统和 `@media` 查询，结合 Design Token。
 - 测试工具函数提供统一的测试 ID 管理
 
 这份指南将持续更新，确保团队成员了解项目的最新架构和最佳实践。
+
+# 主题系统优化开发指南 / Theme System Optimization Guide
+
+## 概述 / Overview
+
+本次优化对 `useTheme.ts` 文件进行了全面重构，将原本 2469 行的巨型文件拆分为多个模块化文件，提升了代码的可维护性、可扩展性和性能。
+
+This optimization completely refactored the `useTheme.ts` file, splitting the original 2469-line monolithic file into multiple modular files, improving code maintainability, extensibility, and performance.
+
+## 优化内容 / Optimization Details
+
+### 1. 文件拆分 / File Splitting
+
+#### 原有结构 / Original Structure
+```
+src/renderer/src/hooks/useTheme.ts (2469 lines)
+```
+
+#### 新结构 / New Structure
+```
+src/renderer/src/styles/theme/
+├── types.ts                    # 类型定义 / Type definitions
+├── constants.ts                # 常量和配置 / Constants and configurations
+├── styleFactories.ts           # 样式工厂函数 / Style factory functions
+├── modules/
+│   ├── baseStyles.ts          # 基础样式模块 / Base styles module
+│   └── subtitleStyles.ts      # 字幕样式模块 / Subtitle styles module
+├── index.ts                   # 导出索引 / Export index
+└── README.md                  # 使用文档 / Usage documentation
+```
+
+### 2. 主要改进 / Key Improvements
+
+#### 模块化架构 / Modular Architecture
+- **类型分离**: 将所有 TypeScript 接口定义移至 `types.ts`
+- **常量提取**: 将重复使用的样式值提取为常量
+- **工厂函数**: 创建可复用的样式生成函数
+- **功能分组**: 按功能将样式分组到不同模块
+
+#### 性能优化 / Performance Optimization
+- **按需加载**: 支持按需导入特定样式模块
+- **减少重复**: 消除重复的样式代码
+- **缓存优化**: 使用 `useMemo` 优化样式计算
+- **类型安全**: 完整的 TypeScript 类型支持
+
+#### 代码质量 / Code Quality
+- **可读性**: 清晰的文件结构和命名规范
+- **可维护性**: 易于修改和扩展
+- **一致性**: 统一的代码风格和注释规范
+- **文档化**: 完整的中英文注释
+
+### 3. 新增功能 / New Features
+
+#### 样式工厂函数 / Style Factory Functions
+```typescript
+// 按钮样式工厂 / Button style factory
+createButtonStyle(token, 'MEDIUM', 'primary')
+
+// 弹窗样式工厂 / Popup style factory
+createPopupStyle(token, 'fullscreen')
+
+// 毛玻璃效果工厂 / Glass effect factory
+createGlassEffect(token, 'medium')
+
+// 响应式样式工厂 / Responsive style factory
+createResponsiveStyle(mobileStyles, tabletStyles, desktopStyles)
+```
+
+#### 主题常量 / Theme Constants
+```typescript
+// 动画配置 / Animation configuration
+ANIMATION.DURATION.FAST    // '150ms'
+ANIMATION.EASING.APPLE     // 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+
+// 阴影配置 / Shadow configuration
+SHADOWS.APPLE_CARD.light   // Apple-style card shadow
+SHADOWS.APPLE_CARD.heavy   // Heavy shadow for elevation
+
+// 全屏主题 / Fullscreen theme
+FULLSCREEN_THEME.BACKGROUND // 'rgba(20, 20, 20, 0.95)'
+FULLSCREEN_THEME.TEXT       // 'rgba(255, 255, 255, 0.9)'
+```
+
+## 使用方法 / Usage
+
+### 基本使用 / Basic Usage
+```typescript
+import { useTheme } from '@renderer/hooks/useTheme'
+
+function MyComponent() {
+  const { token, styles, utils } = useTheme()
+  
+  return (
+    <div style={styles.pageContainer}>
+      <button style={styles.primaryButton}>
+        Primary Button
+      </button>
+    </div>
+  )
+}
+```
+
+### 高级使用 / Advanced Usage
+```typescript
+import { 
+  createButtonStyle, 
+  createGlassEffect, 
+  SUBTITLE_CONSTANTS 
+} from '@renderer/styles/theme'
+
+function CustomComponent() {
+  const { token } = useTheme()
+  
+  const customButtonStyle = createButtonStyle(token, 'LARGE', 'secondary')
+  const glassStyle = createGlassEffect(token, 'heavy')
+  
+  return (
+    <div style={{ ...glassStyle, padding: token.paddingLG }}>
+      <button style={customButtonStyle}>
+        Custom Button
+      </button>
+    </div>
+  )
+}
+```
+
+### 按需导入 / Tree Shaking
+```typescript
+// 只导入需要的模块 / Import only needed modules
+import { buildSubtitleStyles } from '@renderer/styles/theme/modules/subtitleStyles'
+import { SUBTITLE_CONSTANTS } from '@renderer/styles/theme/constants'
+```
+
+## 迁移指南 / Migration Guide
+
+### 兼容性 / Compatibility
+- ✅ 完全向后兼容现有 API
+- ✅ 保持所有现有样式名称
+- ✅ 维持相同的使用方式
+
+### 推荐做法 / Best Practices
+1. **使用样式工厂**: 优先使用样式工厂函数而非硬编码样式
+2. **常量引用**: 使用主题常量而非魔术数字
+3. **模块导入**: 根据需要按模块导入样式
+4. **类型安全**: 充分利用 TypeScript 类型检查
+
+## 性能提升 / Performance Improvements
+
+### 打包优化 / Bundle Optimization
+- **减少体积**: 模块化支持 tree-shaking，减少最终打包体积
+- **按需加载**: 只加载实际使用的样式模块
+- **重复消除**: 消除重复代码，减少内存占用
+
+### 运行时优化 / Runtime Optimization
+- **计算缓存**: 使用 `useMemo` 缓存样式计算结果
+- **工厂复用**: 样式工厂函数支持参数化复用
+- **类型推导**: 编译时类型检查，减少运行时错误
+
+## 扩展性 / Extensibility
+
+### 添加新模块 / Adding New Modules
+```typescript
+// 1. 创建新的样式模块 / Create new style module

@@ -6,7 +6,9 @@ import type {
   ApiResponseWithCount,
   VideoUIConfig,
   AppConfig,
-  TitleBarOverlayOptions
+  TitleBarOverlayOptions,
+  TranscodeOptions,
+  VideoInfo
 } from '../types/shared'
 
 interface FileSystemAPI {
@@ -25,6 +27,7 @@ interface FileSystemAPI {
     expectedMtime?: number
   ) => Promise<boolean>
   openFileDialog: (options: Electron.OpenDialogOptions) => Promise<Electron.OpenDialogReturnValue>
+  showItemInFolder: (filePath: string) => Promise<boolean>
 }
 
 interface DictionaryAPI {
@@ -146,6 +149,22 @@ interface EnvAPI {
   isDevelopment: () => boolean
 }
 
+// FFmpeg API 接口 / FFmpeg API interface
+interface FFmpegAPI {
+  checkExists: () => Promise<boolean>
+  getVersion: () => Promise<string | null>
+  download: () => Promise<ApiResponse>
+  getVideoInfo: (inputPath: string) => Promise<VideoInfo | null>
+  transcode: (
+    inputPath: string,
+    outputPath?: string,
+    options?: TranscodeOptions
+  ) => Promise<ApiResponse & { outputPath?: string }>
+  getPath: () => Promise<string>
+  getDataDirectory: () => Promise<string>
+  cancelTranscode: () => Promise<boolean>
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI & {
@@ -163,6 +182,7 @@ declare global {
       appConfig: AppConfigAPI // 应用配置 API / Application configuration API
       window: WindowAPI // 窗口控制 API / Window control API
       env: EnvAPI // 环境信息 API / Environment info API
+      ffmpeg: FFmpegAPI // FFmpeg API
       log: (
         level: 'debug' | 'info' | 'warn' | 'error',
         message: string,

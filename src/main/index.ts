@@ -5,6 +5,7 @@ import { setupFileSystemHandlers, setupDictionaryHandlers, setupStoreHandlers } 
 import { setupLogHandlers } from './handlers/logHandlers'
 import { setupUpdateHandlers } from './handlers/updateHandlers'
 import { setupWindowHandlers, setMainWindow } from './handlers/windowHandlers'
+import { setupFFmpegHandlers } from './handlers/ffmpegHandlers'
 import { Logger } from './utils/logger'
 
 // 🔥 关键修复：命令行参数必须在 app.whenReady() 之前设置！
@@ -72,6 +73,9 @@ app.whenReady().then(() => {
 
   // 设置窗口相关的 IPC 处理器
   setupWindowHandlers()
+
+  // 设置 FFmpeg 相关的 IPC 处理器 / Setup FFmpeg-related IPC handlers
+  setupFFmpegHandlers()
 
   // 创建主窗口
   const mainWindow = createWindow()

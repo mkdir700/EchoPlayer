@@ -8,7 +8,9 @@ import type {
   UpdateSettings,
   VideoUIConfig,
   AppConfig,
-  TitleBarOverlayOptions
+  TitleBarOverlayOptions,
+  TranscodeOptions,
+  VideoInfo
 } from '../types/shared'
 
 // 文件系统 API
@@ -45,7 +47,11 @@ const fileSystemAPI = {
 
   // 打开文件选择对话框
   openFileDialog: (options: Electron.OpenDialogOptions): Promise<Electron.OpenDialogReturnValue> =>
-    ipcRenderer.invoke('dialog:open-file', options)
+    ipcRenderer.invoke('dialog:open-file', options),
+
+  // 在文件管理器中显示文件
+  showItemInFolder: (filePath: string): Promise<boolean> =>
+    ipcRenderer.invoke('shell:showItemInFolder', filePath)
 }
 
 // 词典服务 API
@@ -281,6 +287,39 @@ const envAPI = {
   isDevelopment: (): boolean => process.env.NODE_ENV === 'development'
 }
 
+// FFmpeg API
+const ffmpegAPI = {
+  // 检查 FFmpeg 是否存在
+  checkExists: (): Promise<boolean> => ipcRenderer.invoke('ffmpeg:check-exists'),
+
+  // 获取 FFmpeg 版本信息
+  getVersion: (): Promise<string | null> => ipcRenderer.invoke('ffmpeg:get-version'),
+
+  // 下载 FFmpeg
+  download: (): Promise<ApiResponse> => ipcRenderer.invoke('ffmpeg:download'),
+
+  // 获取视频信息
+  getVideoInfo: (inputPath: string): Promise<VideoInfo | null> =>
+    ipcRenderer.invoke('ffmpeg:get-video-info', inputPath),
+
+  // 转码视频
+  transcode: (
+    inputPath: string,
+    outputPath?: string,
+    options?: TranscodeOptions
+  ): Promise<ApiResponse & { outputPath?: string }> =>
+    ipcRenderer.invoke('ffmpeg:transcode', inputPath, outputPath, options),
+
+  // 获取 FFmpeg 路径
+  getPath: (): Promise<string> => ipcRenderer.invoke('ffmpeg:get-path'),
+
+  // 获取用户数据目录
+  getDataDirectory: (): Promise<string> => ipcRenderer.invoke('ffmpeg:get-data-directory'),
+
+  // 取消转码
+  cancelTranscode: (): Promise<boolean> => ipcRenderer.invoke('ffmpeg:cancel-transcode')
+}
+
 // Custom APIs for renderer
 const api = {
   fileSystem: fileSystemAPI,
@@ -290,6 +329,7 @@ const api = {
   appConfig: appConfigAPI, // 应用配置 API / Application configuration API
   window: windowAPI, // 窗口控制 API / Window control API
   env: envAPI, // 环境信息 API / Environment info API
+  ffmpeg: ffmpegAPI, // FFmpeg API
   // 日志API
   log: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) =>
     ipcRenderer.invoke('log', level, message, data)

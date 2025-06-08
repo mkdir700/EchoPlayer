@@ -13,7 +13,6 @@ import { useTestIds } from '@renderer/hooks/useTestIds'
 import { PLAY_PAGE_ELEMENTS } from '@renderer/utils/test-utils'
 import { CurrentSubtitleDisplayProvider } from '@renderer/contexts/CurrentSubtitleDisplayContext'
 import { useUIStore, useFullscreenMode } from '@renderer/stores'
-import { FullscreenTestInfo } from '@renderer/components/VideoPlayer/FullscreenTestInfo'
 
 // 🚀 性能优化：使用 React.memo 避免不必要的重新渲染
 interface PlayPageProps {
@@ -151,13 +150,6 @@ const PlayPageMemo = React.memo(function PlayPage({ onBack }: PlayPageProps) {
   return (
     <CurrentSubtitleDisplayProvider>
       <div style={containerStyle} {...testIds.withTestId('container')}>
-        {/* 仅在开发模式下显示全屏测试信息 / Only show fullscreen test info in development mode */}
-        {process.env.NODE_ENV === 'development' && (
-          <div {...testIds.withTestId('fullscreenTestInfo')}>
-            <FullscreenTestInfo />
-          </div>
-        )}
-
         <div style={contentAreaStyle} {...testIds.withTestId('contentArea')}>
           {/* 🎬 视频播放区域 - 始终保持在固定位置，避免重新挂载 */}
           <div

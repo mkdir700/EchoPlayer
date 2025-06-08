@@ -237,6 +237,17 @@ interface ThemeStyles {
   subtitleSearchWebsiteGrid: CSSProperties
   subtitleSearchWebsiteButton: CSSProperties
   subtitleSearchWebsiteButtonIcon: CSSProperties
+  // Video compatibility modal specific styles - 视频兼容性模态框样式
+  videoCompatibilityModalContainer: CSSProperties
+  videoCompatibilityModalDescription: CSSProperties
+  videoCompatibilityModalProblemList: CSSProperties
+  videoCompatibilityModalProblemItem: CSSProperties
+  videoCompatibilityModalHelpText: CSSProperties
+  videoCompatibilityModalAlertContainer: CSSProperties
+  videoCompatibilityModalProgressContainer: CSSProperties
+  videoCompatibilityModalProgressHeader: CSSProperties
+  videoCompatibilityModalProgressFooter: CSSProperties
+  videoCompatibilityModalProgressText: CSSProperties
 }
 
 interface ThemeUtils {
@@ -2387,6 +2398,59 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       marginRight: token.marginXS,
       color: token.colorPrimary,
       fontSize: 24
+    },
+
+    // Video compatibility modal specific styles - 视频兼容性模态框样式
+    videoCompatibilityModalContainer: {
+      paddingTop: SPACING.SM
+    },
+
+    videoCompatibilityModalDescription: {
+      marginBottom: SPACING.MD,
+      color: token.colorTextSecondary,
+      fontSize: token.fontSize,
+      lineHeight: 1.6
+    },
+
+    videoCompatibilityModalProblemList: {
+      margin: `0 0 ${SPACING.MD}px 0`,
+      paddingLeft: token.paddingMD,
+      color: token.colorText,
+      listStyle: 'disc'
+    },
+
+    videoCompatibilityModalProblemItem: {
+      marginBottom: SPACING.XXS,
+      lineHeight: 1.5
+    },
+
+    videoCompatibilityModalHelpText: {
+      margin: 0,
+      fontSize: FONT_SIZES.SM,
+      color: token.colorTextTertiary,
+      lineHeight: 1.5
+    },
+
+    videoCompatibilityModalAlertContainer: {
+      marginBottom: SPACING.MD
+    },
+
+    videoCompatibilityModalProgressContainer: {
+      marginBottom: token.marginLG
+    },
+
+    videoCompatibilityModalProgressHeader: {
+      marginBottom: SPACING.XS
+    },
+
+    videoCompatibilityModalProgressFooter: {
+      marginTop: SPACING.XS,
+      textAlign: 'center' as const
+    },
+
+    videoCompatibilityModalProgressText: {
+      fontSize: FONT_SIZES.XS,
+      color: token.colorTextSecondary
     }
   }
 }

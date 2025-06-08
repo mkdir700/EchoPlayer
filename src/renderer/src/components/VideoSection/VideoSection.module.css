@@ -5,10 +5,18 @@
   flex-direction: column;
 }
 
+.videoSectionContainer.fullscreen {
+  position: relative;
+}
+
 .videoPlayerSection {
   flex: 1;
   min-height: 0;
   position: relative; /* 为绝对定位的 bar 提供参考 */
+}
+
+.videoSectionContainer.fullscreen .videoPlayerSection {
+  margin-top: 0; /* 全屏模式下不需要预留空间 */
 }
 
 .videoControlsSection {
@@ -47,5 +55,170 @@
     padding: 6px 10px;
     height: 36px;
     font-size: 13px;
+  }
+}
+
+/* 兼容性警告样式 - 独立区域 */
+.compatibilityAlertContainer {
+  flex-shrink: 0; /* 不允许收缩 */
+  padding: 16px;
+  padding-bottom: 0;
+  animation: slideInDown 0.3s ease-out;
+}
+
+.compatibilityAlert {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #d4b106;
+  background: linear-gradient(135deg, #fff9e6 0%, #fffaed 100%);
+}
+
+.compatibilityAlert .ant-alert-message {
+  font-weight: 600;
+  font-size: 14px;
+  color: #d4b106;
+}
+
+.compatibilityAlert .ant-alert-description {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.compatibilityAlert .ant-alert-description p {
+  color: rgba(0, 0, 0, 0.75);
+  margin-bottom: 8px;
+}
+
+.compatibilityAlert .ant-alert-description ul {
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 12px;
+}
+
+.compatibilityAlert .ant-alert-description li {
+  margin-bottom: 4px;
+}
+
+/* 全屏模式下的兼容性警告 */
+.fullscreenCompatibilityAlert {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  right: 20px;
+  z-index: 1000;
+  animation: slideInDown 0.3s ease-out;
+}
+
+.fullscreenCompatibilityAlert .ant-alert {
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid #faad14;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.fullscreenCompatibilityAlert .ant-alert-message {
+  color: #faad14;
+  font-weight: 600;
+}
+
+.fullscreenCompatibilityAlert .ant-alert-description {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* 警告框按钮样式 */
+.compatibilityAlert .ant-btn-primary {
+  background: #d4b106;
+  border-color: #d4b106;
+  color: #fff;
+  font-weight: 500;
+}
+
+.compatibilityAlert .ant-btn-primary:hover {
+  background: #b7950f;
+  border-color: #b7950f;
+}
+
+.compatibilityAlert .ant-btn-default {
+  border-color: #d9d9d9;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.compatibilityAlert .ant-btn-default:hover {
+  border-color: #d4b106;
+  color: #d4b106;
+}
+
+/* 警告框动画 */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 暗色主题下的兼容性警告样式 */
+[data-theme='dark'] .compatibilityAlert {
+  background: linear-gradient(135deg, #2d2000 0%, #332600 100%);
+  border-color: #d4b106;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='dark'] .compatibilityAlert .ant-alert-message {
+  color: #faad14;
+}
+
+[data-theme='dark'] .compatibilityAlert .ant-alert-description p {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+[data-theme='dark'] .compatibilityAlert .ant-alert-description ul {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* 暗色主题下的按钮样式 */
+[data-theme='dark'] .compatibilityAlert .ant-btn-primary {
+  background: #faad14;
+  border-color: #faad14;
+  color: #000;
+}
+
+[data-theme='dark'] .compatibilityAlert .ant-btn-primary:hover {
+  background: #ffc53d;
+  border-color: #ffc53d;
+}
+
+[data-theme='dark'] .compatibilityAlert .ant-btn-default {
+  border-color: #434343;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme='dark'] .compatibilityAlert .ant-btn-default:hover {
+  border-color: #faad14;
+  color: #faad14;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .compatibilityAlertContainer {
+    padding: 12px;
+    padding-bottom: 0;
+  }
+  
+  .compatibilityAlert .ant-alert-message {
+    font-size: 13px;
+  }
+  
+  .compatibilityAlert .ant-alert-description {
+    font-size: 12px;
+  }
+  
+  .fullscreenCompatibilityAlert {
+    top: 60px;
+    left: 12px;
+    right: 12px;
   }
 }
