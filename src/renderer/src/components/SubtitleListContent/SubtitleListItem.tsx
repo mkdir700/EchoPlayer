@@ -3,7 +3,6 @@ import { Typography } from 'antd'
 import { SubtitleListItemProps } from '@renderer/types'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { COMPONENT_TOKENS } from '@renderer/styles/theme'
-import './SubtitleListItem.css'
 
 const { Text } = Typography
 
@@ -56,10 +55,16 @@ export const SubtitleListItem = React.memo<SubtitleListItemProps>(
       <div
         key={index}
         className="subtitle-list-item"
-        style={itemStyle}
+        style={{
+          ...itemStyle,
+          // 额外的focus禁用样式，覆盖任何可能的默认样式 / Additional focus-disable styles
+          outline: 'none !important',
+          boxShadow: itemStyle.boxShadow // 保持原有的阴影效果
+        }}
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onFocus={(e) => e.target.blur()} // 立即移除焦点 / Immediately remove focus
         role="button"
         tabIndex={-1} // 禁用键盘焦点 / Disable keyboard focus
         onKeyDown={(e) => {

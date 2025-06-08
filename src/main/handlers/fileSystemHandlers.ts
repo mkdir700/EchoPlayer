@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, shell } from 'electron'
 import { readFile, access, constants, stat } from 'fs/promises'
 
 // 设置文件系统相关的 IPC 处理器
@@ -98,4 +98,16 @@ export function setupFileSystemHandlers(): void {
       }
     }
   )
+
+  // 打开外部链接 / Open external URL
+  ipcMain.handle('shell:openExternal', async (_, url: string): Promise<boolean> => {
+    try {
+      await shell.openExternal(url)
+      console.log('打开外部链接:', url)
+      return true
+    } catch (error) {
+      console.error('打开外部链接失败:', error)
+      return false
+    }
+  })
 }

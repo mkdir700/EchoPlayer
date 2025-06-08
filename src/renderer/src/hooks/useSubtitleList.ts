@@ -18,7 +18,7 @@ export interface UseSubtitleListReturn {
   restoreSubtitles: (subtitles: SubtitleItem[], currentSubtitleIndex: number) => void
   showSubtitlePrompt: boolean
   setShowSubtitlePrompt: (show: boolean) => void
-  handleManualSubtitleImport: () => void
+  handleManualSubtitleImport: () => Promise<void>
   handleSkipSubtitleImport: () => void
 }
 
@@ -55,42 +55,79 @@ export function useSubtitleList(): UseSubtitleListReturn {
   }, [])
 
   // 新增：手动导入字幕文件
-  const handleManualSubtitleImport = useCallback(() => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.srt,.vtt,.json,.ass,.ssa'
+  const handleManualSubtitleImport = useCallback((): Promise<void> => {
+    return new Promise<void>((resolve) => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.srt,.vtt,.json,.ass,.ssa'
 
-    input.onchange = async (event) => {
-      const file = (event.target as HTMLInputElement).files?.[0]
-      if (!file) {
-        return
+      // 文件选择完成或取消时的处理 / Handle file selection completion or cancellation
+      const handleComplete = (): void => {
+        resolve()
+        // 清理事件监听器 / Clean up event listeners
+        input.removeEventListener('change', handleFileChange)
+        input.removeEventListener('cancel', handleComplete)
+        // 移除临时创建的元素 / Remove temporarily created element
+        if (document.body.contains(input)) {
+          document.body.removeChild(input)
+        }
       }
 
-      try {
-        const content = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = (e) => resolve(e.target?.result as string)
-          reader.onerror = () => reject(new Error('读取文件失败'))
-          reader.readAsText(file)
-        })
-
-        const subtitles = parseSubtitles(content, file.name)
-        if (subtitles.length === 0) {
-          throw new Error('字幕文件解析失败或为空')
+      const handleFileChange = async (event: Event): Promise<void> => {
+        const file = (event.target as HTMLInputElement).files?.[0]
+        if (!file) {
+          handleComplete()
+          return
         }
 
-        subtitleItemsRef.current = subtitles
-        currentSubtitleIndexRef.current = 0
-        setShowSubtitlePrompt(false)
+        try {
+          const content = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = (e) => resolve(e.target?.result as string)
+            reader.onerror = () => reject(new Error('读取文件失败'))
+            reader.readAsText(file)
+          })
 
-        message.success(`成功加载字幕文件：${file.name}，共 ${subtitles.length} 条字幕`)
-      } catch (error) {
-        console.error('加载字幕文件失败:', error)
-        message.error(`加载字幕文件失败：${(error as Error).message}`)
+          const subtitles = parseSubtitles(content, file.name)
+          if (subtitles.length === 0) {
+            throw new Error('字幕文件解析失败或为空')
+          }
+
+          subtitleItemsRef.current = subtitles
+          currentSubtitleIndexRef.current = 0
+          setShowSubtitlePrompt(false)
+
+          message.success(`成功加载字幕文件：${file.name}，共 ${subtitles.length} 条字幕`)
+        } catch (error) {
+          console.error('加载字幕文件失败:', error)
+          message.error(`加载字幕文件失败：${(error as Error).message}`)
+        }
+
+        handleComplete()
       }
-    }
 
-    input.click()
+      input.addEventListener('change', handleFileChange)
+      input.addEventListener('cancel', handleComplete)
+
+      // 为了确保在某些浏览器中能够监听到 cancel 事件，我们添加到 DOM 中 / Add to DOM to ensure cancel event can be listened to in some browsers
+      input.style.display = 'none'
+      document.body.appendChild(input)
+
+      // 监听窗口焦点变化作为备用方案 / Listen for window focus change as fallback
+      const handleWindowFocus = (): void => {
+        // 延迟一下确保文件对话框已经完全关闭 / Delay to ensure file dialog is completely closed
+        setTimeout(() => {
+          if (document.body.contains(input)) {
+            handleComplete()
+          }
+          window.removeEventListener('focus', handleWindowFocus)
+        }, 100)
+      }
+
+      window.addEventListener('focus', handleWindowFocus)
+
+      input.click()
+    })
   }, [])
 
   // 新增：跳过字幕导入

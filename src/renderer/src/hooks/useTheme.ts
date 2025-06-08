@@ -224,6 +224,19 @@ interface ThemeStyles {
   subtitlePromptPrimaryButton: CSSProperties
   subtitlePromptSecondaryButton: CSSProperties
   subtitlePromptSupportText: CSSProperties
+  // Subtitle search specific styles - 字幕搜索相关样式
+  subtitleSearchContainer: CSSProperties
+  subtitleSearchIcon: CSSProperties
+  subtitleSearchTitle: CSSProperties
+  subtitleSearchSubtitle: CSSProperties
+  subtitleSearchActionContainer: CSSProperties
+  subtitleSearchImportButton: CSSProperties
+  subtitleSearchDivider: CSSProperties
+  subtitleSearchDividerText: CSSProperties
+  subtitleSearchOnlineContainer: CSSProperties
+  subtitleSearchWebsiteGrid: CSSProperties
+  subtitleSearchWebsiteButton: CSSProperties
+  subtitleSearchWebsiteButtonIcon: CSSProperties
 }
 
 interface ThemeUtils {
@@ -2026,7 +2039,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       WebkitFontSmoothing: 'antialiased' as const,
       MozOsxFontSmoothing: 'grayscale' as const,
       // 禁用 focus 样式 / Disable focus styles
-      outline: 'none',
+      outline: 'none !important',
       transition: window.matchMedia('(prefers-reduced-motion: reduce)').matches
         ? `background-color ${ANIMATION_DURATION.FAST} ease, box-shadow ${ANIMATION_DURATION.FAST} ease, transform ${ANIMATION_DURATION.FAST} ease`
         : `background-color ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}, box-shadow ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}, transform ${ANIMATION_DURATION.MEDIUM} ${EASING.STANDARD}`
@@ -2243,6 +2256,137 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
       fontFamily: token.fontFamilyCode || 'monospace'
+    },
+
+    // Subtitle search specific styles - 字幕搜索相关样式
+    subtitleSearchContainer: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100%',
+      padding: `${token.paddingXL}px ${token.paddingLG}px`,
+      gap: token.marginXL,
+      background: `linear-gradient(135deg, 
+        ${token.colorBgContainer}f8 0%, 
+        ${token.colorBgLayout}f0 50%, 
+        ${token.colorBgContainer}f8 100%)`,
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      borderRadius: token.borderRadiusLG,
+      position: 'relative' as const,
+      overflow: 'hidden'
+    },
+
+    subtitleSearchIcon: {
+      marginBottom: token.marginLG,
+      color: token.colorPrimary,
+      fontSize: 24
+    },
+
+    subtitleSearchTitle: {
+      fontSize: token.fontSizeLG, // 从 fontSizeHeading2 调整为 fontSizeLG (16px)
+      fontWeight: 600,
+      marginBottom: token.marginSM,
+      color: token.colorText
+    },
+
+    subtitleSearchSubtitle: {
+      fontSize: token.fontSize, // 从 fontSizeLG 调整为 fontSize (14px)
+      color: token.colorTextSecondary, // 调整颜色为更低对比度
+      fontWeight: 400, // 降低字体粗细
+      marginBottom: token.marginXS,
+      lineHeight: 1.5 // 增加行高提升可读性
+    },
+
+    subtitleSearchActionContainer: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+      marginBottom: token.marginLG
+    },
+
+    subtitleSearchImportButton: {
+      width: '100%',
+      height: '56px',
+      fontSize: token.fontSizeLG,
+      fontWeight: 600,
+      borderRadius: token.borderRadiusLG,
+      border: 'none',
+      background: `linear-gradient(135deg, 
+        ${token.colorPrimary} 0%, 
+        ${token.colorPrimaryHover} 50%, 
+        ${token.colorPrimary} 100%)`,
+      color: token.colorWhite,
+      boxShadow: `0 8px 24px ${token.colorPrimary}40, 
+                  0 4px 12px rgba(0, 0, 0, 0.15)`,
+      transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
+      cursor: 'pointer',
+      position: 'relative' as const,
+      overflow: 'hidden'
+    },
+
+    subtitleSearchDivider: {
+      width: '100%',
+      height: '1px',
+      background: token.colorBorderSecondary,
+      marginBottom: token.marginXS
+    },
+
+    subtitleSearchDividerText: {
+      fontSize: token.fontSizeSM,
+      color: token.colorTextSecondary,
+      textAlign: 'center' as const,
+      lineHeight: 1.6,
+      maxWidth: '280px',
+      padding: `${token.paddingSM}px ${token.paddingMD}px`,
+      background: `${token.colorFillQuaternary}40`,
+      borderRadius: token.borderRadius,
+      border: `1px solid ${token.colorBorderSecondary}40`,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      fontFamily: token.fontFamilyCode || 'monospace'
+    },
+
+    subtitleSearchOnlineContainer: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+      marginBottom: token.marginLG
+    },
+
+    subtitleSearchWebsiteGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '6px'
+    },
+
+    subtitleSearchWebsiteButton: {
+      width: '100%',
+      height: '56px',
+      fontSize: token.fontSizeLG,
+      fontWeight: 600,
+      borderRadius: token.borderRadiusLG,
+      border: 'none',
+      background: `linear-gradient(135deg, 
+        ${token.colorPrimary} 0%, 
+        ${token.colorPrimaryHover} 50%, 
+        ${token.colorPrimary} 100%)`,
+      color: token.colorWhite,
+      boxShadow: `0 8px 24px ${token.colorPrimary}40, 
+                  0 4px 12px rgba(0, 0, 0, 0.15)`,
+      transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
+      cursor: 'pointer',
+      position: 'relative' as const,
+      overflow: 'hidden'
+    },
+
+    subtitleSearchWebsiteButtonIcon: {
+      marginRight: token.marginXS,
+      color: token.colorPrimary,
+      fontSize: 24
     }
   }
 }

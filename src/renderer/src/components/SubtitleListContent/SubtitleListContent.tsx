@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
-import { Space, Typography, Button } from 'antd'
-import { MessageOutlined, FileTextOutlined, CloudUploadOutlined } from '@ant-design/icons'
+import { Space, Typography } from 'antd'
+import { MessageOutlined } from '@ant-design/icons'
 import { List as VirtualizedList, AutoSizer, ListRowProps } from 'react-virtualized'
 import 'react-virtualized/styles.css'
 
@@ -15,15 +15,16 @@ import { AimButton } from './AimButton'
 import { RendererLogger } from '@renderer/utils/logger'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { SPACING, FONT_SIZES } from '@renderer/styles/theme'
+import { SubtitleEmptyState } from './SubtitleEmptyState'
 
 const { Text } = Typography
 
-// 虚拟列表项高度（与CSS中的height保持一致）
-const ITEM_HEIGHT = 64 // 桌面端高度
-const MOBILE_ITEM_HEIGHT = 60 // 移动端高度
-const AUTO_SCROLL_TIMEOUT = 3000 // 用户滚动后自动恢复的时间
+// 虚拟列表项高度（与主题系统保持一致）/ Virtual list item heights consistent with theme system
+const ITEM_HEIGHT = 64 // 桌面端高度 / Desktop height
+const MOBILE_ITEM_HEIGHT = 60 // 移动端高度 / Mobile height
+const AUTO_SCROLL_TIMEOUT = 3000 // 用户滚动后自动恢复的时间 / Auto scroll recovery timeout
 
-// 获取当前设备的行高
+// 获取当前设备的行高 / Get current device row height
 const getItemHeight = (): number => {
   if (typeof window !== 'undefined') {
     return window.innerWidth <= 768 ? MOBILE_ITEM_HEIGHT : ITEM_HEIGHT
@@ -61,20 +62,31 @@ export function SubtitleListContent(): React.JSX.Element {
   } = subtitleListContext
   const virtualListRef = useRef<VirtualizedList>(null)
 
-  // 滚动状态引用
+  // 滚动状态引用 / Scroll state references
   const lastSubtitleIndexRef = useRef(-1)
   const isInitializedRef = useRef(false)
   const isScrollingByUser = useRef(false)
   const userScrollTimerRef = useRef<NodeJS.Timeout | null>(null)
   const hasScrolledOnceRef = useRef(false)
-  // 新增：标记程序是否正在执行自动滚动
+  // 新增：标记程序是否正在执行自动滚动 / Flag for programmatic scrolling
   const isProgrammaticScrollingRef = useRef(false)
-  // 动画相关的引用
+  // 动画相关的引用 / Animation related references
   const animationFrameRef = useRef<number | null>(null)
   const isAnimatingRef = useRef(false)
 
-  // 添加状态来跟踪当前激活的字幕索引，确保重新渲染
+  // 添加状态来跟踪当前激活的字幕索引，确保重新渲染 / Track active subtitle index for re-rendering
   const [activeSubtitleIndex, setActiveSubtitleIndex] = useState(-1)
+
+  // 打开外部浏览器搜索字幕 / Open external browser to search subtitles
+  const handleOpenSubtitleWebsite = useCallback(async (websiteUrl: string, websiteName: string) => {
+    try {
+      // 使用 Electron 的 shell.openExternal 打开外部浏览器
+      await window.electron.ipcRenderer.invoke('shell:openExternal', websiteUrl)
+      console.log(`🌐 打开字幕网站: ${websiteName} - ${websiteUrl}`)
+    } catch (error) {
+      console.error('打开字幕网站失败:', error)
+    }
+  }, [])
 
   // 点击字幕项时，恢复视频状态并立即显示对应字幕
   const handleClickSubtitleItem = useCallback(
@@ -477,81 +489,10 @@ export function SubtitleListContent(): React.JSX.Element {
       )}
       <div style={styles.subtitleListContent}>
         {showSubtitlePrompt ? (
-          // 簡化的字幕提示界面
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              padding: `${SPACING.XL}px ${SPACING.LG}px`,
-              gap: SPACING.LG,
-              textAlign: 'center'
-            }}
-          >
-            {/* 装饰性图标 */}
-            <FileTextOutlined
-              style={{
-                fontSize: '48px',
-                color: token.colorTextTertiary,
-                opacity: 0.6,
-                marginBottom: SPACING.SM
-              }}
-            />
-
-            {/* 提示文本 */}
-            <div>
-              <Text
-                style={{
-                  fontSize: FONT_SIZES.LG,
-                  color: token.colorText,
-                  fontWeight: 500,
-                  display: 'block',
-                  marginBottom: SPACING.XS
-                }}
-              >
-                未找到字幕文件
-              </Text>
-              <Text
-                style={{
-                  fontSize: FONT_SIZES.SM,
-                  color: token.colorTextSecondary,
-                  lineHeight: 1.5
-                }}
-              >
-                在视频文件同目录下未找到匹配的字幕文件
-              </Text>
-            </div>
-
-            {/* 导入按钮 */}
-            <Button
-              type="primary"
-              icon={<CloudUploadOutlined />}
-              onClick={handleManualSubtitleImport}
-              style={{
-                height: '40px',
-                fontSize: FONT_SIZES.SM,
-                fontWeight: 500,
-                borderRadius: token.borderRadius,
-                paddingLeft: SPACING.MD,
-                paddingRight: SPACING.MD
-              }}
-            >
-              导入字幕文件
-            </Button>
-
-            {/* 支持格式提示 */}
-            <Text
-              style={{
-                fontSize: FONT_SIZES.XS,
-                color: token.colorTextTertiary,
-                fontFamily: token.fontFamilyCode || 'monospace'
-              }}
-            >
-              支持格式：.srt, .vtt, .json, .ass, .ssa
-            </Text>
-          </div>
+          <SubtitleEmptyState
+            onImport={handleManualSubtitleImport}
+            onWebsiteClick={handleOpenSubtitleWebsite}
+          />
         ) : subtitleItemsRef.current.length > 0 ? (
           <AutoSizer defaultHeight={100}>
             {({ height, width }) => (
@@ -565,12 +506,7 @@ export function SubtitleListContent(): React.JSX.Element {
                 onScroll={handleScroll}
                 overscanRowCount={10} // 预渲染额外的行以提高滚动体验
                 scrollToAlignment="start" // 改为从顶部开始对齐，让滚动更自然
-                style={{
-                  ...styles.subtitleListVirtualizedList,
-                  // 额外确保没有意外的边框
-                  outline: 'none',
-                  border: 'none'
-                }}
+                style={styles.subtitleListVirtualizedList}
               />
             )}
           </AutoSizer>
