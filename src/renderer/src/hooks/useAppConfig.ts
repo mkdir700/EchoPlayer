@@ -17,6 +17,7 @@ export function useAppConfig(): {
   appTheme: 'system' | 'light' | 'dark'
   autoCheckUpdates: boolean
   language: 'zh-CN' | 'en-US'
+  dataDirectory: string
 } {
   const [config, setConfig] = useState<AppConfig | null>(null)
   const [loading, setLoading] = useState(true)
@@ -112,6 +113,7 @@ export function useAppConfig(): {
     useWindowFrame: config?.useWindowFrame ?? false,
     appTheme: config?.appTheme ?? 'system',
     autoCheckUpdates: config?.autoCheckUpdates ?? true,
-    language: config?.language ?? 'zh-CN'
+    language: config?.language ?? 'zh-CN',
+    dataDirectory: config?.dataDirectory ?? ''
   }
 }

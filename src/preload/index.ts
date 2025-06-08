@@ -217,7 +217,12 @@ const appConfigAPI = {
     ipcRenderer.invoke('app:update-config', updates),
 
   // 重置应用配置
-  resetConfig: (): Promise<ApiResponse> => ipcRenderer.invoke('app:reset-config')
+  resetConfig: (): Promise<ApiResponse> => ipcRenderer.invoke('app:reset-config'),
+
+  // 获取默认数据目录
+  getDefaultDataDirectory: (): Promise<string> =>
+    ipcRenderer.invoke('app:get-default-data-directory'),
+
   // 获取测试视频文件路径
   getTestVideoPath: (): Promise<string> => ipcRenderer.invoke('app:get-test-video-path')
 }

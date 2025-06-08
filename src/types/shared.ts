@@ -16,6 +16,7 @@ export interface AppConfig {
   appTheme?: 'system' | 'light' | 'dark' // 应用主题 / Application theme
   autoCheckUpdates?: boolean // 是否自动检查更新 / Whether to auto check updates
   language?: 'zh-CN' | 'en-US' // 应用语言 / Application language
+  dataDirectory: string // 数据存储目录 / Data storage directory (required)
 }
 
 // 字幕项接口

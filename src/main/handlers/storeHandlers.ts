@@ -1,5 +1,6 @@
-import { ipcMain } from 'electron'
+import { ipcMain, app } from 'electron'
 import { Conf } from 'electron-conf/main'
+import path from 'path'
 import type {
   RecentPlayItem,
   StoreSchema,
@@ -9,12 +10,18 @@ import type {
   AppConfig
 } from '../../types/shared'
 
+// 获取默认数据目录 / Get default data directory
+function getDefaultDataDirectory(): string {
+  return path.join(app.getPath('userData'), 'data')
+}
+
 // 默认应用配置 / Default application configuration
 const defaultAppConfig: AppConfig = {
   useWindowFrame: false, // 默认使用自定义标题栏 / Default to custom title bar
   appTheme: 'system', // 默认跟随系统主题 / Default to system theme
   autoCheckUpdates: true, // 默认自动检查更新 / Default to auto check updates
-  language: 'zh-CN' // 默认语言为中文 / Default language is Chinese
+  language: 'zh-CN', // 默认语言为中文 / Default language is Chinese
+  dataDirectory: getDefaultDataDirectory() // 默认数据目录使用系统位置 / Default data directory uses system location
 }
 
 // 创建 store 实例
@@ -465,6 +472,29 @@ export function setupStoreHandlers(): void {
     } catch (error) {
       console.error('重置应用配置失败:', error)
       return { success: false, error: error instanceof Error ? error.message : '未知错误' }
+    }
+  })
+
+  // 获取默认数据目录
+  ipcMain.handle('app:get-default-data-directory', (): string => {
+    try {
+      return getDefaultDataDirectory()
+    } catch (error) {
+      console.error('获取默认数据目录失败:', error)
+      return getDefaultDataDirectory()
+    }
+  })
+
+  // 获取测试视频文件路径 / Get test video file path
+  ipcMain.handle('app:get-test-video-path', (): string => {
+    try {
+      // 获取应用根目录，然后拼接测试文件路径 / Get app root directory, then join test file path
+      const appPath = app.getAppPath()
+      return path.join(appPath, 'e2e', 'assets', 'test-video.mp4')
+    } catch (error) {
+      console.error('获取测试视频文件路径失败:', error)
+      // 返回默认的相对路径 / Return default relative path
+      return path.join(process.cwd(), 'e2e', 'assets', 'test-video.mp4')
     }
   })
 }

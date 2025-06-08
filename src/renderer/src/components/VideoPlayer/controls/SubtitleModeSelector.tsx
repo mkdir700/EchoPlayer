@@ -66,6 +66,7 @@ export function SubtitleModeSelector({
         document.removeEventListener('mousedown', handleClickOutside)
       }
     }
+    return undefined
   }, [showSubtitleModeSelector])
 
   // 获取当前模式的配置 - 确保即使遇到无效模式也能提供合理的默认值
