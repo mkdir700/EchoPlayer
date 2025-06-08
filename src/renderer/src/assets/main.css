@@ -10,12 +10,12 @@ body {
 }
 
 /* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
-::-webkit-scrollbar {
+::WebkitScrollbar {
   width: 0px;
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+::WebkitScrollbarThumb {
   background: transparent;
 }
 
@@ -35,7 +35,7 @@ html {
   -ms-overflow-style: none;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
+.hide-scrollbar::WebkitScrollbar {
   display: none;
 }
 

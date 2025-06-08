@@ -606,7 +606,7 @@ function buildStyles(token: GlobalToken): ThemeStyles {
       scrollbarWidth: 'none' as const, // Firefox
       msOverflowStyle: 'none' as const, // IE/Edge
       // Hide scrollbar for WebKit browsers
-      '::-webkit-scrollbar': {
+      '::WebkitScrollbar': {
         display: 'none'
       }
     } as CSSProperties,

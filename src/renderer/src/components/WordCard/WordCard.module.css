@@ -202,22 +202,22 @@
 }
 
 /* 滚动条样式 */
-.cardBody::-webkit-scrollbar {
+.cardBody::WebkitScrollbar {
   width: 6px;
 }
 
-.cardBody::-webkit-scrollbar-track {
+.cardBody::WebkitScrollbarTrack {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 3px;
 }
 
-.cardBody::-webkit-scrollbar-thumb {
+.cardBody::WebkitScrollbarThumb {
   background: rgba(102, 126, 234, 0.6);
   border-radius: 3px;
   transition: background 0.3s ease;
 }
 
-.cardBody::-webkit-scrollbar-thumb:hover {
+.cardBody::WebkitScrollbarThumb:hover {
   background: rgba(102, 126, 234, 0.8);
 }
 
