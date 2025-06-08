@@ -166,8 +166,11 @@ export const TitleBar: React.FC<TitleBarProps> = ({
       padding: `0 ${token.paddingSM}px`,
       background: token.colorBgContainer, // 使用主题容器背景色，在暗黑主题下是正确的深色背景 / Use theme container background color, correct dark background in dark theme
       borderBottom: `1px solid ${token.colorBorderSecondary}`,
-      position: 'relative' as const,
-      zIndex: 1000,
+      position: 'fixed' as const, // 固定定位让标题栏始终在顶部 / Fixed positioning to keep title bar always at top
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: token.zIndexPopupBase + 100, // 使用标准化的 zIndex 值 / Use standardized zIndex value
       userSelect: 'none' as const,
       // macOS 红绿灯按钮区域预留 / Reserve space for macOS traffic light buttons
       paddingLeft: getPaddingLeft(),

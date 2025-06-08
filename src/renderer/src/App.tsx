@@ -116,10 +116,27 @@ function AppContent(): React.JSX.Element {
           {currentPage !== 'play' ? (
             <>
               <AppSidebar currentPage={currentPage} onPageChange={setCurrentPage} />
-              <Content style={{ marginLeft: 80 }}>{renderPageContent}</Content>
+              <Content
+                style={{
+                  marginLeft: 80,
+                  // 为固定的标题栏预留空间 / Reserve space for fixed title bar
+                  marginTop: !useWindowFrame ? 32 : 0,
+                  paddingTop: !useWindowFrame ? 1 : 0 // 额外的小间距以避免紧贴 / Extra small spacing to avoid tight fit
+                }}
+              >
+                {renderPageContent}
+              </Content>
             </>
           ) : (
-            <div>{renderPageContent}</div>
+            <div
+              style={{
+                // 播放页面也需要为固定标题栏预留空间 / Play page also needs space for fixed title bar
+                marginTop: !useWindowFrame ? 32 : 0,
+                paddingTop: !useWindowFrame ? 1 : 0
+              }}
+            >
+              {renderPageContent}
+            </div>
           )}
         </Layout>
       </VideoPlayerProvider>
