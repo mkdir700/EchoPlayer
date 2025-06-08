@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
-import { Typography, Button, Divider } from 'antd'
-import { CloudUploadOutlined, GlobalOutlined } from '@ant-design/icons'
+import { Typography, Button, Divider, message } from 'antd'
+import { CloudUploadOutlined, GlobalOutlined, InboxOutlined } from '@ant-design/icons'
 
 import { useTheme } from '@renderer/hooks/useTheme'
 import { SPACING, FONT_SIZES } from '@renderer/styles/theme'
@@ -29,14 +29,18 @@ const SUBTITLE_WEBSITES = [
  *
  * Renders the empty state interface when no subtitles are found, providing options to import or search online
  * Uses theme system for consistent styling and better maintainability
+ * Supports drag and drop file import
  */
 export const SubtitleEmptyState: React.FC<{
   onImport: () => Promise<void>
+  onFilesDrop: (file: File) => Promise<void>
   onWebsiteClick: (url: string, name: string) => void
-}> = ({ onImport, onWebsiteClick }) => {
+}> = ({ onImport, onFilesDrop, onWebsiteClick }) => {
   const { token, styles } = useTheme()
   // 导入按钮加载状态 / Import button loading state
   const [isImporting, setIsImporting] = useState(false)
+  // 拖拽状态 / Drag state
+  const [isDragging, setIsDragging] = useState(false)
 
   // 处理导入按钮点击 / Handle import button click
   const handleImportClick = useCallback(async () => {
@@ -48,11 +52,142 @@ export const SubtitleEmptyState: React.FC<{
     }
   }, [onImport])
 
+  // 验证文件类型 / Validate file type
+  const isValidSubtitleFile = useCallback((file: File): boolean => {
+    const validExtensions = ['.srt', '.vtt', '.json', '.ass', '.ssa']
+    const fileName = file.name.toLowerCase()
+    return validExtensions.some((ext) => fileName.endsWith(ext))
+  }, [])
+
+  // 拖拽事件处理 / Drag event handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // 只有当拖拽离开整个容器时才设置为 false
+    // Only set to false when dragging leaves the entire container
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false)
+    }
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(false)
+
+      const files = Array.from(e.dataTransfer.files)
+      const subtitleFile = files.find((file) => isValidSubtitleFile(file))
+
+      if (!subtitleFile) {
+        message.error('请拖拽有效的字幕文件（支持 .srt, .vtt, .json, .ass, .ssa 格式）')
+        return
+      }
+
+      setIsImporting(true)
+      try {
+        await onFilesDrop(subtitleFile)
+      } finally {
+        setIsImporting(false)
+      }
+    },
+    [isValidSubtitleFile, onFilesDrop]
+  )
+
+  // 拖拽区域样式 / Drag area styles
+  const dragAreaStyle: React.CSSProperties = {
+    ...styles.subtitleSearchContainer,
+    border: isDragging
+      ? `2px dashed ${token.colorPrimary}`
+      : `2px dashed ${token.colorBorderSecondary}`,
+    borderRadius: token.borderRadiusLG,
+    backgroundColor: isDragging ? token.colorPrimaryBg : 'transparent',
+    transition: 'all 0.2s ease',
+    position: 'relative'
+  }
+
   return (
-    <div style={styles.subtitleSearchContainer}>
+    <div
+      style={dragAreaStyle}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* 拖拽提示覆盖层 / Drag overlay */}
+      {isDragging && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: `${token.colorPrimary}10`,
+            border: `2px dashed ${token.colorPrimary}`,
+            borderRadius: token.borderRadiusLG,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            pointerEvents: 'none'
+          }}
+        >
+          <InboxOutlined
+            style={{
+              fontSize: '48px',
+              color: token.colorPrimary,
+              marginBottom: SPACING.SM
+            }}
+          />
+          <Text
+            style={{
+              fontSize: FONT_SIZES.LG,
+              color: token.colorPrimary,
+              fontWeight: 600,
+              textAlign: 'center'
+            }}
+          >
+            释放以导入字幕文件
+          </Text>
+          <Text
+            style={{
+              fontSize: FONT_SIZES.SM,
+              color: token.colorTextSecondary,
+              marginTop: SPACING.XS,
+              textAlign: 'center'
+            }}
+          >
+            支持 .srt, .vtt, .json, .ass, .ssa 格式
+          </Text>
+        </div>
+      )}
+
       {/* 提示文本 / Prompt text */}
       <div style={{ textAlign: 'center' }}>
         <Text style={styles.subtitleSearchSubtitle}>在视频文件同目录下未找到匹配的字幕文件</Text>
+        <Text
+          style={{
+            display: 'block',
+            fontSize: FONT_SIZES.SM,
+            color: token.colorTextTertiary,
+            marginTop: SPACING.XS
+          }}
+        >
+          您可以点击按钮选择文件，或直接拖拽字幕文件到此区域
+        </Text>
       </div>
 
       {/* 操作区域 / Action area */}

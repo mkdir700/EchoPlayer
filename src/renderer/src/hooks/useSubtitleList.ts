@@ -9,6 +9,7 @@ export interface UseSubtitleListReturn {
   subtitleItemsRef: React.RefObject<SubtitleItem[]>
   currentSubtitleIndexRef: React.RefObject<number>
   handleSubtitleUpload: (file: File) => boolean
+  handleDroppedFile: (file: File) => Promise<void>
   getCurrentSubtitleIndex: (currentTime: number) => number
   getSubtitleIndexForTime: (currentTime: number) => number
   getCurrentSubtitle: (currentTime: number) => SubtitleItem | null
@@ -130,6 +131,32 @@ export function useSubtitleList(): UseSubtitleListReturn {
     })
   }, [])
 
+  // 新增：处理拖拽文件 / Handle dropped file
+  const handleDroppedFile = useCallback(async (file: File): Promise<void> => {
+    try {
+      const content = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (e) => resolve(e.target?.result as string)
+        reader.onerror = () => reject(new Error('读取文件失败'))
+        reader.readAsText(file)
+      })
+
+      const subtitles = parseSubtitles(content, file.name)
+      if (subtitles.length === 0) {
+        throw new Error('字幕文件解析失败或为空')
+      }
+
+      subtitleItemsRef.current = subtitles
+      currentSubtitleIndexRef.current = 0
+      setShowSubtitlePrompt(false)
+
+      message.success(`成功加载字幕文件：${file.name}，共 ${subtitles.length} 条字幕`)
+    } catch (error) {
+      console.error('加载字幕文件失败:', error)
+      message.error(`加载字幕文件失败：${(error as Error).message}`)
+    }
+  }, [])
+
   // 新增：跳过字幕导入
   const handleSkipSubtitleImport = useCallback(() => {
     setShowSubtitlePrompt(false)
@@ -225,6 +252,7 @@ export function useSubtitleList(): UseSubtitleListReturn {
     subtitleItemsRef,
     currentSubtitleIndexRef,
     handleSubtitleUpload,
+    handleDroppedFile,
     getCurrentSubtitleIndex,
     getSubtitleIndexForTime,
     getCurrentSubtitle,

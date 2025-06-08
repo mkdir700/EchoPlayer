@@ -58,7 +58,8 @@ export function SubtitleListContent(): React.JSX.Element {
     getSubtitleIndexForTime,
     setCurrentSubtitleIndex,
     showSubtitlePrompt,
-    handleManualSubtitleImport
+    handleManualSubtitleImport,
+    handleDroppedFile
   } = subtitleListContext
   const virtualListRef = useRef<VirtualizedList>(null)
 
@@ -491,6 +492,7 @@ export function SubtitleListContent(): React.JSX.Element {
         {showSubtitlePrompt ? (
           <SubtitleEmptyState
             onImport={handleManualSubtitleImport}
+            onFilesDrop={handleDroppedFile}
             onWebsiteClick={handleOpenSubtitleWebsite}
           />
         ) : subtitleItemsRef.current.length > 0 ? (
