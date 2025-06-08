@@ -35,7 +35,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   variant = 'default'
 }) => {
   const { token } = theme.useToken()
-  const [platform, setPlatform] = useState<string>('')
+  const [platform, setPlatform] = useState<string | null>(null) // 初始值设为 null，避免在平台信息未确定时显示按钮 / Set initial value to null to avoid showing buttons before platform info is determined
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false)
   const [windowControlsOverlayWidth, setWindowControlsOverlayWidth] = useState(0)
 
@@ -73,7 +73,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   // 动态设置标题栏主题 / Dynamically set title bar theme
   useEffect(() => {
     const updateTitleBarTheme = async (): Promise<void> => {
-      if (platform !== 'darwin' && platform !== '') {
+      if (platform !== 'darwin' && platform !== null) {
         try {
           const options: TitleBarOverlayOptions = {
             height: variant === 'compact' ? 40 : 49
@@ -136,8 +136,30 @@ export const TitleBar: React.FC<TitleBarProps> = ({
 
   // 计算样式 / Calculate styles
   const titleBarStyle = useMemo(() => {
+    // 统一所有平台高度为 32px，避免任何高度变化导致的抖动 / Unify height to 32px for all platforms to avoid any height-related jitter
+    const getHeight = (): number => {
+      return 32 // 所有平台统一使用 32px 高度 / Use 32px height for all platforms
+    }
+
+    const getPaddingLeft = (): number => {
+      if (platform === null) {
+        // 默认预留 macOS 红绿灯按钮空间，避免布局跳动 / Default to reserve macOS traffic light space to avoid layout jumps
+        return 80
+      }
+      return platform === 'darwin' ? 80 : token.paddingSM
+    }
+
+    const getPaddingRight = (): number => {
+      if (platform === null) {
+        return token.paddingSM
+      }
+      return platform === 'win32' && windowControlsOverlayWidth > 0
+        ? windowControlsOverlayWidth + token.paddingSM
+        : token.paddingSM
+    }
+
     const style = {
-      height: platform === 'darwin' ? 32 : variant === 'compact' ? 40 : 49,
+      height: getHeight(),
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'flex-end', // 改为右对齐，因为只有右侧的窗口控制按钮
@@ -148,12 +170,9 @@ export const TitleBar: React.FC<TitleBarProps> = ({
       zIndex: 1000,
       userSelect: 'none' as const,
       // macOS 红绿灯按钮区域预留 / Reserve space for macOS traffic light buttons
-      paddingLeft: platform === 'darwin' ? 80 : token.paddingSM,
+      paddingLeft: getPaddingLeft(),
       // Windows 系统窗口控件区域预留 / Reserve space for Windows system window controls
-      paddingRight:
-        platform === 'win32' && windowControlsOverlayWidth > 0
-          ? windowControlsOverlayWidth + token.paddingSM
-          : token.paddingSM
+      paddingRight: getPaddingRight()
     }
 
     // 调试信息 / Debug info
@@ -185,7 +204,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
     <div className={`app-drag ${className}`} style={titleBarStyle}>
       {/* macOS 上不显示自定义窗口控制按钮，因为系统会提供原生的交通灯按钮 */}
       {/* Don't show custom window controls on macOS, as the system provides native traffic light buttons */}
-      {showWindowControls && platform !== 'darwin' && (
+      {/* 只有在平台信息已确定且不是 macOS 时才显示控制按钮 / Only show control buttons when platform info is determined and not macOS */}
+      {showWindowControls && platform !== null && platform !== 'darwin' && (
         <Space size={token.marginXXS}>
           <Tooltip title={isAlwaysOnTop ? '取消置顶' : '窗口置顶'}>
             <Button
