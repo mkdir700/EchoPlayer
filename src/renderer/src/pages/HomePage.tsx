@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import { Button, Typography, message, Modal } from 'antd'
+import { Button, Typography, message, Modal, Spin } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { useRecentPlayList } from '@renderer/hooks/useRecentPlayList'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
@@ -36,8 +36,14 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
 
   // 使用自定义 Hooks
   const videoControls = useVideoControls()
-  const { recentPlays, removeRecentPlay, clearRecentPlays, addRecentPlay, updateRecentPlay } =
-    useRecentPlayList()
+  const {
+    recentPlays,
+    removeRecentPlay,
+    clearRecentPlays,
+    addRecentPlay,
+    updateRecentPlay,
+    loading: recentPlaysLoading
+  } = useRecentPlayList()
   const playingVideoContext = usePlayingVideoContext()
   const { handleVideoFileSelect: selectVideoFile } = useVideoFileSelection()
 
@@ -264,23 +270,25 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
           >
             <Title level={3} style={{ ...styles.sectionTitle, margin: 0 }}>
               最近观看
-              <div
-                style={{
-                  background: utils.hexToRgba(token.colorPrimary, 0.1),
-                  color: token.colorPrimary,
-                  padding: `${token.paddingXXS}px ${token.paddingXS}px`,
-                  borderRadius: token.borderRadius,
-                  fontSize: token.fontSizeSM,
-                  fontWeight: FONT_WEIGHTS.SEMIBOLD,
-                  marginLeft: token.marginSM
-                }}
-              >
-                {recentPlays.length}
-              </div>
+              {!recentPlaysLoading && (
+                <div
+                  style={{
+                    background: utils.hexToRgba(token.colorPrimary, 0.1),
+                    color: token.colorPrimary,
+                    padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+                    borderRadius: token.borderRadius,
+                    fontSize: token.fontSizeSM,
+                    fontWeight: FONT_WEIGHTS.SEMIBOLD,
+                    marginLeft: token.marginSM
+                  }}
+                >
+                  {recentPlays.length}
+                </div>
+              )}
             </Title>
 
             <div>
-              {recentPlays.length > 0 && (
+              {!recentPlaysLoading && recentPlays.length > 0 && (
                 <Button
                   type="text"
                   size="small"
@@ -307,7 +315,19 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
             </div>
           </div>
 
-          {recentPlays.length === 0 ? (
+          {recentPlaysLoading ? (
+            // 数据加载中，显示加载动画 / Data loading, show loading spinner
+            <div
+              style={{
+                height: '200px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Spin size="large" tip="加载最近播放记录中..." />
+            </div>
+          ) : recentPlays.length === 0 ? (
             <EmptyState onAddVideo={handleVideoFileSelect} isSelectingFile={isSelectingFile} />
           ) : (
             // 卡片网格 - 移除内部滚动，让内容自然流动 / Card grid - remove internal scrolling, let content flow naturally
