@@ -11,6 +11,8 @@ import { useTheme } from '@renderer/hooks/useTheme'
 import { useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
 import { FONT_WEIGHTS } from '@renderer/styles/theme'
 import { EmptyState, VideoGrid, ConfirmModals } from '@renderer/components/HomePage'
+// 导入测试工具 / Import test utilities
+import { COMMON_TEST_IDS } from '@renderer/utils/test-utils'
 
 const { Title } = Typography
 
@@ -309,6 +311,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
                 loading={isSelectingFile}
                 disabled={isSelectingFile}
                 style={{ marginLeft: token.marginXS, borderRadius: token.borderRadiusLG }}
+                data-testid={COMMON_TEST_IDS.HOME_PAGE_ADD_VIDEO_BUTTON}
               >
                 {isSelectingFile ? '选择视频中...' : '添加视频'}
               </Button>

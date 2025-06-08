@@ -18,6 +18,41 @@ export function useVideoFileSelection(): UseVideoFileSelectionReturn {
       resetVideoState?: () => void
     ): Promise<{ success: boolean; filePath?: string; fileName?: string }> => {
       try {
+        // 🧪 测试环境：直接使用测试视频文件，跳过文件选择对话框
+        // Test environment: directly use test video file, skip file selection dialog
+        if (window.api.env.isTestEnv()) {
+          console.log('🧪 Test mode detected, using test video file...')
+
+          // 使用新的API获取测试视频文件路径 / Use new API to get test video file path
+          const testVideoPath = await window.api.appConfig.getTestVideoPath()
+          const testFileName = 'test-video.mp4'
+
+          // 在设置新视频文件之前，先重置视频播放器状态
+          if (resetVideoState) {
+            RendererLogger.info('🔄 重置视频播放器状态 (测试模式)...')
+            resetVideoState()
+          }
+
+          // 创建测试文件 URL
+          const testFileUrl = `file://${testVideoPath}`
+
+          RendererLogger.info('🧪 使用测试视频文件:', {
+            filePath: testVideoPath,
+            fileName: testFileName,
+            fileUrl: testFileUrl
+          })
+
+          // 直接调用回调设置视频文件
+          onVideoSet('test-file-id', testFileUrl, testFileName, testVideoPath)
+
+          RendererLogger.info('✅ 测试视频文件设置成功')
+          message.success(`测试视频文件 ${testFileName} 已加载`)
+
+          return { success: true, filePath: testVideoPath, fileName: testFileName }
+        }
+
+        // 🎬 生产环境：正常的文件选择流程
+        // Production environment: normal file selection flow
         const filePaths = await FileSystemHelper.openFileDialog({
           title: '选择视频文件',
           filters: [

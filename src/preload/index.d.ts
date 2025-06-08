@@ -119,6 +119,8 @@ interface AppConfigAPI {
   getConfig: () => Promise<AppConfig>
   updateConfig: (updates: Partial<AppConfig>) => Promise<ApiResponse>
   resetConfig: () => Promise<ApiResponse>
+  getDefaultDataDirectory: () => Promise<string>
+  getTestVideoPath: () => Promise<string>
 }
 
 // 窗口控制 API 接口 / Window control API interface
@@ -137,6 +139,13 @@ interface WindowAPI {
   toggleFullScreen: () => Promise<boolean>
 }
 
+// 环境信息 API 接口 / Environment info API interface
+interface EnvAPI {
+  getNodeEnv: () => string
+  isTestEnv: () => boolean
+  isDevelopment: () => boolean
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI & {
@@ -153,6 +162,7 @@ declare global {
       update: UpdateAPI
       appConfig: AppConfigAPI // 应用配置 API / Application configuration API
       window: WindowAPI // 窗口控制 API / Window control API
+      env: EnvAPI // 环境信息 API / Environment info API
       log: (
         level: 'debug' | 'info' | 'warn' | 'error',
         message: string,

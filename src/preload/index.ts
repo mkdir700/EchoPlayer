@@ -218,6 +218,8 @@ const appConfigAPI = {
 
   // 重置应用配置
   resetConfig: (): Promise<ApiResponse> => ipcRenderer.invoke('app:reset-config')
+  // 获取测试视频文件路径
+  getTestVideoPath: (): Promise<string> => ipcRenderer.invoke('app:get-test-video-path')
 }
 
 // 窗口控制 API / Window control API
@@ -262,6 +264,18 @@ const windowAPI = {
   toggleFullScreen: (): Promise<boolean> => ipcRenderer.invoke('window:toggle-fullscreen')
 }
 
+// 环境信息 API / Environment info API
+const envAPI = {
+  // 获取当前环境 / Get current environment
+  getNodeEnv: (): string => process.env.NODE_ENV || 'production',
+
+  // 检查是否是测试环境 / Check if in test environment
+  isTestEnv: (): boolean => process.env.NODE_ENV === 'test',
+
+  // 检查是否是开发环境 / Check if in development environment
+  isDevelopment: (): boolean => process.env.NODE_ENV === 'development'
+}
+
 // Custom APIs for renderer
 const api = {
   fileSystem: fileSystemAPI,
@@ -270,6 +284,7 @@ const api = {
   update: updateAPI,
   appConfig: appConfigAPI, // 应用配置 API / Application configuration API
   window: windowAPI, // 窗口控制 API / Window control API
+  env: envAPI, // 环境信息 API / Environment info API
   // 日志API
   log: (level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown) =>
     ipcRenderer.invoke('log', level, message, data)

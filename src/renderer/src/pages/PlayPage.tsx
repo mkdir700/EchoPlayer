@@ -8,6 +8,9 @@ import { usePlayStateSaver } from '@renderer/hooks/usePlayStateSaver'
 import { usePlayStateInitializer } from '@renderer/hooks/usePlayStateInitializer'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
 import { useTheme } from '@renderer/hooks/useTheme'
+// 导入测试相关 hooks 和常量 / Import test-related hooks and constants
+import { useTestIds } from '@renderer/hooks/useTestIds'
+import { PLAY_PAGE_ELEMENTS } from '@renderer/utils/test-utils'
 import { CurrentSubtitleDisplayProvider } from '@renderer/contexts/CurrentSubtitleDisplayContext'
 import { useUIStore, useFullscreenMode } from '@renderer/stores'
 import { FullscreenTestInfo } from '@renderer/components/VideoPlayer/FullscreenTestInfo'
@@ -20,6 +23,9 @@ interface PlayPageProps {
 const PlayPageMemo = React.memo(function PlayPage({ onBack }: PlayPageProps) {
   // 🎨 获取主题样式
   const { styles, token } = useTheme()
+
+  // 🧪 使用统一的测试常量并生成测试标识符 / Use unified test constants and generate test identifiers
+  const testIds = useTestIds('play-page', PLAY_PAGE_ELEMENTS)
 
   // 🖥️ 获取UI状态，用于全屏模式布局调整
   const showSubtitleList = useUIStore((state) => state.showSubtitleList)
@@ -144,11 +150,15 @@ const PlayPageMemo = React.memo(function PlayPage({ onBack }: PlayPageProps) {
 
   return (
     <CurrentSubtitleDisplayProvider>
-      <div style={containerStyle}>
+      <div style={containerStyle} {...testIds.withTestId('container')}>
         {/* 仅在开发模式下显示全屏测试信息 / Only show fullscreen test info in development mode */}
-        {process.env.NODE_ENV === 'development' && <FullscreenTestInfo />}
+        {process.env.NODE_ENV === 'development' && (
+          <div {...testIds.withTestId('fullscreenTestInfo')}>
+            <FullscreenTestInfo />
+          </div>
+        )}
 
-        <div style={contentAreaStyle}>
+        <div style={contentAreaStyle} {...testIds.withTestId('contentArea')}>
           {/* 🎬 视频播放区域 - 始终保持在固定位置，避免重新挂载 */}
           <div
             style={{
@@ -158,16 +168,16 @@ const PlayPageMemo = React.memo(function PlayPage({ onBack }: PlayPageProps) {
             }}
           >
             {/* 视频区域容器 - 根据全屏状态调整宽度 */}
-            <div style={videoContainerStyle}>
+            <div style={videoContainerStyle} {...testIds.withTestId('videoContainer')}>
               <VideoSection key="main-video-section" onBack={onBack} />
             </div>
 
             {/* 侧边栏区域 - 使用动画控制显示/隐藏 */}
             <>
               {/* 分割线 */}
-              <div style={dividerStyle} />
+              <div style={dividerStyle} {...testIds.withTestId('divider')} />
               {/* 字幕列表区域 */}
-              <div style={sidebarStyle}>
+              <div style={sidebarStyle} {...testIds.withTestId('sidebarContainer')}>
                 <div style={styles.sidebarSection}>
                   <div style={styles.sidebarDivider} />
                   <SidebarSectionContainer />

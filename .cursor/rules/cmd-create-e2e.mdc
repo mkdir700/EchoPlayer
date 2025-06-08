@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+[test-utils.ts](mdc:src/renderer/src/utils/test-utils.ts) [useTestIds.ts](mdc:src/renderer/src/hooks/useTestIds.ts) 
+
+请你为下方这些组件生成 e2e 测试用例，如果组件没有 test-id，你可以在 @COMMON_TEST_IDS 新增常量并修改原组件添加 test-id

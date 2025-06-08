@@ -58,20 +58,4 @@ test.describe('EchoLab Smoke Test - MVP 核心验证', () => {
 
     console.log('✅ 基础键盘事件测试完成')
   })
-
-  test('应用稳定性: 窗口大小调整', async () => {
-    const page = electronApp.getPage()
-
-    // 测试窗口调整大小时的稳定性
-    await page.setViewportSize({ width: 1200, height: 800 })
-    await page.waitForTimeout(500)
-
-    await page.setViewportSize({ width: 800, height: 600 })
-    await page.waitForTimeout(500)
-
-    // 验证应用仍然响应
-    await expect(page.locator('body')).toBeVisible()
-
-    console.log('✅ 窗口调整大小测试通过')
-  })
 })

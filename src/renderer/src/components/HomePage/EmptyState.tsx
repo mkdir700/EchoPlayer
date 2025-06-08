@@ -3,6 +3,8 @@ import { Button, Typography } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { FONT_WEIGHTS } from '@renderer/styles/theme'
+// 导入测试工具 / Import test utilities
+import { COMMON_TEST_IDS } from '@renderer/utils/test-utils'
 
 const { Title, Text } = Typography
 
@@ -65,6 +67,7 @@ export function EmptyState({ onAddVideo, isSelectingFile }: EmptyStateProps): Re
         loading={isSelectingFile}
         disabled={isSelectingFile}
         style={{ borderRadius: token.borderRadiusLG }}
+        data-testid={COMMON_TEST_IDS.EMPTY_STATE_ADD_VIDEO_BUTTON}
       >
         {isSelectingFile ? '选择视频中...' : '立即添加'}
       </Button>
