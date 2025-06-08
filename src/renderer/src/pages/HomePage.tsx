@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import { Button, Typography, message, Modal, Spin } from 'antd'
+import { Button, Typography, Modal, Spin } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { useRecentPlayList } from '@renderer/hooks/useRecentPlayList'
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
@@ -136,14 +136,6 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
       if (audioIssues.length > 0) {
         console.warn('🔍 检测到潜在的音频兼容性问题:')
         audioIssues.forEach((issue) => console.warn(issue))
-
-        // 如果是MKV文件且可能有音频问题，显示警告
-        if (item.fileName.toLowerCase().endsWith('.mkv')) {
-          message.warning({
-            content: 'MKV 文件可能存在音频兼容性问题，如果没有声音请查看控制台建议',
-            duration: 5
-          })
-        }
       }
 
       try {

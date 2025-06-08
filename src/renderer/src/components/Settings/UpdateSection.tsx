@@ -205,7 +205,7 @@ export function UpdateSection(): React.JSX.Element {
             icon={<SyncOutlined spin={isCheckingForUpdates} />}
             loading={isCheckingForUpdates}
             onClick={handleCheckForUpdates}
-            style={styles.primaryButton}
+            style={{ marginLeft: token.marginXS, borderRadius: token.borderRadiusLG }}
           >
             检查更新
           </Button>
