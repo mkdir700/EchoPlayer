@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+请你查看目前的未提交的内容，生成 git commit 内容并提交，要求如下：
+
+1. 你应该根据我们之前的对话，来决定 commit 的内容是采用何种语言；
+2. 你应该根据之前对话的内容，来决定 commit 的内容类型，比如，新功能就是 feat，问题修复则是 fix
+3. 请你遵循 https://www.conventionalcommits.org/en/v1.0.0/ 规则
+    - 类型: feat, refactor, fix, chore, ci ...
+    - 范围: player, titlebar...
