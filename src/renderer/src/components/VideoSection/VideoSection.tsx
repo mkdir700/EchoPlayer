@@ -134,6 +134,7 @@ function VideoSectionInner({ onBack }: VideoSectionInnerProps): React.JSX.Elemen
         console.error('❌ 切换到转码后文件时出错:', error)
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [playingVideoContext]
   )
 

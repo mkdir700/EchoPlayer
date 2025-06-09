@@ -161,6 +161,7 @@ function SubtitleV3({
     }
     parentDimensionsRef.current = dimensions
     return dimensions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [windowDimensions]) // Add windowDimensions as dependency to trigger recalculation on resize
 
   // Get stable function for parent container bounds
@@ -277,6 +278,7 @@ function SubtitleV3({
     return () => {
       document.removeEventListener('click', handleClickOutside)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventHandlers.contextMenuVisible, eventHandlers.handleContextMenuClose])
 
   // Calculate actual background type

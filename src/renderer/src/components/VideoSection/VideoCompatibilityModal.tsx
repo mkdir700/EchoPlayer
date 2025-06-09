@@ -436,6 +436,7 @@ export function VideoCompatibilityModal({
       setErrorMessage(error instanceof Error ? error.message : '转码失败')
       setCurrentStep('error')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoFile, transcodeDecision])
 
   // 使用转码后的文件 / Use transcoded file
