@@ -1,53 +1,19 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { ConfigProvider, theme } from 'antd'
-// import { appleTheme, appleDarkTheme } from '@renderer/styles/theme'
-// import { ThemeContext } from '@renderer/contexts/ThemeContext'
-// import type { ThemeCustomization, ThemeContextType } from '@renderer/hooks/useThemeCustomization'
 import type { ThemeConfig } from 'antd'
 import { ThemeContext } from '@renderer/contexts/theme-context'
 import appleTheme, { appleDarkTheme } from '@renderer/styles/theme'
-import { ThemeCustomization, ThemeContextType } from '@renderer/hooks/useThemeCustomization'
+import type { ThemeCustomization } from '@types_/shared'
+import { useAppConfig } from '@renderer/hooks/useAppConfig'
+import { defaultThemeCustomization } from '../constants/themeConfig'
 
-const defaultCustomization: ThemeCustomization = {
-  colorPrimary: '#007AFF',
-  colorSuccess: '#34C759',
-  colorWarning: '#FF9500',
-  colorError: '#FF3B30',
-  borderRadius: 8,
-  fontSize: 16,
-  algorithm: 'default'
-}
-
-// 从 localStorage 读取保存的主题设置
-const loadSavedCustomization = (): ThemeCustomization => {
-  try {
-    const saved = localStorage.getItem('echolab-theme-customization')
-    if (saved) {
-      return { ...defaultCustomization, ...JSON.parse(saved) }
-    }
-  } catch (error) {
-    console.warn('Failed to load saved theme customization:', error)
-  }
-  return defaultCustomization
-}
-
-// 保存主题设置到 localStorage
-const saveCustomization = (customization: ThemeCustomization): void => {
-  try {
-    localStorage.setItem('echolab-theme-customization', JSON.stringify(customization))
-  } catch (error) {
-    console.warn('Failed to save theme customization:', error)
-  }
-}
-
-// 根据自定义设置生成主题配置
+// 生成主题配置
 const generateThemeConfig = (customization: ThemeCustomization): ThemeConfig => {
   const baseTheme =
     customization.algorithm === 'dark' || customization.algorithm === 'darkCompact'
       ? appleDarkTheme
       : appleTheme
 
-  // 选择算法
   let algorithms: (typeof theme.defaultAlgorithm)[] = []
   switch (customization.algorithm) {
     case 'dark':
@@ -80,41 +46,103 @@ const generateThemeConfig = (customization: ThemeCustomization): ThemeConfig => 
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [customization, setCustomization] = useState<ThemeCustomization>(loadSavedCustomization)
+  // 获取持久化配置hook
+  const { themeCustomization, updateThemeCustomization, resetThemeCustomization, loading } =
+    useAppConfig()
 
-  // 生成当前主题配置 - 直接使用当前customization
-  const currentTheme = generateThemeConfig(customization)
+  // 本地主题状态 - 确保立即生效
+  const [localCustomization, setLocalCustomization] =
+    useState<ThemeCustomization>(defaultThemeCustomization)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  const updateCustomization = useCallback((updates: Partial<ThemeCustomization>) => {
-    setCustomization((prev) => ({ ...prev, ...updates }))
-  }, [])
+  // 从持久化配置初始化本地状态
+  useEffect(() => {
+    if (!loading && themeCustomization && !isInitialized) {
+      console.log('🔄 从持久化配置初始化本地主题状态:', themeCustomization)
+      setLocalCustomization(themeCustomization)
+      setIsInitialized(true)
+    }
+  }, [themeCustomization, loading, isInitialized])
 
-  // 新增：直接更新并应用主题的方法
-  const updateAndApplyTheme = useCallback((updates: Partial<ThemeCustomization>) => {
-    setCustomization((prev) => {
-      const newCustomization = { ...prev, ...updates }
-      saveCustomization(newCustomization)
-      return newCustomization
+  // 生成当前主题配置
+  const currentTheme = useMemo(() => {
+    const theme = generateThemeConfig(localCustomization)
+    console.log('🎨 当前主题配置生成:', {
+      algorithm: localCustomization.algorithm,
+      colorPrimary: localCustomization.colorPrimary,
+      timestamp: Date.now()
     })
-  }, [])
+    return theme
+  }, [localCustomization])
 
-  const resetToDefault = useCallback(() => {
-    setCustomization(defaultCustomization)
-    saveCustomization(defaultCustomization)
-  }, [])
+  // 更新主题的核心方法
+  const updateAndApplyTheme = useCallback(
+    async (updates: Partial<ThemeCustomization>) => {
+      console.log('🚀 开始更新主题:', updates)
+
+      // 1. 立即更新本地状态，确保UI立即响应
+      const newCustomization = { ...localCustomization, ...updates }
+      setLocalCustomization(newCustomization)
+      console.log('⚡ 本地主题状态立即更新:', newCustomization)
+
+      // 2. 异步保存到持久化存储
+      try {
+        await updateThemeCustomization(updates)
+        console.log('💾 主题配置已保存到持久化存储')
+      } catch (error) {
+        console.error('❌ 保存主题配置失败:', error)
+        // 如果保存失败，可以选择回滚本地状态或显示错误提示
+      }
+    },
+    [localCustomization, updateThemeCustomization]
+  )
+
+  const updateCustomization = useCallback(
+    async (updates: Partial<ThemeCustomization>) => {
+      await updateAndApplyTheme(updates)
+    },
+    [updateAndApplyTheme]
+  )
+
+  const resetToDefault = useCallback(async () => {
+    console.log('🔄 重置主题为默认配置')
+
+    // 1. 立即更新本地状态
+    setLocalCustomization(defaultThemeCustomization)
+    console.log('⚡ 本地主题状态立即重置')
+
+    // 2. 异步保存到持久化存储
+    try {
+      await resetThemeCustomization()
+      console.log('💾 默认主题配置已保存到持久化存储')
+    } catch (error) {
+      console.error('❌ 重置主题配置失败:', error)
+    }
+  }, [resetThemeCustomization])
 
   const applyTheme = useCallback(() => {
-    saveCustomization(customization)
-  }, [customization])
+    console.log('🎨 应用当前主题 (no-op)')
+  }, [])
 
-  const contextValue: ThemeContextType = {
-    currentTheme,
-    customization,
-    updateCustomization,
-    updateAndApplyTheme,
-    resetToDefault,
-    applyTheme
-  }
+  // 创建context值
+  const contextValue = useMemo(
+    () => ({
+      currentTheme,
+      customization: localCustomization,
+      updateCustomization,
+      updateAndApplyTheme,
+      resetToDefault,
+      applyTheme
+    }),
+    [
+      currentTheme,
+      localCustomization,
+      updateCustomization,
+      updateAndApplyTheme,
+      resetToDefault,
+      applyTheme
+    ]
+  )
 
   return (
     <ThemeContext.Provider value={contextValue}>

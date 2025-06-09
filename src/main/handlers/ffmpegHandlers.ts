@@ -5,7 +5,7 @@ import * as path from 'path'
 import * as https from 'https'
 import { createWriteStream } from 'fs'
 import { Logger } from '../utils/logger'
-import { getAppConfig } from './storeHandlers'
+import { getAppConfig } from './store'
 import type { ApiResponse, TranscodeProgress, TranscodeOptions } from '../../types/shared'
 
 // 全局变量用于管理正在进行的转码进程 / Global variable to manage ongoing transcoding processes

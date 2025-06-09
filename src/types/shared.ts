@@ -10,6 +10,20 @@ export interface TitleBarOverlayOptions {
   height?: number
 }
 
+// 主题自定义配置接口 / Theme customization configuration interface
+export interface ThemeCustomization {
+  // 基础颜色 / Basic colors
+  colorPrimary: string
+  colorSuccess: string
+  colorWarning: string
+  colorError: string
+  // 布局设置 / Layout settings
+  borderRadius: number
+  fontSize: number
+  // 主题模式 / Theme mode
+  algorithm: 'default' | 'dark' | 'compact' | 'darkCompact'
+}
+
 // 应用配置接口 / Application configuration interface
 export interface AppConfig {
   useWindowFrame?: boolean // 是否使用系统窗口框架 / Whether to use system window frame
@@ -17,6 +31,7 @@ export interface AppConfig {
   autoCheckUpdates?: boolean // 是否自动检查更新 / Whether to auto check updates
   language?: 'zh-CN' | 'en-US' // 应用语言 / Application language
   dataDirectory: string // 数据存储目录 / Data storage directory (required)
+  themeCustomization: ThemeCustomization // 主题自定义配置 / Theme customization configuration
 }
 
 // 字幕项接口

@@ -1,33 +1,26 @@
 import { useContext } from 'react'
 import type { ThemeConfig } from 'antd'
 import { ThemeContext } from '@renderer/contexts/theme-context'
-
-export interface ThemeCustomization {
-  // Basic colors
-  colorPrimary: string
-  colorSuccess: string
-  colorWarning: string
-  colorError: string
-  // Layout
-  borderRadius: number
-  fontSize: number
-  // Theme mode
-  algorithm: 'default' | 'dark' | 'compact' | 'darkCompact'
-}
+import type { ThemeCustomization } from '@types_/shared'
 
 export interface ThemeContextType {
   currentTheme: ThemeConfig
   customization: ThemeCustomization
-  updateCustomization: (updates: Partial<ThemeCustomization>) => void
-  updateAndApplyTheme: (updates: Partial<ThemeCustomization>) => void
-  resetToDefault: () => void
+  updateCustomization: (updates: Partial<ThemeCustomization>) => Promise<void>
+  updateAndApplyTheme: (updates: Partial<ThemeCustomization>) => Promise<void>
+  resetToDefault: () => Promise<void>
   applyTheme: () => void
 }
 
 export const useThemeCustomization = (): ThemeContextType => {
   const context = useContext(ThemeContext)
+
   if (!context) {
     throw new Error('useThemeCustomization must be used within a ThemeProvider')
   }
+
   return context
 }
+
+// 重新导出类型以保持向后兼容性 / Re-export type for backward compatibility
+export type { ThemeCustomization }

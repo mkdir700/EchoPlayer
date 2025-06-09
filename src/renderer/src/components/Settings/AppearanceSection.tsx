@@ -33,7 +33,8 @@ import {
 } from '@ant-design/icons'
 import { useTheme } from '@renderer/hooks/useTheme'
 import type { Color } from 'antd/es/color-picker'
-import { ThemeCustomization, useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
+import { useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
+import type { ThemeCustomization } from '@types_/shared'
 import { useAppConfig } from '@renderer/hooks/useAppConfig'
 
 const { Text, Title } = Typography
@@ -133,6 +134,7 @@ export function AppearanceSection(): React.JSX.Element {
   // 应用配置管理 / Application configuration management
   const { useWindowFrame, updateConfig, restartApp } = useAppConfig()
   const [isRestartModalVisible, setIsRestartModalVisible] = useState(false)
+  const [isThemeUpdating, setIsThemeUpdating] = useState(false)
 
   const handleColorChange = useCallback(
     (
@@ -141,30 +143,63 @@ export function AppearanceSection(): React.JSX.Element {
         'colorPrimary' | 'colorSuccess' | 'colorWarning' | 'colorError'
       >
     ) =>
-      (color: Color | string) => {
-        const colorValue = typeof color === 'string' ? color : color.toHexString()
-        updateAndApplyTheme({ [colorType]: colorValue })
+      async (color: Color | string) => {
+        try {
+          setIsThemeUpdating(true)
+          const colorValue = typeof color === 'string' ? color : color.toHexString()
+          await updateAndApplyTheme({ [colorType]: colorValue })
+        } catch (error) {
+          console.error('更新主题颜色失败:', error)
+          message.error('更新主题颜色失败')
+        } finally {
+          setIsThemeUpdating(false)
+        }
       },
     [updateAndApplyTheme]
   )
 
   const handleSliderChange = useCallback(
-    (configKey: keyof Pick<ThemeCustomization, 'borderRadius' | 'fontSize'>) => (value: number) => {
-      updateAndApplyTheme({ [configKey]: value })
-    },
+    (configKey: keyof Pick<ThemeCustomization, 'borderRadius' | 'fontSize'>) =>
+      async (value: number) => {
+        try {
+          setIsThemeUpdating(true)
+          await updateAndApplyTheme({ [configKey]: value })
+        } catch (error) {
+          console.error('更新主题设置失败:', error)
+          message.error('更新主题设置失败')
+        } finally {
+          setIsThemeUpdating(false)
+        }
+      },
     [updateAndApplyTheme]
   )
 
   const handleAlgorithmChange = useCallback(
-    (algorithm: ThemeCustomization['algorithm']) => {
-      updateAndApplyTheme({ algorithm })
+    async (algorithm: ThemeCustomization['algorithm']) => {
+      try {
+        setIsThemeUpdating(true)
+        await updateAndApplyTheme({ algorithm })
+      } catch (error) {
+        console.error('更新主题模式失败:', error)
+        message.error('更新主题模式失败')
+      } finally {
+        setIsThemeUpdating(false)
+      }
     },
     [updateAndApplyTheme]
   )
 
-  const handleReset = useCallback(() => {
-    resetToDefault()
-    message.success('主题设置已重置为默认配置')
+  const handleReset = useCallback(async () => {
+    try {
+      setIsThemeUpdating(true)
+      await resetToDefault()
+      message.success('主题设置已重置为默认配置')
+    } catch (error) {
+      console.error('重置主题设置失败:', error)
+      message.error('重置主题设置失败')
+    } finally {
+      setIsThemeUpdating(false)
+    }
   }, [resetToDefault])
 
   // 窗口框架设置处理器 / Window frame settings handlers
@@ -211,7 +246,13 @@ export function AppearanceSection(): React.JSX.Element {
       className="settings-section-card"
       extra={
         <Space>
-          <Button icon={<ReloadOutlined />} size="small" onClick={handleReset} type="default">
+          <Button
+            icon={<ReloadOutlined />}
+            size="small"
+            onClick={handleReset}
+            type="default"
+            loading={isThemeUpdating}
+          >
             重置主题
           </Button>
         </Space>
@@ -315,6 +356,7 @@ export function AppearanceSection(): React.JSX.Element {
                         onChange={handleColorChange('colorPrimary')}
                         showText
                         size="large"
+                        disabled={isThemeUpdating}
                         presets={[
                           {
                             label: 'Apple Colors',
@@ -339,6 +381,7 @@ export function AppearanceSection(): React.JSX.Element {
                         onChange={handleColorChange('colorSuccess')}
                         showText
                         size="large"
+                        disabled={isThemeUpdating}
                       />
                     </div>
                   </Col>
@@ -357,6 +400,7 @@ export function AppearanceSection(): React.JSX.Element {
                         onChange={handleColorChange('colorWarning')}
                         showText
                         size="large"
+                        disabled={isThemeUpdating}
                       />
                     </div>
                   </Col>
@@ -375,6 +419,7 @@ export function AppearanceSection(): React.JSX.Element {
                         onChange={handleColorChange('colorError')}
                         showText
                         size="large"
+                        disabled={isThemeUpdating}
                       />
                     </div>
                   </Col>

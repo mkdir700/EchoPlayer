@@ -2,7 +2,7 @@ import { BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import icon from '../../../resources/icon.png?asset'
-import { getAppConfig } from '../handlers/storeHandlers'
+import { getAppConfig } from '../handlers/store'
 
 export function createWindow(): BrowserWindow {
   // 获取应用配置 / Get application configuration
