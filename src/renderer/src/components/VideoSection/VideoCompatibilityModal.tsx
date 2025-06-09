@@ -88,7 +88,7 @@ export function VideoCompatibilityModal({
   // 苹果风格的样式定义 / Apple-style style definitions
   const modalStyles = {
     modal: {
-      borderRadius: BORDER_RADIUS.XL,
+      borderRadius: token.borderRadiusLG,
       overflow: 'hidden',
       backdropFilter: isFullscreen ? 'blur(20px) saturate(180%)' : 'none',
       WebkitBackdropFilter: isFullscreen ? 'blur(20px) saturate(180%)' : 'none',
@@ -96,19 +96,21 @@ export function VideoCompatibilityModal({
       border: isFullscreen
         ? '1px solid rgba(255, 255, 255, 0.1)'
         : `1px solid ${token.colorBorderSecondary}`,
-      boxShadow: isFullscreen ? '0 8px 32px rgba(0, 0, 0, 0.8)' : '0 16px 40px rgba(0, 0, 0, 0.12)'
+      boxShadow: isFullscreen
+        ? `0 8px 32px rgba(0, 0, 0, 0.8)`
+        : `0 ${token.boxShadowTertiary?.split(' ')[1] || '16px'} ${token.boxShadowTertiary?.split(' ')[2] || '40px'} rgba(0, 0, 0, 0.12)`
     } as React.CSSProperties,
 
     container: {
       width: '100%',
-      height: '450px', // 从420px增加到450px，给内容更多空间
+      minHeight: '420px', // 改为最小高度，允许内容自适应
       display: 'flex',
       flexDirection: 'column',
       padding: 0
     } as React.CSSProperties,
 
     header: {
-      padding: `${SPACING.MD}px ${SPACING.MD}px ${SPACING.SM}px`, // 减少padding
+      padding: `${token.paddingMD}px ${token.paddingMD}px ${token.paddingSM}px`,
       borderBottom: `1px solid ${isFullscreen ? 'rgba(255, 255, 255, 0.1)' : token.colorBorderSecondary}`,
       backgroundColor: 'transparent',
       display: 'flex',
@@ -118,8 +120,8 @@ export function VideoCompatibilityModal({
 
     headerTitle: {
       color: isFullscreen ? 'rgba(255, 255, 255, 0.9)' : token.colorText,
-      fontSize: token.fontSize, // 从fontSizeLG减少到fontSize
-      fontWeight: FONT_WEIGHTS.SEMIBOLD,
+      fontSize: token.fontSize,
+      fontWeight: token.fontWeightStrong || FONT_WEIGHTS.SEMIBOLD,
       margin: 0
     } as React.CSSProperties,
 
@@ -141,14 +143,14 @@ export function VideoCompatibilityModal({
     content: {
       flex: '1 1 auto',
       minHeight: 0, // 允许内容收缩
-      padding: `${SPACING.MD}px ${SPACING.MD}px ${SPACING.SM}px`, // 顶部稍大padding，底部较小
+      padding: `${SPACING.LG}px ${SPACING.MD}px`, // 上下使用相同的padding保持平衡
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'flex-start', // 从center改为flex-start，避免居中时溢出
+      justifyContent: 'center', // 恢复垂直居中
       alignItems: 'center',
       textAlign: 'center',
       overflow: 'auto', // 如果内容太多，允许滚动
-      gap: SPACING.SM // 使用gap替代单独的margin，更好控制间距
+      gap: SPACING.MD // 增加间距，使内容更舒适
     } as React.CSSProperties,
 
     icon: {
@@ -168,8 +170,8 @@ export function VideoCompatibilityModal({
       color: isFullscreen ? 'rgba(255, 255, 255, 0.7)' : token.colorTextSecondary,
       fontSize: token.fontSizeSM, // 保持小字号
       marginBottom: 0, // 移除bottom margin，使用gap控制间距
-      maxWidth: '360px', // 从380px进一步减少到360px
-      lineHeight: 1.4, // 从1.5减少到1.4，更紧凑
+      maxWidth: '420px', // 增加宽度以适应新的Modal尺寸
+      lineHeight: 1.5, // 恢复舒适的行高
       margin: 0
     } as React.CSSProperties,
 
@@ -177,20 +179,20 @@ export function VideoCompatibilityModal({
       backgroundColor: isFullscreen ? 'rgba(255, 255, 255, 0.05)' : token.colorBgContainer,
       border: `1px solid ${isFullscreen ? 'rgba(255, 255, 255, 0.1)' : token.colorBorderSecondary}`,
       borderRadius: BORDER_RADIUS.LG,
-      padding: SPACING.SM, // 从MD进一步减少到SM
+      padding: SPACING.MD, // 恢复舒适的padding
       marginBottom: 0, // 移除bottom margin，使用gap控制间距
       width: '100%',
-      maxWidth: '360px' // 从380px减少到360px
+      maxWidth: '420px' // 增加宽度以适应新的Modal尺寸
     } as React.CSSProperties,
 
     progressContainer: {
       width: '100%',
-      maxWidth: '360px', // 从380px减少到360px
+      maxWidth: '420px', // 增加宽度以适应新的Modal尺寸
       marginBottom: 0 // 移除bottom margin，使用gap控制间距
     } as React.CSSProperties,
 
     progressBar: {
-      marginBottom: SPACING.XS // 从SPACING.SM减少到SPACING.XS
+      marginBottom: SPACING.SM // 恢复适当的间距
     } as React.CSSProperties,
 
     progressText: {
@@ -201,14 +203,14 @@ export function VideoCompatibilityModal({
 
     footer: {
       flexShrink: 0, // 防止Footer被压缩
-      minHeight: '60px', // 从80px减少到60px
-      padding: `${SPACING.SM}px ${SPACING.MD}px ${SPACING.MD}px`, // 减少顶部padding
+      minHeight: '70px', // 适当增加高度保持平衡
+      padding: `${SPACING.MD}px ${SPACING.MD}px`, // 上下使用相同padding
       borderTop: `1px solid ${isFullscreen ? 'rgba(255, 255, 255, 0.1)' : token.colorBorderSecondary}`,
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      gap: SPACING.SM // 从SPACING.MD减少到SPACING.SM
+      gap: SPACING.SM
     } as React.CSSProperties,
 
     primaryButton: {
@@ -868,7 +870,7 @@ export function VideoCompatibilityModal({
       open={visible}
       onCancel={handleClose}
       footer={null}
-      width={520} // 从600减少到520，更紧凑
+      width={560} // 适当增加宽度，保持内容舒适度
       centered={!isFullscreen}
       closable={false}
       style={modalStyles.modal}
