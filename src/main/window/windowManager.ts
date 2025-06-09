@@ -11,7 +11,7 @@ export function createWindow(): BrowserWindow {
 
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 768,
+    width: 800,
     height: 600,
     minWidth: 768,
     minHeight: 600,
@@ -24,11 +24,7 @@ export function createWindow(): BrowserWindow {
     // macOS 交通灯按钮位置自定义 / macOS traffic light position customization
     trafficLightPosition:
       process.platform === 'darwin' && !useWindowFrame ? { x: 10, y: 10 } : undefined,
-    titleBarOverlay: useWindowFrame
-      ? false
-      : {
-          height: 49 // 自定义标题栏高度 / Custom title bar height
-        },
+    titleBarOverlay: false, // 完全禁用系统标题栏覆盖，使用完全自定义的标题栏 / Completely disable system title bar overlay, use fully custom title bar
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

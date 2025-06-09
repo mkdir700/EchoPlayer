@@ -39,6 +39,23 @@ html {
   display: none;
 }
 
+/* 全局禁用焦点轮廓 / Global focus outline disable */
+*,
+*::before,
+*::after {
+  outline: none !important; /* 禁用所有元素的焦点轮廓 / Disable focus outline for all elements */
+}
+
+/* 禁用按钮和输入框的焦点样式 / Disable focus styles for buttons and inputs */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+a:focus {
+  outline: none !important;
+  box-shadow: none !important; /* 同时禁用可能的焦点阴影 / Also disable potential focus shadows */
+}
+
 /* 沉浸式窗口标题栏样式 / Immersive window title bar styles */
 .app-nodrag {
   -webkit-app-region: none; /* 禁用拖拽，允许点击交互 / Disable dragging, allow click interaction */

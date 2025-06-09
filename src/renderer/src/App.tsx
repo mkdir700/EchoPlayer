@@ -105,13 +105,7 @@ function AppContent(): React.JSX.Element {
       <VideoPlayerProvider>
         <Layout style={{ minHeight: '100vh' }}>
           {/* 自定义标题栏 - 仅在非系统框架模式下显示 / Custom title bar - only show in non-system frame mode */}
-          {!useWindowFrame && (
-            <TitleBar
-              showWindowControls={true}
-              onSettingsClick={handleSettingsClick}
-              variant={currentPage === 'play' ? 'compact' : 'default'}
-            />
-          )}
+          {!useWindowFrame && <TitleBar onSettingsClick={handleSettingsClick} />}
 
           {currentPage !== 'play' ? (
             <>
