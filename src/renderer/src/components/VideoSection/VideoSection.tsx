@@ -83,11 +83,17 @@ function VideoSectionInner({ onBack }: VideoSectionInnerProps): React.JSX.Elemen
 
         // 检查是否是 file:// URL，如果是则转换为本地路径
         let localFilePath = transcodedFilePath
-        if (transcodedFilePath.startsWith('file://')) {
+        if (transcodedFilePath.startsWith('file:///')) {
+          // 移除 file:/// 前缀并解码 URL 编码
+          localFilePath = decodeURIComponent(transcodedFilePath.replace('file:///', ''))
+        } else if (transcodedFilePath.startsWith('file://')) {
           // 移除 file:// 前缀并解码 URL 编码
           localFilePath = decodeURIComponent(transcodedFilePath.replace('file://', ''))
-          console.log('转换后的本地文件路径:', localFilePath)
+        } else {
+          // 如果已经是本地路径，直接使用
+          localFilePath = transcodedFilePath
         }
+        console.log('转换后的本地文件路径:', localFilePath)
 
         // 从转码后的文件路径中提取文件名
         const transcodedFileName = localFilePath.split(/[\\/]/).pop() || 'transcoded_video.mp4'
