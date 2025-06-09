@@ -37,7 +37,7 @@ export function buildPlayPageHeaderStyles(
       borderBottom: `1px solid ${token.colorBorderSecondary}`,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: 100
+      zIndex: token.zIndexPopupBase // Use token zIndex instead of hardcoded value - 使用token中的zIndex而非硬编码值
     },
 
     playPageHeaderBackground: {
