@@ -108,10 +108,6 @@ export const SubtitleEmptyState: React.FC<{
   // 拖拽区域样式 / Drag area styles
   const dragAreaStyle: React.CSSProperties = {
     ...styles.subtitleSearchContainer,
-    border: isDragging
-      ? `2px dashed ${token.colorPrimary}`
-      : `2px dashed ${token.colorBorderSecondary}`,
-    borderRadius: token.borderRadiusLG,
     backgroundColor: isDragging ? token.colorPrimaryBg : 'transparent',
     transition: 'all 0.2s ease',
     position: 'relative'
