@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import { Button, Space, Modal, Progress, Typography, Card, Tag, Spin } from 'antd'
+import { Button, Space, Modal, Progress, Typography, Tag, Spin } from 'antd'
 import {
   ToolOutlined,
   CheckCircleOutlined,
@@ -103,7 +103,7 @@ export function VideoCompatibilityModal({
 
     container: {
       width: '100%',
-      minHeight: '420px', // 改为最小高度，允许内容自适应
+      height: '380px', // 固定高度，与"需要下载 FFmpeg 工具"步骤保持一致
       display: 'flex',
       flexDirection: 'column',
       padding: 0
@@ -142,57 +142,48 @@ export function VideoCompatibilityModal({
 
     content: {
       flex: '1 1 auto',
-      minHeight: 0, // 允许内容收缩
-      padding: `${SPACING.LG}px ${SPACING.MD}px`, // 上下使用相同的padding保持平衡
+      minHeight: 0,
+      padding: `${SPACING.MD}px ${SPACING.MD}px`, // 减少上下padding
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center', // 恢复垂直居中
+      justifyContent: 'center',
       alignItems: 'center',
       textAlign: 'center',
-      overflow: 'auto', // 如果内容太多，允许滚动
-      gap: SPACING.MD // 增加间距，使内容更舒适
+      overflow: 'hidden',
+      gap: SPACING.SM // 减小间距
     } as React.CSSProperties,
 
     icon: {
-      fontSize: '32px', // 从36px进一步减少到32px
-      marginBottom: 0 // 移除bottom margin，使用gap控制间距
+      fontSize: '28px', // 进一步减小图标尺寸
+      marginBottom: 0
     } as React.CSSProperties,
 
     title: {
       color: isFullscreen ? 'rgba(255, 255, 255, 0.9)' : token.colorText,
-      fontSize: token.fontSize, // 从fontSizeLG减少到fontSize，进一步压缩
+      fontSize: token.fontSizeLG, // 保持合适的标题大小
       fontWeight: FONT_WEIGHTS.SEMIBOLD,
-      marginBottom: 0, // 移除bottom margin，使用gap控制间距
-      margin: 0
+      marginBottom: 0,
+      margin: 0,
+      lineHeight: 1.3 // 减小行高
     } as React.CSSProperties,
 
     description: {
       color: isFullscreen ? 'rgba(255, 255, 255, 0.7)' : token.colorTextSecondary,
-      fontSize: token.fontSizeSM, // 保持小字号
-      marginBottom: 0, // 移除bottom margin，使用gap控制间距
-      maxWidth: '420px', // 增加宽度以适应新的Modal尺寸
-      lineHeight: 1.5, // 恢复舒适的行高
+      fontSize: token.fontSizeSM,
+      marginBottom: 0,
+      maxWidth: '400px', // 稍微减小宽度
+      lineHeight: 1.4, // 减小行高
       margin: 0
-    } as React.CSSProperties,
-
-    card: {
-      backgroundColor: isFullscreen ? 'rgba(255, 255, 255, 0.05)' : token.colorBgContainer,
-      border: `1px solid ${isFullscreen ? 'rgba(255, 255, 255, 0.1)' : token.colorBorderSecondary}`,
-      borderRadius: BORDER_RADIUS.LG,
-      padding: SPACING.MD, // 恢复舒适的padding
-      marginBottom: 0, // 移除bottom margin，使用gap控制间距
-      width: '100%',
-      maxWidth: '420px' // 增加宽度以适应新的Modal尺寸
     } as React.CSSProperties,
 
     progressContainer: {
       width: '100%',
-      maxWidth: '420px', // 增加宽度以适应新的Modal尺寸
-      marginBottom: 0 // 移除bottom margin，使用gap控制间距
+      maxWidth: '400px', // 减小宽度
+      marginBottom: 0
     } as React.CSSProperties,
 
     progressBar: {
-      marginBottom: SPACING.SM // 恢复适当的间距
+      marginBottom: SPACING.XS // 进一步减小间距
     } as React.CSSProperties,
 
     progressText: {
@@ -202,15 +193,13 @@ export function VideoCompatibilityModal({
     } as React.CSSProperties,
 
     footer: {
-      flexShrink: 0, // 防止Footer被压缩
-      minHeight: '70px', // 适当增加高度保持平衡
-      padding: `${SPACING.MD}px ${SPACING.MD}px`, // 上下使用相同padding
+      flexShrink: 0,
+      minHeight: '50px', // 进一步减小footer高度
+      padding: `${SPACING.XS}px ${SPACING.MD}px`, // 最小化上下padding
       borderTop: `1px solid ${isFullscreen ? 'rgba(255, 255, 255, 0.1)' : token.colorBorderSecondary}`,
       display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: SPACING.SM
+      justifyContent: 'center', // 直接居中，移除flex-direction: column
+      alignItems: 'center'
     } as React.CSSProperties,
 
     primaryButton: {
@@ -530,8 +519,7 @@ export function VideoCompatibilityModal({
               需要下载 FFmpeg 工具
             </Title>
             <Text style={modalStyles.description}>
-              转码功能需要 FFmpeg 工具支持。FFmpeg 是开源的音视频处理工具， 下载大小约
-              30-50MB，仅需下载一次。
+              转码功能需要 FFmpeg 工具支持。下载大小约 30-50MB，仅需下载一次。
             </Text>
           </>
         )
@@ -567,33 +555,16 @@ export function VideoCompatibilityModal({
               视频格式完全兼容，可直接播放，无需转码处理。
             </Text>
             {analysisResult && (
-              <Card style={modalStyles.card}>
-                <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                  <Text
-                    strong
-                    style={{ color: isFullscreen ? 'rgba(255, 255, 255, 0.9)' : token.colorText }}
-                  >
-                    分析结果
-                  </Text>
-                  <Space>
-                    <Text
-                      style={{
-                        color: isFullscreen ? 'rgba(255, 255, 255, 0.7)' : token.colorTextSecondary
-                      }}
-                    >
-                      策略:
-                    </Text>
-                    <Tag
-                      color={getStrategyColor(analysisResult.decision.strategy)}
-                      style={modalStyles.tag}
-                    >
-                      {transcodeDecisionHelper.getStrategyFriendlyName(
-                        analysisResult.decision.strategy
-                      )}
-                    </Tag>
-                  </Space>
-                </Space>
-              </Card>
+              <div style={{ marginTop: SPACING.XS }}>
+                <Tag
+                  color={getStrategyColor(analysisResult.decision.strategy)}
+                  style={modalStyles.tag}
+                >
+                  {transcodeDecisionHelper.getStrategyFriendlyName(
+                    analysisResult.decision.strategy
+                  )}
+                </Tag>
+              </div>
             )}
           </>
         )
@@ -606,57 +577,34 @@ export function VideoCompatibilityModal({
               需要转码处理
             </Title>
             <Text style={modalStyles.description}>
-              为了获得最佳播放体验，建议对视频进行转码处理。转码后的文件将保存在原视频的同级目录下。
+              为获得最佳播放体验，建议对视频进行转码处理。
             </Text>
             {analysisResult && (
-              <Card style={modalStyles.card}>
-                <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                  <Text
-                    strong
-                    style={{ color: isFullscreen ? 'rgba(255, 255, 255, 0.9)' : token.colorText }}
-                  >
-                    转码信息
-                  </Text>
-                  <Space>
-                    <Text
-                      style={{
-                        color: isFullscreen ? 'rgba(255, 255, 255, 0.7)' : token.colorTextSecondary
-                      }}
-                    >
-                      策略:
-                    </Text>
-                    <Tag
-                      color={getStrategyColor(analysisResult.decision.strategy)}
-                      style={modalStyles.tag}
-                    >
-                      {transcodeDecisionHelper.getStrategyFriendlyName(
-                        analysisResult.decision.strategy
-                      )}
-                    </Tag>
-                  </Space>
-                  {analysisResult.decision.estimatedTime &&
-                    analysisResult.decision.estimatedTime > 0 && (
-                      <Space>
-                        <Text
-                          style={{
-                            color: isFullscreen
-                              ? 'rgba(255, 255, 255, 0.7)'
-                              : token.colorTextSecondary
-                          }}
-                        >
-                          预计用时:
-                        </Text>
-                        <Text
-                          style={{
-                            color: isFullscreen ? 'rgba(255, 255, 255, 0.9)' : token.colorText
-                          }}
-                        >
-                          {Math.round(analysisResult.decision.estimatedTime)} 秒
-                        </Text>
-                      </Space>
-                    )}
-                </Space>
-              </Card>
+              <div style={{ marginTop: SPACING.XS, textAlign: 'center' }}>
+                <Tag
+                  color={getStrategyColor(analysisResult.decision.strategy)}
+                  style={modalStyles.tag}
+                >
+                  {transcodeDecisionHelper.getStrategyFriendlyName(
+                    analysisResult.decision.strategy
+                  )}
+                </Tag>
+                {analysisResult.decision.estimatedTime &&
+                  analysisResult.decision.estimatedTime > 0 && (
+                    <div style={{ marginTop: SPACING.XS }}>
+                      <Text
+                        style={{
+                          color: isFullscreen
+                            ? 'rgba(255, 255, 255, 0.7)'
+                            : token.colorTextSecondary,
+                          fontSize: token.fontSizeSM
+                        }}
+                      >
+                        预计用时: {Math.round(analysisResult.decision.estimatedTime)} 秒
+                      </Text>
+                    </div>
+                  )}
+              </div>
             )}
           </>
         )
@@ -703,35 +651,33 @@ export function VideoCompatibilityModal({
             <Title level={4} style={modalStyles.title}>
               转码完成
             </Title>
-            <Text style={modalStyles.description}>
-              视频已成功转码，文件已保存在原视频的同目录下。
-            </Text>
-            <Card style={modalStyles.card}>
-              <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                {transcodedFilePath && (
-                  <Space>
-                    <Text
-                      style={{
-                        color: isFullscreen ? 'rgba(255, 255, 255, 0.9)' : token.colorText,
-                        fontWeight: FONT_WEIGHTS.MEDIUM
-                      }}
-                      title={getDecodedFileName(transcodedFilePath)} // 完整文件名作为tooltip
-                    >
-                      {truncateFileName(getDecodedFileName(transcodedFilePath))}
-                    </Text>
-                  </Space>
-                )}
-                {progressInfo.detail && (
+            <Text style={modalStyles.description}>视频已成功转码。</Text>
+            <div style={{ marginTop: SPACING.XS, textAlign: 'center' }}>
+              {transcodedFilePath && (
+                <Text
+                  style={{
+                    color: isFullscreen ? 'rgba(255, 255, 255, 0.9)' : token.colorText,
+                    fontWeight: FONT_WEIGHTS.MEDIUM,
+                    fontSize: token.fontSizeSM
+                  }}
+                  title={getDecodedFileName(transcodedFilePath)}
+                >
+                  {truncateFileName(getDecodedFileName(transcodedFilePath))}
+                </Text>
+              )}
+              {progressInfo.detail && (
+                <div style={{ marginTop: SPACING.XS }}>
                   <Text
                     style={{
-                      color: isFullscreen ? 'rgba(255, 255, 255, 0.7)' : token.colorTextSecondary
+                      color: isFullscreen ? 'rgba(255, 255, 255, 0.7)' : token.colorTextSecondary,
+                      fontSize: token.fontSizeSM
                     }}
                   >
                     {progressInfo.detail}
                   </Text>
-                )}
-              </Space>
-            </Card>
+                </div>
+              )}
+            </div>
           </>
         )
 

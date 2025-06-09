@@ -154,28 +154,58 @@ function convertFileUrlToLocalPath(inputPath: string): string {
 // 解压 ZIP 文件 / Extract ZIP file
 async function extractZipFile(zipPath: string, extractDir: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const unzip = spawn('unzip', ['-o', zipPath, '-d', extractDir])
+    if (process.platform === 'win32') {
+      // Windows 使用 PowerShell 的 Expand-Archive 命令 / Use PowerShell's Expand-Archive on Windows
+      const powershellCommand = `Expand-Archive -Path "${zipPath}" -DestinationPath "${extractDir}" -Force`
+      const powershell = spawn('powershell.exe', ['-Command', powershellCommand], {
+        windowsHide: true
+      })
 
-    unzip.stdout.on('data', (data) => {
-      Logger.info('解压输出:', data.toString())
-    })
+      powershell.stdout.on('data', (data) => {
+        Logger.info('PowerShell 解压输出:', data.toString())
+      })
 
-    unzip.stderr.on('data', (data) => {
-      Logger.warn('解压警告:', data.toString())
-    })
+      powershell.stderr.on('data', (data) => {
+        Logger.warn('PowerShell 解压警告:', data.toString())
+      })
 
-    unzip.on('close', (code) => {
-      if (code === 0) {
-        Logger.info('ZIP 解压成功')
-        resolve()
-      } else {
-        reject(new Error(`解压失败，退出代码: ${code}`))
-      }
-    })
+      powershell.on('close', (code) => {
+        if (code === 0) {
+          Logger.info('ZIP 解压成功 (PowerShell)')
+          resolve()
+        } else {
+          reject(new Error(`PowerShell 解压失败，退出代码: ${code}`))
+        }
+      })
 
-    unzip.on('error', (error) => {
-      reject(new Error(`解压命令执行失败: ${error.message}`))
-    })
+      powershell.on('error', (error) => {
+        reject(new Error(`PowerShell 解压命令执行失败: ${error.message}`))
+      })
+    } else {
+      // macOS/Linux 使用 unzip 命令 / Use unzip command on macOS/Linux
+      const unzip = spawn('unzip', ['-o', zipPath, '-d', extractDir])
+
+      unzip.stdout.on('data', (data) => {
+        Logger.info('解压输出:', data.toString())
+      })
+
+      unzip.stderr.on('data', (data) => {
+        Logger.warn('解压警告:', data.toString())
+      })
+
+      unzip.on('close', (code) => {
+        if (code === 0) {
+          Logger.info('ZIP 解压成功')
+          resolve()
+        } else {
+          reject(new Error(`解压失败，退出代码: ${code}`))
+        }
+      })
+
+      unzip.on('error', (error) => {
+        reject(new Error(`解压命令执行失败: ${error.message}`))
+      })
+    }
   })
 }
 
@@ -367,37 +397,133 @@ async function downloadFFmpeg(onProgress?: (progress: number) => void): Promise<
   try {
     Logger.info('开始下载 FFmpeg...', { url: downloadInfo.url, path: downloadPath })
 
-    // 下载文件 / Download file
+    // 下载文件，支持重定向 / Download file with redirect support
     await new Promise<void>((resolve, reject) => {
-      https
-        .get(downloadInfo.url, (response) => {
-          if (response.statusCode !== 200) {
-            reject(new Error(`下载失败: HTTP ${response.statusCode}`))
-            return
-          }
+      const downloadTimeout = setTimeout(
+        () => {
+          reject(new Error('下载超时: 请检查网络连接'))
+        },
+        30 * 60 * 1000
+      ) // 30分钟超时
 
-          const totalSize = parseInt(response.headers['content-length'] || '0', 10)
-          let downloadedSize = 0
+      const cleanup = (): void => {
+        if (downloadTimeout) {
+          clearTimeout(downloadTimeout)
+        }
+      }
 
-          const fileStream = createWriteStream(downloadPath)
+      const downloadFile = (url: string, maxRedirects: number = 5): void => {
+        if (maxRedirects <= 0) {
+          cleanup()
+          reject(new Error('下载失败: 重定向次数过多'))
+          return
+        }
 
-          response.on('data', (chunk) => {
-            downloadedSize += chunk.length
-            if (onProgress && totalSize > 0) {
-              onProgress((downloadedSize / totalSize) * 100)
+        const request = https
+          .get(
+            url,
+            {
+              timeout: 30000, // 30秒连接超时
+              headers: {
+                'User-Agent': 'EchoLab/1.0.0 (Electron FFmpeg Downloader)'
+              }
+            },
+            (response) => {
+              // 处理重定向 / Handle redirects
+              if (response.statusCode === 301 || response.statusCode === 302) {
+                const redirectUrl = response.headers.location
+                if (redirectUrl) {
+                  Logger.info(`处理重定向: ${response.statusCode}`, {
+                    from: url,
+                    to: redirectUrl,
+                    remainingRedirects: maxRedirects - 1
+                  })
+                  downloadFile(redirectUrl, maxRedirects - 1)
+                  return
+                } else {
+                  cleanup()
+                  reject(new Error(`下载失败: HTTP ${response.statusCode} 但未提供重定向地址`))
+                  return
+                }
+              }
+
+              // 检查最终响应状态 / Check final response status
+              if (response.statusCode !== 200) {
+                cleanup()
+                reject(
+                  new Error(
+                    `下载失败: HTTP ${response.statusCode} - ${response.statusMessage || '未知错误'}`
+                  )
+                )
+                return
+              }
+
+              const totalSize = parseInt(response.headers['content-length'] || '0', 10)
+              let downloadedSize = 0
+
+              Logger.info('开始接收文件数据', {
+                contentLength: totalSize,
+                contentType: response.headers['content-type']
+              })
+
+              const fileStream = createWriteStream(downloadPath)
+
+              response.on('data', (chunk) => {
+                downloadedSize += chunk.length
+                if (onProgress && totalSize > 0) {
+                  const progress = (downloadedSize / totalSize) * 100
+                  onProgress(progress)
+
+                  // 每10%记录一次日志
+                  if (Math.floor(progress) % 10 === 0 && Math.floor(progress) !== 0) {
+                    Logger.debug('下载进度更新', {
+                      progress: `${Math.floor(progress)}%`,
+                      downloaded: `${Math.round(downloadedSize / 1024 / 1024)}MB`,
+                      total: `${Math.round(totalSize / 1024 / 1024)}MB`
+                    })
+                  }
+                }
+              })
+
+              response.pipe(fileStream)
+
+              fileStream.on('finish', () => {
+                fileStream.close()
+                cleanup()
+                Logger.info('文件下载完成', {
+                  finalSize: downloadedSize,
+                  expectedSize: totalSize
+                })
+                resolve()
+              })
+
+              fileStream.on('error', (error) => {
+                cleanup()
+                Logger.error('文件写入错误:', error)
+                reject(error)
+              })
+
+              response.on('error', (error) => {
+                cleanup()
+                Logger.error('响应流错误:', error)
+                reject(error)
+              })
             }
+          )
+          .on('error', (error) => {
+            cleanup()
+            Logger.error('请求错误:', error)
+            reject(error)
           })
-
-          response.pipe(fileStream)
-
-          fileStream.on('finish', () => {
-            fileStream.close()
-            resolve()
+          .on('timeout', () => {
+            cleanup()
+            request.destroy()
+            reject(new Error('连接超时: 请检查网络连接'))
           })
+      }
 
-          fileStream.on('error', reject)
-        })
-        .on('error', reject)
+      // 开始下载 / Start download
+      downloadFile(downloadInfo.url)
     })
 
     Logger.info('FFmpeg 下载完成', {
