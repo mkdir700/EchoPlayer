@@ -5,6 +5,11 @@ import { EditOutlined, CloseOutlined, KeyOutlined } from '@ant-design/icons'
 import { useShortcuts } from '@renderer/hooks/useShortcuts'
 import { DEFAULT_SHORTCUTS } from '@renderer/hooks/useShortcutManager'
 import { useTheme } from '@renderer/hooks/useTheme'
+import {
+  checkSingleShortcutConflict,
+  validateShortcuts,
+  getConflictDescription
+} from '@renderer/utils/shortcutValidator'
 
 const { Text } = Typography
 
@@ -111,10 +116,6 @@ const FORBIDDEN_KEYS = new Set([
   'PrintScreen',
   'Pause',
   'ContextMenu',
-  'Meta',
-  'Control',
-  'Alt',
-  'Shift',
   'F1',
   'F2',
   'F3',
@@ -268,6 +269,14 @@ function ShortcutItem({
     // 处理特殊按键
     if (key === ' ') {
       keyString += 'Space'
+    } else if (key === 'ArrowLeft') {
+      keyString += '←'
+    } else if (key === 'ArrowRight') {
+      keyString += '→'
+    } else if (key === 'ArrowUp') {
+      keyString += '↑'
+    } else if (key === 'ArrowDown') {
+      keyString += '↓'
     } else if (key.length === 1) {
       keyString += key.toUpperCase()
     } else {
@@ -493,20 +502,17 @@ export function ShortcutsSection({ className }: ShortcutsSectionProps): React.JS
   const { shortcuts, getCurrentShortcut, updateShortcut, resetShortcuts } = useShortcuts()
   const { token } = useTheme()
 
+  // 检测当前配置中的冲突
+  const validation = validateShortcuts(shortcuts)
+  const hasConflicts = !validation.isValid
+
   const handleEditShortcut = (key: string): void => {
     setEditingShortcut(key)
   }
 
   const checkShortcutConflict = (newKey: string, currentKey: string): string | null => {
-    // 检查是否与其他快捷键冲突
-    for (const config of SHORTCUT_CONFIGS) {
-      if (config.key === currentKey) continue // 跳过当前正在编辑的快捷键
-      const existingKey = getCurrentShortcut(config.key)
-      if (existingKey === newKey) {
-        return config.name
-      }
-    }
-    return null
+    // 使用新的冲突检测工具
+    return checkSingleShortcutConflict(newKey, currentKey, shortcuts)
   }
 
   const handleSaveShortcut = (key: string, newKey: string): void => {
@@ -548,6 +554,35 @@ export function ShortcutsSection({ className }: ShortcutsSectionProps): React.JS
 
   return (
     <div className={className}>
+      {/* 冲突警告 */}
+      {hasConflicts && (
+        <div
+          style={{
+            background: token.colorErrorBg,
+            border: `1px solid ${token.colorErrorBorder}`,
+            borderRadius: token.borderRadius,
+            padding: token.paddingMD,
+            marginBottom: token.marginLG
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: token.marginXS }}>
+            <Text strong style={{ color: token.colorError }}>
+              ⚠️ 检测到快捷键冲突
+            </Text>
+          </div>
+          <div style={{ marginBottom: token.marginSM }}>
+            {getConflictDescription(validation.conflicts).map((desc, index) => (
+              <div key={index} style={{ color: token.colorErrorText, fontSize: token.fontSizeSM }}>
+                • {desc}
+              </div>
+            ))}
+          </div>
+          <Text style={{ color: token.colorErrorText, fontSize: token.fontSizeSM }}>
+            请修改冲突的快捷键或点击&ldquo;重置为默认&rdquo;来解决冲突。
+          </Text>
+        </div>
+      )}
+
       <div
         style={{
           background: token.colorBgContainer,

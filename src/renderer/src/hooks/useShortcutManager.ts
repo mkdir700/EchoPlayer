@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { matchesShortcut as matchesShortcutUtil } from '../utils/shortcutMatcher'
+import { validateShortcuts, fixShortcutConflicts } from '../utils/shortcutValidator'
 
 // 快捷键配置接口
 export interface ShortcutConfig {
@@ -139,7 +140,24 @@ export function useShortcutManager(): {
     const saved = localStorage.getItem('echolab-shortcuts')
     if (saved) {
       try {
-        return JSON.parse(saved)
+        const parsedShortcuts = JSON.parse(saved)
+
+        // 验证配置是否有冲突
+        const validation = validateShortcuts(parsedShortcuts)
+        if (!validation.isValid) {
+          console.warn('检测到快捷键冲突，正在自动修复...', validation.conflicts)
+
+          // 自动修复冲突
+          const fixResult = fixShortcutConflicts(parsedShortcuts)
+          if (fixResult.fixedShortcuts) {
+            // 保存修复后的配置
+            localStorage.setItem('echolab-shortcuts', JSON.stringify(fixResult.fixedShortcuts))
+            console.log('快捷键冲突已自动修复')
+            return fixResult.fixedShortcuts
+          }
+        }
+
+        return parsedShortcuts
       } catch {
         return {}
       }
