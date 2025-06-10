@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, memo } from 'react'
 import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubtitleDisplayContext'
 import {
   OriginalSubtitleText,
@@ -20,7 +20,7 @@ interface SubtitleContentProps {
   onSelectionChange?: (selectedText: string) => void
 }
 
-export const SubtitleContent: React.FC<SubtitleContentProps> = ({
+const SubtitleContentComponent: React.FC<SubtitleContentProps> = ({
   dynamicTextStyle,
   dynamicEnglishTextStyle,
   dynamicChineseTextStyle,
@@ -157,3 +157,23 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
 
   return <>{renderSubtitleContent}</>
 }
+
+// Apply React.memo for performance optimization
+// 应用 React.memo 进行性能优化
+export const SubtitleContent = memo(SubtitleContentComponent, (prevProps, nextProps) => {
+  // Compare all props for shallow equality
+  // 对所有 props 进行浅比较
+  return (
+    prevProps.onWordHover === nextProps.onWordHover &&
+    prevProps.onWordClick === nextProps.onWordClick &&
+    prevProps.enableTextSelection === nextProps.enableTextSelection &&
+    prevProps.onSelectionChange === nextProps.onSelectionChange &&
+    // Deep comparison for style objects since they might be recreated
+    // 对样式对象进行深度比较，因为它们可能被重新创建
+    JSON.stringify(prevProps.dynamicTextStyle) === JSON.stringify(nextProps.dynamicTextStyle) &&
+    JSON.stringify(prevProps.dynamicEnglishTextStyle) ===
+      JSON.stringify(nextProps.dynamicEnglishTextStyle) &&
+    JSON.stringify(prevProps.dynamicChineseTextStyle) ===
+      JSON.stringify(nextProps.dynamicChineseTextStyle)
+  )
+})

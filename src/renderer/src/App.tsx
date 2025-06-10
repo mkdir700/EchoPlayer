@@ -1,15 +1,23 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, Suspense } from 'react'
 import { Layout } from 'antd'
 
-// 导入组件
+// 导入关键组件 / Import critical components
 import { AppSidebar } from '@renderer/components/AppSidebar/AppSidebar'
 import { TitleBar } from '@renderer/components/TitleBar/TitleBar'
 import { HomePage } from '@renderer/pages/HomePage'
 import { PlayPage } from '@renderer/pages/PlayPage'
-import { FavoritesPage } from '@renderer/pages/FavoritesPage'
-import { AboutPage } from '@renderer/pages/AboutPage'
-import { SettingsPage } from '@renderer/pages/SettingsPage'
 import UpdateNotification from '@renderer/components/UpdateNotification'
+
+// 懒加载的页面组件 / Lazy-loaded page components
+const FavoritesPage = React.lazy(() =>
+  import('@renderer/pages/FavoritesPage').then((module) => ({ default: module.FavoritesPage }))
+)
+const AboutPage = React.lazy(() =>
+  import('@renderer/pages/AboutPage').then((module) => ({ default: module.AboutPage }))
+)
+const SettingsPage = React.lazy(() =>
+  import('@renderer/pages/SettingsPage').then((module) => ({ default: module.SettingsPage }))
+)
 
 import { ShortcutProvider } from '@renderer/contexts/ShortcutContext'
 import { PlayingVideoProvider } from '@renderer/contexts/PlayingVideoContext'
@@ -26,6 +34,24 @@ import { PageType } from '@renderer/types'
 import { performanceMonitor } from '@renderer/utils/performance'
 
 const { Content } = Layout
+
+/**
+ * Loading fallback component for lazy-loaded pages
+ * 懒加载页面的加载回退组件
+ */
+const PageLoadingFallback: React.FC = () => (
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '200px',
+      color: '#666'
+    }}
+  >
+    <div>加载中...</div>
+  </div>
+)
 
 /**
  * Renders the main application content with page navigation and context providers.
@@ -75,20 +101,26 @@ function AppContent(): React.JSX.Element {
           </SubtitleListProvider>
         )}
 
-        {/* 其他页面 - 条件渲染，覆盖在播放页面之上 */}
+        {/* 其他页面 - 条件渲染，覆盖在播放页面之上 / Other pages - conditional rendering, overlaid on play page */}
         {currentPage === 'favorites' && (
           <div>
-            <FavoritesPage />
+            <Suspense fallback={<PageLoadingFallback />}>
+              <FavoritesPage />
+            </Suspense>
           </div>
         )}
         {currentPage === 'about' && (
           <div>
-            <AboutPage />
+            <Suspense fallback={<PageLoadingFallback />}>
+              <AboutPage />
+            </Suspense>
           </div>
         )}
         {currentPage === 'settings' && (
           <div>
-            <SettingsPage />
+            <Suspense fallback={<PageLoadingFallback />}>
+              <SettingsPage />
+            </Suspense>
           </div>
         )}
       </>

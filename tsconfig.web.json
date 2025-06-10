@@ -4,7 +4,8 @@
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
     "src/preload/*.d.ts",
-    "src/types/**/*"
+    "src/types/**/*",
+    "src/test/**/*"
   ],
   "compilerOptions": {
     "composite": true,
