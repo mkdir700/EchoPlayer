@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Typography } from 'antd'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { useSubtitleTextSelection } from '@renderer/hooks/useSubtitleTextSelection'
 import RendererLogger from '@renderer/utils/logger'
 
 const { Text } = Typography
@@ -10,26 +11,58 @@ interface SubtitleTextProps {
   style: React.CSSProperties
   onWordHover: (isHovering: boolean) => void
   onWordClick: (word: string, event: React.MouseEvent) => void
+  // 新增划词选中相关属性 / New text selection related props
+  enableTextSelection?: boolean
+  onSelectionChange?: (selectedText: string) => void
 }
 
-// Word wrapper component to handle hover states with theme system
+// Word wrapper component to handle hover states with theme system and text selection
 const WordWrapper: React.FC<{
   children: React.ReactNode
   isClickable: boolean
   onWordHover: (isHovering: boolean) => void
   onWordClick?: (event: React.MouseEvent) => void
-}> = ({ children, isClickable, onWordHover, onWordClick }) => {
-  const { styles } = useTheme()
+  // 新增划词选中相关属性 / New text selection related props
+  wordIndex?: number
+  charIndex?: number
+  isSelected?: boolean
+  onSelectionMouseDown?: (wordIndex: number, charIndex?: number) => (e: React.MouseEvent) => void
+  onSelectionMouseEnter?: (wordIndex: number, charIndex?: number) => void
+}> = ({
+  children,
+  isClickable,
+  onWordHover,
+  onWordClick,
+  wordIndex,
+  charIndex,
+  isSelected = false,
+  onSelectionMouseDown,
+  onSelectionMouseEnter
+}) => {
+  const { styles, token } = useTheme()
   const [isHovered, setIsHovered] = useState(false)
 
   const handleMouseEnter = (): void => {
     setIsHovered(true)
     onWordHover(true)
+
+    // 处理划词选中的鼠标进入事件 / Handle text selection mouse enter
+    if (typeof wordIndex === 'number' && onSelectionMouseEnter) {
+      onSelectionMouseEnter(wordIndex, charIndex)
+    }
   }
 
   const handleMouseLeave = (): void => {
     setIsHovered(false)
     onWordHover(false)
+  }
+
+  const handleMouseDown = (e: React.MouseEvent): void => {
+    // 处理划词选中的鼠标按下事件 / Handle text selection mouse down
+    if (typeof wordIndex === 'number' && onSelectionMouseDown) {
+      const selectionHandler = onSelectionMouseDown(wordIndex, charIndex)
+      selectionHandler(e)
+    }
   }
 
   const baseStyle = {
@@ -43,11 +76,22 @@ const WordWrapper: React.FC<{
       : styles.subtitleWordHover
     : {}
 
+  // 选中状态样式 / Selection state style
+  const selectionStyle = isSelected
+    ? {
+        backgroundColor: token.colorPrimary + '40', // 40% 透明度 / 40% transparency
+        color: token.colorTextBase,
+        borderRadius: '2px'
+      }
+    : {}
+
   return (
     <span
-      style={{ ...baseStyle, ...hoverStyle }}
+      className={isClickable ? 'clickableWord' : undefined}
+      style={{ ...baseStyle, ...hoverStyle, ...selectionStyle }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
       onClick={onWordClick}
     >
       {children}
@@ -331,11 +375,41 @@ const SmartTextContent: React.FC<{
   style: React.CSSProperties
   onWordHover: (isHovering: boolean) => void
   onWordClick: (word: string, event: React.MouseEvent) => void
-}> = ({ text, style, onWordHover, onWordClick }) => {
+  // 新增划词选中相关属性 / New text selection related props
+  enableTextSelection?: boolean
+  onSelectionChange?: (selectedText: string) => void
+}> = ({
+  text,
+  style,
+  onWordHover,
+  onWordClick,
+  enableTextSelection = false,
+  onSelectionChange
+}) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
   const [needsSegmentation, setNeedsSegmentation] = useState(false)
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 })
+
+  // 划词选中功能 / Text selection functionality
+  // 只有启用划词选中时才按字符分割（支持中文原文），否则按单词分割 / Only split by characters when text selection is enabled (supports Chinese original text), otherwise split by words
+  const shouldSplitByCharacters = enableTextSelection && /[\u4e00-\u9fff]/.test(text)
+  const words = shouldSplitByCharacters
+    ? text.split('')
+    : text.split(/(\s+)/).filter((word) => word.trim() !== '')
+
+  // 始终调用 hook，但根据 enableTextSelection 决定是否使用 / Always call hook, but use based on enableTextSelection
+  const textSelection = useSubtitleTextSelection(
+    words,
+    enableTextSelection ? onSelectionChange : undefined
+  )
+
+  // 当文本变化时，清除选择状态 / Clear selection when text changes
+  useEffect(() => {
+    if (enableTextSelection) {
+      textSelection.clearSelection()
+    }
+  }, [text, enableTextSelection, textSelection.clearSelection])
 
   // Use ResizeObserver to monitor container size changes
   useEffect(() => {
@@ -374,6 +448,90 @@ const SmartTextContent: React.FC<{
     }
   }, [text, containerDimensions, style.fontSize]) // Add containerDimensions and fontSize as dependencies
 
+  // 渲染带有划词选中功能的文本 / Render text with selection functionality
+  const renderTextWithSelection = (textContent: string): React.ReactNode[] => {
+    if (!enableTextSelection) {
+      return splitTextWithTheme(textContent, onWordHover, onWordClick)
+    }
+
+    // 使用划词选中功能渲染文本 / Render text with selection functionality
+    if (shouldSplitByCharacters) {
+      return textContent.split('').map((char, index) => {
+        const isClickableChar = char.trim() !== '' && /[\u4e00-\u9fff]/.test(char)
+        const wordIndex = words.indexOf(char)
+        const isSelected = wordIndex >= 0 && textSelection.isWordSelected(wordIndex)
+
+        return (
+          <WordWrapper
+            key={index}
+            isClickable={isClickableChar}
+            onWordHover={onWordHover}
+            onWordClick={
+              isClickableChar
+                ? (e: React.MouseEvent) => {
+                    // 如果正在选择文本，不触发单词点击 / Don't trigger word click if selecting text
+                    if (!textSelection.selectionState.isSelecting) {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      onWordClick(char, e)
+                    }
+                  }
+                : undefined
+            }
+            // 划词选中相关属性 / Text selection related props
+            wordIndex={wordIndex >= 0 ? wordIndex : undefined}
+            isSelected={isSelected}
+            onSelectionMouseDown={textSelection.handleWordMouseDown}
+            onSelectionMouseEnter={textSelection.handleWordMouseEnter}
+          >
+            {char}
+          </WordWrapper>
+        )
+      })
+    } else {
+      let wordIndex = 0
+      return textContent.split(/(\s+)/).map((word, index) => {
+        if (word.trim() === '') {
+          return <span key={index}>{word}</span>
+        }
+
+        const trimWord = word.replace(/^[^\w\s]+|[^\w\s]+$/g, '')
+        const isClickableWord = trimWord.trim() !== ''
+        const currentWordIndex = wordIndex
+        const isSelected = textSelection.isWordSelected(currentWordIndex)
+
+        wordIndex++
+
+        return (
+          <WordWrapper
+            key={index}
+            isClickable={isClickableWord}
+            onWordHover={onWordHover}
+            onWordClick={
+              isClickableWord
+                ? (e: React.MouseEvent) => {
+                    // 如果正在选择文本，不触发单词点击 / Don't trigger word click if selecting text
+                    if (!textSelection.selectionState.isSelecting) {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      onWordClick(trimWord, e)
+                    }
+                  }
+                : undefined
+            }
+            // 划词选中相关属性 / Text selection related props
+            wordIndex={currentWordIndex}
+            isSelected={isSelected}
+            onSelectionMouseDown={textSelection.handleWordMouseDown}
+            onSelectionMouseEnter={textSelection.handleWordMouseEnter}
+          >
+            {word}
+          </WordWrapper>
+        )
+      })
+    }
+  }
+
   if (!needsSegmentation) {
     return (
       <div
@@ -388,7 +546,7 @@ const SmartTextContent: React.FC<{
         }}
       >
         <Text ref={textRef} style={style}>
-          {splitTextWithTheme(text, onWordHover, onWordClick)}
+          {renderTextWithSelection(text)}
         </Text>
       </div>
     )
@@ -427,7 +585,7 @@ const SmartTextContent: React.FC<{
             overflowWrap: 'break-word'
           }}
         >
-          {splitTextWithTheme(segment, onWordHover, onWordClick)}
+          {renderTextWithSelection(segment)}
         </div>
       ))}
     </div>
@@ -441,6 +599,9 @@ interface BilingualLineProps {
   onWordHover: (isHovering: boolean) => void
   onWordClick: (word: string, event: React.MouseEvent) => void
   language: 'english' | 'chinese' | 'original'
+  // 新增划词选中相关属性 / New text selection related props
+  enableTextSelection?: boolean
+  onSelectionChange?: (selectedText: string) => void
 }
 
 // 原始字幕文本组件
@@ -448,7 +609,9 @@ export const OriginalSubtitleText: React.FC<SubtitleTextProps> = ({
   text,
   style,
   onWordHover,
-  onWordClick
+  onWordClick,
+  enableTextSelection = false,
+  onSelectionChange
 }) => {
   const { styles } = useTheme()
 
@@ -475,6 +638,8 @@ export const OriginalSubtitleText: React.FC<SubtitleTextProps> = ({
         style={{ ...styles.subtitleText, ...style }}
         onWordHover={onWordHover}
         onWordClick={onWordClick}
+        enableTextSelection={enableTextSelection}
+        onSelectionChange={onSelectionChange}
       />
     </div>
   )
@@ -485,7 +650,9 @@ export const ChineseSubtitleText: React.FC<SubtitleTextProps> = ({
   text,
   style,
   onWordHover,
-  onWordClick
+  onWordClick,
+  enableTextSelection = false,
+  onSelectionChange
 }) => {
   const { styles } = useTheme()
 
@@ -512,6 +679,8 @@ export const ChineseSubtitleText: React.FC<SubtitleTextProps> = ({
         style={{ ...styles.subtitleText, ...styles.subtitleTextChinese, ...style }}
         onWordHover={onWordHover}
         onWordClick={onWordClick}
+        enableTextSelection={enableTextSelection}
+        onSelectionChange={onSelectionChange}
       />
     </div>
   )
@@ -522,7 +691,9 @@ export const EnglishSubtitleText: React.FC<SubtitleTextProps> = ({
   text,
   style,
   onWordHover,
-  onWordClick
+  onWordClick,
+  enableTextSelection = false,
+  onSelectionChange
 }) => {
   const { styles } = useTheme()
 
@@ -544,6 +715,8 @@ export const EnglishSubtitleText: React.FC<SubtitleTextProps> = ({
         style={{ ...styles.subtitleText, ...styles.subtitleTextEnglish, ...style }}
         onWordHover={onWordHover}
         onWordClick={onWordClick}
+        enableTextSelection={enableTextSelection}
+        onSelectionChange={onSelectionChange}
       />
     </div>
   )
@@ -555,7 +728,9 @@ export const BilingualSubtitleLine: React.FC<BilingualLineProps> = ({
   style,
   onWordHover,
   onWordClick,
-  language
+  language,
+  enableTextSelection = false,
+  onSelectionChange
 }) => {
   const { styles } = useTheme()
 
@@ -590,6 +765,8 @@ export const BilingualSubtitleLine: React.FC<BilingualLineProps> = ({
         style={getTextStyle()}
         onWordHover={onWordHover}
         onWordClick={onWordClick}
+        enableTextSelection={enableTextSelection}
+        onSelectionChange={onSelectionChange}
       />
     </div>
   )

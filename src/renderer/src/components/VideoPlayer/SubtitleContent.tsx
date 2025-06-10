@@ -15,6 +15,9 @@ interface SubtitleContentProps {
   dynamicChineseTextStyle: React.CSSProperties
   onWordHover: (isHovering: boolean) => void
   onWordClick: (word: string, event: React.MouseEvent) => void
+  // 新增划词选中相关属性 / New text selection related props
+  enableTextSelection?: boolean
+  onSelectionChange?: (selectedText: string) => void
 }
 
 export const SubtitleContent: React.FC<SubtitleContentProps> = ({
@@ -22,7 +25,9 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
   dynamicEnglishTextStyle,
   dynamicChineseTextStyle,
   onWordHover,
-  onWordClick
+  onWordClick,
+  enableTextSelection = false,
+  onSelectionChange
 }) => {
   const { displayMode } = useSubtitleDisplayModeControls()
   // 使用新的当前字幕显示hook
@@ -40,10 +45,13 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
       case 'original':
         return (
           <OriginalSubtitleText
+            key={`original-${text.substring(0, 20)}`}
             text={text}
             style={dynamicTextStyle}
             onWordHover={onWordHover}
             onWordClick={onWordClick}
+            enableTextSelection={enableTextSelection}
+            onSelectionChange={onSelectionChange}
           />
         )
 
@@ -51,10 +59,13 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
         if (chineseText) {
           return (
             <ChineseSubtitleText
+              key={`chinese-${chineseText.substring(0, 20)}`}
               text={chineseText}
               style={dynamicChineseTextStyle}
               onWordHover={onWordHover}
               onWordClick={onWordClick}
+              enableTextSelection={false} // 译文不支持选中 / Translation doesn't support selection
+              onSelectionChange={undefined}
             />
           )
         }
@@ -64,10 +75,13 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
         if (englishText) {
           return (
             <EnglishSubtitleText
+              key={`english-${englishText.substring(0, 20)}`}
               text={englishText}
               style={dynamicEnglishTextStyle}
               onWordHover={onWordHover}
               onWordClick={onWordClick}
+              enableTextSelection={enableTextSelection} // 英文作为原文支持选中 / English as original supports selection
+              onSelectionChange={onSelectionChange}
             />
           )
         }
@@ -89,29 +103,38 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
           >
             {englishText && (
               <BilingualSubtitleLine
+                key={`bilingual-english-${englishText.substring(0, 20)}`}
                 text={englishText}
                 style={dynamicEnglishTextStyle}
                 onWordHover={onWordHover}
                 onWordClick={onWordClick}
                 language="english"
+                enableTextSelection={enableTextSelection} // 英文作为原文支持选中 / English as original supports selection
+                onSelectionChange={onSelectionChange}
               />
             )}
             {chineseText && (
               <BilingualSubtitleLine
+                key={`bilingual-chinese-${chineseText.substring(0, 20)}`}
                 text={chineseText}
                 style={dynamicChineseTextStyle}
                 onWordHover={onWordHover}
                 onWordClick={onWordClick}
                 language="chinese"
+                enableTextSelection={false} // 中文译文不支持选中 / Chinese translation doesn't support selection
+                onSelectionChange={undefined}
               />
             )}
             {!englishText && !chineseText && (
               <BilingualSubtitleLine
+                key={`bilingual-original-${text.substring(0, 20)}`}
                 text={text}
                 style={dynamicTextStyle}
                 onWordHover={onWordHover}
                 onWordClick={onWordClick}
                 language="original"
+                enableTextSelection={enableTextSelection} // 原文支持选中 / Original text supports selection
+                onSelectionChange={onSelectionChange}
               />
             )}
           </div>
@@ -127,7 +150,9 @@ export const SubtitleContent: React.FC<SubtitleContentProps> = ({
     dynamicEnglishTextStyle,
     dynamicChineseTextStyle,
     onWordHover,
-    onWordClick
+    onWordClick,
+    enableTextSelection,
+    onSelectionChange
   ])
 
   return <>{renderSubtitleContent}</>

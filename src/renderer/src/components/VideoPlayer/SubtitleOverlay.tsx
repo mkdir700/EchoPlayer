@@ -6,6 +6,9 @@ interface SubtitleOverlayProps {
   onWordHover: (isHovering: boolean) => void
   onPauseOnHover: () => void
   onResumeOnLeave: () => void
+  // 新增划词选中相关属性 / New text selection related props
+  enableTextSelection?: boolean
+  onSelectionChange?: (selectedText: string) => void
 }
 
 /**
@@ -19,7 +22,9 @@ interface SubtitleOverlayProps {
 function SubtitleOverlay({
   onWordHover,
   onPauseOnHover,
-  onResumeOnLeave
+  onResumeOnLeave,
+  enableTextSelection = false,
+  onSelectionChange
 }: SubtitleOverlayProps): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleOverlay'
@@ -43,6 +48,8 @@ function SubtitleOverlay({
         onWordHover={onWordHover}
         onPauseOnHover={onPauseOnHover}
         onResumeOnLeave={onResumeOnLeave}
+        enableTextSelection={enableTextSelection}
+        onSelectionChange={onSelectionChange}
       />
     </div>
   )

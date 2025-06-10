@@ -20,6 +20,9 @@ import styles from './VideoPlayer.module.css'
 import RendererLogger from '@renderer/utils/logger'
 import { SubtitleOverlay } from '@renderer/components/VideoPlayer/SubtitleOverlay'
 import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useSubtitleCopy } from '@renderer/hooks/useSubtitleCopy'
+import { useCopySuccessToast } from '@renderer/hooks/useCopySuccessToast'
+import { CopySuccessToast } from '@renderer/components/CopySuccessToast/CopySuccessToast'
 
 interface VideoPlayerProps {
   isVideoLoaded: boolean
@@ -59,7 +62,6 @@ function VideoPlayer({
 
   // 内部状态管理 - 只管理 UI 相关的本地状态
   const [showControls, setShowControls] = useState(false)
-  const [isUserInteracting, setIsUserInteracting] = useState(false)
   const [isPausedByHover, setIsPausedByHover] = useState(false)
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -70,6 +72,19 @@ function VideoPlayer({
   // 全屏状态管理
   const { isFullscreen } = useFullscreenMode()
 
+  // 选中文本状态 / Selected text state
+  const [selectedText, setSelectedText] = useState<string>('')
+
+  // 复制成功提示管理 / Copy success toast management
+  const { toastState, showCopySuccess, hideCopySuccess } = useCopySuccessToast()
+
+  // 字幕复制功能 / Subtitle copy functionality
+  useSubtitleCopy({
+    selectedText,
+    enabled: true,
+    onCopySuccess: showCopySuccess
+  })
+
   // 监听全屏状态变化并通知父组件
   useEffect(() => {
     onFullscreenToggle?.(isFullscreen)
@@ -79,6 +94,16 @@ function VideoPlayer({
   const handleWordHoverForControls = useCallback((isHovering: boolean) => {
     if (isHovering) {
       setShowControls(true)
+    }
+  }, [])
+
+  // 划词选中功能的回调 / Text selection callback
+  const handleSelectionChange = useCallback((selectedText: string) => {
+    setSelectedText(selectedText)
+    if (selectedText) {
+      console.log('选中的文本 / Selected text:', selectedText)
+      // 这里可以添加更多的处理逻辑，比如显示翻译等
+      // Additional logic can be added here, such as showing translation, etc.
     }
   }, [])
 
@@ -108,36 +133,29 @@ function VideoPlayer({
   }, [eventHandlers, onVideoReady])
 
   // 优化：提取控制栏显示逻辑，避免重复代码
-  const showControlsWithTimeout = useCallback(
-    (timeout: number = 3000) => {
-      setShowControls(true)
+  const showControlsWithTimeout = useCallback((timeout: number = 3000) => {
+    setShowControls(true)
 
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current)
-      }
+    if (hideControlsTimeoutRef.current) {
+      clearTimeout(hideControlsTimeoutRef.current)
+    }
 
-      if (!isUserInteracting) {
-        hideControlsTimeoutRef.current = setTimeout(() => {
-          setShowControls(false)
-        }, timeout)
-      }
-    },
-    [isUserInteracting]
-  )
+    hideControlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false)
+    }, timeout)
+  }, [])
 
   // 智能控制显示逻辑
   const handleMouseEnter = useCallback((): void => {
     showControlsWithTimeout()
   }, [showControlsWithTimeout])
 
-  // 鼠标离开时，如果用户没有交互，则隐藏控制栏
+  // 鼠标离开时隐藏控制栏
   const handleMouseLeave = useCallback((): void => {
-    if (!isUserInteracting) {
-      hideControlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false)
-      }, 2000) // 2秒后隐藏
-    }
-  }, [isUserInteracting])
+    hideControlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false)
+    }, 2000) // 2秒后隐藏
+  }, [])
 
   // 优化：添加节流的鼠标移动处理
   const handleMouseMove = useCallback((): void => {
@@ -161,24 +179,10 @@ function VideoPlayer({
       clearTimeout(hideControlsTimeoutRef.current)
     }
 
-    if (!isUserInteracting) {
-      hideControlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false)
-      }, 3000) // 3秒无操作后隐藏
-    }
-  }, [showControls, isUserInteracting])
-
-  const handleUserInteractionStart = useCallback((): void => {
-    setIsUserInteracting(true)
-    setShowControls(true)
-  }, [])
-
-  const handleUserInteractionEnd = useCallback((): void => {
-    setIsUserInteracting(false)
     hideControlsTimeoutRef.current = setTimeout(() => {
       setShowControls(false)
-    }, 2000)
-  }, [])
+    }, 3000) // 3秒无操作后隐藏
+  }, [showControls])
 
   // 处理视频播放器点击事件
   const handleVideoClick = useCallback((): void => {
@@ -206,7 +210,7 @@ function VideoPlayer({
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current)
       }
-    } else if (!isUserInteracting) {
+    } else {
       hideControlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false)
       }, 3000)
@@ -216,7 +220,7 @@ function VideoPlayer({
     if (isPlaying && isPausedByHover) {
       setIsPausedByHover(false)
     }
-  }, [isPlaying, isUserInteracting, isPausedByHover])
+  }, [isPlaying, isPausedByHover])
 
   return (
     <div className={styles.videoSection}>
@@ -275,29 +279,33 @@ function VideoPlayer({
               onWordHover={handleWordHoverForControls}
               onPauseOnHover={handlePauseOnHover}
               onResumeOnLeave={handleResumeOnLeave}
+              enableTextSelection={true}
+              onSelectionChange={handleSelectionChange}
             />
 
-            {/* 视频控制组件 - 仅在全屏模式下显示 */}
-            {isFullscreen && showControls && (
-              <div
-                className={styles.controlsOverlay}
-                onMouseEnter={handleUserInteractionStart}
-                onMouseLeave={handleUserInteractionEnd}
-              >
-                <VideoControlsFullScreen
-                  showControls={showControls}
-                  isVideoLoaded={isVideoLoaded}
-                  videoError={videoError}
-                />
-              </div>
+            {/* 全屏控制栏 */}
+            {isFullscreen && (
+              <VideoControlsFullScreen
+                isVideoLoaded={isVideoLoaded}
+                videoError={videoError}
+                showControls={showControls}
+              />
             )}
           </>
         ) : (
           <VideoPlaceholder />
         )}
       </div>
+
+      {/* 复制成功提示 / Copy success toast */}
+      <CopySuccessToast
+        visible={toastState.visible}
+        position={toastState.position}
+        copiedText={toastState.copiedText}
+        onComplete={hideCopySuccess}
+      />
     </div>
   )
 }
 
-export { VideoPlayer }
+export default VideoPlayer

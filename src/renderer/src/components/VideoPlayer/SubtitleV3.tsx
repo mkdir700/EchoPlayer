@@ -16,6 +16,9 @@ interface SubtitleV3Props {
   onWordHover: (isHovering: boolean) => void
   onPauseOnHover: () => void
   onResumeOnLeave: () => void
+  // 新增划词选中相关属性 / New text selection related props
+  enableTextSelection?: boolean
+  onSelectionChange?: (selectedText: string) => void
 }
 
 // Split subcomponent: Mask overlay
@@ -86,7 +89,9 @@ ResizeHandle.displayName = 'ResizeHandle'
 function SubtitleV3({
   onWordHover,
   onPauseOnHover,
-  onResumeOnLeave
+  onResumeOnLeave,
+  enableTextSelection = false,
+  onSelectionChange
 }: SubtitleV3Props): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleV3',
@@ -415,6 +420,8 @@ function SubtitleV3({
             dynamicChineseTextStyle={dynamicChineseTextStyle}
             onWordHover={eventHandlers.handleWordHover}
             onWordClick={eventHandlers.handleWordClick}
+            enableTextSelection={enableTextSelection}
+            onSelectionChange={onSelectionChange}
           />
         </div>
 
@@ -455,7 +462,10 @@ function SubtitleV3({
 const MemoizedSubtitleV3 = memo(SubtitleV3, (prevProps, nextProps) => {
   return (
     prevProps.onWordHover === nextProps.onWordHover &&
-    prevProps.onPauseOnHover === nextProps.onPauseOnHover
+    prevProps.onPauseOnHover === nextProps.onPauseOnHover &&
+    prevProps.onResumeOnLeave === nextProps.onResumeOnLeave &&
+    prevProps.enableTextSelection === nextProps.enableTextSelection &&
+    prevProps.onSelectionChange === nextProps.onSelectionChange
   )
 })
 
