@@ -55,6 +55,8 @@ borderRadiusLG: 12
 padding/margin: 统一的间距系统
 ```
 
+更多 token 请参考: https://ant.design/docs/react/migrate-less-variables-cn
+
 ### 2. 自定义主题 Hook (`src/hooks/useTheme.ts`)
 
 **提供的功能：**
