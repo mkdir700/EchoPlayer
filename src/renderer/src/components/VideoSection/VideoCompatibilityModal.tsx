@@ -41,6 +41,14 @@ export interface VideoCompatibilityModalProps {
   onClose: () => void
   /** 转码完成回调 */
   onTranscodeComplete?: (transcodedFilePath: string) => void
+  /** 初始步骤 - 可以跳过分析直接显示特定步骤 */
+  initialStep?: ModalStep
+  /** 预先分析的结果 - 避免重复分析 */
+  initialAnalysisResult?: {
+    decision: TranscodeDecision
+    recommendation: string
+    canExecute: boolean
+  }
 }
 
 /**
@@ -53,7 +61,6 @@ type ModalStep =
   | 'downloading'
   | 'analyzing'
   | 'decision-ready'
-  | 'no-transcode-needed'
   | 'transcoding'
   | 'completed'
   | 'error'
@@ -69,18 +76,20 @@ export function VideoCompatibilityModal({
   videoFile,
   isFullscreen = false,
   onClose,
-  onTranscodeComplete
+  onTranscodeComplete,
+  initialStep,
+  initialAnalysisResult
 }: VideoCompatibilityModalProps): React.JSX.Element {
   const { token } = useTheme()
 
   // 状态管理 / State management
-  const [currentStep, setCurrentStep] = useState<ModalStep>('initial')
+  const [currentStep, setCurrentStep] = useState<ModalStep>(initialStep || 'initial')
   const [transcodeDecision, setTranscodeDecision] = useState<TranscodeDecision | null>(null)
   const [analysisResult, setAnalysisResult] = useState<{
     decision: TranscodeDecision
     recommendation: string
     canExecute: boolean
-  } | null>(null)
+  } | null>(initialAnalysisResult || null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [transcodedFilePath, setTranscodedFilePath] = useState<string | null>(null)
   const [progressInfo, setProgressInfo] = useState<ProgressInfo>({ progress: 0, status: '' })
@@ -272,7 +281,10 @@ export function VideoCompatibilityModal({
 
       // 根据决策结果设置对应的步骤 / Set step based on decision result
       if (analysisResult.decision.strategy === TranscodeStrategy.NOT_NEEDED) {
-        setCurrentStep('no-transcode-needed')
+        // 如果视频完全兼容，直接关闭 modal，不显示兼容性步骤 / If video is fully compatible, close modal directly
+        RendererLogger.info('视频完全兼容，无需转码，自动关闭 modal')
+        onClose()
+        return
       } else {
         setCurrentStep('decision-ready')
       }
@@ -281,7 +293,7 @@ export function VideoCompatibilityModal({
       setErrorMessage(error instanceof Error ? error.message : '未知错误')
       setCurrentStep('error')
     }
-  }, [videoFile])
+  }, [videoFile, onClose])
 
   // 下载 FFmpeg / Download FFmpeg
   const downloadFFmpeg = useCallback(async () => {
@@ -447,19 +459,32 @@ export function VideoCompatibilityModal({
     onClose()
   }, [transcodedFilePath, onTranscodeComplete, onClose])
 
-  // 当模态框显示时自动开始分析 / Auto start analysis when modal shows
+  // 当模态框显示时初始化状态 / Initialize state when modal shows
   useEffect(() => {
     if (visible && videoFile) {
-      setCurrentStep('analyzing')
+      // 重置状态
       setErrorMessage(null)
       setTranscodedFilePath(null)
-      setTranscodeDecision(null)
-      setAnalysisResult(null)
       setProgressInfo({ progress: 0, status: '' })
 
-      analyzeVideoCompatibility()
+      // 如果有预设的分析结果，直接使用，否则开始分析
+      if (initialAnalysisResult && initialStep) {
+        RendererLogger.info('使用预设的分析结果，跳过重复分析', {
+          initialStep,
+          strategy: initialAnalysisResult.decision.strategy
+        })
+        setCurrentStep(initialStep)
+        setAnalysisResult(initialAnalysisResult)
+        setTranscodeDecision(initialAnalysisResult.decision)
+      } else {
+        RendererLogger.info('开始分析视频兼容性')
+        setCurrentStep('analyzing')
+        setTranscodeDecision(null)
+        setAnalysisResult(null)
+        analyzeVideoCompatibility()
+      }
     }
-  }, [visible, videoFile, analyzeVideoCompatibility])
+  }, [visible, videoFile, initialStep, initialAnalysisResult, analyzeVideoCompatibility])
 
   // 重试操作 / Retry operation
   const retryOperation = useCallback(() => {
@@ -542,31 +567,6 @@ export function VideoCompatibilityModal({
               />
               <Text style={modalStyles.progressText}>{progressInfo.status}</Text>
             </div>
-          </>
-        )
-
-      case 'no-transcode-needed':
-        return (
-          <>
-            <CheckCircleOutlined style={{ ...modalStyles.icon, color: token.colorSuccess }} />
-            <Title level={4} style={modalStyles.title}>
-              视频完全兼容
-            </Title>
-            <Text style={modalStyles.description}>
-              视频格式完全兼容，可直接播放，无需转码处理。
-            </Text>
-            {analysisResult && (
-              <div style={{ marginTop: SPACING.XS }}>
-                <Tag
-                  color={getStrategyColor(analysisResult.decision.strategy)}
-                  style={modalStyles.tag}
-                >
-                  {transcodeDecisionHelper.getStrategyFriendlyName(
-                    analysisResult.decision.strategy
-                  )}
-                </Tag>
-              </div>
-            )}
           </>
         )
 
@@ -780,13 +780,6 @@ export function VideoCompatibilityModal({
               重试
             </Button>
           </>
-        )
-
-      case 'no-transcode-needed':
-        return (
-          <Button type="primary" style={modalStyles.primaryButton} onClick={handleClose}>
-            确定
-          </Button>
         )
 
       case 'analyzing':

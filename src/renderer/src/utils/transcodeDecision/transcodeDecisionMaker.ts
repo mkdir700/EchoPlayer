@@ -55,7 +55,7 @@ export class TranscodeDecisionMaker {
 
     // 检查容器格式 / Check container format
     const fileExtension = filePath.toLowerCase().split('.').pop() || ''
-    const containerSupported = ['mp4', 'webm', 'ogg'].includes(fileExtension)
+    const containerSupported = ['mp4', 'webm', 'ogg', 'mkv'].includes(fileExtension)
 
     // 添加调试日志 / Add debug logging
     console.log('🔍 视频兼容性检查 - 容器格式:', { filePath, fileExtension, containerSupported })

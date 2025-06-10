@@ -14,6 +14,13 @@ import { VideoCompatibilityModal } from './VideoCompatibilityModal'
 import styles from './VideoSection.module.css'
 import { useRecentPlayList } from '@renderer/hooks/useRecentPlayList'
 import { isWindows } from '@renderer/utils/system'
+import { ffmpegNativeClient } from '@renderer/utils/ffmpegNativeClient'
+import {
+  transcodeDecisionHelper,
+  TranscodeStrategy,
+  type TranscodeDecision
+} from '@renderer/utils/transcodeDecision'
+import RendererLogger from '@renderer/utils/logger'
 
 // 内部组件 - 需要在 SubtitleControlProvider 内部使用
 interface VideoSectionInnerProps {
@@ -29,6 +36,17 @@ function VideoSectionInner({ onBack }: VideoSectionInnerProps): React.JSX.Elemen
 
   // 兼容性警告状态 / Compatibility warning state
   const [showCompatibilityModal, setShowCompatibilityModal] = useState(false)
+  const [modalInitialStep, setModalInitialStep] = useState<
+    'ffmpeg-not-found' | 'decision-ready' | undefined
+  >(undefined)
+  const [modalAnalysisResult, setModalAnalysisResult] = useState<
+    | {
+        decision: TranscodeDecision
+        recommendation: string
+        canExecute: boolean
+      }
+    | undefined
+  >(undefined)
 
   // 注册组件特定的快捷键 / Register component-specific shortcuts
   useShortcutGroup('VideoSection', {
@@ -38,21 +56,82 @@ function VideoSectionInner({ onBack }: VideoSectionInnerProps): React.JSX.Elemen
     nextSubtitle: subtitleControl.goToNextSubtitle
   })
 
+  // 静默检查视频兼容性 / Silently check video compatibility
+  const silentCompatibilityCheck = useCallback(async (videoFile: string) => {
+    try {
+      RendererLogger.info('开始静默检查视频兼容性', { videoFile })
+
+      // 重置状态
+      setModalInitialStep(undefined)
+      setModalAnalysisResult(undefined)
+
+      // 检查 FFmpeg 是否存在 / Check if FFmpeg exists
+      const ffmpegExists = await ffmpegNativeClient.checkExists()
+
+      if (!ffmpegExists) {
+        // FFmpeg 不存在，需要下载，显示 modal
+        RendererLogger.info('FFmpeg 不存在，需要显示下载提示')
+        setModalInitialStep('ffmpeg-not-found')
+        setShowCompatibilityModal(true)
+        return
+      }
+
+      // 获取视频信息并分析兼容性
+      const videoInfo = await ffmpegNativeClient.getVideoInfo(videoFile)
+      if (!videoInfo) {
+        RendererLogger.warn('无法获取视频信息，可能需要用户干预')
+        setModalInitialStep('decision-ready')
+        setShowCompatibilityModal(true)
+        return
+      }
+
+      // 使用智能转码决策系统分析
+      const analysisResult = await transcodeDecisionHelper.analyzeVideo(videoFile)
+      RendererLogger.info('静默兼容性检查结果', {
+        strategy: analysisResult.decision.strategy,
+        canExecute: analysisResult.canExecute
+      })
+
+      // 只有在需要转码时才显示 modal
+      if (analysisResult.decision.strategy !== TranscodeStrategy.NOT_NEEDED) {
+        RendererLogger.info('视频需要转码处理，显示兼容性 modal')
+        setModalInitialStep('decision-ready')
+        setModalAnalysisResult(analysisResult)
+        setShowCompatibilityModal(true)
+      } else {
+        RendererLogger.info('视频完全兼容，无需显示 modal')
+        setShowCompatibilityModal(false)
+      }
+    } catch (error) {
+      RendererLogger.error('静默兼容性检查失败，显示 modal 让用户处理:', error)
+      // 检查失败时显示 modal，让用户看到具体错误
+      setModalInitialStep(undefined) // 让 modal 自己分析
+      setShowCompatibilityModal(true)
+    }
+  }, [])
+
   // 检测视频兼容性 / Check video compatibility
   useEffect(() => {
     if (playingVideoContext.videoFile) {
       const fileName = playingVideoContext.videoFile.toLowerCase()
 
-      // 检查是否是可能有兼容性问题的格式
-      if (fileName.endsWith('.mkv') || fileName.endsWith('.m2ts') || fileName.endsWith('.ts')) {
-        setShowCompatibilityModal(true)
+      // 对于可能有兼容性问题的格式，进行静默检查
+      if (
+        fileName.endsWith('.mkv') ||
+        fileName.endsWith('.m2ts') ||
+        fileName.endsWith('.ts') ||
+        fileName.includes('hevc') ||
+        fileName.includes('h265')
+      ) {
+        silentCompatibilityCheck(playingVideoContext.videoFile)
       } else {
+        // 对于常见的兼容格式，不显示 modal
         setShowCompatibilityModal(false)
       }
     } else {
       setShowCompatibilityModal(false)
     }
-  }, [playingVideoContext.videoFile])
+  }, [playingVideoContext.videoFile, silentCompatibilityCheck])
 
   // 监听视频错误，如果播放失败可能是编解码器问题 / Listen for video errors
   useEffect(() => {
@@ -65,6 +144,7 @@ function VideoSectionInner({ onBack }: VideoSectionInnerProps): React.JSX.Elemen
         errorMessage.includes('unsupported') ||
         errorMessage.includes('decode')
       ) {
+        RendererLogger.info('检测到视频播放错误，显示兼容性 modal', { videoError })
         setShowCompatibilityModal(true)
       }
     }
@@ -73,6 +153,8 @@ function VideoSectionInner({ onBack }: VideoSectionInnerProps): React.JSX.Elemen
   // 关闭兼容性模态框 / Close compatibility modal
   const handleCloseCompatibilityModal = useCallback(() => {
     setShowCompatibilityModal(false)
+    setModalInitialStep(undefined)
+    setModalAnalysisResult(undefined)
   }, [])
 
   const recentPlayList = useRecentPlayList()
@@ -153,6 +235,8 @@ function VideoSectionInner({ onBack }: VideoSectionInnerProps): React.JSX.Elemen
         isFullscreen={isFullscreen}
         onClose={handleCloseCompatibilityModal}
         onTranscodeComplete={handleTranscodeComplete}
+        initialStep={modalInitialStep}
+        initialAnalysisResult={modalAnalysisResult}
       />
 
       {/* 视频播放区域 / Video player area */}
