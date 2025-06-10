@@ -53,6 +53,7 @@ export const CopySuccessToast: React.FC<CopySuccessToastProps> = ({
     } else {
       setIsAnimating(false)
       setShouldRender(false)
+      return undefined
     }
   }, [visible, onComplete])
 

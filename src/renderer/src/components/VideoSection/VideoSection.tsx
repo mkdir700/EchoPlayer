@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import { VideoPlayer } from '@renderer/components/VideoPlayer/VideoPlayer'
+import VideoPlayer from '@renderer/components/VideoPlayer/VideoPlayer'
 import { VideoControlsCompact } from '@renderer/components/VideoPlayer/VideoControlsCompact'
 
 import { SubtitleControlProvider } from '@renderer/contexts/subtitle-control-context'

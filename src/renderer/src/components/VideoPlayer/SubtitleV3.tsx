@@ -13,9 +13,8 @@ import RendererLogger from '@renderer/utils/logger'
 import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 
 interface SubtitleV3Props {
-  onWordHover: (isHovering: boolean) => void
-  onPauseOnHover: () => void
-  onResumeOnLeave: () => void
+  // 保留必要的外部回调 / Keep necessary external callbacks
+  onWordHover?: (isHovering: boolean) => void // 用于控制栏显示 / For controls display
   // 新增划词选中相关属性 / New text selection related props
   enableTextSelection?: boolean
   onSelectionChange?: (selectedText: string) => void
@@ -88,14 +87,12 @@ ResizeHandle.displayName = 'ResizeHandle'
  */
 function SubtitleV3({
   onWordHover,
-  onPauseOnHover,
-  onResumeOnLeave,
   enableTextSelection = false,
   onSelectionChange
 }: SubtitleV3Props): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleV3',
-    props: { onWordHover, onPauseOnHover }
+    props: { onWordHover, enableTextSelection }
   })
 
   // Get video context
@@ -233,9 +230,7 @@ function SubtitleV3({
     displayAspectRatio,
     containerRef,
     dragAndResizeProps,
-    onWordHover,
-    onPauseOnHover,
-    onResumeOnLeave
+    onWordHover
   })
 
   // Global event listener management
@@ -462,8 +457,6 @@ function SubtitleV3({
 const MemoizedSubtitleV3 = memo(SubtitleV3, (prevProps, nextProps) => {
   return (
     prevProps.onWordHover === nextProps.onWordHover &&
-    prevProps.onPauseOnHover === nextProps.onPauseOnHover &&
-    prevProps.onResumeOnLeave === nextProps.onResumeOnLeave &&
     prevProps.enableTextSelection === nextProps.enableTextSelection &&
     prevProps.onSelectionChange === nextProps.onSelectionChange
   )

@@ -5,7 +5,7 @@ import {
   ChineseSubtitleText,
   EnglishSubtitleText,
   BilingualSubtitleLine
-} from './SubtitleTextComponents'
+} from './'
 
 import { useSubtitleDisplayModeControls } from '@renderer/hooks/useSubtitleDisplayMode'
 
