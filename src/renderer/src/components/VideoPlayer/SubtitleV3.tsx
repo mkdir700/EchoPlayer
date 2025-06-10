@@ -1,77 +1,27 @@
-import React, { useState, useMemo, useRef, useEffect, memo } from 'react'
-import { WordCard } from '@renderer/components/WordCard/WordCard'
+import React, { useMemo, useRef, memo, Suspense } from 'react'
+// 懒加载 WordCard 组件 / Lazy load WordCard component
+const WordCard = React.lazy(() =>
+  import('@renderer/components/WordCard/WordCard').then((module) => ({ default: module.WordCard }))
+)
 import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 import { useVideoSubtitleState } from '@renderer/hooks/useVideoSubtitleState'
 import { useSubtitleDragAndResize } from '@renderer/hooks/useSubtitleDragAndResize'
 import { useSubtitleStyles } from '@renderer/hooks/useSubtitleStyles'
 import { useTheme } from '@renderer/hooks/useTheme'
-import { useSubtitleEventHandlers } from '@renderer/hooks/useSubtitleEventHandlers'
 import { SubtitleContent } from './SubtitleContent'
 import { MaskFrame } from './MaskFrame'
 import { SubtitleContextMenu } from './SubtitleContextMenu'
 import RendererLogger from '@renderer/utils/logger'
 import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 
-interface SubtitleV3Props {
-  onWordHover: (isHovering: boolean) => void
-  onPauseOnHover: () => void
-  onResumeOnLeave: () => void
-}
-
-// Split subcomponent: Mask overlay
-const MaskOverlay = memo((): React.JSX.Element => {
-  const { styles } = useTheme()
-
-  const style = useMemo(
-    (): React.CSSProperties => ({
-      ...styles.subtitleMaskOverlay,
-      position: 'absolute',
-      left: '0%',
-      top: '0%',
-      width: '100%',
-      height: '100%',
-      zIndex: 5,
-      pointerEvents: 'none'
-    }),
-    [styles]
-  )
-
-  return <div style={style} />
-})
-MaskOverlay.displayName = 'MaskOverlay'
-
-// Split subcomponent: Resize handle
-const ResizeHandle = memo(
-  ({
-    visible,
-    buttonSize,
-    onMouseDown
-  }: {
-    visible: boolean
-    buttonSize: number
-    onMouseDown: (e: React.MouseEvent) => void
-  }): React.JSX.Element | null => {
-    const { styles } = useTheme()
-
-    const handleStyle = useMemo(
-      (): React.CSSProperties => ({
-        ...styles.subtitleResizeHandle,
-        bottom: 0,
-        right: 0,
-        width: `${Math.max(12, Math.min(24, buttonSize * 0.5))}px`,
-        height: `${Math.max(12, Math.min(24, buttonSize * 0.5))}px`,
-        cursor: 'se-resize',
-        borderRadius: '3px 0 8px 0'
-      }),
-      [styles, buttonSize]
-    )
-
-    if (!visible) return null
-
-    return <div onMouseDown={onMouseDown} style={handleStyle} />
-  }
-)
-ResizeHandle.displayName = 'ResizeHandle'
+import { MaskOverlay, ResizeHandle } from './SubtitleV3/subcomponents'
+import { useWindowDimensions, useSubtitleEventHandlers } from './SubtitleV3/hooks'
+import {
+  calculateActualBackgroundType,
+  calculateContainerStyle,
+  calculateSubtitleContentStyle
+} from './SubtitleV3/utils/styleCalculations'
+import type { SubtitleV3Props } from './SubtitleV3/types'
 
 /**
  * Renders an interactive subtitle component with draggable, resizable, and mask overlay features.
@@ -79,18 +29,18 @@ ResizeHandle.displayName = 'ResizeHandle'
  * Provides word-level hover and click interactions, subtitle area drag and resize, mask mode with adjustable frame, and dynamic background styling. Integrates with video context for aspect ratio-aware layout and exposes callbacks for word hover and video pause events.
  *
  * @param onWordHover - Callback invoked when a word in the subtitle is hovered.
- * @param onPauseOnHover - Callback invoked to pause the video when a word card is shown.
- * @param onResumeOnLeave - Callback invoked to resume the video when a word card is closed.
+ * @param enableTextSelection - Whether to enable text selection
+ * @param onSelectionChange - Callback invoked when text selection changes
  * @returns The rendered subtitle UI with controls, mask overlay, and word card popup.
  */
 function SubtitleV3({
   onWordHover,
-  onPauseOnHover,
-  onResumeOnLeave
+  enableTextSelection = false,
+  onSelectionChange
 }: SubtitleV3Props): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleV3',
-    props: { onWordHover, onPauseOnHover }
+    props: { onWordHover, enableTextSelection }
   })
 
   // Get video context
@@ -102,55 +52,14 @@ function SubtitleV3({
   // Get subtitle layout lock state - 获取字幕布局锁定状态
   const { isSubtitleLayoutLocked } = useVideoConfig()
 
-  // Add window dimensions state to trigger re-renders when window size changes
-  const [windowDimensions, setWindowDimensions] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight
-  })
+  // Use window dimensions hook for optimized resize handling
+  // 使用窗口尺寸 Hook 进行优化的调整大小处理
+  const windowDimensions = useWindowDimensions()
 
   // References
   const containerRef = useRef<HTMLDivElement>(null)
   const parentDimensionsRef = useRef({ width: 0, height: 0 })
   const renderCount = useRef(0)
-
-  // Add window resize listener to update dimensions and trigger re-renders
-  useEffect(() => {
-    const handleResize = (): void => {
-      const newDimensions = {
-        width: window.innerWidth,
-        height: window.innerHeight
-      }
-
-      // Only update if dimensions actually changed to avoid unnecessary re-renders
-      setWindowDimensions((prev) => {
-        if (prev.width !== newDimensions.width || prev.height !== newDimensions.height) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🔄 Window resized, updating subtitle font sizes:', {
-              from: prev,
-              to: newDimensions
-            })
-          }
-          return newDimensions
-        }
-        return prev
-      })
-    }
-
-    // Use throttled resize handler to improve performance
-    const throttledResize = (() => {
-      let timeoutId: NodeJS.Timeout | null = null
-      return () => {
-        if (timeoutId) clearTimeout(timeoutId)
-        timeoutId = setTimeout(handleResize, 100) // 100ms throttle
-      }
-    })()
-
-    window.addEventListener('resize', throttledResize)
-
-    return () => {
-      window.removeEventListener('resize', throttledResize)
-    }
-  }, [])
 
   // Get parent container dimensions - recalculate when window dimensions change
   const parentDimensions = useMemo(() => {
@@ -219,7 +128,7 @@ function SubtitleV3({
   const { dynamicTextStyle, dynamicEnglishTextStyle, dynamicChineseTextStyle, buttonSize } =
     useSubtitleStyles(currentLayoutWithWindowDimensions)
 
-  // Use event handlers hook
+  // Use refactored event handlers hook - 使用重构后的事件处理器 hook
   const eventHandlers = useSubtitleEventHandlers({
     subtitleState,
     updateSubtitleState,
@@ -228,115 +137,35 @@ function SubtitleV3({
     displayAspectRatio,
     containerRef,
     dragAndResizeProps,
-    onWordHover,
-    onPauseOnHover,
-    onResumeOnLeave
+    onWordHover
   })
-
-  // Global event listener management
-  useEffect(() => {
-    const isDraggingOrResizing = dragAndResizeProps.isDragging || dragAndResizeProps.isResizing
-
-    if (!isDraggingOrResizing) {
-      return
-    }
-
-    const handleMouseMove = (e: MouseEvent): void => {
-      dragAndResizeProps.handleMouseMove(e, containerRef)
-    }
-    const handleMouseUp = (): void => {
-      dragAndResizeProps.handleMouseUp()
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [
-    dragAndResizeProps.isDragging,
-    dragAndResizeProps.isResizing,
-    dragAndResizeProps.handleMouseMove,
-    dragAndResizeProps.handleMouseUp,
-    dragAndResizeProps
-  ])
-
-  // Note: Mask mode state changes are now handled in the event handlers hook
-
-  // Handle clicks outside context menu to close it - 处理右键菜单外部点击关闭
-  useEffect(() => {
-    if (!eventHandlers.contextMenuVisible) return
-
-    const handleClickOutside = (): void => {
-      eventHandlers.handleContextMenuClose()
-    }
-
-    document.addEventListener('click', handleClickOutside)
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventHandlers.contextMenuVisible, eventHandlers.handleContextMenuClose])
 
   // Calculate actual background type
   const actualBackgroundType = useMemo(() => {
-    const isDraggingOrResizing = dragAndResizeProps.isDragging || dragAndResizeProps.isResizing
-    return isDraggingOrResizing ? 'transparent' : subtitleState.backgroundType
+    return calculateActualBackgroundType(
+      dragAndResizeProps.isDragging,
+      dragAndResizeProps.isResizing,
+      subtitleState.backgroundType
+    )
   }, [dragAndResizeProps.isDragging, dragAndResizeProps.isResizing, subtitleState.backgroundType])
 
   // Container style
   const containerStyle = useMemo((): React.CSSProperties => {
-    const isDraggingOrResizing = dragAndResizeProps.isDragging || dragAndResizeProps.isResizing
-    // In locked mode, use default cursor instead of grab/grabbing - 锁定模式下使用默认鼠标样式而非抓取手势
-    const cursor = isSubtitleLayoutLocked
-      ? 'default'
-      : dragAndResizeProps.isDragging
-        ? 'grabbing'
-        : dragAndResizeProps.isResizing
-          ? 'se-resize'
-          : 'grab'
-
-    const left = subtitleState.isMaskMode
-      ? `${subtitleState.maskFrame.left + (currentLayout.left * subtitleState.maskFrame.width) / 100}%`
-      : `${currentLayout.left}%`
-
-    const top = subtitleState.isMaskMode
-      ? `${subtitleState.maskFrame.top + (currentLayout.top * subtitleState.maskFrame.height) / 100}%`
-      : `${currentLayout.top}%`
-
-    const width = subtitleState.isMaskMode
-      ? `${(currentLayout.width * subtitleState.maskFrame.width) / 100}%`
-      : `${currentLayout.width}%`
-
-    const height = subtitleState.isMaskMode
-      ? `${(currentLayout.height * subtitleState.maskFrame.height) / 100}%`
-      : `${currentLayout.height}%`
-
-    // Merge with theme styles
-    const baseStyle = styles.subtitleContainer
-    // In locked mode, don't show hover style even if isHovering is true - 锁定模式下即使悬停也不显示悬停样式
-    const hoverStyle =
-      eventHandlers.isHovering && !isSubtitleLayoutLocked ? styles.subtitleContainerHover : {}
-    const draggingStyle = isDraggingOrResizing ? styles.subtitleContainerDragging : {}
-
-    return {
-      ...baseStyle,
-      ...hoverStyle,
-      ...draggingStyle,
-      left,
-      top,
-      width,
-      height,
-      cursor,
-      zIndex: isDraggingOrResizing ? 100 : 10,
-      userSelect: isDraggingOrResizing ? 'none' : 'auto'
-    }
+    return calculateContainerStyle({
+      subtitleState,
+      currentLayout,
+      isDragging: dragAndResizeProps.isDragging,
+      isResizing: dragAndResizeProps.isResizing,
+      isHovering: eventHandlers.isHovering,
+      isSubtitleLayoutLocked,
+      styles: {
+        subtitleContainer: styles.subtitleContainer,
+        subtitleContainerHover: styles.subtitleContainerHover,
+        subtitleContainerDragging: styles.subtitleContainerDragging
+      }
+    })
   }, [
-    subtitleState.isMaskMode,
-    subtitleState.maskFrame,
+    subtitleState,
     currentLayout,
     dragAndResizeProps.isDragging,
     dragAndResizeProps.isResizing,
@@ -347,30 +176,16 @@ function SubtitleV3({
 
   // Subtitle content style
   const subtitleContentStyle = useMemo((): React.CSSProperties => {
-    const baseStyle = styles.subtitleContent
-
-    let backgroundStyle: React.CSSProperties = {}
-    switch (actualBackgroundType) {
-      case 'transparent':
-        backgroundStyle = styles.subtitleContentTransparent
-        break
-      case 'blur':
-        backgroundStyle = styles.subtitleContentBlur
-        break
-      case 'solid-black':
-        backgroundStyle = styles.subtitleContentSolidBlack
-        break
-      case 'solid-gray':
-        backgroundStyle = styles.subtitleContentSolidGray
-        break
-      default:
-        backgroundStyle = styles.subtitleContentTransparent
-    }
-
-    return {
-      ...baseStyle,
-      ...backgroundStyle
-    }
+    return calculateSubtitleContentStyle(
+      {
+        subtitleContent: styles.subtitleContent,
+        subtitleContentTransparent: styles.subtitleContentTransparent,
+        subtitleContentBlur: styles.subtitleContentBlur,
+        subtitleContentSolidBlack: styles.subtitleContentSolidBlack,
+        subtitleContentSolidGray: styles.subtitleContentSolidGray
+      },
+      actualBackgroundType
+    )
   }, [styles, actualBackgroundType])
 
   // Development environment debugging
@@ -401,6 +216,7 @@ function SubtitleV3({
       {/* Subtitle container */}
       <div
         ref={containerRef}
+        data-subtitle-container
         style={containerStyle}
         onMouseDown={eventHandlers.handleContainerMouseDown}
         onMouseEnter={eventHandlers.handleMouseEnter}
@@ -415,6 +231,8 @@ function SubtitleV3({
             dynamicChineseTextStyle={dynamicChineseTextStyle}
             onWordHover={eventHandlers.handleWordHover}
             onWordClick={eventHandlers.handleWordClick}
+            enableTextSelection={enableTextSelection}
+            onSelectionChange={onSelectionChange}
           />
         </div>
 
@@ -428,11 +246,13 @@ function SubtitleV3({
 
       {/* Word card */}
       {eventHandlers.selectedWord && (
-        <WordCard
-          word={eventHandlers.selectedWord.word}
-          targetElement={eventHandlers.selectedWord.element}
-          onClose={eventHandlers.handleCloseWordCard}
-        />
+        <Suspense fallback={<div>Loading word card...</div>}>
+          <WordCard
+            word={eventHandlers.selectedWord.word}
+            targetElement={eventHandlers.selectedWord.element}
+            onClose={eventHandlers.handleCloseWordCard}
+          />
+        </Suspense>
       )}
 
       {/* Context menu - 右键菜单 */}
@@ -455,7 +275,8 @@ function SubtitleV3({
 const MemoizedSubtitleV3 = memo(SubtitleV3, (prevProps, nextProps) => {
   return (
     prevProps.onWordHover === nextProps.onWordHover &&
-    prevProps.onPauseOnHover === nextProps.onPauseOnHover
+    prevProps.enableTextSelection === nextProps.enableTextSelection &&
+    prevProps.onSelectionChange === nextProps.onSelectionChange
   )
 })
 

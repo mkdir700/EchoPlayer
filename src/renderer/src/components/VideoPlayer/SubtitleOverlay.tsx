@@ -3,23 +3,25 @@ import { SubtitleV3 } from './SubtitleV3'
 import RendererLogger from '@renderer/utils/logger'
 
 interface SubtitleOverlayProps {
-  onWordHover: (isHovering: boolean) => void
-  onPauseOnHover: () => void
-  onResumeOnLeave: () => void
+  // 保留必要的外部回调 / Keep necessary external callbacks
+  onWordHover?: (isHovering: boolean) => void // 用于控制栏显示 / For controls display
+  // 新增划词选中相关属性 / New text selection related props
+  enableTextSelection?: boolean
+  onSelectionChange?: (selectedText: string) => void
 }
 
 /**
- * Renders a full-area overlay for subtitles, forwarding hover and pause events to the underlying subtitle component.
+ * Renders a full-area overlay for subtitles, forwarding necessary callbacks to the underlying subtitle component.
  *
- * @param onWordHover - Callback invoked when a word in the subtitle is hovered or unhovered.
- * @param onPauseOnHover - Callback triggered when playback should pause (called when word card is shown).
- * @param onResumeOnLeave - Callback triggered when playback should resume (called when word card is closed).
+ * @param onWordHover - Optional callback for word hover events (mainly for controls display).
+ * @param enableTextSelection - Whether to enable text selection functionality.
+ * @param onSelectionChange - Callback triggered when text selection changes.
  * @returns A React element displaying the subtitle overlay.
  */
 function SubtitleOverlay({
   onWordHover,
-  onPauseOnHover,
-  onResumeOnLeave
+  enableTextSelection = false,
+  onSelectionChange
 }: SubtitleOverlayProps): React.JSX.Element {
   RendererLogger.componentRender({
     component: 'SubtitleOverlay'
@@ -41,8 +43,8 @@ function SubtitleOverlay({
     <div style={subtitleOverlayStyle}>
       <SubtitleV3
         onWordHover={onWordHover}
-        onPauseOnHover={onPauseOnHover}
-        onResumeOnLeave={onResumeOnLeave}
+        enableTextSelection={enableTextSelection}
+        onSelectionChange={onSelectionChange}
       />
     </div>
   )

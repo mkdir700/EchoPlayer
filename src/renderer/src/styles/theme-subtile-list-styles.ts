@@ -56,7 +56,7 @@ export function buildSubtileListStyles(token: GlobalToken): SubtileListStylesRet
       cursor: 'pointer',
       userSelect: 'none' as const,
       border: 'none', // 移除边框，避免悬停时出现黑色边框 / Remove border to avoid black border on hover
-      background: 'transparent',
+      backgroundColor: 'transparent',
       borderRadius: token.borderRadius,
       wordBreak: 'break-word' as const,
       overflowWrap: 'break-word' as const,

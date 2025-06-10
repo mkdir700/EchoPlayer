@@ -1,8 +1,10 @@
-import { useCallback, useRef, useState, useMemo } from 'react'
-import { useUIStore } from '@renderer/stores/slices/uiStore'
-import { useVideoConfig } from './useVideoConfig'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { SubtitleDisplaySettings } from '@types_/shared'
+import { useUIStore } from '@renderer/stores'
+import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useVideoControls, useVideoPlayState } from '@renderer/hooks/useVideoPlayerHooks'
 
+// 定义本地类型而不是导入 / Define local type instead of importing
 interface DragAndResizeProps {
   isDragging: boolean
   isResizing: boolean
@@ -30,9 +32,9 @@ interface UseSubtitleEventHandlersProps {
   displayAspectRatio: number
   containerRef: React.RefObject<HTMLDivElement | null>
   dragAndResizeProps: DragAndResizeProps
-  onWordHover: (isHovering: boolean) => void
-  onPauseOnHover: () => void
-  onResumeOnLeave: () => void
+  // 移除外部视频控制回调，改为内部管理 / Remove external video control callbacks, manage internally
+  onWordHover?: (isHovering: boolean) => void // 保留这个用于控制栏显示 / Keep this for controls display
+  // 移除文本选择回调，改为内部处理 / Remove text selection callback, handle internally
 }
 
 interface UseSubtitleEventHandlersReturn {
@@ -86,13 +88,18 @@ export const useSubtitleEventHandlers = ({
   displayAspectRatio,
   containerRef,
   dragAndResizeProps,
-  onWordHover,
-  onPauseOnHover,
-  onResumeOnLeave
+  onWordHover // 可选的外部回调，主要用于控制栏显示 / Optional external callback, mainly for controls display
 }: UseSubtitleEventHandlersProps): UseSubtitleEventHandlersReturn => {
   // Get subtitle layout lock state and auto resume setting - 获取字幕布局锁定状态和自动恢复设置
   const { autoResumeAfterWordCard } = useUIStore()
   const { isSubtitleLayoutLocked } = useVideoConfig()
+
+  // 内聚视频控制功能 - 直接使用视频控制 hooks / Internalize video control functionality
+  const { toggle } = useVideoControls()
+  const isPlaying = useVideoPlayState()
+
+  // 跟踪是否因为单词卡片而暂停 / Track if paused due to word card
+  const [isPausedByWordCard, setIsPausedByWordCard] = useState(false)
 
   // Local state
   const [selectedWord, setSelectedWord] = useState<{
@@ -111,41 +118,45 @@ export const useSubtitleEventHandlers = ({
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const maskFrameCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Stable callback functions - store latest values using useRef to keep function reference stable
-  const callbacksRef = useRef({
-    onWordHover,
-    onPauseOnHover,
-    onResumeOnLeave
-  })
-  callbacksRef.current = { onWordHover, onPauseOnHover, onResumeOnLeave }
-
   // Word interaction handlers - 单词交互处理函数
-  const handleWordHover = useCallback((isHovering: boolean): void => {
-    callbacksRef.current.onWordHover(isHovering)
+  const handleWordHover = useCallback(
+    (isHovering: boolean): void => {
+      // 调用外部回调（如果提供）用于控制栏显示 / Call external callback (if provided) for controls display
+      onWordHover?.(isHovering)
 
-    // 悬停时不暂停，只更新悬停状态 / Don't pause on hover, only update hover state
-    console.log(`Word hover: ${isHovering}`)
-  }, [])
+      // 悬停时不暂停，只更新悬停状态 / Don't pause on hover, only update hover state
+      console.log(`Word hover: ${isHovering}`)
+    },
+    [onWordHover]
+  )
 
-  const handleWordClick = useCallback((word: string, event: React.MouseEvent): void => {
-    event.stopPropagation()
-    event.preventDefault()
+  const handleWordClick = useCallback(
+    (word: string, event: React.MouseEvent): void => {
+      event.stopPropagation()
+      event.preventDefault()
 
-    const trimmedWord = word.trim()
-    if (trimmedWord === '') {
-      return
-    }
+      const trimmedWord = word.trim()
+      if (trimmedWord === '') {
+        return
+      }
 
-    const wordElement = event.target as HTMLElement
-    setSelectedWord({
-      word: trimmedWord,
-      element: wordElement
-    })
+      const wordElement = event.target as HTMLElement
+      setSelectedWord({
+        word: trimmedWord,
+        element: wordElement
+      })
 
-    // 显示单词卡片时暂停视频 / Pause video when showing word card
-    console.log('Trigger video pause - word card shown')
-    callbacksRef.current.onPauseOnHover()
-  }, [])
+      // 内聚视频暂停逻辑 - 显示单词卡片时暂停视频 / Internalize video pause logic
+      if (isPlaying) {
+        console.log(
+          '内部处理：显示单词卡片时暂停视频 / Internal handling: Pause video when showing word card'
+        )
+        toggle()
+        setIsPausedByWordCard(true)
+      }
+    },
+    [isPlaying, toggle]
+  )
 
   const isWordElement = useCallback((element: HTMLElement): boolean => {
     if (element.classList.contains('subtitleWord') || element.classList.contains('clickableWord')) {
@@ -167,14 +178,21 @@ export const useSubtitleEventHandlers = ({
   const handleCloseWordCard = useCallback((): void => {
     setSelectedWord(null)
 
-    // 根据设置决定是否在关闭单词卡片时恢复播放 / Resume playback based on setting when word card is closed
-    if (autoResumeAfterWordCard) {
-      console.log('Trigger video resume - word card closed (auto resume enabled)')
-      callbacksRef.current.onResumeOnLeave()
+    // 内聚视频恢复逻辑 - 根据设置决定是否在关闭单词卡片时恢复播放 / Internalize video resume logic
+    if (isPausedByWordCard && autoResumeAfterWordCard) {
+      console.log(
+        '内部处理：关闭单词卡片时恢复播放 / Internal handling: Resume playback when word card is closed'
+      )
+      toggle()
+      setIsPausedByWordCard(false)
     } else {
-      console.log('Skip video resume - auto resume disabled')
+      // 即使不恢复播放，也要重置暂停状态 / Reset pause state even if not resuming playback
+      setIsPausedByWordCard(false)
+      console.log(
+        '不自动恢复播放（根据用户设置）/ Do not auto-resume playback (based on user setting)'
+      )
     }
-  }, [autoResumeAfterWordCard])
+  }, [isPausedByWordCard, autoResumeAfterWordCard, toggle])
 
   // State update handlers - 状态更新处理函数
   const updateMaskFrame = useCallback(

@@ -41,6 +41,8 @@ export interface VideoCompatibility {
   issues: string[]
 }
 
+const SUPPORTED_CONTAINERS = new Set(['mp4', 'webm', 'ogg', 'mkv'])
+
 /**
  * 转码决策器类 / Transcoding Decision Maker Class
  */
@@ -55,7 +57,7 @@ export class TranscodeDecisionMaker {
 
     // 检查容器格式 / Check container format
     const fileExtension = filePath.toLowerCase().split('.').pop() || ''
-    const containerSupported = ['mp4', 'webm', 'ogg'].includes(fileExtension)
+    const containerSupported = SUPPORTED_CONTAINERS.has(fileExtension)
 
     // 添加调试日志 / Add debug logging
     console.log('🔍 视频兼容性检查 - 容器格式:', { filePath, fileExtension, containerSupported })
