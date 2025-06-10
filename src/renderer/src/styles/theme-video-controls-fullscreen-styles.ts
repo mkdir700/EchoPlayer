@@ -275,7 +275,7 @@ export function buildVideoControlsFullscreenStyles(
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: '4px',
-      width: '70px',
+      width: '75px',
       height: '32px',
       fontSize: '12px',
       padding: '0 8px',

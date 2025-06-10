@@ -38,6 +38,12 @@ export function matchesShortcut(
     return event.code === 'ArrowUp'
   } else if (key === '↓') {
     return event.code === 'ArrowDown'
+  } else if (key === '[') {
+    return event.code === 'BracketLeft'
+  } else if (key === ']') {
+    return event.code === 'BracketRight'
+  } else if (key === '\\') {
+    return event.code === 'Backslash'
   } else if (key.startsWith('Arrow')) {
     return event.code === key
   } else if (key.length === 1) {

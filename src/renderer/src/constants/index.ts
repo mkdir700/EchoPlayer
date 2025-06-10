@@ -29,7 +29,8 @@ export const PLAYBACK_RATES = {
   MIN: 0.5,
   MAX: 2,
   STEP: 0.1,
-  DEFAULT: 1
+  DEFAULT: 1,
+  KEYBOARD_STEP: 0.25
 }
 
 export const VOLUME_SETTINGS = {

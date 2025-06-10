@@ -7,6 +7,7 @@ import { useShortcutCommand, useCommandShortcuts } from '@renderer/hooks/useComm
 import { usePlayStateSaver } from '@renderer/hooks/usePlayStateSaver'
 import { usePlayStateInitializer } from '@renderer/hooks/usePlayStateInitializer'
 import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { usePlaybackSpeedCycleShortcuts } from '@renderer/hooks/useVideoPlaybackHooks'
 import { useTheme } from '@renderer/hooks/useTheme'
 // 导入测试相关 hooks 和常量 / Import test-related hooks and constants
 import { useTestIds } from '@renderer/hooks/useTestIds'
@@ -57,6 +58,9 @@ const PlayPageMemo = React.memo(function PlayPage({ onBack }: PlayPageProps) {
   // 📹 视频播放相关 hooks - 稳定的引用
   const { toggle, stepBackward, stepForward } = useVideoControls()
 
+  // 🎵 播放速度控制 hooks - 稳定的引用
+  const { increaseSpeed, decreaseSpeed, resetSpeed } = usePlaybackSpeedCycleShortcuts()
+
   // 💾 播放状态保存 - 🚀 已优化，不会导致重新渲染
   const { savePlayStateRef } = usePlayStateSaver()
 
@@ -74,9 +78,12 @@ const PlayPageMemo = React.memo(function PlayPage({ onBack }: PlayPageProps) {
       playPause: toggle,
       stepBackward: stepBackward,
       stepForward: stepForward,
-      toggleFullscreen: toggleFullscreen
+      toggleFullscreen: toggleFullscreen,
+      speedIncrease: increaseSpeed,
+      speedDecrease: decreaseSpeed,
+      speedReset: resetSpeed
     }),
-    [toggle, stepBackward, stepForward, toggleFullscreen]
+    [toggle, stepBackward, stepForward, toggleFullscreen, increaseSpeed, decreaseSpeed, resetSpeed]
   )
 
   // 注册快捷键 - 使用稳定的引用避免重新绑定
@@ -84,6 +91,9 @@ const PlayPageMemo = React.memo(function PlayPage({ onBack }: PlayPageProps) {
   useShortcutCommand('stepBackward', shortcutCommands.stepBackward)
   useShortcutCommand('stepForward', shortcutCommands.stepForward)
   useShortcutCommand('toggleFullscreen', shortcutCommands.toggleFullscreen)
+  useShortcutCommand('speedIncrease', shortcutCommands.speedIncrease)
+  useShortcutCommand('speedDecrease', shortcutCommands.speedDecrease)
+  useShortcutCommand('speedReset', shortcutCommands.speedReset)
 
   // 注意：返回处理逻辑已迁移到 App.tsx 的 TitleBar 中
   // handleBack 逻辑现在由 TitleBar 通过 onBack 回调处理

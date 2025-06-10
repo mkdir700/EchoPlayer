@@ -276,6 +276,14 @@ export interface ThemeStyles {
   videoCompatibilityModalProgressHeader: CSSProperties
   videoCompatibilityModalProgressFooter: CSSProperties
   videoCompatibilityModalProgressText: CSSProperties
+
+  // Speed overlay specific styles - 速度覆盖层特定样式
+  speedOverlay: CSSProperties
+  speedOverlayFullscreen: CSSProperties
+  speedOverlayText: CSSProperties
+  speedOverlayTextFullscreen: CSSProperties
+  speedOverlayVisible: CSSProperties
+  speedOverlayHidden: CSSProperties
 }
 
 /**

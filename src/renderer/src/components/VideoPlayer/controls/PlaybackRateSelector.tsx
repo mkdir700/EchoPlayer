@@ -5,6 +5,11 @@ import { ThunderboltOutlined } from '@ant-design/icons'
 import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import {
+  useSelectedPlaybackRates,
+  useSetSelectedPlaybackRates
+} from '@renderer/stores/slices/videoConfigStore'
+import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
 
 interface PlaybackRateSelectorProps {
   isVideoLoaded: boolean
@@ -50,12 +55,12 @@ export function PlaybackRateSelector({
   const { styles } = useTheme()
   const { playerRef, isVideoLoadedRef } = useVideoPlayerContext()
   const { playbackRate, setPlaybackRate: updatePlaybackRate } = useVideoConfig()
+  const { fileId } = usePlayingVideoContext()
+  const selectedPlaybackRates = useSelectedPlaybackRates(fileId || '')
+  const setSelectedPlaybackRates = useSetSelectedPlaybackRates()
 
   // Control dropdown panel visibility state - 控制下拉面板显示状态
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-
-  // Manage which speed options are checked (default common ones) - 管理哪些速度选项被勾选（默认勾选常用的几个）
-  const [selectedRates, setSelectedRates] = useState<Set<number>>(new Set([0.75, 1, 1.25, 1.5, 2]))
 
   // Dropdown panel position state - 下拉面板位置状态
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({
@@ -156,22 +161,32 @@ export function PlaybackRateSelector({
 
   const handleRateSelection = useCallback(
     (rate: number, checked: boolean): void => {
-      setSelectedRates((prev) => {
-        const newSet = new Set(prev)
-        if (checked) {
-          newSet.add(rate)
-        } else {
-          newSet.delete(rate)
-          // If current playback speed is deselected, switch to a selected speed - 如果当前播放速度被取消勾选，需要切换到一个已勾选的速度
-          if (rate === playbackRate && newSet.size > 0) {
-            const firstSelectedRate = Array.from(newSet)[0]
-            handlePlaybackRateChange(firstSelectedRate)
-          }
+      const currentFileId = fileId || ''
+      const safeRates = selectedPlaybackRates || [0.75, 1, 1.25, 1.5, 2]
+
+      if (checked) {
+        // 添加速度选项 / Add speed option
+        const newRates = [...safeRates, rate].sort((a, b) => a - b)
+        setSelectedPlaybackRates(currentFileId, newRates)
+      } else {
+        // 移除速度选项 / Remove speed option
+        const newRates = safeRates.filter((r) => r !== rate)
+        setSelectedPlaybackRates(currentFileId, newRates)
+
+        // 如果当前播放速度被取消勾选，需要切换到一个已勾选的速度 / If current playback speed is deselected, switch to a selected speed
+        if (rate === playbackRate && newRates.length > 0) {
+          const firstSelectedRate = newRates[0]
+          handlePlaybackRateChange(firstSelectedRate)
         }
-        return newSet
-      })
+      }
     },
-    [playbackRate, handlePlaybackRateChange]
+    [
+      fileId,
+      selectedPlaybackRates,
+      setSelectedPlaybackRates,
+      playbackRate,
+      handlePlaybackRateChange
+    ]
   )
 
   const handleCurrentRateClick = useCallback(
@@ -183,8 +198,20 @@ export function PlaybackRateSelector({
   )
 
   // Get currently selected playback speed options for display - 获取当前选中的播放速度选项用于显示
-  const selectedOptions = SPEED_OPTIONS.filter((option) => selectedRates.has(option.value))
-  const currentOption = SPEED_OPTIONS.find((option) => option.value === playbackRate)
+  // Add defensive check to ensure selectedPlaybackRates is always an array - 添加防御性检查确保 selectedPlaybackRates 始终是数组
+  const safeSelectedPlaybackRates = selectedPlaybackRates || [0.75, 1, 1.25, 1.5, 2]
+  const selectedOptions = SPEED_OPTIONS.filter((option) =>
+    safeSelectedPlaybackRates.includes(option.value)
+  )
+
+  // Format playback rate for display - 格式化播放速度用于显示
+  const formatPlaybackRate = (rate: number): string => {
+    // 如果是整数，显示为整数；否则显示为最多2位小数 / If integer, show as integer; otherwise show up to 2 decimal places
+    return rate % 1 === 0 ? rate.toString() : rate.toFixed(2).replace(/\.?0+$/, '')
+  }
+
+  // Get display text for current playback rate - 获取当前播放速度的显示文本
+  const currentRateDisplay = formatPlaybackRate(playbackRate)
 
   // Click outside to close dropdown - 点击外部关闭下拉框
   useEffect((): (() => void) | void => {
@@ -284,7 +311,7 @@ export function PlaybackRateSelector({
                 : styles.playbackRateSpanText
             }
           >
-            {currentOption?.label || '1x'}
+            {currentRateDisplay}x
           </span>
         </Button>
       </Tooltip>
@@ -314,9 +341,15 @@ export function PlaybackRateSelector({
                 {SPEED_OPTIONS.map((option) => (
                   <div
                     key={option.value}
-                    style={getConfigItemStyle(option, selectedRates.has(option.value))}
+                    style={getConfigItemStyle(
+                      option,
+                      safeSelectedPlaybackRates.includes(option.value)
+                    )}
                     onClick={() =>
-                      handleRateSelection(option.value, !selectedRates.has(option.value))
+                      handleRateSelection(
+                        option.value,
+                        !safeSelectedPlaybackRates.includes(option.value)
+                      )
                     }
                   >
                     <span
@@ -328,7 +361,7 @@ export function PlaybackRateSelector({
                       {option.label}
                     </span>
                     <Checkbox
-                      checked={selectedRates.has(option.value)}
+                      checked={safeSelectedPlaybackRates.includes(option.value)}
                       onChange={() => {}} // Empty function, actual click handled by parent div - 空函数，实际点击由父div处理
                       style={{
                         marginLeft: '4px',

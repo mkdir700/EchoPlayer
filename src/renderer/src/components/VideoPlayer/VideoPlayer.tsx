@@ -25,6 +25,9 @@ import { SubtitleOverlay } from '@renderer/components/VideoPlayer/SubtitleOverla
 import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
 import { CopySuccessToast } from '@renderer/components/CopySuccessToast/CopySuccessToast'
 import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
+import { SpeedOverlay } from './SpeedOverlay'
+import { useSpeedOverlay } from '@renderer/hooks/useSpeedOverlay'
+import { usePlaybackSpeedMonitor } from '@renderer/hooks/usePlaybackSpeedMonitor'
 
 interface VideoPlayerProps {
   isVideoLoaded: boolean
@@ -59,6 +62,14 @@ function VideoPlayer({
 
   // 外部通知管理
   useVideoPlayerNotifications({ onFullscreenToggle })
+
+  // 速度覆盖层管理 / Speed overlay management
+  const speedOverlay = useSpeedOverlay()
+
+  // 监听播放速度变化 / Monitor playback speed changes
+  usePlaybackSpeedMonitor({
+    onSpeedChange: speedOverlay.showSpeedOverlay
+  })
 
   // 节流相关的 refs（保留在组件中，因为它们是实现细节）
   const mouseMoveThrottleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -149,6 +160,13 @@ function VideoPlayer({
               onWordHover={controlsDisplay.handleWordHoverForControls}
               enableTextSelection={true}
               onSelectionChange={textSelection.handleSelectionChange}
+            />
+
+            {/* 播放速度反馈覆盖层 / Speed feedback overlay */}
+            <SpeedOverlay
+              speed={speedOverlay.currentSpeed}
+              visible={speedOverlay.isVisible}
+              onHide={speedOverlay.hideSpeedOverlay}
             />
 
             {/* 全屏控制栏 */}

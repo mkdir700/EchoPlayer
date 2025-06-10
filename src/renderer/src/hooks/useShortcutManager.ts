@@ -47,6 +47,27 @@ export const DEFAULT_SHORTCUTS: Record<string, ShortcutConfig> = {
     defaultKey: '↓',
     category: 'playback'
   },
+  speedIncrease: {
+    key: 'speedIncrease',
+    name: '播放速度增加',
+    description: '加快播放速度',
+    defaultKey: ']',
+    category: 'playback'
+  },
+  speedDecrease: {
+    key: 'speedDecrease',
+    name: '播放速度减少',
+    description: '减慢播放速度',
+    defaultKey: '[',
+    category: 'playback'
+  },
+  speedReset: {
+    key: 'speedReset',
+    name: '重置播放速度',
+    description: '重置播放速度为1倍',
+    defaultKey: '\\',
+    category: 'playback'
+  },
   toggleSubtitleMode: {
     key: 'toggleSubtitleMode',
     name: '切换字幕模式',

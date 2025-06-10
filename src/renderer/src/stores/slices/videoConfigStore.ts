@@ -15,6 +15,7 @@ export interface VideoConfig {
   isSingleLoop: VideoPlaybackSettings['isSingleLoop'] // 单句循环 / Single loop
   isAutoPause: VideoPlaybackSettings['isAutoPause'] // 自动暂停 / Auto pause
   subtitleDisplay: SubtitleDisplaySettings // 字幕显示配置 / Subtitle display settings
+  selectedPlaybackRates: number[] // 用户选择的播放速度选项 / User selected playback rate options
 }
 
 // 视频配置状态接口 / Video config state interface
@@ -37,6 +38,9 @@ export interface VideoConfigActions {
   setIsSingleLoop: (fileId: string, loop: VideoPlaybackSettings['isSingleLoop']) => void
   setIsAutoPause: (fileId: string, pause: VideoPlaybackSettings['isAutoPause']) => void
   setSubtitleDisplay: (fileId: string, settings: SubtitleDisplaySettings) => void
+
+  // 播放速度选项管理 / Playback rate options management
+  setSelectedPlaybackRates: (fileId: string, rates: number[]) => void
 
   // 批量设置播放配置 / Batch set playback settings
   setPlaybackSettings: (
@@ -77,7 +81,8 @@ const defaultVideoConfig: VideoConfig = {
       width: 100,
       height: 50
     }
-  }
+  },
+  selectedPlaybackRates: [0.75, 1, 1.25, 1.5, 2] // 默认选择的播放速度选项 / Default selected playback rate options
 }
 
 // 初始状态 / Initial state
@@ -161,6 +166,14 @@ export const useVideoConfigStore = create<VideoConfigStore>()(
               state.configs[fileId] = { ...defaultVideoConfig }
             }
             state.configs[fileId].subtitleDisplay = settings
+          }),
+
+        setSelectedPlaybackRates: (fileId: string, rates: number[]) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            state.configs[fileId].selectedPlaybackRates = rates
           }),
 
         setPlaybackSettings: (
@@ -310,3 +323,10 @@ export const useSetPlaybackSettings = (): ((
   fileId: string,
   settings: Partial<Omit<VideoConfig, 'isSubtitleLayoutLocked'>>
 ) => void) => useVideoConfigStore((state) => state.setPlaybackSettings)
+
+// 播放速度选项相关 hooks / Playback rate options related hooks
+export const useSelectedPlaybackRates = (fileId: string): number[] =>
+  useVideoConfigStore((state) => state.getVideoConfig(fileId).selectedPlaybackRates)
+
+export const useSetSelectedPlaybackRates = (): ((fileId: string, rates: number[]) => void) =>
+  useVideoConfigStore((state) => state.setSelectedPlaybackRates)

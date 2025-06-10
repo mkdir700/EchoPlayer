@@ -58,6 +58,12 @@ export function buildVideoControlsStyles(
   | 'playbackRateConfigGrid'
   | 'playbackRateConfigItem'
   | 'playbackRateConfigItemSelected'
+  | 'speedOverlay'
+  | 'speedOverlayFullscreen'
+  | 'speedOverlayText'
+  | 'speedOverlayTextFullscreen'
+  | 'speedOverlayVisible'
+  | 'speedOverlayHidden'
 > {
   return {
     // Video controls specific styles
@@ -145,11 +151,7 @@ export function buildVideoControlsStyles(
     },
 
     controlBtnActive: {
-      background: `rgba(${token.colorPrimary
-        .slice(1)
-        .match(/.{2}/g)
-        ?.map((hex) => parseInt(hex, 16))
-        .join(', ')}, 0.15)`,
+      background: token.colorPrimaryBg,
       color: token.colorPrimary
     },
 
@@ -164,11 +166,7 @@ export function buildVideoControlsStyles(
       cursor: 'pointer',
       transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
       flexShrink: 0,
-      boxShadow: `0 2px 8px rgba(${token.colorPrimary
-        .slice(1)
-        .match(/.{2}/g)
-        ?.map((hex) => parseInt(hex, 16))
-        .join(', ')}, 0.3)`
+      boxShadow: token.boxShadowSecondary
     },
 
     controlPopup: {
@@ -201,7 +199,7 @@ export function buildVideoControlsStyles(
       fontSize: token.fontSizeSM
     },
     playbackRateConfigItemCurrent: {
-      fontWeight: 600,
+      fontWeight: token.fontWeightStrong,
       color: token.colorPrimary
     },
 
@@ -225,15 +223,15 @@ export function buildVideoControlsStyles(
     },
 
     playbackRateQuickButton: {
-      height: '28px',
-      fontSize: '12px',
-      padding: '0 12px',
-      borderRadius: '6px',
+      height: token.controlHeightSM,
+      fontSize: token.fontSizeSM,
+      padding: `0 ${token.paddingSM}px`,
+      borderRadius: token.borderRadius,
       fontWeight: 'normal'
     },
 
     playbackRateQuickButtonActive: {
-      fontWeight: 600
+      fontWeight: token.fontWeightStrong
     },
 
     playbackRateDivider: {
@@ -245,7 +243,7 @@ export function buildVideoControlsStyles(
     playbackRateSpanText: {
       flex: 1,
       textAlign: 'center' as const,
-      fontSize: '12px',
+      fontSize: token.fontSizeSM,
       color: token.colorText
     },
 
@@ -293,7 +291,7 @@ export function buildVideoControlsStyles(
       background: token.colorBgElevated,
       padding: `${token.paddingXXS}px ${token.paddingXS}px`,
       borderRadius: token.borderRadiusSM,
-      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)',
+      boxShadow: token.boxShadow,
       border: `1px solid ${token.colorBorder}`,
       width: 180,
       height: 32,
@@ -325,11 +323,7 @@ export function buildVideoControlsStyles(
       width: 6,
       height: 6,
       transform: 'translateX(-50%)',
-      boxShadow: `0 1px 3px rgba(${token.colorPrimary
-        .slice(1)
-        .match(/.{2}/g)
-        ?.map((hex) => parseInt(hex, 16))
-        .join(', ')}, 0.4)`
+      boxShadow: token.boxShadow
     },
 
     volumeSliderKeyPointLabel: {
@@ -337,7 +331,7 @@ export function buildVideoControlsStyles(
       top: -20,
       left: '50%',
       transform: 'translateX(-50%)',
-      fontSize: 10,
+      fontSize: token.fontSize,
       color: token.colorTextTertiary,
       fontWeight: 500,
       whiteSpace: 'nowrap' as const,
@@ -384,7 +378,7 @@ export function buildVideoControlsStyles(
       transform: 'translate(-50%, -50%)',
       cursor: 'grab',
       transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
-      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+      boxShadow: token.boxShadow,
       zIndex: 3
     },
 
@@ -435,11 +429,11 @@ export function buildVideoControlsStyles(
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: '4px',
-      width: '60px',
-      height: '30px',
+      gap: token.marginXXS,
+      width: token.controlHeight * 2.2,
+      height: token.controlHeightSM,
       fontSize: token.fontSizeSM,
-      padding: '0 8px',
+      padding: `0 ${token.paddingXS}px`,
       border: `1px solid ${token.colorBorder}`,
       borderRadius: token.borderRadius,
       background: token.colorBgContainer,
@@ -453,11 +447,11 @@ export function buildVideoControlsStyles(
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: '4px',
-      width: '60px',
-      height: '30px',
+      gap: token.marginXXS,
+      width: token.controlHeight * 2.2,
+      height: token.controlHeightSM,
       fontSize: token.fontSizeSM,
-      padding: '0 8px',
+      padding: `0 ${token.paddingXS}px`,
       border: `1px solid ${token.colorBorder}`,
       borderRadius: token.borderRadius,
       background: token.colorBgContainer,
@@ -475,10 +469,10 @@ export function buildVideoControlsStyles(
       boxShadow: themeStyles.appleCardShadow.heavy,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
-      zIndex: token.zIndexPopupBase, // Use token zIndex for popup layer - 使用token中的popup层级zIndex
-      minWidth: '400px',
-      maxWidth: '480px',
-      padding: '12px 16px',
+      zIndex: token.zIndexPopupBase,
+      minWidth: token.controlHeight * 10,
+      maxWidth: token.controlHeight * 12,
+      padding: `${token.paddingSM}px ${token.paddingMD}px`,
       color: token.colorText
     },
 
@@ -496,20 +490,20 @@ export function buildVideoControlsStyles(
     playbackRateConfigGrid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: '6px'
+      gap: token.marginXS
     },
 
     playbackRateConfigItem: {
-      padding: '6px 8px',
+      padding: `${token.paddingXS}px ${token.paddingXS}px`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       cursor: 'pointer',
-      borderRadius: '4px',
+      borderRadius: token.borderRadius,
       border: `1px solid ${token.colorBorder}`,
       background: token.colorBgContainer,
       transition: 'all 0.15s ease',
-      minHeight: '32px',
+      minHeight: token.controlHeightSM,
       color: token.colorText
     },
 
@@ -517,6 +511,71 @@ export function buildVideoControlsStyles(
       border: `1px solid ${token.colorPrimary}`,
       background: token.colorPrimaryBg,
       color: token.colorText
+    },
+
+    // Speed overlay styles - 速度覆盖层样式
+    speedOverlay: {
+      position: 'absolute' as const,
+      top: '50%',
+      left: '50%',
+      zIndex: token.zIndexPopupBase + 10,
+      background: token.colorBgElevated,
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      border: `1px solid ${token.colorBorderSecondary}`,
+      borderRadius: token.borderRadiusLG,
+      padding: `${token.paddingMD}px ${token.paddingLG}px`,
+      minWidth: token.controlHeight * 2, // 使用token计算最小宽度
+      boxShadow: themeStyles.appleCardShadow.medium,
+      transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
+      pointerEvents: 'none' as const,
+      userSelect: 'none' as const
+    },
+
+    speedOverlayFullscreen: {
+      position: 'absolute' as const,
+      top: '50%',
+      left: '50%',
+      zIndex: token.zIndexPopupBase + 10,
+      background: token.colorBgMask, // 使用token的遮罩背景色，更适合全屏覆盖
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      border: `1px solid ${token.colorBorderSecondary}`,
+      borderRadius: token.borderRadiusLG,
+      padding: `${token.paddingMD}px ${token.paddingLG}px`,
+      minWidth: token.controlHeight * 2, // 使用token计算最小宽度
+      boxShadow: token.boxShadowTertiary, // 直接使用token的阴影
+      transition: `all ${token.motionDurationMid} ${themeStyles.easing.apple}`,
+      pointerEvents: 'none' as const,
+      userSelect: 'none' as const
+    },
+
+    speedOverlayText: {
+      fontSize: token.fontSizeHeading4,
+      fontWeight: token.fontWeightStrong,
+      color: token.colorText,
+      textAlign: 'center' as const,
+      margin: 0,
+      fontFamily: token.fontFamily
+    },
+
+    speedOverlayTextFullscreen: {
+      fontSize: token.fontSizeHeading4,
+      fontWeight: token.fontWeightStrong,
+      color: token.colorTextLightSolid, // 使用token的亮色文本
+      textAlign: 'center' as const,
+      margin: 0,
+      fontFamily: token.fontFamily
+    },
+
+    speedOverlayVisible: {
+      opacity: 1,
+      transform: 'translate(-50%, -50%) scale(1)'
+    },
+
+    speedOverlayHidden: {
+      opacity: 0,
+      transform: 'translate(-50%, -50%) scale(0.8)' // 保持缩放值，这是动画效果
     }
   }
 }

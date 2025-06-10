@@ -1,5 +1,10 @@
+import { useCallback } from 'react'
 import { useVideoConfig } from './useVideoConfig'
-import { VideoPlaybackSettings, SubtitleDisplaySettings } from '@types_/shared'
+import { useVideoPlayerContext } from './useVideoPlayerContext'
+import { PLAYBACK_RATES } from '../constants'
+import { useSelectedPlaybackRates } from '../stores/slices/videoConfigStore'
+import { usePlayingVideoContext } from './usePlayingVideoContext'
+import type { VideoPlaybackSettings, SubtitleDisplaySettings } from '@types_/shared'
 
 /**
  * Hook for accessing subtitle display mode
@@ -187,5 +192,163 @@ export const useVideoPlaybackControlsWithMessages = (): {
     handleSingleLoopToggle,
     handleAutoPauseToggle,
     handleSettingsRestore
+  }
+}
+
+/**
+ * Hook for playback speed keyboard shortcuts
+ * 播放速度键盘快捷键的 Hook
+ */
+export const usePlaybackSpeedShortcuts = (): {
+  increaseSpeed: () => void
+  decreaseSpeed: () => void
+  resetSpeed: () => void
+} => {
+  const { playbackRate, setPlaybackRate } = useVideoConfig()
+  const { playerRef, isVideoLoadedRef } = useVideoPlayerContext()
+
+  const increaseSpeed = useCallback(() => {
+    // 使用固定步长调整（保持原有逻辑作为后备方案）/ Use fixed step adjustment (keep original logic as fallback)
+    const newRate = Math.min(PLAYBACK_RATES.MAX, playbackRate + PLAYBACK_RATES.KEYBOARD_STEP)
+    setPlaybackRate(newRate)
+
+    // 直接控制播放器的播放速度 / Directly control player playback speed
+    if (playerRef.current && isVideoLoadedRef.current) {
+      const internalPlayer = playerRef.current.getInternalPlayer()
+      if (internalPlayer && 'playbackRate' in internalPlayer) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(internalPlayer as any).playbackRate = newRate
+      }
+    }
+  }, [playbackRate, setPlaybackRate, playerRef, isVideoLoadedRef])
+
+  const decreaseSpeed = useCallback(() => {
+    // 使用固定步长调整（保持原有逻辑作为后备方案）/ Use fixed step adjustment (keep original logic as fallback)
+    const newRate = Math.max(PLAYBACK_RATES.MIN, playbackRate - PLAYBACK_RATES.KEYBOARD_STEP)
+    setPlaybackRate(newRate)
+
+    // 直接控制播放器的播放速度 / Directly control player playback speed
+    if (playerRef.current && isVideoLoadedRef.current) {
+      const internalPlayer = playerRef.current.getInternalPlayer()
+      if (internalPlayer && 'playbackRate' in internalPlayer) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(internalPlayer as any).playbackRate = newRate
+      }
+    }
+  }, [playbackRate, setPlaybackRate, playerRef, isVideoLoadedRef])
+
+  const resetSpeed = useCallback(() => {
+    const newRate = PLAYBACK_RATES.DEFAULT
+    setPlaybackRate(newRate)
+
+    // 直接控制播放器的播放速度 / Directly control player playback speed
+    if (playerRef.current && isVideoLoadedRef.current) {
+      const internalPlayer = playerRef.current.getInternalPlayer()
+      if (internalPlayer && 'playbackRate' in internalPlayer) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(internalPlayer as any).playbackRate = newRate
+      }
+    }
+  }, [setPlaybackRate, playerRef, isVideoLoadedRef])
+
+  return {
+    increaseSpeed,
+    decreaseSpeed,
+    resetSpeed
+  }
+}
+
+/**
+ * Hook for playback speed keyboard shortcuts that cycle through user-selected speed options
+ * 播放速度键盘快捷键的 Hook，在用户选择的速度选项中循环切换
+ */
+export const usePlaybackSpeedCycleShortcuts = (): {
+  increaseSpeed: () => void
+  decreaseSpeed: () => void
+  resetSpeed: () => void
+} => {
+  const { playbackRate, setPlaybackRate } = useVideoConfig()
+  const { playerRef, isVideoLoadedRef } = useVideoPlayerContext()
+  const { fileId } = usePlayingVideoContext()
+  const selectedPlaybackRates = useSelectedPlaybackRates(fileId || '')
+
+  // 应用播放速度到播放器 / Apply playback rate to player
+  const applyPlaybackRate = useCallback(
+    (newRate: number) => {
+      setPlaybackRate(newRate)
+
+      // 直接控制播放器的播放速度 / Directly control player playback speed
+      if (playerRef.current && isVideoLoadedRef.current) {
+        const internalPlayer = playerRef.current.getInternalPlayer()
+        if (internalPlayer && 'playbackRate' in internalPlayer) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(internalPlayer as any).playbackRate = newRate
+        }
+      }
+    },
+    [setPlaybackRate, playerRef, isVideoLoadedRef]
+  )
+
+  const increaseSpeed = useCallback(() => {
+    // Add defensive check for selectedPlaybackRates - 添加对 selectedPlaybackRates 的防御性检查
+    const safeRates = selectedPlaybackRates || []
+
+    // 如果没有选择的速度选项，使用固定步长调整 / If no selected speed options, use fixed step adjustment
+    if (safeRates.length === 0) {
+      const newRate = Math.min(PLAYBACK_RATES.MAX, playbackRate + PLAYBACK_RATES.KEYBOARD_STEP)
+      applyPlaybackRate(newRate)
+      return
+    }
+
+    // 在用户选择的速度选项中循环切换 / Cycle through user-selected speed options
+    const sortedRates = [...safeRates].sort((a, b) => a - b)
+    const currentIndex = sortedRates.findIndex((rate) => Math.abs(rate - playbackRate) < 0.01)
+
+    if (currentIndex === -1) {
+      // 当前速度不在选择列表中，切换到最接近且更大的速度 / Current speed not in list, switch to closest higher speed
+      const nextRate = sortedRates.find((rate) => rate > playbackRate) || sortedRates[0]
+      applyPlaybackRate(nextRate)
+    } else {
+      // 切换到下一个速度，如果已经是最后一个则循环到第一个 / Switch to next speed, cycle to first if at end
+      const nextIndex = (currentIndex + 1) % sortedRates.length
+      applyPlaybackRate(sortedRates[nextIndex])
+    }
+  }, [selectedPlaybackRates, playbackRate, applyPlaybackRate])
+
+  const decreaseSpeed = useCallback(() => {
+    // Add defensive check for selectedPlaybackRates - 添加对 selectedPlaybackRates 的防御性检查
+    const safeRates = selectedPlaybackRates || []
+
+    // 如果没有选择的速度选项，使用固定步长调整 / If no selected speed options, use fixed step adjustment
+    if (safeRates.length === 0) {
+      const newRate = Math.max(PLAYBACK_RATES.MIN, playbackRate - PLAYBACK_RATES.KEYBOARD_STEP)
+      applyPlaybackRate(newRate)
+      return
+    }
+
+    // 在用户选择的速度选项中循环切换 / Cycle through user-selected speed options
+    const sortedRates = [...safeRates].sort((a, b) => a - b)
+    const currentIndex = sortedRates.findIndex((rate) => Math.abs(rate - playbackRate) < 0.01)
+
+    if (currentIndex === -1) {
+      // 当前速度不在选择列表中，切换到最接近且更小的速度 / Current speed not in list, switch to closest lower speed
+      const prevRate = sortedRates.reverse().find((rate) => rate < playbackRate) || sortedRates[0]
+      applyPlaybackRate(prevRate)
+    } else {
+      // 切换到上一个速度，如果已经是第一个则循环到最后一个 / Switch to previous speed, cycle to last if at beginning
+      const prevIndex = currentIndex === 0 ? sortedRates.length - 1 : currentIndex - 1
+      applyPlaybackRate(sortedRates[prevIndex])
+    }
+  }, [selectedPlaybackRates, playbackRate, applyPlaybackRate])
+
+  const resetSpeed = useCallback(() => {
+    const newRate = PLAYBACK_RATES.DEFAULT
+    applyPlaybackRate(newRate)
+  }, [applyPlaybackRate])
+
+  return {
+    increaseSpeed,
+    decreaseSpeed,
+    resetSpeed
   }
 }
