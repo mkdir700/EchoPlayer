@@ -13,6 +13,7 @@ import { VideoCompatibilityModal } from './VideoCompatibilityModal'
 
 import styles from './VideoSection.module.css'
 import { useRecentPlayList } from '@renderer/hooks/useRecentPlayList'
+import { isWindows } from '@renderer/utils/system'
 
 // 内部组件 - 需要在 SubtitleControlProvider 内部使用
 interface VideoSectionInnerProps {
@@ -81,18 +82,23 @@ function VideoSectionInner({ onBack }: VideoSectionInnerProps): React.JSX.Elemen
       try {
         console.log('转码完成，新文件路径:', transcodedFilePath)
 
-        // 检查是否是 file:// URL，如果是则转换为本地路径
         let localFilePath = transcodedFilePath
-        if (transcodedFilePath.startsWith('file:///')) {
-          // 移除 file:/// 前缀并解码 URL 编码
-          localFilePath = decodeURIComponent(transcodedFilePath.replace('file:///', ''))
-        } else if (transcodedFilePath.startsWith('file://')) {
-          // 移除 file:// 前缀并解码 URL 编码
-          localFilePath = decodeURIComponent(transcodedFilePath.replace('file://', ''))
+
+        // 判断当前平台是否为 unix 或者 windows
+        // 如果是 unix 平台，则使用 / 作为开始
+        // 如果是 windows 平台
+        if (isWindows()) {
+          if (transcodedFilePath.startsWith('file:///')) {
+            // 移除 file:/// 前缀并解码 URL 编码
+            localFilePath = decodeURIComponent(transcodedFilePath.replace('file:///', ''))
+          }
         } else {
-          // 如果已经是本地路径，直接使用
-          localFilePath = transcodedFilePath
+          if (transcodedFilePath.startsWith('file://')) {
+            // 移除 file:// 前缀并解码 URL 编码
+            localFilePath = decodeURIComponent(transcodedFilePath.replace('file://', ''))
+          }
         }
+
         console.log('转换后的本地文件路径:', localFilePath)
 
         // 从转码后的文件路径中提取文件名
