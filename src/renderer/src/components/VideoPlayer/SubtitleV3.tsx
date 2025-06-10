@@ -401,6 +401,7 @@ function SubtitleV3({
       {/* Subtitle container */}
       <div
         ref={containerRef}
+        data-subtitle-container
         style={containerStyle}
         onMouseDown={eventHandlers.handleContainerMouseDown}
         onMouseEnter={eventHandlers.handleMouseEnter}

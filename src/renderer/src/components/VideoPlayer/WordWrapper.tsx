@@ -74,14 +74,15 @@ export const WordWrapper: React.FC<WordWrapperProps> = ({
   // 选中状态样式 / Selection state style
   const selectionStyle = isSelected
     ? {
-        backgroundColor: token.colorPrimary + '40', // 40% 透明度 / 40% transparency
-        color: token.colorTextBase,
-        borderRadius: '2px'
+        backgroundColor: token.colorPrimary + '80', // 80% 透明度，更明显 / 80% transparency, more visible
+        color: token.colorWhite, // 使用白色文字确保对比度 / Use white text for better contrast
+        padding: '1px 2px' // 添加轻微内边距 / Add slight padding
       }
     : {}
 
   return (
     <span
+      data-word-wrapper
       className={isClickable ? 'clickableWord' : undefined}
       style={{ ...baseStyle, ...hoverStyle, ...selectionStyle }}
       onMouseEnter={handleMouseEnter}

@@ -29,8 +29,8 @@ interface UseSubtitleTextSelectionReturn {
 /**
  * 字幕文本选择 Hook / Subtitle text selection hook
  *
- * 提供划词选中功能，避免与拖拽功能冲突
- * Provides text selection functionality while avoiding conflicts with drag functionality
+ * 提供划词选中功能，当用户按下鼠标并移动到另一个span时自动激活选择模式
+ * Provides text selection functionality that activates when user drags from one span to another
  *
  * @param words - 单词数组 / Array of words
  * @param onSelectionChange - 选择变化回调 / Selection change callback
@@ -49,15 +49,9 @@ export const useSubtitleTextSelection = (
   // 选择开始位置 / Selection start position
   const selectionStartRef = useRef<{ wordIndex: number; charIndex?: number } | null>(null)
 
-  // 鼠标按下计时器，用于区分点击和拖拽 / Mouse down timer to distinguish click from drag
-  const mouseDownTimerRef = useRef<NodeJS.Timeout | null>(null)
+  // 鼠标按下状态跟踪 / Mouse down state tracking
   const mouseDownPositionRef = useRef<{ x: number; y: number } | null>(null)
-
-  // 选择阈值配置 / Selection threshold configuration
-  const SELECTION_THRESHOLD = {
-    TIME_MS: 150, // 按住时间阈值（毫秒）/ Hold time threshold (ms)
-    DISTANCE_PX: 5 // 移动距离阈值（像素）/ Movement distance threshold (px)
-  }
+  const isMouseDownRef = useRef<boolean>(false)
 
   // 清除选择 / Clear selection
   const clearSelection = useCallback(() => {
@@ -68,11 +62,7 @@ export const useSubtitleTextSelection = (
     })
     selectionStartRef.current = null
     mouseDownPositionRef.current = null
-
-    if (mouseDownTimerRef.current) {
-      clearTimeout(mouseDownTimerRef.current)
-      mouseDownTimerRef.current = null
-    }
+    isMouseDownRef.current = false
 
     onSelectionChange?.('', null)
   }, [onSelectionChange])
@@ -94,11 +84,7 @@ export const useSubtitleTextSelection = (
       })
       selectionStartRef.current = null
       mouseDownPositionRef.current = null
-
-      if (mouseDownTimerRef.current) {
-        clearTimeout(mouseDownTimerRef.current)
-        mouseDownTimerRef.current = null
-      }
+      isMouseDownRef.current = false
 
       // 通知选择变化 / Notify selection change
       onSelectionChange?.('', null)
@@ -172,20 +158,10 @@ export const useSubtitleTextSelection = (
       // 只处理左键 / Only handle left mouse button
       if (e.button !== 0) return
 
-      // 记录鼠标按下位置和时间 / Record mouse down position and time
+      // 记录鼠标按下位置和起始单词索引 / Record mouse down position and starting word index
       mouseDownPositionRef.current = { x: e.clientX, y: e.clientY }
       selectionStartRef.current = { wordIndex, charIndex }
-
-      // 设置计时器，延迟启动选择模式 / Set timer to delay selection mode activation
-      mouseDownTimerRef.current = setTimeout(() => {
-        // 检查鼠标是否还在按下状态 / Check if mouse is still down
-        if (selectionStartRef.current) {
-          setSelectionState((prev) => ({
-            ...prev,
-            isSelecting: true
-          }))
-        }
-      }, SELECTION_THRESHOLD.TIME_MS)
+      isMouseDownRef.current = true
 
       // 阻止默认的文本选择行为 / Prevent default text selection behavior
       e.preventDefault()
@@ -195,36 +171,46 @@ export const useSubtitleTextSelection = (
   // 处理单词鼠标进入 / Handle word mouse enter
   const handleWordMouseEnter = useCallback(
     (wordIndex: number, charIndex?: number) => {
-      if (!selectionStartRef.current || !selectionState.isSelecting) return
+      // 只有在鼠标按下状态且有起始位置时才处理 / Only handle when mouse is down and has start position
+      if (!isMouseDownRef.current || !selectionStartRef.current) return
 
-      const range: SelectionRange = {
-        startWordIndex: selectionStartRef.current.wordIndex,
-        endWordIndex: wordIndex,
-        startCharIndex: selectionStartRef.current.charIndex,
-        endCharIndex: charIndex
+      const startWordIndex = selectionStartRef.current.wordIndex
+
+      // 检查是否移动到了不同的单词/字符 / Check if moved to different word/character
+      const hasMoved =
+        wordIndex !== startWordIndex ||
+        (typeof charIndex === 'number' &&
+          typeof selectionStartRef.current.charIndex === 'number' &&
+          charIndex !== selectionStartRef.current.charIndex)
+
+      if (hasMoved) {
+        // 移动到了不同的span，激活选择模式 / Moved to different span, activate selection mode
+        const range: SelectionRange = {
+          startWordIndex: selectionStartRef.current.wordIndex,
+          endWordIndex: wordIndex,
+          startCharIndex: selectionStartRef.current.charIndex,
+          endCharIndex: charIndex
+        }
+
+        updateSelectionRange(range)
       }
-
-      updateSelectionRange(range)
     },
-    [selectionState.isSelecting, updateSelectionRange]
+    [updateSelectionRange]
   )
 
   // 处理鼠标抬起 / Handle mouse up
   const handleWordMouseUp = useCallback(() => {
-    // 清除计时器 / Clear timer
-    if (mouseDownTimerRef.current) {
-      clearTimeout(mouseDownTimerRef.current)
-      mouseDownTimerRef.current = null
+    // 如果没有进入选择模式，说明是单纯的点击 / If not in selection mode, it's a simple click
+    if (!selectionState.isSelecting && selectionStartRef.current) {
+      // 这里可以触发单词点击事件，但由于我们在WordWrapper中已经处理了，这里不需要额外操作
+      // Word click event can be triggered here, but it's already handled in WordWrapper
     }
 
-    // 如果没有进入选择模式，清除选择 / If not in selection mode, clear selection
-    if (!selectionState.isSelecting) {
-      clearSelection()
-    }
-
+    // 重置状态 / Reset state
     selectionStartRef.current = null
     mouseDownPositionRef.current = null
-  }, [selectionState.isSelecting, clearSelection])
+    isMouseDownRef.current = false
+  }, [selectionState.isSelecting])
 
   // 检查单词是否被选中 / Check if word is selected
   const isWordSelected = useCallback(
@@ -272,47 +258,42 @@ export const useSubtitleTextSelection = (
 
   // 监听全局鼠标事件 / Listen to global mouse events
   useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent): void => {
-      // 检查鼠标移动距离，如果超过阈值则可能是拖拽 / Check mouse movement distance for potential drag
-      if (mouseDownPositionRef.current && selectionStartRef.current) {
-        const distance = Math.sqrt(
-          Math.pow(e.clientX - mouseDownPositionRef.current.x, 2) +
-            Math.pow(e.clientY - mouseDownPositionRef.current.y, 2)
-        )
-
-        // 如果移动距离超过阈值，取消选择模式 / Cancel selection mode if movement exceeds threshold
-        if (distance > SELECTION_THRESHOLD.DISTANCE_PX && !selectionState.isSelecting) {
-          if (mouseDownTimerRef.current) {
-            clearTimeout(mouseDownTimerRef.current)
-            mouseDownTimerRef.current = null
-          }
-          selectionStartRef.current = null
-          mouseDownPositionRef.current = null
-        }
-      }
-    }
-
     const handleGlobalMouseUp = (): void => {
       handleWordMouseUp()
     }
 
-    document.addEventListener('mousemove', handleGlobalMouseMove)
-    document.addEventListener('mouseup', handleGlobalMouseUp)
+    // 监听全局点击事件，点击其他区域时清除选择状态 / Listen to global click events, clear selection when clicking outside
+    const handleGlobalClick = (e: MouseEvent): void => {
+      // 如果当前处于划词状态，检查点击是否在字幕区域外 / If in selection mode, check if click is outside subtitle area
+      if (selectionState.isSelecting) {
+        const target = e.target as Element
 
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove)
-      document.removeEventListener('mouseup', handleGlobalMouseUp)
-    }
-  }, [selectionState.isSelecting, handleWordMouseUp])
+        // 检查点击目标是否在字幕相关元素内 / Check if click target is within subtitle-related elements
+        const isClickInSubtitle =
+          target?.closest('[data-subtitle-container]') ||
+          target?.closest('[data-word-wrapper]') ||
+          target?.closest('.subtitle-word') ||
+          target?.closest('.word-wrapper') ||
+          target?.closest('.clickableWord') ||
+          target?.classList?.contains('subtitle-word') ||
+          target?.classList?.contains('clickableWord') ||
+          target?.classList?.contains('word-wrapper')
 
-  // 清理计时器 / Cleanup timer
-  useEffect(() => {
-    return () => {
-      if (mouseDownTimerRef.current) {
-        clearTimeout(mouseDownTimerRef.current)
+        // 如果点击在字幕区域外，清除选择状态 / If click is outside subtitle area, clear selection
+        if (!isClickInSubtitle) {
+          clearSelection()
+        }
       }
     }
-  }, [])
+
+    document.addEventListener('mouseup', handleGlobalMouseUp)
+    document.addEventListener('click', handleGlobalClick, true) // 使用捕获模式确保优先处理 / Use capture mode for priority handling
+
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp)
+      document.removeEventListener('click', handleGlobalClick, true)
+    }
+  }, [handleWordMouseUp, selectionState.isSelecting, clearSelection])
 
   return {
     selectionState,
