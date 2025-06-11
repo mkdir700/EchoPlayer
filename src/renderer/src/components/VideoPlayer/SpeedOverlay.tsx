@@ -44,6 +44,8 @@ export function SpeedOverlay({ speed, visible, onHide }: SpeedOverlayProps): Rea
   useEffect(() => {
     if (visible) {
       setIsAnimating(true)
+      // 当visible为true时，不需要返回清理函数 / No cleanup needed when visible is true
+      return
     } else {
       // 延迟隐藏以完成淡出动画 / Delay hiding to complete fade-out animation
       const timer = setTimeout(() => {

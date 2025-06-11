@@ -9,6 +9,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    typecheck: {
+      enabled: true,
+      tsconfig: './tsconfig.web.json'
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

@@ -3,10 +3,13 @@
   "include": [
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
+    "src/renderer/src/types/global.d.ts",
     "src/preload/*.d.ts",
     "src/types/**/*",
     "src/test/**/*"
   ],
+  "types": ["vitest/globals", "@testing-library/jest-dom"],
+  "typeRoots": ["./src/preload"],
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",
