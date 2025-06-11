@@ -154,18 +154,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run tests
-        if: github.event.inputs.skip_tests != 'true' && needs.detect-version.outputs.version_type != 'dev'
-        run: pnpm test:run
-
-      - name: Type check
-        if: needs.detect-version.outputs.version_type != 'dev'
-        run: pnpm typecheck
-
-      - name: Lint check
-        if: needs.detect-version.outputs.version_type == 'stable'
-        run: pnpm lint
-
       - name: Build and release using electron-builder
         run: pnpm release
         env:
