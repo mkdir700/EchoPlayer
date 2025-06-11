@@ -35,8 +35,10 @@ mac:
   icon: icons/mac/icon.icns
   artifactName: ${productName}-${version}-${arch}.${ext}
   target:
-    - dmg
-    - zip
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
   category: public.app-category.education
   darkModeSupport: true
   extendInfo:
