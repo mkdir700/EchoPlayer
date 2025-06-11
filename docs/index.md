@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: 快速入门
-      link: /user-guide/quick-start
+      link: ./user-guide/quick-start
 
 features:
   - title: 🎯 逐句精听系统
@@ -35,28 +35,28 @@ EchoLab 是一款强大的桌面应用程序，专为语言学习而设计。它
 <div class="vp-doc">
   <div class="custom-block tip">
     <p class="custom-block-title">EchoLab 新用户？</p>
-    <p>从我们的 <a href="/user-guide/features/quick-start">快速入门</a> 开始，5 分钟内掌握核心功能。</p>
+    <p>从我们的 <a href="./user-guide/quick-start">快速入门</a> 开始，5 分钟内掌握核心功能。</p>
   </div>
 </div>
 
 ## 文档导航
 
-### 📖 [用户指南](/user-guide/)
+### 📖 [用户指南](./user-guide/)
 
 完整的用户手册，涵盖安装、界面、功能和故障排除。
 
-### 🚀 [快速入门](/user-guide/quick-start)
+### 🚀 [快速入门](./user-guide/quick-start)
 
 5 分钟掌握 EchoLab 核心功能，开始高效语言学习。
 
-### 📋 [安装指南](/user-guide/installation)
+### 📋 [安装指南](./user-guide/installation)
 
 详细的安装步骤，支持 Windows、macOS 和 Linux 系统。
 
 ## 获取帮助
 
-- **使用问题**: 查看[常见问题解答](/user-guide/troubleshooting#常见问题解答)或[安装问题排查](/user-guide/installation#安装问题排查)
-- **技术支持**: 访问[技术支持](/user-guide/troubleshooting#技术支持)获取官方帮助
+- **使用问题**: 查看[常见问题解答](./user-guide/faq)或[故障排除](./user-guide/troubleshooting)
+- **技术支持**: 访问[技术支持](./user-guide/troubleshooting)获取官方帮助
 - **问题报告**: 在我们的 [GitHub 仓库](https://github.com/mkdir700/echolab/issues)提交问题
 
 ## 社区

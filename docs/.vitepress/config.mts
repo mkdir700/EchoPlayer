@@ -5,6 +5,7 @@ export default defineConfig({
   title: 'EchoLab Documentation',
   description: 'Professional video subtitle editing and language learning tool',
   base: '/echolab/',
+  ignoreDeadLinks: true,
 
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
@@ -12,6 +13,11 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: '用户指南', link: '/user-guide/' }
     ],
+
+    outline: {
+      level: [2, 6],
+      label: '页面导航'
+    },
 
     sidebar: {
       '/user-guide/': [
@@ -26,7 +32,8 @@ export default defineConfig({
         {
           text: '用户手册',
           items: [
-            { text: '介绍', link: '/user-guide/overview' },
+            { text: '概述', link: '/user-guide/overview' },
+            { text: '用户手册', link: '/user-guide/user-manual' },
             { text: '视频导入', link: '/user-guide/video-import' },
             { text: '字幕编辑', link: '/user-guide/subtitle-editing' },
             { text: '键盘快捷键', link: '/user-guide/keyboard-shortcuts' },
@@ -34,57 +41,29 @@ export default defineConfig({
           ]
         },
         {
-          text: '功能',
+          text: '帮助与支持',
           items: [
-            { text: '视频播放', link: '/user-guide/features/playback' },
-            { text: '字幕管理', link: '/user-guide/features/subtitles' },
-            { text: '语言学习', link: '/user-guide/features/learning' },
-            { text: '视频转换', link: '/user-guide/features/conversion' }
-          ]
-        },
-        {
-          text: '故障排除',
-          items: [
-            { text: '常见问题', link: '/user-guide/troubleshooting' },
-            { text: '常见问题解答', link: '/user-guide/faq' }
+            { text: '故障排除', link: '/user-guide/troubleshooting' },
+            { text: '常见问题', link: '/user-guide/faq' }
           ]
         }
       ],
       '/developer/': [
         {
-          text: '开发',
+          text: '开发指南',
           items: [
             { text: '介绍', link: '/developer/' },
-            { text: '安装', link: '/developer/setup' },
-            { text: '架构', link: '/developer/architecture' },
-            { text: '构建 & 发布', link: '/developer/build-release' }
-          ]
-        },
-        {
-          text: '指南',
-          items: [
+            { text: '构建 & 发布', link: '/developer/build-release' },
             { text: '测试指南', link: '/developer/testing' },
             { text: 'Git 工作流', link: '/developer/git-workflow' },
             { text: '发布流程', link: '/developer/release-process' }
-          ]
-        },
-        {
-          text: '贡献',
-          items: [
-            { text: '代码风格', link: '/developer/code-style' },
-            { text: 'Pull Requests 拉取请求', link: '/developer/pull-requests' }
           ]
         }
       ],
       '/api/': [
         {
           text: 'API 参考',
-          items: [
-            { text: '介绍', link: '/api/' },
-            { text: '主进程', link: '/api/main-process' },
-            { text: '渲染进程', link: '/api/renderer-process' },
-            { text: 'IPC 通信', link: '/api/ipc' }
-          ]
+          items: [{ text: '介绍', link: '/api/' }]
         }
       ]
     },
