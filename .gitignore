@@ -38,3 +38,4 @@ node_modules/
 # Task files
 tasks.json
 tasks/ 
+docs/.vitepress/cache/deps
