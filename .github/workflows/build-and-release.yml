@@ -154,24 +154,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Setup Linux build environment
-        if: matrix.platform == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libnss3-dev libgconf-2-4 libxtst6 libxrandr2 libasound2-dev libpangocairo-1.0-0 libatk1.0-0 libcairo-gobject2 libgtk-3-0 libgdk-pixbuf2.0-0
-          sudo snap install snapcraft --classic
-
-      - name: Clean electron-builder cache
-        if: matrix.platform == 'linux'
-        run: |
-          rm -rf ~/.cache/electron-builder
-          rm -rf node_modules/.cache
-
-      - name: Fix app-builder permissions
-        if: matrix.platform == 'linux'
-        run: |
-          find node_modules -name "app-builder" -type f -exec chmod +x {} \;
-
       - name: Run tests
         if: github.event.inputs.skip_tests != 'true' && needs.detect-version.outputs.version_type != 'dev'
         run: pnpm test:run
