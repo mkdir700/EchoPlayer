@@ -28,6 +28,10 @@ import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
 import { SpeedOverlay } from './SpeedOverlay'
 import { useSpeedOverlay } from '@renderer/hooks/useSpeedOverlay'
 import { usePlaybackSpeedMonitor } from '@renderer/hooks/usePlaybackSpeedMonitor'
+// 导入字幕模式覆盖层相关组件和 hooks
+import { SubtitleModeOverlay } from './SubtitleModeOverlay'
+import { useSubtitleModeOverlay } from '@renderer/hooks/useSubtitleModeOverlay'
+import { useSubtitleModeMonitor } from '@renderer/hooks/useSubtitleModeMonitor'
 
 interface VideoPlayerProps {
   isVideoLoaded: boolean
@@ -69,6 +73,14 @@ function VideoPlayer({
   // 监听播放速度变化 / Monitor playback speed changes
   usePlaybackSpeedMonitor({
     onSpeedChange: speedOverlay.showSpeedOverlay
+  })
+
+  // 字幕模式覆盖层管理 / Subtitle mode overlay management
+  const subtitleModeOverlay = useSubtitleModeOverlay()
+
+  // 监听字幕模式变化 / Monitor subtitle mode changes
+  useSubtitleModeMonitor({
+    onModeChange: subtitleModeOverlay.showModeOverlay
   })
 
   // 节流相关的 refs（保留在组件中，因为它们是实现细节）
@@ -155,41 +167,52 @@ function VideoPlayer({
             {/* 错误状态提示 */}
             {videoError && <ErrorIndicator error={videoError} />}
 
-            {/* 字幕显示组件 - 使用内聚的回调 */}
-            <SubtitleOverlay
-              onWordHover={controlsDisplay.handleWordHoverForControls}
-              enableTextSelection={true}
-              onSelectionChange={textSelection.handleSelectionChange}
-            />
+            {/* 字幕覆盖层 - 字幕显示和交互 */}
+            <div className={styles.subtitleOverlay}>
+              <SubtitleOverlay
+                onWordHover={controlsDisplay.handleWordHoverForControls}
+                enableTextSelection={true}
+                onSelectionChange={textSelection.handleSelectionChange}
+              />
+            </div>
 
-            {/* 播放速度反馈覆盖层 / Speed feedback overlay */}
+            {/* 控制器覆盖层(仅在全屏模式下显示) - 播放控制 */}
+            <div className={styles.controlsOverlay}>
+              {isFullscreen && (
+                <VideoControlsFullScreen
+                  showControls={controlsDisplay.showControls}
+                  isVideoLoaded={isVideoLoaded}
+                  videoError={videoError}
+                />
+              )}
+            </div>
+
+            {/* 速度覆盖层 - 播放速度反馈 */}
             <SpeedOverlay
               speed={speedOverlay.currentSpeed}
               visible={speedOverlay.isVisible}
               onHide={speedOverlay.hideSpeedOverlay}
             />
 
-            {/* 全屏控制栏 */}
-            {isFullscreen && (
-              <VideoControlsFullScreen
-                isVideoLoaded={isVideoLoaded}
-                videoError={videoError}
-                showControls={controlsDisplay.showControls}
-              />
-            )}
+            {/* 字幕模式覆盖层 - 字幕模式切换反馈 */}
+            <SubtitleModeOverlay
+              mode={subtitleModeOverlay.currentMode}
+              visible={subtitleModeOverlay.isVisible}
+              onHide={subtitleModeOverlay.hideModeOverlay}
+            />
+
+            {/* 复制成功提示 */}
+            <CopySuccessToast
+              visible={textSelection.toastState.visible}
+              position={textSelection.toastState.position}
+              copiedText={textSelection.toastState.copiedText}
+              onComplete={textSelection.hideCopySuccess}
+            />
           </>
         ) : (
           <VideoPlaceholder />
         )}
       </div>
-
-      {/* 复制成功提示 - 使用内聚的文本选择功能 */}
-      <CopySuccessToast
-        visible={textSelection.toastState.visible}
-        position={textSelection.toastState.position}
-        copiedText={textSelection.toastState.copiedText}
-        onComplete={textSelection.hideCopySuccess}
-      />
     </div>
   )
 }
