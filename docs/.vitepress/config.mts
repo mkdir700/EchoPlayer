@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'EchoLab Documentation',
-  description: 'Professional video subtitle editing and language learning tool',
+  description: '一款专为语言学习者设计的视频播放器',
   base: '/',
   ignoreDeadLinks: true,
 

@@ -3,7 +3,7 @@
 layout: home
 
 hero:
-  name: 'EchoLab Documentation'
+  name: 'EchoLab'
   tagline: 专为语言学习者设计的智能视频播放器
   actions:
     - theme: brand

@@ -33,36 +33,6 @@
 - [安装问题排查](./features/installation-guide#安装问题排查) - 安装相关问题
 - [技术支持](./features/user-manual#技术支持) - 获取官方支持
 
-## Key Features Overview
-
-### Video Playback Control
-
-- Precise frame-by-frame navigation
-- Variable playback speeds
-- Loop and auto-pause functionality
-- Keyboard shortcuts for efficient control
-
-### Subtitle Management
-
-- Real-time subtitle editing
-- Automatic timing synchronization
-- Multiple subtitle format support
-- Smart text segmentation
-
-### Language Learning Tools
-
-- Interactive subtitle display
-- Word-by-word learning mode
-- Progress tracking
-- Custom vocabulary lists
-
-### Video Format Support
-
-- Wide range of input formats
-- Automatic video conversion
-- Quality optimization
-- Cross-platform compatibility
-
 ## 快速开始清单
 
 - [ ] [安装 EchoLab](./features/installation-guide)
