@@ -19,14 +19,6 @@ on:
           - 'alpha'
           - 'beta'
           - 'stable'
-      skip_tests:
-        description: 'Skip tests for faster builds'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'false'
-          - 'true'
 
 permissions:
   contents: write
