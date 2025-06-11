@@ -4,7 +4,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'EchoLab Documentation',
   description: 'Professional video subtitle editing and language learning tool',
-  base: '/docs/',
+  base: '/echolab/',
 
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
