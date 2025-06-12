@@ -1,3 +1,23 @@
+## [v0.2.0-alpha.3](https://github.com/mkdir700/echolab/tree/v0.2.0-alpha.3)(2025-06-12)
+
+### 🐛 修复问题
+
+- **依赖优化**: 移除 cheerio 依赖以解决 Electron 打包问题，使用原生正则表达式替代 HTML 解析 #50
+- **字典解析**: 重构 parseEudicHtml() 为 parseEudicHtmlWithRegex()，支持多种 HTML 格式解析
+- **运行时兼容**: 提升 Electron 运行时兼容性，减少打包体积
+
+### ⚙️ 自动化改进
+
+- **发布流程**: 新增自动化发布和版本检查功能，包括 release:auto 和 release:check 命令
+- **Git Hook**: 添加 Git pre-push hook，在推送前自动检查版本状态
+- **版本管理**: 新增版本管理和发布指南文档，详细说明版本管理流程
+- **发布检查**: 实现发布前检查脚本，验证版本号、Git 状态和基本测试
+
+### 🛠️ 构建优化
+
+- **构建目标**: 移除 Linux 构建目标中的 snap 选项，简化构建配置
+- **自动化脚本**: 实现自动化发布脚本，支持用户选择版本类型和发布渠道
+
 ## [v0.2.0-alpha.2](https://github.com/mkdir700/echolab/tree/v0.2.0-alpha.2)(2025-06-12)
 
 ### 🎯 字幕模式增强
