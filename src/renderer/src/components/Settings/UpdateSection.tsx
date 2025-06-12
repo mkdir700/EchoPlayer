@@ -142,15 +142,43 @@ export function UpdateSection(): React.JSX.Element {
   // 更改更新渠道
   const handleUpdateChannelChange = async (channel: 'stable' | 'beta' | 'alpha'): Promise<void> => {
     try {
+      // 设置更新渠道
       await window.api.update.setUpdateChannel(channel)
       const newSettings = { ...updateSettings, updateChannel: channel }
       setUpdateSettings(newSettings)
 
       notification.success({
         message: '更新渠道已变更',
-        description: `已切换到 ${getChannelDisplayName(channel)} 渠道`,
-        duration: 3
+        description: `已切换到 ${getChannelDisplayName(channel)} 渠道，正在检查新渠道的更新...`,
+        duration: 4
       })
+
+      // 立即触发更新检查以查找新渠道的更新
+      // Immediately trigger update check to find updates in the new channel
+      try {
+        setIsCheckingForUpdates(true)
+        const result = await window.api.update.checkForUpdates({ silent: true })
+
+        if (result && result.status === 'available') {
+          notification.info({
+            message: '发现新版本',
+            description: `在 ${getChannelDisplayName(channel)} 渠道中发现可用更新`,
+            duration: 5
+          })
+        } else if (result && result.status === 'not-available') {
+          notification.success({
+            message: '渠道切换完成',
+            description: `${getChannelDisplayName(channel)} 渠道已是最新版本`,
+            duration: 3
+          })
+        }
+      } catch (updateCheckError) {
+        console.warn('切换渠道后检查更新失败:', updateCheckError)
+        // 不显示错误通知，因为渠道切换本身是成功的
+        // Don't show error notification as the channel switch itself was successful
+      } finally {
+        setIsCheckingForUpdates(false)
+      }
     } catch (error) {
       console.error('更改更新渠道失败:', error)
       notification.error({
@@ -231,6 +259,8 @@ export function UpdateSection(): React.JSX.Element {
             value={updateSettings.updateChannel}
             onChange={handleUpdateChannelChange}
             style={componentStyles.updateChannelSelect}
+            loading={isCheckingForUpdates}
+            disabled={isCheckingForUpdates}
           >
             <Option value="stable">
               <Space>
