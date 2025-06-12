@@ -102,7 +102,11 @@
     "onlyBuiltDependencies": [
       "electron",
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "brace-expansion": "^2.0.1",
+      "minimatch": "^9.0.5"
+    }
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
