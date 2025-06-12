@@ -6,6 +6,88 @@ import type { UpdateSettings, UpdateStatus } from '../../types/shared'
 import { is } from '@electron-toolkit/utils'
 import { getUpdateChannel, getVersionInfo } from '../utils/version-parser'
 
+/**
+ * Format bytes to human readable string
+ * 将字节数格式化为人类可读的字符串
+ *
+ * @param bytes - Number of bytes / 字节数
+ * @param decimals - Number of decimal places / 小数位数
+ * @returns Formatted string / 格式化后的字符串
+ */
+function formatBytes(bytes: number, decimals = 2): string {
+  if (bytes === 0) return '0 Bytes'
+
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
+/**
+ * Enhanced update info with additional properties
+ * 增强的更新信息，包含额外属性
+ */
+interface EnhancedUpdateInfo extends UpdateInfo {
+  updateSize?: number
+}
+
+/**
+ * Process and enhance update info from electron-updater
+ * 处理和增强来自electron-updater的更新信息
+ *
+ * @param info - Raw update info from electron-updater / 来自electron-updater的原始更新信息
+ * @returns Enhanced update info / 增强后的更新信息
+ */
+function processUpdateInfo(info: UpdateInfo): EnhancedUpdateInfo {
+  // Calculate total update size from files array
+  // 从文件数组计算总更新大小
+  let totalSize = 0
+  if (info.files && Array.isArray(info.files)) {
+    totalSize = info.files.reduce((sum, file) => {
+      return sum + (file.size || 0)
+    }, 0)
+  }
+
+  // Process release notes based on type
+  // 根据类型处理发布说明
+  let processedReleaseNotes: string | undefined
+
+  if (info.releaseNotes) {
+    if (typeof info.releaseNotes === 'string') {
+      // Already a string, use as-is
+      // 已经是字符串，直接使用
+      processedReleaseNotes = info.releaseNotes
+    } else if (Array.isArray(info.releaseNotes)) {
+      // Array of ReleaseNoteInfo, combine into markdown
+      // ReleaseNoteInfo数组，合并为markdown
+      processedReleaseNotes = info.releaseNotes
+        .map((note) => {
+          const version = note.version ? `## ${note.version}\n` : ''
+          const content = note.note || ''
+          return version + content
+        })
+        .join('\n\n')
+    } else {
+      // Other types, convert to string
+      // 其他类型，转换为字符串
+      processedReleaseNotes = String(info.releaseNotes)
+    }
+  }
+
+  // Return enhanced update info
+  // 返回增强后的更新信息
+  return {
+    ...info,
+    releaseNotes: processedReleaseNotes,
+    // Add updateSize as a custom property
+    // 添加updateSize作为自定义属性
+    updateSize: totalSize > 0 ? totalSize : undefined
+  } as EnhancedUpdateInfo
+}
+
 // 创建更新设置存储
 const updateStore = new Conf({
   name: 'echolab-update-settings',
@@ -209,31 +291,39 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
           // 有可用的更新
           Logger.info('发现新版本:', checkResult.updateInfo.version)
 
+          // Process and enhance update info
+          // 处理和增强更新信息
+          const enhancedInfo = processUpdateInfo(checkResult.updateInfo)
+
           if (!options.silent) {
             sendStatusToWindow({
               status: 'available',
-              info: checkResult.updateInfo
+              info: enhancedInfo
             })
           }
 
           return {
             status: 'available',
-            info: checkResult.updateInfo
+            info: enhancedInfo
           }
         } else {
           // 无可用的更新
           Logger.info('当前已是最新版本')
 
+          // Process update info for consistency
+          // 为保持一致性处理更新信息
+          const enhancedInfo = processUpdateInfo(checkResult.updateInfo)
+
           if (!options.silent) {
             sendStatusToWindow({
               status: 'not-available',
-              info: checkResult.updateInfo
+              info: enhancedInfo
             })
           }
 
           return {
             status: 'not-available',
-            info: checkResult.updateInfo
+            info: enhancedInfo
           }
         }
       } catch (error) {
@@ -360,7 +450,22 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
     Logger.info('发现可用更新:', info.version)
-    sendStatusToWindow({ status: 'available', info })
+
+    // Process and enhance update info with release notes parsing and file size calculation
+    // 处理和增强更新信息，包括发布说明解析和文件大小计算
+    const enhancedInfo = processUpdateInfo(info)
+
+    // Log enhanced information for debugging
+    // 记录增强信息用于调试
+    Logger.info('增强后的更新信息:', {
+      version: enhancedInfo.version,
+      releaseDate: enhancedInfo.releaseDate,
+      updateSize: enhancedInfo.updateSize ? formatBytes(enhancedInfo.updateSize) : 'Unknown',
+      releaseNotesLength: enhancedInfo.releaseNotes?.length || 0,
+      hasReleaseNotes: !!enhancedInfo.releaseNotes
+    })
+
+    sendStatusToWindow({ status: 'available', info: enhancedInfo })
   })
 
   autoUpdater.on('update-not-available', (info: UpdateInfo) => {
@@ -378,7 +483,12 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
 
   autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
     Logger.info('更新下载完成:', info.version)
-    sendStatusToWindow({ status: 'downloaded', info })
+
+    // Process and enhance update info for consistency
+    // 为保持一致性处理和增强更新信息
+    const enhancedInfo = processUpdateInfo(info)
+
+    sendStatusToWindow({ status: 'downloaded', info: enhancedInfo })
   })
 
   autoUpdater.on('error', (err: Error) => {
