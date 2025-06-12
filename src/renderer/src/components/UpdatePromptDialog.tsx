@@ -406,6 +406,8 @@ export function UpdatePromptDialog({
       borderRadius: token.borderRadius,
       fontWeight: FONT_WEIGHTS.MEDIUM,
       height: responsiveConfig.buttonHeight,
+      minWidth: responsiveConfig.stackButtons ? 'auto' : 120, // 确保按钮有最小宽度
+      flex: responsiveConfig.stackButtons ? 'none' : '0 0 auto', // 防止按钮被压缩
       ...(responsiveConfig.stackButtons && { width: '100%' })
     }
 
@@ -419,7 +421,9 @@ export function UpdatePromptDialog({
               onClick={onRemindLater}
               style={{
                 ...commonButtonStyle,
-                borderColor: token.colorBorderSecondary
+                borderColor: token.colorBorderSecondary,
+                // 在水平布局时确保按钮不会太窄
+                ...(!responsiveConfig.stackButtons && { minWidth: 100 })
               }}
               icon={<ClockCircleOutlined />}
             >
@@ -434,7 +438,9 @@ export function UpdatePromptDialog({
               ...commonButtonStyle,
               background: `linear-gradient(135deg, ${token.colorPrimary} 0%, ${token.colorPrimaryHover} 100%)`,
               border: 'none',
-              boxShadow: `0 4px 12px ${utils.hexToRgba(token.colorPrimary, 0.3)}`
+              boxShadow: `0 4px 12px ${utils.hexToRgba(token.colorPrimary, 0.3)}`,
+              // 在水平布局时确保主要按钮有足够宽度
+              ...(!responsiveConfig.stackButtons && { minWidth: 140 })
             }}
             icon={<CloudDownloadOutlined />}
           >
@@ -451,7 +457,9 @@ export function UpdatePromptDialog({
               onClick={onRemindLater}
               style={{
                 ...commonButtonStyle,
-                borderColor: token.colorBorderSecondary
+                borderColor: token.colorBorderSecondary,
+                // 在水平布局时确保按钮不会太窄
+                ...(!responsiveConfig.stackButtons && { minWidth: 100 })
               }}
               icon={<ClockCircleOutlined />}
             >
@@ -466,7 +474,9 @@ export function UpdatePromptDialog({
               ...commonButtonStyle,
               background: `linear-gradient(135deg, ${token.colorSuccess} 0%, ${token.colorSuccessHover} 100%)`,
               border: 'none',
-              boxShadow: `0 4px 12px ${utils.hexToRgba(token.colorSuccess, 0.3)}`
+              boxShadow: `0 4px 12px ${utils.hexToRgba(token.colorSuccess, 0.3)}`,
+              // 在水平布局时确保主要按钮有足够宽度
+              ...(!responsiveConfig.stackButtons && { minWidth: 140 })
             }}
             icon={<CheckCircleOutlined />}
           >
@@ -484,7 +494,9 @@ export function UpdatePromptDialog({
             }}
             style={{
               ...commonButtonStyle,
-              borderColor: token.colorBorderSecondary
+              borderColor: token.colorBorderSecondary,
+              // 在水平布局时确保按钮不会太窄，为800px宽度优化
+              ...(!responsiveConfig.stackButtons && { minWidth: 90 })
             }}
           >
             关闭
@@ -493,7 +505,11 @@ export function UpdatePromptDialog({
             key="retry"
             type="primary"
             onClick={onRetry}
-            style={commonButtonStyle}
+            style={{
+              ...commonButtonStyle,
+              // 在水平布局时确保按钮不会太窄，为800px宽度优化
+              ...(!responsiveConfig.stackButtons && { minWidth: 90 })
+            }}
             icon={<InfoCircleOutlined />}
           >
             重试
@@ -514,7 +530,9 @@ export function UpdatePromptDialog({
             }}
             style={{
               ...commonButtonStyle,
-              borderColor: token.colorBorderSecondary
+              borderColor: token.colorBorderSecondary,
+              // 在水平布局时确保按钮不会太窄
+              ...(!responsiveConfig.stackButtons && { minWidth: 80 })
             }}
           >
             取消
@@ -531,7 +549,9 @@ export function UpdatePromptDialog({
             }}
             style={{
               ...commonButtonStyle,
-              borderColor: token.colorBorderSecondary
+              borderColor: token.colorBorderSecondary,
+              // 在水平布局时确保按钮不会太窄
+              ...(!responsiveConfig.stackButtons && { minWidth: 80 })
             }}
           >
             关闭
@@ -589,10 +609,13 @@ export function UpdatePromptDialog({
           background: utils.hexToRgba(token.colorFillQuaternary, 0.3),
           borderRadius: `0 0 ${token.borderRadiusLG}px ${token.borderRadiusLG}px`,
           padding: `${responsiveConfig.padding.md}px ${responsiveConfig.padding.lg}px`,
-          textAlign: responsiveConfig.stackButtons ? 'center' : 'right',
-          display: responsiveConfig.stackButtons ? 'flex' : 'block',
+          display: 'flex',
           flexDirection: responsiveConfig.stackButtons ? 'column' : 'row',
-          gap: responsiveConfig.stackButtons ? `${responsiveConfig.buttonGap}px` : 'unset'
+          justifyContent: responsiveConfig.stackButtons ? 'center' : 'flex-end',
+          alignItems: responsiveConfig.stackButtons ? 'stretch' : 'center',
+          gap: `${responsiveConfig.buttonGap}px`,
+          flexWrap: 'nowrap', // 防止按钮换行
+          minHeight: responsiveConfig.buttonHeight + responsiveConfig.padding.md * 2 // 确保footer有足够高度
         }
       }}
     >

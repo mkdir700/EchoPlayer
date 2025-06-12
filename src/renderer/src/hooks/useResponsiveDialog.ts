@@ -82,7 +82,7 @@ export function useResponsiveDialog(): ResponsiveDialogConfig {
     if (width >= 1440) {
       // Large screens (2K and above) - 大屏幕 (2K 及以上)
       return {
-        width: 560,
+        width: 800, // 增加到800px以提供更好的用户体验
         buttonHeight: 44,
         titleFontSize: 18,
         contentFontSize: 16,
@@ -95,10 +95,26 @@ export function useResponsiveDialog(): ResponsiveDialogConfig {
         stackButtons: false,
         buttonGap: 12
       }
-    } else if (width >= 1024) {
-      // Medium-large screens (1024px-1439px) - 中大屏幕
+    } else if (width >= 1200) {
+      // Large-medium screens (1200px-1439px) - 大中屏幕
       return {
-        width: 520,
+        width: 800, // 专门为800px宽度优化
+        buttonHeight: 42,
+        titleFontSize: 17,
+        contentFontSize: 15,
+        smallFontSize: 13,
+        padding: {
+          sm: 11,
+          md: 18,
+          lg: 22
+        },
+        stackButtons: false,
+        buttonGap: 12
+      }
+    } else if (width >= 1024) {
+      // Medium-large screens (1024px-1199px) - 中大屏幕
+      return {
+        width: 720, // 适当减小宽度以适应屏幕
         buttonHeight: 40,
         titleFontSize: 16,
         contentFontSize: 15,
@@ -114,7 +130,7 @@ export function useResponsiveDialog(): ResponsiveDialogConfig {
     } else if (width >= 900) {
       // Medium screens (900px-1023px) - 中等屏幕
       return {
-        width: 480,
+        width: 600, // 调整宽度以更好适应中等屏幕
         buttonHeight: 38,
         titleFontSize: 15,
         contentFontSize: 14,
@@ -127,10 +143,28 @@ export function useResponsiveDialog(): ResponsiveDialogConfig {
         stackButtons: false,
         buttonGap: 8
       }
-    } else {
-      // Small screens (768px-899px) - 小屏幕（最小支持分辨率）
+    } else if (width >= 800) {
+      // Small-medium screens (800px-899px) - 小中屏幕
+      // 在800px宽度下仍然保持按钮水平排列
       return {
-        width: '92%', // Use percentage for very constrained width
+        width: 520, // 增加对话框宽度以容纳水平按钮
+        buttonHeight: 36,
+        titleFontSize: 14,
+        contentFontSize: 13,
+        smallFontSize: 12,
+        padding: {
+          sm: 8,
+          md: 12,
+          lg: 16
+        },
+        stackButtons: false, // 保持按钮水平排列
+        buttonGap: 8
+      }
+    } else {
+      // Small screens (768px-799px) - 小屏幕（最小支持分辨率）
+      // 只有在最小支持尺寸768px时才垂直堆叠按钮
+      return {
+        width: 480, // 使用固定宽度而不是百分比，确保按钮有足够空间
         buttonHeight: 36,
         titleFontSize: 14,
         contentFontSize: 13,
@@ -140,7 +174,7 @@ export function useResponsiveDialog(): ResponsiveDialogConfig {
           md: 12,
           lg: 16
         },
-        stackButtons: true, // Stack buttons vertically for better UX
+        stackButtons: true, // 只在768px最小尺寸时垂直堆叠
         buttonGap: 8
       }
     }
