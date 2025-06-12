@@ -72,8 +72,8 @@ export const DEFAULT_SHORTCUTS: Record<string, ShortcutConfig> = {
   toggleSubtitleMode: {
     key: 'toggleSubtitleMode',
     name: '切换字幕模式',
-    description: '在原文/双语/隐藏字幕间切换',
-    defaultKey: 'Ctrl+M',
+    description: '在双语/原文/译文/隐藏字幕间切换',
+    defaultKey: 'S',
     category: 'subtitle'
   },
   singleLoop: {

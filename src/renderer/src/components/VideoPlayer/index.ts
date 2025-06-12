@@ -17,6 +17,10 @@ export { BilingualSubtitleLine, type BilingualSubtitleLineProps } from './Biling
 // 字幕占位符组件 / Subtitle placeholder component
 export { SubtitlePlaceholder, type SubtitlePlaceholderProps } from './SubtitlePlaceholder'
 
+// 覆盖层组件 / Overlay components
+export { SpeedOverlay } from './SpeedOverlay'
+export { SubtitleModeOverlay } from './SubtitleModeOverlay'
+
 // 基础组件 / Base components
 export { WordWrapper, type WordWrapperProps } from './WordWrapper'
 export { TextRenderer, type TextRendererProps } from './TextRenderer'
