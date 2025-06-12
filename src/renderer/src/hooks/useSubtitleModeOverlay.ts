@@ -25,7 +25,7 @@ interface UseSubtitleModeOverlayReturn {
 export function useSubtitleModeOverlay(): UseSubtitleModeOverlayReturn {
   const [isVisible, setIsVisible] = useState(false)
   const [currentMode, setCurrentMode] = useState<DisplayMode>('bilingual')
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // 清理定时器 / Clear timeout
   const clearHideTimeout = useCallback(() => {
