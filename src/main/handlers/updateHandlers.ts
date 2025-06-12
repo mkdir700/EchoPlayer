@@ -4,6 +4,7 @@ import Logger from 'electron-log'
 import { Conf } from 'electron-conf/main'
 import type { UpdateSettings, UpdateStatus } from '../../types/shared'
 import { is } from '@electron-toolkit/utils'
+import { getUpdateChannel, getVersionInfo } from '../utils/version-parser'
 
 // 创建更新设置存储
 const updateStore = new Conf({
@@ -34,6 +35,33 @@ autoUpdater.logger = Logger
 
 // 自动更新的定时器
 let autoUpdateTimer: NodeJS.Timeout | null = null
+
+/**
+ * 获取有效的更新渠道
+ * Get effective update channel
+ *
+ * 优先使用用户手动设置的渠道，如果没有设置则使用基于版本自动检测的渠道
+ * Prioritize user-set channel, fallback to auto-detected channel based on version
+ */
+function getEffectiveUpdateChannel(): string {
+  const currentVersion = app.getVersion()
+  const detectedChannel = getUpdateChannel(currentVersion)
+  const settings = getUpdateSettings()
+
+  // 如果用户设置了渠道且不是默认的stable，使用用户设置
+  // If user has set a channel and it's not the default stable, use user setting
+  const userChannel = settings.updateChannel
+  const effectiveChannel = userChannel && userChannel !== 'stable' ? userChannel : detectedChannel
+
+  Logger.info('渠道选择逻辑:', {
+    currentVersion,
+    detectedChannel,
+    userSetChannel: userChannel,
+    effectiveChannel
+  })
+
+  return effectiveChannel
+}
 
 export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
   // 发送状态到窗口
@@ -69,6 +97,36 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
     return app.getVersion()
   })
 
+  // 获取当前版本的更新渠道信息
+  ipcMain.handle('get-version-info', () => {
+    const currentVersion = app.getVersion()
+    const versionInfo = getVersionInfo(currentVersion)
+
+    Logger.info('版本信息:', {
+      version: currentVersion,
+      detectedChannel: versionInfo.channel,
+      isValid: versionInfo.isValid,
+      pattern: versionInfo.pattern?.name
+    })
+
+    return versionInfo
+  })
+
+  // 获取当前版本的自动检测渠道
+  ipcMain.handle('get-auto-detected-channel', (): string => {
+    const currentVersion = app.getVersion()
+    const detectedChannel = getUpdateChannel(currentVersion)
+
+    Logger.info(`自动检测到的更新渠道: ${detectedChannel} (基于版本: ${currentVersion})`)
+
+    return detectedChannel
+  })
+
+  // 获取有效的更新渠道（考虑用户设置和自动检测）
+  ipcMain.handle('get-effective-update-channel', (): string => {
+    return getEffectiveUpdateChannel()
+  })
+
   // 获取更新设置
   ipcMain.handle('get-update-settings', (): UpdateSettings => {
     return getUpdateSettings()
@@ -90,6 +148,11 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
       try {
         // 保存最后检查时间
         saveUpdateSettings({ lastChecked: Date.now() })
+
+        // 获取有效的更新渠道
+        const effectiveChannel = getEffectiveUpdateChannel()
+
+        Logger.info(`使用更新渠道: ${effectiveChannel}`)
 
         Logger.info('正在检查更新...')
 
