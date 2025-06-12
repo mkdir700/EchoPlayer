@@ -52,7 +52,6 @@ dmg:
 linux:
   target:
     - AppImage
-    - snap
     - deb
   maintainer: mkdir700
   category: Education
