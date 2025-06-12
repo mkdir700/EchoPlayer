@@ -63,6 +63,34 @@ function getEffectiveUpdateChannel(): string {
   return effectiveChannel
 }
 
+/**
+ * 配置 autoUpdater 的更新渠道
+ * Configure autoUpdater update channel
+ *
+ * 根据当前版本和用户设置动态设置更新渠道
+ * Dynamically set update channel based on current version and user settings
+ */
+function configureAutoUpdater(): void {
+  // 获取有效的更新渠道
+  const effectiveChannel = getEffectiveUpdateChannel()
+
+  // 设置 autoUpdater 的渠道
+  // electron-updater 会根据这个渠道查找对应的更新文件
+  autoUpdater.channel = effectiveChannel
+
+  Logger.info(`AutoUpdater 配置完成:`, {
+    channel: effectiveChannel,
+    version: app.getVersion()
+  })
+
+  // 在生产环境中，electron-updater 会自动使用 GitHub 发布
+  // 由于 electron-builder.yml 中设置了 generateUpdatesFilesForAllChannels: true
+  // electron-updater 会查找带有对应渠道标签的发布版本
+  if (!is.dev) {
+    Logger.info(`生产环境: 使用 GitHub 发布，渠道: ${effectiveChannel}`)
+  }
+}
+
 export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
   // 发送状态到窗口
   function sendStatusToWindow(status: UpdateStatus): void {
@@ -71,9 +99,12 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
     }
   }
 
-  // 设置 autoUpdater 配置
+  // 设置 autoUpdater 基础配置
   autoUpdater.autoDownload = false // 禁用自动下载，让用户决定是否下载
   autoUpdater.autoInstallOnAppQuit = false // 禁用自动安装，让用户决定何时安装
+
+  // 配置更新渠道
+  configureAutoUpdater()
 
   // 开发模式下，设置本地更新源
   if (is.dev) {
@@ -149,7 +180,11 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
         // 保存最后检查时间
         saveUpdateSettings({ lastChecked: Date.now() })
 
-        // 获取有效的更新渠道
+        // 重新配置 autoUpdater 渠道（以防用户在运行时更改了设置）
+        // Reconfigure autoUpdater channel (in case user changed settings at runtime)
+        configureAutoUpdater()
+
+        // 获取有效的更新渠道用于日志记录
         const effectiveChannel = getEffectiveUpdateChannel()
 
         Logger.info(`使用更新渠道: ${effectiveChannel}`)
@@ -273,6 +308,13 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
     'set-update-channel',
     (_event, channel: 'stable' | 'beta' | 'alpha'): UpdateSettings => {
       saveUpdateSettings({ updateChannel: channel })
+
+      // 重新配置 autoUpdater 以使用新的渠道设置
+      // Reconfigure autoUpdater to use the new channel setting
+      configureAutoUpdater()
+
+      Logger.info(`更新渠道已设置为: ${channel}`)
+
       return getUpdateSettings()
     }
   )
@@ -285,6 +327,8 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
     // 首次启动后5分钟检查一次更新
     setTimeout(
       () => {
+        // 在自动检查前重新配置渠道
+        configureAutoUpdater()
         autoUpdater.checkForUpdates().catch((err) => {
           Logger.error('自动检查更新失败:', err)
         })
@@ -297,6 +341,8 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
       () => {
         const currentSettings = getUpdateSettings()
         if (currentSettings.autoUpdate) {
+          // 在自动检查前重新配置渠道
+          configureAutoUpdater()
           autoUpdater.checkForUpdates().catch((err) => {
             Logger.error('自动检查更新失败:', err)
           })
