@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+# Git pre-push hook to check version before pushing
+# 在推送前检查版本号的 Git hook
+
+echo "🔍 运行发布前检查..."
+npm run release:check
+
+# 如果检查失败，可以选择是否继续推送
+echo ""
+echo "💡 如果需要更新版本号，请运行："
+echo "   npm run version:patch  # 或 minor, major"
+echo "   npm run release:auto   # 自动化发布"
+echo ""
+
+# 这里不阻止推送，只是提醒
+# 如果想要阻止推送，可以取消注释下面的行
+# exit 1 

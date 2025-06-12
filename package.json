@@ -41,6 +41,8 @@
     "release:all": "npm run build && electron-builder --publish always",
     "release:never": "npm run build && electron-builder --publish never",
     "release:draft": "npm run build && electron-builder --publish onTagOrDraft",
+    "release:auto": "tsx scripts/release.ts",
+    "release:check": "tsx scripts/pre-release-check.ts",
     "prepare": "husky"
   },
   "dependencies": {
