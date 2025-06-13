@@ -480,14 +480,12 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
       hasReleaseNotes: !!enhancedInfo.releaseNotes
     })
 
-    // 取消发送状态到窗口，避免自动弹出对话框
-    // Cancel sending status to window to avoid automatic dialog popup
-    // if (!isBackgroundCheck) {
-    //   sendStatusToWindow({ status: 'available', info: enhancedInfo })
-    // } else {
-    //   Logger.info('后台检查发现可用更新，不触发对话框')
-    // }
-    Logger.info('发现可用更新，但不触发对话框')
+    // 始终发送状态到窗口以显示红点，但不触发对话框
+    // Always send status to window to show red dot, but don't trigger dialog
+    // 渲染进程会根据是否为用户主动检查来决定是否显示对话框
+    // Renderer process will decide whether to show dialog based on user-initiated check
+    sendStatusToWindow({ status: 'available', info: enhancedInfo })
+    Logger.info('发现可用更新，已通知渲染进程显示红点')
   })
 
   autoUpdater.on('update-not-available', (info: UpdateInfo) => {

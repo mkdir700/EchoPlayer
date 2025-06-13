@@ -21,6 +21,15 @@ export {
   useSetPlaybackSettings
 } from './slices/videoConfigStore'
 
+// Export update notification store
+export {
+  useUpdateNotificationStore,
+  useHasNewVersion,
+  useIsCheckingForUpdates,
+  useUpdateRedDots,
+  useHasVisibleRedDots
+} from './slices/updateNotificationStore'
+
 // Export store types
 export type { UIStore, UIState, UIActions } from './types'
 export type {
@@ -29,6 +38,13 @@ export type {
   VideoConfigActions,
   VideoConfig
 } from './slices/videoConfigStore'
+export type {
+  UpdateNotificationStore,
+  UpdateNotificationState,
+  UpdateNotificationActions,
+  RedDotState,
+  RedDotType
+} from './types'
 
 // Export hooks
 export { useFullscreenMode } from '../hooks/useFullscreenMode'

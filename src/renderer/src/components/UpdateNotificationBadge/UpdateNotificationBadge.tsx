@@ -47,7 +47,19 @@ export function UpdateNotificationBadge({
   offset
 }: UpdateNotificationBadgeProps): React.JSX.Element {
   return (
-    <Badge dot={showDot} offset={offset} style={style}>
+    <Badge
+      dot={showDot}
+      offset={offset}
+      style={{
+        ...style,
+        // 确保红点可见的调试样式 / Debug styles to ensure red dot visibility
+        ...(showDot &&
+          ({
+            '--ant-badge-dot-size': '8px',
+            '--ant-badge-color': '#ff4d4f'
+          } as React.CSSProperties))
+      }}
+    >
       {children}
     </Badge>
   )

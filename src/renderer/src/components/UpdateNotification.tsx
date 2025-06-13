@@ -28,6 +28,9 @@ const UpdateNotification: React.FC = () => {
     }
   }, [])
 
+  // 跟踪是否是用户主动检查更新 / Track if it's user-initiated update check
+  const isUserInitiatedCheckRef = useRef(false)
+
   // 检查是否应该显示更新对话框（只对用户主动检查生效）
   // Check if update dialog should be shown (only for user-initiated checks)
   const shouldShowUpdateDialog = useCallback((status: UpdateStatus): boolean => {
@@ -44,16 +47,25 @@ const UpdateNotification: React.FC = () => {
       )
     }
 
-    // 检查版本是否被会话级抑制
+    // 如果是用户主动检查，忽略会话级抑制
+    // If it's user-initiated check, ignore session suppression
+    if (isUserInitiatedCheckRef.current) {
+      console.log(`用户主动检查更新，忽略会话级抑制，显示对话框`)
+      return (
+        status.status === 'available' || status.status === 'downloaded' || status.status === 'error'
+      )
+    }
+
+    // 检查版本是否被会话级抑制（仅对自动检查生效）
     if (version && suppressedVersionsRef.current.has(version)) {
       console.log(`版本 ${version} 在当前会话中已被抑制，跳过显示更新对话框`)
       return false
     }
 
-    // 对于可用更新、已下载和错误状态，显示对话框
-    return (
-      status.status === 'available' || status.status === 'downloaded' || status.status === 'error'
-    )
+    // 对于自动检查（非用户主动检查），不显示对话框，只显示红点
+    // For automatic checks (non-user-initiated), don't show dialog, only show red dot
+    console.log('自动检查发现更新，不显示对话框，仅通过红点提示')
+    return false
   }, [])
 
   useEffect(() => {
@@ -61,6 +73,21 @@ const UpdateNotification: React.FC = () => {
     window.electron.ipcRenderer.on('update-status', (_event, status: UpdateStatus) => {
       console.log('收到更新状态:', status)
       setUpdateStatus(status)
+
+      // 如果是检查状态，说明用户主动检查更新，设置标志并清除会话级抑制
+      // If it's checking status, user initiated update check, set flag and clear session suppression
+      if (status.status === 'checking') {
+        console.log('用户主动检查更新，设置标志并清除会话级抑制')
+        isUserInitiatedCheckRef.current = true
+        suppressedVersionsRef.current.clear()
+      } else if (status.status === 'not-available' || status.status === 'error') {
+        // 只在检查完成且无更新或出错时重置用户主动检查标志
+        // Only reset user-initiated check flag when check is complete and no update or error
+        console.log('更新检查完成，重置用户主动检查标志')
+        isUserInitiatedCheckRef.current = false
+      }
+      // 对于 'available' 和 'downloaded' 状态，保持用户主动检查标志，以便正确显示对话框
+      // For 'available' and 'downloaded' status, keep user-initiated check flag to properly show dialog
 
       // 只对用户主动检查显示对话框（silent: false 的情况）
       // Only show dialog for user-initiated checks (silent: false cases)

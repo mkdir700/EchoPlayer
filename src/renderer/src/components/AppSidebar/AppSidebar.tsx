@@ -6,7 +6,7 @@ import { COMMON_TEST_IDS, withTestId } from '@renderer/utils/test-utils'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useAppConfig } from '@renderer/hooks/useAppConfig'
 import { UpdateNotificationBadge } from '@renderer/components/UpdateNotificationBadge/UpdateNotificationBadge'
-import { useUpdateNotification } from '@renderer/hooks/useUpdateNotification'
+import { useUpdateNotificationStore } from '@renderer/stores'
 
 // 导航菜单配置 - 主要功能页面
 const navigationItems: NavigationItem[] = [
@@ -44,7 +44,14 @@ export function AppSidebar({ currentPage, onPageChange }: AppHeaderProps): React
   const { token, styles, utils } = useTheme()
   const { useWindowFrame } = useAppConfig()
   const [platform, setPlatform] = useState<string>('')
-  const { hasNewVersion } = useUpdateNotification()
+
+  // 使用红点可见性而不是 hasNewVersion / Use red dot visibility instead of hasNewVersion
+  const isUpdateRedDotVisible = useUpdateNotificationStore((state) =>
+    state.isRedDotVisible('update_available')
+  )
+
+  // 调试红点状态 / Debug red dot state
+  console.log('[AppSidebar] isUpdateRedDotVisible:', isUpdateRedDotVisible)
 
   // 获取平台信息 / Get platform information
   useEffect(() => {
@@ -194,7 +201,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppHeaderProps): React
         {bottomItems.map((item) => (
           <Tooltip key={item.key} title={item.label} placement="right" mouseEnterDelay={0.5}>
             <UpdateNotificationBadge
-              showDot={item.key === 'settings' && hasNewVersion}
+              showDot={item.key === 'settings' && isUpdateRedDotVisible}
               offset={[-2, 2]}
             >
               <Button

@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { SETTINGS_SECTIONS } from '@renderer/constants/settings'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { UpdateNotificationBadge } from '@renderer/components/UpdateNotificationBadge/UpdateNotificationBadge'
-import { useUpdateNotification } from '@renderer/hooks/useUpdateNotification'
+import { useIsShowRedDot } from '@renderer/stores/slices/updateNotificationStore'
 
 interface SettingsNavigationProps {
   activeSection: string
@@ -27,7 +27,9 @@ export function SettingsNavigation({
 }: SettingsNavigationProps): React.JSX.Element {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const { styles } = useTheme()
-  const { hasNewVersion } = useUpdateNotification()
+
+  // 使用红点可见性而不是 hasNewVersion / Use red dot visibility instead of hasNewVersion
+  const isShowUpdateRedDot = useIsShowRedDot('update_available')
 
   // 优化事件处理函数，避免重新创建
   const handleMouseEnter = useCallback((key: string) => {
@@ -64,7 +66,7 @@ export function SettingsNavigation({
         return (
           <UpdateNotificationBadge
             key={item.key}
-            showDot={item.key === 'about' && hasNewVersion}
+            showDot={item.key === 'about' && isShowUpdateRedDot}
             offset={[8, 0]}
           >
             <div
