@@ -34,7 +34,7 @@ vi.mock('../../renderer/src/hooks/useTheme', () => ({
       }
     },
     utils: {
-      hexToRgba: (hex: string, alpha: number) => `rgba(24, 144, 255, ${alpha})`
+      hexToRgba: (_hex: string, alpha: number) => `rgba(24, 144, 255, ${alpha})`
     }
   })
 }))
