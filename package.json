@@ -1,6 +1,9 @@
 {
   "name": "echolab",
   "version": "0.2.0-alpha.3",
+  "build": {
+    "generateUpdatesFilesForAllChannels": true
+  },
   "description": "EchoLab is a video player designed for language learners, helping users learn foreign languages efficiently through sentence-by-sentence intensive listening.",
   "main": "./out/main/index.js",
   "author": "echolab.vip",
@@ -43,6 +46,9 @@
     "release:draft": "npm run build && electron-builder --publish onTagOrDraft",
     "release:auto": "tsx scripts/release.ts",
     "release:check": "tsx scripts/pre-release-check.ts",
+    "dev:update-server": "tsx scripts/dev-update-server.ts",
+    "generate-test-update": "tsx scripts/generate-test-update.ts",
+    "demo:local-update": "tsx scripts/demo-local-update.ts",
     "prepare": "husky"
   },
   "dependencies": {

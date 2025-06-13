@@ -145,16 +145,14 @@ describe('UpdateNotification Integration Tests / UpdateNotification 集成测试
   })
 
   describe('Component Initialization / 组件初始化', () => {
-    it('sets up IPC listeners and checks for updates on mount / 挂载时设置 IPC 监听器并检查更新', async () => {
+    it('sets up IPC listeners on mount / 挂载时设置 IPC 监听器', async () => {
       render(<UpdateNotification />)
 
       // 应该注册 IPC 监听器 / Should register IPC listener
       expect(mockIpcRenderer.on).toHaveBeenCalledWith('update-status', expect.any(Function))
 
-      // 应该自动检查更新（静默模式）/ Should auto-check for updates (silent mode)
-      await waitFor(() => {
-        expect(mockUpdateApi.checkForUpdates).toHaveBeenCalledWith({ silent: true })
-      })
+      // 不再自动检查更新（已移除启动时的自动检查）/ No longer auto-checks for updates (startup auto-check removed)
+      expect(mockUpdateApi.checkForUpdates).not.toHaveBeenCalled()
     })
 
     it('cleans up listeners on unmount / 卸载时清理监听器', () => {
@@ -470,6 +468,15 @@ describe('UpdateNotification Integration Tests / UpdateNotification 集成测试
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       render(<UpdateNotification />)
+
+      // 手动触发检查更新以测试错误处理 / Manually trigger update check to test error handling
+      act(() => {
+        ipcListeners['update-status'](null, mockUpdateStatusData.error)
+      })
+
+      // 点击重试按钮触发 API 调用 / Click retry button to trigger API call
+      const retryButton = await screen.findByRole('button', { name: /重试/ })
+      fireEvent.click(retryButton)
 
       // 应该捕获并记录错误 / Should catch and log error
       await waitFor(() => {

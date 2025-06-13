@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react'
 import { SETTINGS_SECTIONS } from '@renderer/constants/settings'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { UpdateNotificationBadge } from '@renderer/components/UpdateNotificationBadge/UpdateNotificationBadge'
+import { useUpdateNotification } from '@renderer/hooks/useUpdateNotification'
 
 interface SettingsNavigationProps {
   activeSection: string
@@ -25,6 +27,7 @@ export function SettingsNavigation({
 }: SettingsNavigationProps): React.JSX.Element {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const { styles } = useTheme()
+  const { hasNewVersion } = useUpdateNotification()
 
   // 优化事件处理函数，避免重新创建
   const handleMouseEnter = useCallback((key: string) => {
@@ -59,17 +62,22 @@ export function SettingsNavigation({
         const labelStyle = styles.horizontalNavLabel
 
         return (
-          <div
+          <UpdateNotificationBadge
             key={item.key}
-            className="settings-nav-item"
-            style={itemStyle}
-            onClick={() => handleClick(item.key)}
-            onMouseEnter={() => handleMouseEnter(item.key)}
-            onMouseLeave={handleMouseLeave}
+            showDot={item.key === 'about' && hasNewVersion}
+            offset={[8, 0]}
           >
-            <div style={iconStyle}>{item.icon}</div>
-            <span style={labelStyle}>{item.label}</span>
-          </div>
+            <div
+              className="settings-nav-item"
+              style={itemStyle}
+              onClick={() => handleClick(item.key)}
+              onMouseEnter={() => handleMouseEnter(item.key)}
+              onMouseLeave={handleMouseLeave}
+            >
+              <div style={iconStyle}>{item.icon}</div>
+              <span style={labelStyle}>{item.label}</span>
+            </div>
+          </UpdateNotificationBadge>
         )
       })}
     </nav>

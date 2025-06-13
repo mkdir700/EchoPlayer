@@ -13,7 +13,8 @@ const REMIND_LATER_DELAY_MINUTES = 60 // 1小时后再次提醒 / Remind again a
 const UpdateNotification: React.FC = () => {
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [lastRemindedVersion, setLastRemindedVersion] = useState<string | null>(null)
+  // 移除 lastRemindedVersion，因为不再需要自动弹窗逻辑
+  // Remove lastRemindedVersion as auto-popup logic is no longer needed
   const remindLaterTimerRef = useRef<NodeJS.Timeout | null>(null)
   // 会话级抑制机制：记录在当前会话中被用户主动关闭的更新版本
   // Session-level suppression: track update versions dismissed by user in current session
@@ -27,43 +28,33 @@ const UpdateNotification: React.FC = () => {
     }
   }, [])
 
-  // 检查是否应该显示更新对话框 / Check if update dialog should be shown
-  const shouldShowUpdateDialog = useCallback(
-    (status: UpdateStatus): boolean => {
-      const version = status.info?.version
+  // 检查是否应该显示更新对话框（只对用户主动检查生效）
+  // Check if update dialog should be shown (only for user-initiated checks)
+  const shouldShowUpdateDialog = useCallback((status: UpdateStatus): boolean => {
+    const version = status.info?.version
 
-      // 检查是否为强制更新（通过 releaseNotes 中的标识判断）
-      // Check if this is a mandatory update (identified by marker in releaseNotes)
-      const isUpdateMandatory = isMandatoryUpdate(status)
+    // 检查是否为强制更新
+    const isUpdateMandatory = isMandatoryUpdate(status)
 
-      // 强制更新不受会话级抑制影响 / Mandatory updates bypass session-level suppression
-      if (isUpdateMandatory) {
-        console.log(`版本 ${version} 是强制更新，跳过会话级抑制检查`)
-        return (
-          status.status === 'available' ||
-          status.status === 'downloaded' ||
-          status.status === 'error'
-        )
-      }
+    // 强制更新总是显示
+    if (isUpdateMandatory) {
+      console.log(`版本 ${version} 是强制更新，显示对话框`)
+      return (
+        status.status === 'available' || status.status === 'downloaded' || status.status === 'error'
+      )
+    }
 
-      // 检查版本是否被会话级抑制 / Check if version is suppressed at session level
-      if (version && suppressedVersionsRef.current.has(version)) {
-        console.log(`版本 ${version} 在当前会话中已被抑制，跳过显示更新对话框`)
-        return false
-      }
+    // 检查版本是否被会话级抑制
+    if (version && suppressedVersionsRef.current.has(version)) {
+      console.log(`版本 ${version} 在当前会话中已被抑制，跳过显示更新对话框`)
+      return false
+    }
 
-      if (status.status === 'available') {
-        // 如果这是新版本，或者用户还没有"稍后提醒"过这个版本，则显示
-        // If this is a new version, or user hasn't "reminded later" for this version, show it
-        return version !== lastRemindedVersion
-      }
-
-      // 对于已下载和错误状态，总是显示（这些通常是重要状态）
-      // Always show for downloaded and error status (these are usually important states)
-      return status.status === 'downloaded' || status.status === 'error'
-    },
-    [lastRemindedVersion]
-  )
+    // 对于可用更新、已下载和错误状态，显示对话框
+    return (
+      status.status === 'available' || status.status === 'downloaded' || status.status === 'error'
+    )
+  }, [])
 
   useEffect(() => {
     // 监听来自主进程的更新状态消息 / Listen for update status messages from main process
@@ -71,16 +62,17 @@ const UpdateNotification: React.FC = () => {
       console.log('收到更新状态:', status)
       setUpdateStatus(status)
 
-      // 根据状态和提醒历史决定是否显示对话框 / Decide whether to show dialog based on status and remind history
+      // 只对用户主动检查显示对话框（silent: false 的情况）
+      // Only show dialog for user-initiated checks (silent: false cases)
       if (shouldShowUpdateDialog(status)) {
         setIsModalOpen(true)
-        // 清除任何现有的稍后提醒定时器 / Clear any existing remind later timer
         clearRemindLaterTimer()
       }
     })
 
-    // 组件挂载时自动检查更新（静默模式） / Auto check for updates on component mount (silent mode)
-    checkForUpdates(true)
+    // 移除启动时的自动更新检查，改为非侵入式的后台检查
+    // Remove startup auto-update check, replaced with non-intrusive background checks
+    // checkForUpdates(true) - 已移除 / Removed
 
     // 清理函数 / Cleanup function
     return () => {
@@ -123,7 +115,6 @@ const UpdateNotification: React.FC = () => {
 
       // 清除稍后提醒状态，因为用户主动关闭了对话框
       // Clear remind later state since user actively dismissed the dialog
-      setLastRemindedVersion(null)
       clearRemindLaterTimer()
     }
   }
@@ -134,7 +125,6 @@ const UpdateNotification: React.FC = () => {
 
     // 记录用户对当前版本选择了"稍后提醒" / Record that user chose "remind later" for current version
     if (updateStatus?.info?.version) {
-      setLastRemindedVersion(updateStatus.info.version)
       console.log(
         `已设置稍后提醒，版本: ${updateStatus.info.version}，${REMIND_LATER_DELAY_MINUTES}分钟后再次提醒`
       )
@@ -143,8 +133,6 @@ const UpdateNotification: React.FC = () => {
       remindLaterTimerRef.current = setTimeout(
         () => {
           console.log('稍后提醒时间到，重新显示更新对话框')
-          // 清除记录，允许再次显示此版本的更新对话框 / Clear record to allow showing dialog for this version again
-          setLastRemindedVersion(null)
           // 如果仍然有可用更新，重新显示对话框 / If update is still available, show dialog again
           if (updateStatus?.status === 'available') {
             setIsModalOpen(true)
@@ -158,7 +146,6 @@ const UpdateNotification: React.FC = () => {
   // 处理下载动作 / Handle download action
   const handleDownload = (): void => {
     // 清除稍后提醒设置，因为用户选择了下载 / Clear remind later setting since user chose to download
-    setLastRemindedVersion(null)
     clearRemindLaterTimer()
     downloadUpdate()
     // 下载开始后不关闭对话框，让用户看到进度 / Don't close dialog after download starts, let user see progress
@@ -167,7 +154,6 @@ const UpdateNotification: React.FC = () => {
   // 处理安装动作 / Handle install action
   const handleInstall = (): void => {
     // 清除稍后提醒设置，因为用户选择了安装 / Clear remind later setting since user chose to install
-    setLastRemindedVersion(null)
     clearRemindLaterTimer()
     installUpdate()
     // 安装后应用会重启，所以不需要关闭对话框 / App will restart after install, so no need to close dialog

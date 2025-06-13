@@ -352,12 +352,12 @@ describe('Update Handlers - Release Notes Processing', () => {
         const settings = mockConfInstance.get('updateSettings')
         const userChannel = settings.updateChannel
 
-        // For alpha/beta/dev versions, auto-detect takes precedence
-        const autoDetected = 'alpha' // Would call getUpdateChannel(currentVersion)
+        // // For alpha/beta/dev versions, auto-detect takes precedence
+        // const autoDetected = 'alpha' // Would call getUpdateChannel(currentVersion)
 
-        if (autoDetected !== 'stable') {
-          return autoDetected
-        }
+        // if (autoDetected !== 'stable') {
+        //   return autoDetected
+        // }
 
         return userChannel
       }

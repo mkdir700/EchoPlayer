@@ -19,6 +19,8 @@ import {
   ExperimentOutlined
 } from '@ant-design/icons'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { UpdateNotificationBadge } from '@renderer/components/UpdateNotificationBadge/UpdateNotificationBadge'
+import { useUpdateNotification } from '@renderer/hooks/useUpdateNotification'
 
 const { Text } = Typography
 const { Option } = Select
@@ -32,6 +34,8 @@ interface UpdateSettings {
 export function UpdateSection(): React.JSX.Element {
   // 使用统一的主题系统
   const { token, styles } = useTheme()
+  // 使用更新通知Hook
+  const { hasNewVersion, markUpdateAsSeen } = useUpdateNotification()
 
   const [updateSettings, setUpdateSettings] = useState<UpdateSettings>({
     autoUpdate: true,
@@ -228,15 +232,23 @@ export function UpdateSection(): React.JSX.Element {
             <Text type="secondary">上次检查: {formatLastChecked(updateSettings.lastChecked)}</Text>
           </div>
 
-          <Button
-            type="primary"
-            icon={<SyncOutlined spin={isCheckingForUpdates} />}
-            loading={isCheckingForUpdates}
-            onClick={handleCheckForUpdates}
-            style={{ marginLeft: token.marginXS, borderRadius: token.borderRadiusLG }}
-          >
-            检查更新
-          </Button>
+          <UpdateNotificationBadge showDot={hasNewVersion} offset={[-8, 8]}>
+            <Button
+              type="primary"
+              icon={<SyncOutlined spin={isCheckingForUpdates} />}
+              loading={isCheckingForUpdates}
+              onClick={() => {
+                handleCheckForUpdates()
+                // 用户点击检查更新时，标记为已查看
+                if (hasNewVersion) {
+                  markUpdateAsSeen()
+                }
+              }}
+              style={{ marginLeft: token.marginXS, borderRadius: token.borderRadiusLG }}
+            >
+              检查更新
+            </Button>
+          </UpdateNotificationBadge>
         </div>
 
         <Divider style={styles.settingsDivider} />

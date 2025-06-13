@@ -130,10 +130,14 @@ function getEffectiveUpdateChannel(): string {
   const detectedChannel = getUpdateChannel(currentVersion)
   const settings = getUpdateSettings()
 
-  // 如果用户设置了渠道且不是默认的stable，使用用户设置
-  // If user has set a channel and it's not the default stable, use user setting
+  // 如果用户设置了stable渠道，使用用户设置
   const userChannel = settings.updateChannel
-  const effectiveChannel = userChannel && userChannel !== 'stable' ? userChannel : detectedChannel
+  let effectiveChannel = detectedChannel
+  if (userChannel) {
+    effectiveChannel = userChannel
+  } else {
+    effectiveChannel = detectedChannel
+  }
 
   Logger.info('渠道选择逻辑:', {
     currentVersion,
@@ -273,6 +277,9 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
 
         Logger.info('正在检查更新...')
 
+        // 用户主动检查更新 / User-initiated update check
+
+        // 只有用户主动检查时才发送状态 / Only send status for user-initiated checks
         if (!options.silent) {
           sendStatusToWindow({
             status: 'checking'
@@ -295,6 +302,7 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
           // 处理和增强更新信息
           const enhancedInfo = processUpdateInfo(checkResult.updateInfo)
 
+          // 只有用户主动检查时才发送状态 / Only send status for user-initiated checks
           if (!options.silent) {
             sendStatusToWindow({
               status: 'available',
@@ -314,6 +322,7 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
           // 为保持一致性处理更新信息
           const enhancedInfo = processUpdateInfo(checkResult.updateInfo)
 
+          // 只有用户主动检查时才发送状态 / Only send status for user-initiated checks
           if (!options.silent) {
             sendStatusToWindow({
               status: 'not-available',
@@ -329,6 +338,7 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
       } catch (error) {
         Logger.error('检查更新时出错:', error)
 
+        // 只有用户主动检查时才发送错误状态 / Only send error status for user-initiated checks
         if (!options.silent) {
           sendStatusToWindow({
             status: 'error',
@@ -419,6 +429,7 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
       () => {
         // 在自动检查前重新配置渠道
         configureAutoUpdater()
+        // 自动后台检查 / Automatic background check
         autoUpdater.checkForUpdates().catch((err) => {
           Logger.error('自动检查更新失败:', err)
         })
@@ -433,6 +444,7 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
         if (currentSettings.autoUpdate) {
           // 在自动检查前重新配置渠道
           configureAutoUpdater()
+          // 自动后台检查 / Automatic background check
           autoUpdater.checkForUpdates().catch((err) => {
             Logger.error('自动检查更新失败:', err)
           })
@@ -445,7 +457,10 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
   // 监听更新事件
   autoUpdater.on('checking-for-update', () => {
     Logger.info('开始检查更新')
-    sendStatusToWindow({ status: 'checking' })
+    // 取消发送状态到窗口，避免自动弹窗 / Cancel sending status to window to avoid auto-popup
+    // if (!isBackgroundCheck) {
+    //   sendStatusToWindow({ status: 'checking' })
+    // }
   })
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
@@ -465,16 +480,28 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
       hasReleaseNotes: !!enhancedInfo.releaseNotes
     })
 
-    sendStatusToWindow({ status: 'available', info: enhancedInfo })
+    // 取消发送状态到窗口，避免自动弹出对话框
+    // Cancel sending status to window to avoid automatic dialog popup
+    // if (!isBackgroundCheck) {
+    //   sendStatusToWindow({ status: 'available', info: enhancedInfo })
+    // } else {
+    //   Logger.info('后台检查发现可用更新，不触发对话框')
+    // }
+    Logger.info('发现可用更新，但不触发对话框')
   })
 
   autoUpdater.on('update-not-available', (info: UpdateInfo) => {
     Logger.info('当前为最新版本:', info.version)
-    sendStatusToWindow({ status: 'not-available', info })
+    // 取消发送状态到窗口，避免自动弹窗 / Cancel sending status to window to avoid auto-popup
+    // if (!isBackgroundCheck) {
+    //   sendStatusToWindow({ status: 'not-available', info })
+    // }
   })
 
   autoUpdater.on('download-progress', (progressObj) => {
     Logger.info('下载进度:', `${Math.round(progressObj.percent)}%`)
+    // 下载进度总是发送，因为下载是用户主动触发的
+    // Always send download progress as download is user-initiated
     sendStatusToWindow({
       status: 'downloading',
       progress: progressObj
@@ -488,15 +515,23 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
     // 为保持一致性处理和增强更新信息
     const enhancedInfo = processUpdateInfo(info)
 
+    // 下载完成总是发送，因为下载是用户主动触发的
+    // Always send download completion as download is user-initiated
     sendStatusToWindow({ status: 'downloaded', info: enhancedInfo })
   })
 
   autoUpdater.on('error', (err: Error) => {
     Logger.error('更新错误:', err.message)
-    sendStatusToWindow({
-      status: 'error',
-      error: err.message
-    })
+    // 取消发送错误状态到窗口，避免自动弹窗 / Cancel sending error status to window to avoid auto-popup
+    // if (!isBackgroundCheck) {
+    //   sendStatusToWindow({
+    //     status: 'error',
+    //     error: err.message
+    //   })
+    // } else {
+    //   Logger.info('后台检查更新出错，不触发对话框')
+    // }
+    Logger.info('更新检查出错，不触发对话框')
   })
 
   // 应用启动时检查自动更新设置
