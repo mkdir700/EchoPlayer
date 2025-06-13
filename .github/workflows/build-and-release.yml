@@ -178,12 +178,18 @@ jobs:
           echo "🔄 Renaming build artifacts..."
           echo "重命名构建产物..."
           pnpm exec tsx scripts/rename-artifacts.ts
+        env:
+          BUILD_ARCH: ${{ matrix.arch }}
+          BUILD_PLATFORM: ${{ matrix.platform }}
 
       - name: Verify build artifacts
         run: |
           echo "🔍 Verifying build artifacts..."
           echo "验证构建产物..."
           pnpm exec tsx scripts/verify-build-artifacts.ts
+        env:
+          BUILD_ARCH: ${{ matrix.arch }}
+          BUILD_PLATFORM: ${{ matrix.platform }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

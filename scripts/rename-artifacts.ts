@@ -44,6 +44,19 @@ function getPackageInfo(): { version: string; productName: string } {
  * 获取平台和架构信息 / Get platform and architecture info
  */
 function getPlatformInfo(): { platform: string; arch: string } {
+  // 优先使用 GitHub Actions 矩阵变量 / Prefer GitHub Actions matrix variables
+  const buildPlatform = process.env.BUILD_PLATFORM
+  const buildArch = process.env.BUILD_ARCH
+
+  if (buildPlatform && buildArch) {
+    console.log(`🎯 使用 GitHub Actions 矩阵配置: ${buildPlatform}-${buildArch}`)
+    return {
+      platform: buildPlatform,
+      arch: buildArch
+    }
+  }
+
+  // 回退到系统检测 / Fallback to system detection
   const platform = process.env.RUNNER_OS?.toLowerCase() || process.platform
   const arch = process.env.RUNNER_ARCH || process.arch
 
@@ -61,6 +74,7 @@ function getPlatformInfo(): { platform: string; arch: string } {
   const normalizedArch =
     arch === 'x64' ? 'x64' : arch === 'arm64' ? 'arm64' : arch === 'x86_64' ? 'x64' : arch
 
+  console.log(`🔍 使用系统检测: ${normalizedPlatform}-${normalizedArch}`)
   return {
     platform: normalizedPlatform,
     arch: normalizedArch
