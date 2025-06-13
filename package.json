@@ -19,8 +19,13 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
+    "build:win:x64": "npm run build && electron-builder --win --x64",
+    "build:win:arm64": "npm run build && electron-builder --win --arm64",
     "build:mac": "electron-vite build && electron-builder --mac",
+    "build:mac:x64": "npm run build && electron-builder --mac --x64",
+    "build:mac:arm64": "npm run build && electron-builder --mac --arm64",
     "build:linux": "electron-vite build && electron-builder --linux",
+    "build:linux:x64": "npm run build && electron-builder --linux --x64",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
@@ -41,9 +46,15 @@
     "release:all": "npm run build && electron-builder --publish always",
     "release:never": "npm run build && electron-builder --publish never",
     "release:draft": "npm run build && electron-builder --publish onTagOrDraft",
+    "release:rename": "tsx scripts/rename-artifacts.ts",
     "release:auto": "tsx scripts/release.ts",
     "release:check": "tsx scripts/pre-release-check.ts",
-    "prepare": "husky"
+    "build:all": "tsx scripts/build-all-platforms.ts",
+    "build:all:clean": "tsx scripts/build-all-platforms.ts --clean",
+    "build:verify": "tsx scripts/verify-build-artifacts.ts",
+    "build:test-config": "tsx scripts/test-build-config.ts",
+    "prepare": "husky",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
@@ -75,6 +86,7 @@
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.2",
+    "@types/yaml": "^1.9.7",
     "@vitejs/plugin-react": "^4.5.0",
     "@vitest/coverage-v8": "^2.1.8",
     "@vitest/ui": "^2.1.8",
@@ -96,7 +108,8 @@
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vite": "^6.2.6",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "yaml": "^2.8.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

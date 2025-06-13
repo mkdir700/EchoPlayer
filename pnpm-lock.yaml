@@ -94,12 +94,15 @@ importers:
       '@types/react-dom':
         specifier: ^19.1.2
         version: 19.1.6(@types/react@19.1.8)
+      '@types/yaml':
+        specifier: ^1.9.7
+        version: 1.9.7
       '@vitejs/plugin-react':
         specifier: ^4.5.0
         version: 4.5.2(vite@6.3.5(@types/node@22.15.31)(jiti@2.4.2)(tsx@4.20.2)(yaml@2.8.0))
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.9(vitest@2.1.9(@types/node@22.15.31)(@vitest/ui@2.1.9)(jsdom@25.0.1)(msw@2.10.2(@types/node@22.15.31)(typescript@5.8.3)))
+        version: 2.1.9(vitest@2.1.9)
       '@vitest/ui':
         specifier: ^2.1.8
         version: 2.1.9(vitest@2.1.9)
@@ -108,7 +111,7 @@ importers:
         version: 35.5.1
       electron-builder:
         specifier: ^25.1.8
-        version: 25.1.8(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8))
+        version: 25.1.8(electron-builder-squirrel-windows@25.1.8)
       electron-icon-maker:
         specifier: ^0.0.5
         version: 0.0.5
@@ -160,6 +163,9 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.15.31)(@vitest/ui@2.1.9)(jsdom@25.0.1)(msw@2.10.2(@types/node@22.15.31)(typescript@5.8.3))
+      yaml:
+        specifier: ^2.8.0
+        version: 2.8.0
 
 packages:
 
@@ -1511,6 +1517,10 @@ packages:
 
   '@types/verror@1.10.11':
     resolution: {integrity: sha512-RlDm9K7+o5stv0Co8i8ZRGxDbrTxhJtgjqjFyVh/tXQyl/rYtTKlnTvZ88oSTeYREWurwx20Js4kTuKCsFkUtg==}
+
+  '@types/yaml@1.9.7':
+    resolution: {integrity: sha512-8WMXRDD1D+wCohjfslHDgICd2JtMATZU8CkhH8LVJqcJs6dyYj5TGptzP8wApbmEullGBSsCEzzap73DQ1HJaA==}
+    deprecated: This is a stub types definition. yaml provides its own type definitions, so you do not need this installed.
 
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
@@ -7023,6 +7033,10 @@ snapshots:
   '@types/verror@1.10.11':
     optional: true
 
+  '@types/yaml@1.9.7':
+    dependencies:
+      yaml: 2.8.0
+
   '@types/yauzl@2.10.3':
     dependencies:
       '@types/node': 22.15.31
@@ -7132,7 +7146,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@2.1.9(vitest@2.1.9(@types/node@22.15.31)(@vitest/ui@2.1.9)(jsdom@25.0.1)(msw@2.10.2(@types/node@22.15.31)(typescript@5.8.3)))':
+  '@vitest/coverage-v8@2.1.9(vitest@2.1.9)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -7340,7 +7354,7 @@ snapshots:
 
   app-builder-bin@5.0.0-alpha.10: {}
 
-  app-builder-lib@25.1.8(dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8)):
+  app-builder-lib@25.1.8(dmg-builder@25.1.8)(electron-builder-squirrel-windows@25.1.8):
     dependencies:
       '@develar/schema-utils': 2.6.5
       '@electron/notarize': 2.5.0
@@ -8015,7 +8029,7 @@ snapshots:
 
   dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8):
     dependencies:
-      app-builder-lib: 25.1.8(dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8))
+      app-builder-lib: 25.1.8(dmg-builder@25.1.8)(electron-builder-squirrel-windows@25.1.8)
       builder-util: 25.1.7
       builder-util-runtime: 9.2.10
       fs-extra: 10.1.0
@@ -8084,7 +8098,7 @@ snapshots:
 
   electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8):
     dependencies:
-      app-builder-lib: 25.1.8(dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8))
+      app-builder-lib: 25.1.8(dmg-builder@25.1.8)(electron-builder-squirrel-windows@25.1.8)
       archiver: 5.3.2
       builder-util: 25.1.7
       fs-extra: 10.1.0
@@ -8093,9 +8107,9 @@ snapshots:
       - dmg-builder
       - supports-color
 
-  electron-builder@25.1.8(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8)):
+  electron-builder@25.1.8(electron-builder-squirrel-windows@25.1.8):
     dependencies:
-      app-builder-lib: 25.1.8(dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8))
+      app-builder-lib: 25.1.8(dmg-builder@25.1.8)(electron-builder-squirrel-windows@25.1.8)
       builder-util: 25.1.7
       builder-util-runtime: 9.2.10
       chalk: 4.1.2

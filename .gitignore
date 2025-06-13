@@ -42,3 +42,4 @@ docs/.vitepress/cache/deps
 
 .taskmaster/
 .cursor/mcp.json
+*.tsbuildinfo
