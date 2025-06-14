@@ -159,6 +159,32 @@ function handleWindowsArtifacts(version: string, productName: string, arch: stri
     }
   }
 
+  // 更新 latest.yml 文件中的文件引用 / Update file references in latest.yml
+  const latestYmlPath = path.join(DIST_DIR, 'latest.yml')
+  if (fs.existsSync(latestYmlPath)) {
+    try {
+      let yamlContent = fs.readFileSync(latestYmlPath, 'utf8')
+      let updated = false
+
+      // 更新 EXE 文件引用 / Update EXE file references
+      const oldExeName = `${productName}-${version}-setup.exe`
+      const newExeName = `${productName}-${version}-${arch}-setup.exe`
+      if (yamlContent.includes(oldExeName)) {
+        yamlContent = yamlContent.replace(new RegExp(oldExeName, 'g'), newExeName)
+        updated = true
+        console.log(`✅ 更新 YAML 中的 EXE 文件引用: ${oldExeName} -> ${newExeName}`)
+      }
+
+      if (updated) {
+        fs.writeFileSync(latestYmlPath, yamlContent, 'utf8')
+        console.log(`✅ 已更新 latest.yml 文件`)
+        renamedCount++
+      }
+    } catch (error) {
+      console.error(`❌ 更新 latest.yml 文件失败:`, error)
+    }
+  }
+
   return renamedCount
 }
 
@@ -188,13 +214,96 @@ function handleMacOSArtifacts(version: string, productName: string, arch: string
     }
   }
 
+  // 查找 macOS ZIP 文件 / Find macOS ZIP files
+  const zipPattern = /\.zip$/i
+  const zipFiles = files.filter((file) => zipPattern.test(file))
+
+  for (const file of zipFiles) {
+    const oldPath = path.join(DIST_DIR, file)
+    const expectedName = `${productName}-${version}-${arch}.zip`
+    const newPath = path.join(DIST_DIR, expectedName)
+
+    if (path.basename(file) !== expectedName) {
+      if (renameFile(oldPath, newPath)) {
+        renamedCount++
+      }
+    } else {
+      console.log(`✅ macOS ZIP 文件已是正确名称: ${file}`)
+      renamedCount++
+    }
+  }
+
+  // 查找 macOS blockmap 文件 / Find macOS blockmap files
+  const blockmapPattern = /\.blockmap$/i
+  const blockmapFiles = files.filter((file) => blockmapPattern.test(file))
+
+  for (const file of blockmapFiles) {
+    const oldPath = path.join(DIST_DIR, file)
+    let expectedName = ''
+
+    if (file.includes('.dmg.blockmap')) {
+      expectedName = `${productName}-${version}-${arch}.dmg.blockmap`
+    } else if (file.includes('.zip.blockmap')) {
+      expectedName = `${productName}-${version}-${arch}.zip.blockmap`
+    } else {
+      continue // 跳过不匹配的 blockmap 文件
+    }
+
+    const newPath = path.join(DIST_DIR, expectedName)
+
+    if (path.basename(file) !== expectedName) {
+      if (renameFile(oldPath, newPath)) {
+        renamedCount++
+      }
+    } else {
+      console.log(`✅ macOS blockmap 文件已是正确名称: ${file}`)
+      renamedCount++
+    }
+  }
+
+  // 更新 latest-mac.yml 文件中的文件引用 / Update file references in latest-mac.yml
+  const latestMacYmlPath = path.join(DIST_DIR, 'latest-mac.yml')
+  if (fs.existsSync(latestMacYmlPath)) {
+    try {
+      let yamlContent = fs.readFileSync(latestMacYmlPath, 'utf8')
+      let updated = false
+
+      // 更新 ZIP 文件引用 / Update ZIP file references
+      const oldZipName = `${productName}-${version}-mac.zip`
+      const newZipName = `${productName}-${version}-${arch}.zip`
+      if (yamlContent.includes(oldZipName)) {
+        yamlContent = yamlContent.replace(new RegExp(oldZipName, 'g'), newZipName)
+        updated = true
+        console.log(`✅ 更新 YAML 中的 ZIP 文件引用: ${oldZipName} -> ${newZipName}`)
+      }
+
+      // 更新 DMG 文件引用 / Update DMG file references
+      const oldDmgName = `${productName}-${version}.dmg`
+      const newDmgName = `${productName}-${version}-${arch}.dmg`
+      if (yamlContent.includes(oldDmgName)) {
+        yamlContent = yamlContent.replace(new RegExp(oldDmgName, 'g'), newDmgName)
+        updated = true
+        console.log(`✅ 更新 YAML 中的 DMG 文件引用: ${oldDmgName} -> ${newDmgName}`)
+      }
+
+      if (updated) {
+        fs.writeFileSync(latestMacYmlPath, yamlContent, 'utf8')
+        console.log(`✅ 已更新 latest-mac.yml 文件`)
+        renamedCount++
+      }
+    } catch (error) {
+      console.error(`❌ 更新 latest-mac.yml 文件失败:`, error)
+    }
+  }
+
   return renamedCount
 }
 
 /**
  * 处理 Linux 构建产物 / Handle Linux build artifacts
  */
-function handleLinuxArtifacts(version: string, productName: string): number {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function handleLinuxArtifacts(version: string, productName: string, arch: string): number {
   let renamedCount = 0
   const files = listDistFiles()
 
@@ -233,6 +342,41 @@ function handleLinuxArtifacts(version: string, productName: string): number {
     } else {
       console.log(`✅ Linux DEB 文件已是正确名称: ${file}`)
       renamedCount++
+    }
+  }
+
+  // 更新 latest-linux.yml 文件中的文件引用 / Update file references in latest-linux.yml
+  const latestLinuxYmlPath = path.join(DIST_DIR, 'latest-linux.yml')
+  if (fs.existsSync(latestLinuxYmlPath)) {
+    try {
+      let yamlContent = fs.readFileSync(latestLinuxYmlPath, 'utf8')
+      let updated = false
+
+      // 更新 AppImage 文件引用 / Update AppImage file references
+      const oldAppImageName = `${productName}-${version}.AppImage`
+      const newAppImageName = `${productName}-${version}-amd64.AppImage`
+      if (yamlContent.includes(oldAppImageName)) {
+        yamlContent = yamlContent.replace(new RegExp(oldAppImageName, 'g'), newAppImageName)
+        updated = true
+        console.log(`✅ 更新 YAML 中的 AppImage 文件引用: ${oldAppImageName} -> ${newAppImageName}`)
+      }
+
+      // 更新 DEB 文件引用 / Update DEB file references
+      const oldDebName = `${productName}-${version}.deb`
+      const newDebName = `${productName}-${version}-amd64.deb`
+      if (yamlContent.includes(oldDebName)) {
+        yamlContent = yamlContent.replace(new RegExp(oldDebName, 'g'), newDebName)
+        updated = true
+        console.log(`✅ 更新 YAML 中的 DEB 文件引用: ${oldDebName} -> ${newDebName}`)
+      }
+
+      if (updated) {
+        fs.writeFileSync(latestLinuxYmlPath, yamlContent, 'utf8')
+        console.log(`✅ 已更新 latest-linux.yml 文件`)
+        renamedCount++
+      }
+    } catch (error) {
+      console.error(`❌ 更新 latest-linux.yml 文件失败:`, error)
     }
   }
 
@@ -282,7 +426,7 @@ async function main(): Promise<void> {
       break
 
     case 'linux':
-      totalRenamed += handleLinuxArtifacts(version, productName)
+      totalRenamed += handleLinuxArtifacts(version, productName, arch)
       break
 
     default:

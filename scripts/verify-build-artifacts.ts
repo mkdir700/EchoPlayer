@@ -187,10 +187,10 @@ function verifyMacOSArtifacts(version: string, productName: string, arch: string
 /**
  * 验证 Linux 构建产物 / Verify Linux build artifacts
  */
-function verifyLinuxArtifacts(version: string, productName: string): FileInfo[] {
+function verifyLinuxArtifacts(version: string, productName: string, arch: string): FileInfo[] {
   const expectedFiles = [
-    `${productName}-${version}-amd64.AppImage`,
-    `${productName}-${version}-amd64.deb`,
+    `${productName}-${version}-${arch}.AppImage`,
+    `${productName}-${version}-${arch}.deb`,
     'latest-linux.yml'
   ]
 
@@ -297,7 +297,7 @@ async function main(): Promise<void> {
       break
 
     case 'linux':
-      files = verifyLinuxArtifacts(version, productName)
+      files = verifyLinuxArtifacts(version, productName, arch)
       break
 
     default:
