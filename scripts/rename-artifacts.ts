@@ -71,8 +71,16 @@ function getPlatformInfo(): { platform: string; arch: string } {
           : platform
 
   // 标准化架构名称 / Normalize architecture names
-  const normalizedArch =
-    arch === 'x64' ? 'x64' : arch === 'arm64' ? 'arm64' : arch === 'x86_64' ? 'x64' : arch
+  // 对于 Linux 平台，保留 amd64 架构名称 / For Linux platform, keep amd64 architecture name
+  const normalizedArch = (() => {
+    if (normalizedPlatform === 'linux') {
+      // Linux 平台保留原有架构名称，特别是 amd64 / Keep original arch names for Linux, especially amd64
+      return arch === 'x86_64' ? 'amd64' : arch === 'x64' ? 'amd64' : arch
+    } else {
+      // 其他平台使用标准化命名 / Use normalized naming for other platforms
+      return arch === 'x64' ? 'x64' : arch === 'arm64' ? 'arm64' : arch === 'x86_64' ? 'x64' : arch
+    }
+  })()
 
   console.log(`🔍 使用系统检测: ${normalizedPlatform}-${normalizedArch}`)
   return {
@@ -302,6 +310,7 @@ function handleMacOSArtifacts(version: string, productName: string, arch: string
 /**
  * 处理 Linux 构建产物 / Handle Linux build artifacts
  */
+
 function handleLinuxArtifacts(version: string, productName: string, arch: string): number {
   let renamedCount = 0
   const files = listDistFiles()
@@ -312,7 +321,16 @@ function handleLinuxArtifacts(version: string, productName: string, arch: string
 
   for (const file of appImageFiles) {
     const oldPath = path.join(DIST_DIR, file)
-    const expectedName = `${productName}-${version}-${arch}.AppImage`
+
+    // 检测实际文件名中的架构标识 / Detect architecture identifier in actual filename
+    let targetArch = arch
+    if (file.includes('x86_64') && arch === 'x64') {
+      // 如果文件名包含 x86_64 而矩阵配置是 x64，转换为 amd64
+      targetArch = 'amd64'
+      console.log(`🔄 检测到 x86_64 架构，转换为 amd64`)
+    }
+
+    const expectedName = `${productName}-${version}-${targetArch}.AppImage`
     const newPath = path.join(DIST_DIR, expectedName)
 
     if (path.basename(file) !== expectedName) {
@@ -331,7 +349,16 @@ function handleLinuxArtifacts(version: string, productName: string, arch: string
 
   for (const file of debFiles) {
     const oldPath = path.join(DIST_DIR, file)
-    const expectedName = `${productName}-${version}-${arch}.deb`
+
+    // 检测实际文件名中的架构标识 / Detect architecture identifier in actual filename
+    let targetArch = arch
+    if (file.includes('amd64') && arch === 'x64') {
+      // 如果文件名包含 amd64 而矩阵配置是 x64，保持 amd64
+      targetArch = 'amd64'
+      console.log(`🔄 检测到 amd64 架构，保持 amd64`)
+    }
+
+    const expectedName = `${productName}-${version}-${targetArch}.deb`
     const newPath = path.join(DIST_DIR, expectedName)
 
     if (path.basename(file) !== expectedName) {
@@ -351,18 +378,35 @@ function handleLinuxArtifacts(version: string, productName: string, arch: string
       let yamlContent = fs.readFileSync(latestLinuxYmlPath, 'utf8')
       let updated = false
 
+      // 确定目标架构名称 / Determine target architecture name
+      let targetArch = arch
+      if (yamlContent.includes('x86_64') && arch === 'x64') {
+        targetArch = 'amd64'
+        console.log(`🔄 YAML 文件中检测到 x86_64，转换为 amd64`)
+      }
+
       // 更新 AppImage 文件引用 / Update AppImage file references
       const oldAppImageName = `${productName}-${version}.AppImage`
-      const newAppImageName = `${productName}-${version}-${arch}.AppImage`
+      const newAppImageName = `${productName}-${version}-${targetArch}.AppImage`
       if (yamlContent.includes(oldAppImageName)) {
         yamlContent = yamlContent.replace(new RegExp(oldAppImageName, 'g'), newAppImageName)
         updated = true
         console.log(`✅ 更新 YAML 中的 AppImage 文件引用: ${oldAppImageName} -> ${newAppImageName}`)
       }
 
+      // 处理可能存在的 x86_64 AppImage 引用 / Handle possible x86_64 AppImage references
+      const oldAppImageNameX86 = `${productName}-${version}-x86_64.AppImage`
+      if (yamlContent.includes(oldAppImageNameX86) && targetArch === 'amd64') {
+        yamlContent = yamlContent.replace(new RegExp(oldAppImageNameX86, 'g'), newAppImageName)
+        updated = true
+        console.log(
+          `✅ 更新 YAML 中的 x86_64 AppImage 文件引用: ${oldAppImageNameX86} -> ${newAppImageName}`
+        )
+      }
+
       // 更新 DEB 文件引用 / Update DEB file references
       const oldDebName = `${productName}-${version}.deb`
-      const newDebName = `${productName}-${version}-${arch}.deb`
+      const newDebName = `${productName}-${version}-${targetArch}.deb`
       if (yamlContent.includes(oldDebName)) {
         yamlContent = yamlContent.replace(new RegExp(oldDebName, 'g'), newDebName)
         updated = true
