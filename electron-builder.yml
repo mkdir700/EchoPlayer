@@ -20,13 +20,12 @@ win:
   artifactName: ${productName}-${version}-${arch}.${ext}
   target:
     - target: nsis
-      arch: [x64]
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   deleteAppDataOnUninstall: true
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${productName}-${version}-${arch}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
@@ -36,9 +35,7 @@ mac:
   artifactName: ${productName}-${version}-${arch}.${ext}
   target:
     - target: dmg
-      arch: [x64, arm64]
     - target: zip
-      arch: [x64, arm64]
   category: public.app-category.education
   darkModeSupport: true
   extendInfo:
@@ -48,17 +45,19 @@ mac:
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${productName}-${version}-${arch}.${ext}
 linux:
   target:
-    - AppImage
-    - deb
+    - target: AppImage
+    - target: deb
   maintainer: mkdir700
   category: Education
   icon: icons/png
   artifactName: ${productName}-${version}-${arch}.${ext}
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${productName}-${version}-amd64.${ext}
+deb:
+  artifactName: ${productName}-${version}-amd64.${ext}
 npmRebuild: false
 publish:
   provider: github

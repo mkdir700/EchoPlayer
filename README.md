@@ -31,13 +31,13 @@ EchoLab 是一款专为语言学习者设计的视频播放器，通过**逐句�
 
 _清晰直观的首页设计，快速开始您的学习之旅_
 
-![首页截图](./assets/home.png)
+![首页.png](https://cdn.z2blog.com/utools/pic/1749827196647.png)
 
 ### 播放页面
 
 _专业的逐句精听界面，专注高效的语言学习体验_
 
-![播放页截图](./assets/playback.png)
+![播放页.png](https://cdn.z2blog.com/utools/pic/1749827233129.png)
 
 ## ✨ 功能特性
 

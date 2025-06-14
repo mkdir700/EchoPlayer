@@ -107,14 +107,32 @@ jobs:
     needs: detect-version
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
+          # Windows builds - 支持 x64 和 ARM64 架构
           - os: windows-latest
             platform: win
+            arch: x64
+            target: --win --x64
+          - os: windows-latest
+            platform: win
+            arch: arm64
+            target: --win --arm64
+          # macOS builds - 支持 Intel 和 Apple Silicon 架构
           - os: macos-latest
             platform: mac
+            arch: x64
+            target: --mac --x64
+          - os: macos-latest
+            platform: mac
+            arch: arm64
+            target: --mac --arm64
+          # Linux builds - 仅支持 x64 架构
           - os: ubuntu-latest
             platform: linux
+            arch: x64
+            target: --linux --x64
 
     steps:
       - name: Checkout repository
@@ -146,10 +164,62 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build and release using electron-builder
-        run: pnpm release
+      - name: Build for ${{ matrix.platform }}-${{ matrix.arch }}
+        run: |
+          echo "🏗️ Building for ${{ matrix.platform }}-${{ matrix.arch }}"
+          echo "构建平台: ${{ matrix.platform }}-${{ matrix.arch }}"
+          pnpm build
+          pnpm exec electron-builder ${{ matrix.target }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rename artifacts
+        run: |
+          echo "🔄 Renaming build artifacts..."
+          echo "重命名构建产物..."
+          pnpm exec tsx scripts/rename-artifacts.ts
+        env:
+          BUILD_ARCH: ${{ matrix.arch }}
+          BUILD_PLATFORM: ${{ matrix.platform }}
+
+      - name: Verify build artifacts
+        run: |
+          echo "🔍 Verifying build artifacts..."
+          echo "验证构建产物..."
+          pnpm exec tsx scripts/verify-build-artifacts.ts
+        env:
+          BUILD_ARCH: ${{ matrix.arch }}
+          BUILD_PLATFORM: ${{ matrix.platform }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-${{ matrix.arch }}-artifacts
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.deb
+            dist/*.appimage
+            dist/*.AppImage
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Create Release and Upload Assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.detect-version.outputs.version }}
+          name: ${{ needs.detect-version.outputs.version }}
+          draft: true
+          prerelease: ${{ needs.detect-version.outputs.is_prerelease }}
+          files: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.deb
+            dist/*.appimage
+            dist/*.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     needs: [detect-version, release]

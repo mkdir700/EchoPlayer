@@ -1,3 +1,11 @@
+## [v0.2.0-alpha.4](https://github.com/mkdir700/echolab/tree/v0.2.0-alpha.4)(2025-06-13)
+
+### 🚀 多平台多架构支持
+
+- **Windows**: 支持 x64 和 arm64 架构
+- **macOS**: 支持 x64 和 arm64 架构
+- **Linux**: 支持 x64 架构
+
 ## [v0.2.0-alpha.3](https://github.com/mkdir700/echolab/tree/v0.2.0-alpha.3)(2025-06-12)
 
 ### 🐛 修复问题
