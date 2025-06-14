@@ -254,14 +254,6 @@ export function UpdatePromptDialog({
                   </div>
                 </div>
               )}
-
-              {/* 操作提示 */}
-              <Alert
-                message="点击立即更新开始下载，或选择跳过此版本。"
-                type="info"
-                showIcon
-                style={{ borderRadius: token.borderRadius }}
-              />
             </Space>
           </div>
         )
@@ -562,11 +554,9 @@ export function UpdatePromptDialog({
   // 处理用户主动关闭对话框 / Handle user-initiated dialog dismissal
   const handleCancel = (): void => {
     if (updateStatus?.status !== 'downloading') {
-      // 强制更新不允许关闭，不调用 onDismiss 进行抑制
-      // Mandatory updates cannot be dismissed, don't call onDismiss for suppression
-      if (!isUpdateMandatory) {
-        onDismiss?.()
-      }
+      // 无论是否为强制更新，都允许关闭对话框，仅关闭UI，不执行业务逻辑
+      // Allow closing the dialog regardless of mandatory status, only close UI without business logic
+      onDismiss?.()
     }
   }
 

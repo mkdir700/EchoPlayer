@@ -142,6 +142,9 @@ const UpdateNotification: React.FC = () => {
       suppressedVersionsRef.current.add(version)
       console.log(`版本 ${version} 已添加到会话级抑制列表`)
     }
+
+    // 关闭对话框 / Close dialog
+    setIsModalOpen(false)
   }
 
   // 处理下载动作 / Handle download action
