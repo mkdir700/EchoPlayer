@@ -48,6 +48,8 @@
     "release:check": "tsx scripts/pre-release-check.ts",
     "dev:update-server": "tsx scripts/dev-update-server.ts",
     "generate-test-update": "tsx scripts/generate-test-update.ts",
+    "test-scenarios": "tsx scripts/update-test-scenarios.ts",
+    "test:update": "tsx scripts/start-update-testing.ts",
     "demo:local-update": "tsx scripts/demo-local-update.ts",
     "prepare": "husky"
   },
