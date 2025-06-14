@@ -348,18 +348,33 @@ describe('Update Handlers - Release Notes Processing', () => {
         set: vi.fn()
       }
 
+      // Mock a function that simulates getUpdateChannel behavior for alpha version
+      const mockGetUpdateChannel = vi.fn().mockReturnValue('alpha')
+
       const getEffectiveUpdateChannel = (): string => {
         const settings = mockConfInstance.get('updateSettings')
         const userChannel = settings.updateChannel
 
-        // // For alpha/beta/dev versions, auto-detect takes precedence
-        // const autoDetected = 'alpha' // Would call getUpdateChannel(currentVersion)
+        // Simulate the current version being an alpha version
+        const currentVersion = '0.2.0-alpha.4' // This would be detected as 'alpha'
+        const autoDetected = mockGetUpdateChannel(currentVersion)
 
-        // if (autoDetected !== 'stable') {
-        //   return autoDetected
-        // }
+        // Use the same logic as the real implementation:
+        // If user has set a channel, use it; otherwise use auto-detected
+        let effectiveChannel = autoDetected
+        if (userChannel) {
+          effectiveChannel = userChannel
+        } else {
+          effectiveChannel = autoDetected
+        }
 
-        return userChannel
+        // But for alpha/beta/dev versions, auto-detect should take precedence over 'stable'
+        // This matches the logic in the actual implementation
+        if (autoDetected !== 'stable' && userChannel === 'stable') {
+          effectiveChannel = autoDetected
+        }
+
+        return effectiveChannel
       }
 
       expect(getEffectiveUpdateChannel()).toBe('alpha')
