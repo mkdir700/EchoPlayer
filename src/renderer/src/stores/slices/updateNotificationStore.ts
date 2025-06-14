@@ -42,8 +42,52 @@ const initialState: UpdateNotificationState = {
  */
 
 /**
- * Compare two semantic versions
- * 比较两个语义化版本
+ * Parse version string into components
+ * 解析版本字符串为组件
+ */
+interface ParsedVersion {
+  major: number
+  minor: number
+  patch: number
+  prerelease?: {
+    type: 'alpha' | 'beta' | 'rc' | 'dev' | 'test'
+    number?: number
+  }
+  raw: string
+}
+
+function parseVersion(version: string): ParsedVersion | null {
+  if (!version) return null
+
+  const cleanVersion = version.replace(/^v/, '').trim()
+
+  // Match semver pattern with prerelease
+  const match = cleanVersion.match(/^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z]+)(?:\.(\d+))?)?$/)
+
+  if (!match) return null
+
+  const [, major, minor, patch, prereleaseType, prereleaseNumber] = match
+
+  const parsed: ParsedVersion = {
+    major: parseInt(major, 10),
+    minor: parseInt(minor, 10),
+    patch: parseInt(patch, 10),
+    raw: cleanVersion
+  }
+
+  if (prereleaseType) {
+    parsed.prerelease = {
+      type: prereleaseType as 'alpha' | 'beta' | 'rc' | 'dev' | 'test',
+      number: prereleaseNumber ? parseInt(prereleaseNumber, 10) : undefined
+    }
+  }
+
+  return parsed
+}
+
+/**
+ * Compare two semantic versions with proper prerelease handling
+ * 比较两个语义化版本，正确处理预发布版本
  * @param current - Current version
  * @param latest - Latest version
  * @returns true if latest > current
@@ -51,19 +95,81 @@ const initialState: UpdateNotificationState = {
 function compareVersions(current: string, latest: string): boolean {
   if (!current || !latest) return false
 
-  const currentParts = current.replace(/^v/, '').split('.').map(Number)
-  const latestParts = latest.replace(/^v/, '').split('.').map(Number)
+  const currentParsed = parseVersion(current)
+  const latestParsed = parseVersion(latest)
 
-  for (let i = 0; i < Math.max(currentParts.length, latestParts.length); i++) {
-    const currentPart = currentParts[i] || 0
-    const latestPart = latestParts[i] || 0
-
-    if (latestPart > currentPart) return true
-    if (latestPart < currentPart) return false
+  if (!currentParsed || !latestParsed) {
+    console.warn('版本解析失败:', { current, latest })
+    return false
   }
 
-  console.log('compareVersions', current, latest, false)
+  // Compare major.minor.patch first
+  // 首先比较主版本.次版本.修订版本
+  if (latestParsed.major !== currentParsed.major) {
+    return latestParsed.major > currentParsed.major
+  }
+  if (latestParsed.minor !== currentParsed.minor) {
+    return latestParsed.minor > currentParsed.minor
+  }
+  if (latestParsed.patch !== currentParsed.patch) {
+    return latestParsed.patch > currentParsed.patch
+  }
 
+  // If base versions are equal, handle prerelease comparison
+  // 如果基础版本相等，处理预发布版本比较
+  const currentHasPrerelease = !!currentParsed.prerelease
+  const latestHasPrerelease = !!latestParsed.prerelease
+
+  // Stable version (no prerelease) is always greater than prerelease
+  // 稳定版本（无预发布）总是大于预发布版本
+  if (!latestHasPrerelease && currentHasPrerelease) {
+    return true
+  }
+  if (latestHasPrerelease && !currentHasPrerelease) {
+    return false
+  }
+
+  // Both have prerelease or both are stable
+  // 两者都有预发布版本或都是稳定版本
+  if (!currentHasPrerelease && !latestHasPrerelease) {
+    // Both are stable and equal
+    console.log('版本比较结果:', { current, latest, result: false, reason: '版本相等' })
+    return false
+  }
+
+  if (currentHasPrerelease && latestHasPrerelease) {
+    // Compare prerelease types: dev < alpha < beta < rc
+    // 比较预发布类型优先级
+    const prereleaseOrder = { dev: 1, test: 1, alpha: 2, beta: 3, rc: 4 }
+    const currentOrder = prereleaseOrder[currentParsed.prerelease!.type] || 0
+    const latestOrder = prereleaseOrder[latestParsed.prerelease!.type] || 0
+
+    if (latestOrder !== currentOrder) {
+      const result = latestOrder > currentOrder
+      console.log('版本比较结果:', {
+        current,
+        latest,
+        result,
+        reason: `预发布类型比较: ${currentParsed.prerelease!.type}(${currentOrder}) vs ${latestParsed.prerelease!.type}(${latestOrder})`
+      })
+      return result
+    }
+
+    // Same prerelease type, compare numbers
+    // 相同预发布类型，比较数字
+    const currentNum = currentParsed.prerelease!.number || 0
+    const latestNum = latestParsed.prerelease!.number || 0
+    const result = latestNum > currentNum
+    console.log('版本比较结果:', {
+      current,
+      latest,
+      result,
+      reason: `预发布版本号比较: ${currentNum} vs ${latestNum}`
+    })
+    return result
+  }
+
+  console.log('版本比较结果:', { current, latest, result: false, reason: '未知情况' })
   return false
 }
 

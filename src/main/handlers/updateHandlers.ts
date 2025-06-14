@@ -35,6 +35,115 @@ interface EnhancedUpdateInfo extends UpdateInfo {
 }
 
 /**
+ * Parse version string into components for comparison
+ * 解析版本字符串为组件用于比较
+ */
+interface ParsedVersion {
+  major: number
+  minor: number
+  patch: number
+  prerelease?: {
+    type: 'alpha' | 'beta' | 'rc' | 'dev' | 'test'
+    number?: number
+  }
+  raw: string
+}
+
+function parseVersion(version: string): ParsedVersion | null {
+  if (!version) return null
+
+  const cleanVersion = version.replace(/^v/, '').trim()
+
+  // Match semver pattern with prerelease
+  const match = cleanVersion.match(/^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z]+)(?:\.(\d+))?)?$/)
+
+  if (!match) return null
+
+  const [, major, minor, patch, prereleaseType, prereleaseNumber] = match
+
+  const parsed: ParsedVersion = {
+    major: parseInt(major, 10),
+    minor: parseInt(minor, 10),
+    patch: parseInt(patch, 10),
+    raw: cleanVersion
+  }
+
+  if (prereleaseType) {
+    parsed.prerelease = {
+      type: prereleaseType as 'alpha' | 'beta' | 'rc' | 'dev' | 'test',
+      number: prereleaseNumber ? parseInt(prereleaseNumber, 10) : undefined
+    }
+  }
+
+  return parsed
+}
+
+/**
+ * Check if available version is newer than current version
+ * 检查可用版本是否比当前版本更新
+ * @param current - Current version
+ * @param available - Available version
+ * @returns true if available > current
+ */
+function isVersionNewer(current: string, available: string): boolean {
+  if (!current || !available) return false
+
+  const currentParsed = parseVersion(current)
+  const availableParsed = parseVersion(available)
+
+  if (!currentParsed || !availableParsed) {
+    Logger.warn('版本解析失败:', { current, available })
+    return false
+  }
+
+  // Compare major.minor.patch first
+  if (availableParsed.major !== currentParsed.major) {
+    return availableParsed.major > currentParsed.major
+  }
+  if (availableParsed.minor !== currentParsed.minor) {
+    return availableParsed.minor > currentParsed.minor
+  }
+  if (availableParsed.patch !== currentParsed.patch) {
+    return availableParsed.patch > currentParsed.patch
+  }
+
+  // If base versions are equal, handle prerelease comparison
+  const currentHasPrerelease = !!currentParsed.prerelease
+  const availableHasPrerelease = !!availableParsed.prerelease
+
+  // Stable version (no prerelease) is always greater than prerelease
+  if (!availableHasPrerelease && currentHasPrerelease) {
+    return true
+  }
+  if (availableHasPrerelease && !currentHasPrerelease) {
+    return false
+  }
+
+  // Both have prerelease or both are stable
+  if (!currentHasPrerelease && !availableHasPrerelease) {
+    return false // Both are stable and equal
+  }
+
+  if (currentHasPrerelease && availableHasPrerelease) {
+    // Compare prerelease types: dev < alpha < beta < rc
+    const prereleaseOrder = { dev: 1, test: 1, alpha: 2, beta: 3, rc: 4 }
+    const currentOrder = prereleaseOrder[currentParsed.prerelease!.type] || 0
+    const availableOrder = prereleaseOrder[availableParsed.prerelease!.type] || 0
+
+    if (availableOrder !== currentOrder) {
+      return availableOrder > currentOrder
+    }
+
+    // Same prerelease type, compare numbers
+    const currentNum = currentParsed.prerelease!.number || 0
+    const availableNum = availableParsed.prerelease!.number || 0
+    return availableNum > currentNum
+  }
+
+  return false
+}
+
+/**
  * Process and enhance update info from electron-updater
  * 处理和增强来自electron-updater的更新信息
  *
@@ -294,9 +403,20 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
           throw new Error('更新检查失败，未收到有效响应')
         }
 
-        if (checkResult.updateInfo.version !== app.getVersion()) {
+        // 使用更严格的版本比较逻辑
+        const currentVersion = app.getVersion()
+        const availableVersion = checkResult.updateInfo.version
+        const isUpdateAvailable = isVersionNewer(currentVersion, availableVersion)
+
+        Logger.info('版本比较结果:', {
+          current: currentVersion,
+          available: availableVersion,
+          isUpdateAvailable
+        })
+
+        if (isUpdateAvailable) {
           // 有可用的更新
-          Logger.info('发现新版本:', checkResult.updateInfo.version)
+          Logger.info('发现新版本:', availableVersion)
 
           // Process and enhance update info
           // 处理和增强更新信息
@@ -465,6 +585,32 @@ export function setupUpdateHandlers(mainWindow: BrowserWindow): void {
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
     Logger.info('发现可用更新:', info.version)
+
+    // 详细记录原始更新信息用于调试
+    Logger.info('原始更新信息详情:', {
+      version: info.version,
+      releaseDate: info.releaseDate,
+      releaseName: info.releaseName,
+      releaseNotesPreview: info.releaseNotes
+        ? typeof info.releaseNotes === 'string'
+          ? info.releaseNotes.substring(0, 200) + '...'
+          : `Array with ${info.releaseNotes.length} items`
+        : 'No release notes',
+      filesCount: info.files?.length || 0,
+      downloadUrl: info.files?.[0]?.url || 'Unknown'
+    })
+
+    // 验证版本信息一致性
+    if (info.releaseName && info.version) {
+      const releaseNameVersion = info.releaseName.replace(/^v/, '')
+      if (releaseNameVersion !== info.version) {
+        Logger.warn('版本信息不一致:', {
+          infoVersion: info.version,
+          releaseName: info.releaseName,
+          releaseNameVersion
+        })
+      }
+    }
 
     // Process and enhance update info with release notes parsing and file size calculation
     // 处理和增强更新信息，包括发布说明解析和文件大小计算
