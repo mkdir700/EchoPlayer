@@ -49,15 +49,17 @@ dmg:
 linux:
   target:
     - target: AppImage
+      arch: [x64, arm64]
     - target: deb
+      arch: [x64, arm64]
   maintainer: mkdir700
   category: Education
   icon: icons/png
   artifactName: ${productName}-${version}-${arch}.${ext}
 appImage:
-  artifactName: ${productName}-${version}-amd64.${ext}
+  artifactName: ${productName}-${version}-${arch}.${ext}
 deb:
-  artifactName: ${productName}-${version}-amd64.${ext}
+  artifactName: ${productName}-${version}-${arch}.${ext}
 npmRebuild: false
 publish:
   provider: github

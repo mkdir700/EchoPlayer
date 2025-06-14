@@ -302,7 +302,6 @@ function handleMacOSArtifacts(version: string, productName: string, arch: string
 /**
  * 处理 Linux 构建产物 / Handle Linux build artifacts
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function handleLinuxArtifacts(version: string, productName: string, arch: string): number {
   let renamedCount = 0
   const files = listDistFiles()
@@ -313,7 +312,7 @@ function handleLinuxArtifacts(version: string, productName: string, arch: string
 
   for (const file of appImageFiles) {
     const oldPath = path.join(DIST_DIR, file)
-    const expectedName = `${productName}-${version}-amd64.AppImage`
+    const expectedName = `${productName}-${version}-${arch}.AppImage`
     const newPath = path.join(DIST_DIR, expectedName)
 
     if (path.basename(file) !== expectedName) {
@@ -332,7 +331,7 @@ function handleLinuxArtifacts(version: string, productName: string, arch: string
 
   for (const file of debFiles) {
     const oldPath = path.join(DIST_DIR, file)
-    const expectedName = `${productName}-${version}-amd64.deb`
+    const expectedName = `${productName}-${version}-${arch}.deb`
     const newPath = path.join(DIST_DIR, expectedName)
 
     if (path.basename(file) !== expectedName) {
@@ -354,7 +353,7 @@ function handleLinuxArtifacts(version: string, productName: string, arch: string
 
       // 更新 AppImage 文件引用 / Update AppImage file references
       const oldAppImageName = `${productName}-${version}.AppImage`
-      const newAppImageName = `${productName}-${version}-amd64.AppImage`
+      const newAppImageName = `${productName}-${version}-${arch}.AppImage`
       if (yamlContent.includes(oldAppImageName)) {
         yamlContent = yamlContent.replace(new RegExp(oldAppImageName, 'g'), newAppImageName)
         updated = true
@@ -363,7 +362,7 @@ function handleLinuxArtifacts(version: string, productName: string, arch: string
 
       // 更新 DEB 文件引用 / Update DEB file references
       const oldDebName = `${productName}-${version}.deb`
-      const newDebName = `${productName}-${version}-amd64.deb`
+      const newDebName = `${productName}-${version}-${arch}.deb`
       if (yamlContent.includes(oldDebName)) {
         yamlContent = yamlContent.replace(new RegExp(oldDebName, 'g'), newDebName)
         updated = true
