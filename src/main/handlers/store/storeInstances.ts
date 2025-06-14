@@ -21,7 +21,7 @@ const defaultThemeCustomization: ThemeCustomization = {
 
 // 默认更新通知配置 / Default update notification configuration
 const defaultUpdateNotificationConfig: UpdateNotificationConfig = {
-  currentVersion: '',
+  currentVersion: app.getVersion(), // ensures a sensible default
   latestVersion: null,
   lastChecked: null,
   lastSeenVersion: null,
