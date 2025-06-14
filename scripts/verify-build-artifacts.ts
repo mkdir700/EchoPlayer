@@ -92,8 +92,16 @@ function getPlatformInfo(): { platform: string; arch: string } {
           : platform
 
   // 标准化架构名称 / Normalize architecture names
-  const normalizedArch =
-    arch === 'x64' ? 'x64' : arch === 'arm64' ? 'arm64' : arch === 'x86_64' ? 'x64' : arch
+  // 对于 Linux 平台，保留 amd64 架构名称 / For Linux platform, keep amd64 architecture name
+  const normalizedArch = (() => {
+    if (normalizedPlatform === 'linux') {
+      // Linux 平台保留原有架构名称，特别是 amd64 / Keep original arch names for Linux, especially amd64
+      return arch === 'x86_64' ? 'amd64' : arch === 'x64' ? 'amd64' : arch
+    } else {
+      // 其他平台使用标准化命名 / Use normalized naming for other platforms
+      return arch === 'x64' ? 'x64' : arch === 'arm64' ? 'arm64' : arch === 'x86_64' ? 'x64' : arch
+    }
+  })()
 
   console.log(`🔍 使用系统检测: ${normalizedPlatform}-${normalizedArch}`)
   return {

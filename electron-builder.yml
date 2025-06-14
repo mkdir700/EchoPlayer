@@ -49,9 +49,7 @@ dmg:
 linux:
   target:
     - target: AppImage
-      arch: [x64, arm64]
     - target: deb
-      arch: [x64, arm64]
   maintainer: mkdir700
   category: Education
   icon: icons/png
