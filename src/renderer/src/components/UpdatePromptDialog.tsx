@@ -6,7 +6,9 @@ import {
   CheckCircleOutlined,
   InfoCircleOutlined,
   ExclamationCircleOutlined,
-  EyeInvisibleOutlined
+  EyeInvisibleOutlined,
+  DownOutlined,
+  UpOutlined
 } from '@ant-design/icons'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useResponsiveDialog } from '@renderer/hooks/useResponsiveDialog'
@@ -41,8 +43,33 @@ export function UpdatePromptDialog({
   const { token, styles, utils } = useTheme()
   const responsiveConfig = useResponsiveDialog()
 
+  // 展开/折叠状态管理 / Expand/collapse state management
+  const [isReleaseNotesExpanded, setIsReleaseNotesExpanded] = React.useState(false)
+
+  // 当对话框关闭或状态改变时重置展开状态 / Reset expand state when dialog closes or status changes
+  React.useEffect(() => {
+    if (!isVisible || updateStatus?.status !== 'available') {
+      setIsReleaseNotesExpanded(false)
+    }
+  }, [isVisible, updateStatus?.status])
+
   // 检查是否为强制更新 / Check if this is a mandatory update
   const isUpdateMandatory = isMandatoryUpdate(updateStatus)
+
+  // 检查内容是否需要展开功能 / Check if content needs expand functionality
+  const shouldShowExpandButton = (content: string): boolean => {
+    const lines = content.split('\n')
+    return lines.length > 3 || content.length > 200
+  }
+
+  // 获取截断的内容 / Get truncated content
+  const getTruncatedContent = (content: string): string => {
+    const lines = content.split('\n')
+    if (lines.length <= 3) {
+      return content.length > 200 ? content.substring(0, 200) + '...' : content
+    }
+    return lines.slice(0, 3).join('\n') + '...'
+  }
 
   // 渲染标题 / Render title
   const renderTitle = (): React.ReactNode => {
@@ -109,6 +136,39 @@ export function UpdatePromptDialog({
         >
           {text}
         </span>
+
+        {/* 版本信息紧跟在标题后面 / Version info right after title */}
+        {updateStatus.status === 'available' && updateStatus.info?.version && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: token.marginXS,
+              marginLeft: token.marginSM
+            }}
+          >
+            <Text
+              style={{
+                fontSize: responsiveConfig.smallFontSize,
+                color: token.colorTextSecondary,
+                fontWeight: FONT_WEIGHTS.MEDIUM
+              }}
+            >
+              v{updateStatus.info.version}
+            </Text>
+            <Tag
+              color="blue"
+              style={{
+                margin: 0,
+                fontSize: responsiveConfig.smallFontSize,
+                padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+                lineHeight: 1.2
+              }}
+            >
+              新版本
+            </Tag>
+          </div>
+        )}
       </div>
     )
   }
@@ -142,50 +202,41 @@ export function UpdatePromptDialog({
         return (
           <div style={containerStyle}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              {/* 版本信息 */}
-              <div
-                style={{
-                  background: utils.hexToRgba(token.colorPrimary, 0.05),
-                  border: `1px solid ${utils.hexToRgba(token.colorPrimary, 0.15)}`,
-                  borderRadius: token.borderRadius,
-                  padding: responsiveConfig.padding.sm
-                }}
-              >
-                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                  <div>
-                    <Text strong style={{ fontSize: responsiveConfig.contentFontSize }}>
-                      版本 {updateStatus.info?.version}
-                    </Text>
-                    <div style={{ marginTop: token.marginXXS }}>
-                      <Space split={<span style={{ color: token.colorTextTertiary }}>•</span>}>
-                        {updateStatus.info?.releaseDate && (
-                          <Text
-                            style={{
-                              fontSize: responsiveConfig.smallFontSize,
-                              color: token.colorTextSecondary
-                            }}
-                          >
-                            发布于 {new Date(updateStatus.info.releaseDate).toLocaleDateString()}
-                          </Text>
-                        )}
-                        {updateStatus.info?.updateSize && (
-                          <Text
-                            style={{
-                              fontSize: responsiveConfig.smallFontSize,
-                              color: token.colorTextSecondary
-                            }}
-                          >
-                            大小 {formatFileSize(updateStatus.info.updateSize)}
-                          </Text>
-                        )}
-                      </Space>
-                    </div>
-                  </div>
-                  <Tag color="blue" style={{ margin: 0 }}>
-                    新版本
-                  </Tag>
-                </Space>
-              </div>
+              {/* 版本详细信息 / Version details */}
+              {(updateStatus.info?.releaseDate || updateStatus.info?.updateSize) && (
+                <div
+                  style={{
+                    background: utils.hexToRgba(token.colorPrimary, 0.05),
+                    border: `1px solid ${utils.hexToRgba(token.colorPrimary, 0.15)}`,
+                    borderRadius: token.borderRadius,
+                    padding: responsiveConfig.padding.sm,
+                    textAlign: 'center'
+                  }}
+                >
+                  <Space split={<span style={{ color: token.colorTextTertiary }}>•</span>}>
+                    {updateStatus.info?.releaseDate && (
+                      <Text
+                        style={{
+                          fontSize: responsiveConfig.smallFontSize,
+                          color: token.colorTextSecondary
+                        }}
+                      >
+                        发布于 {new Date(updateStatus.info.releaseDate).toLocaleDateString()}
+                      </Text>
+                    )}
+                    {updateStatus.info?.updateSize && (
+                      <Text
+                        style={{
+                          fontSize: responsiveConfig.smallFontSize,
+                          color: token.colorTextSecondary
+                        }}
+                      >
+                        大小 {formatFileSize(updateStatus.info.updateSize)}
+                      </Text>
+                    )}
+                  </Space>
+                </div>
+              )}
 
               {/* 更新内容 */}
               {updateStatus.info?.releaseNotes && (
@@ -201,57 +252,80 @@ export function UpdatePromptDialog({
                   >
                     更新内容：
                   </Text>
-                  <div
-                    style={{
-                      background: token.colorFillQuaternary,
-                      borderRadius: token.borderRadius,
-                      padding: responsiveConfig.padding.sm,
-                      maxHeight: 120,
-                      overflowY: 'auto',
-                      border: `1px solid ${token.colorBorderSecondary}`
-                    }}
-                  >
-                    {(() => {
-                      const content =
-                        typeof updateStatus.info.releaseNotes === 'string'
-                          ? updateStatus.info.releaseNotes
-                          : JSON.stringify(updateStatus.info.releaseNotes, null, 2)
+                  {(() => {
+                    const content =
+                      typeof updateStatus.info.releaseNotes === 'string'
+                        ? updateStatus.info.releaseNotes
+                        : JSON.stringify(updateStatus.info.releaseNotes, null, 2)
 
-                      // Check if content appears to be markdown formatted
-                      // 检查内容是否看起来是Markdown格式
-                      if (isMarkdownContent(content)) {
-                        // Render as markdown with sanitization
-                        // 渲染为经过净化的Markdown
-                        const htmlContent = renderMarkdown(content)
-                        return (
-                          <div
-                            style={{
-                              margin: 0,
-                              fontSize: responsiveConfig.smallFontSize,
-                              color: token.colorText,
-                              lineHeight: 1.6
-                            }}
-                            {...createHtmlProps(htmlContent)}
-                          />
-                        )
-                      } else {
-                        // Render as plain text
-                        // 渲染为纯文本
-                        return (
-                          <Paragraph
-                            style={{
-                              margin: 0,
-                              fontSize: responsiveConfig.smallFontSize,
-                              color: token.colorText,
-                              lineHeight: 1.6
-                            }}
-                          >
-                            {content}
-                          </Paragraph>
-                        )
-                      }
-                    })()}
-                  </div>
+                    const needsExpand = shouldShowExpandButton(content)
+                    const displayContent =
+                      needsExpand && !isReleaseNotesExpanded
+                        ? getTruncatedContent(content)
+                        : content
+
+                    return (
+                      <div>
+                        <div
+                          style={{
+                            background: token.colorFillQuaternary,
+                            borderRadius: token.borderRadius,
+                            padding: responsiveConfig.padding.sm,
+                            maxHeight: isReleaseNotesExpanded ? 300 : 120,
+                            overflowY: 'auto',
+                            border: `1px solid ${token.colorBorderSecondary}`,
+                            transition: 'max-height 0.3s ease-in-out',
+                            position: 'relative'
+                          }}
+                        >
+                          {/* 内容渲染 / Content rendering */}
+                          {isMarkdownContent(displayContent) ? (
+                            <div
+                              style={{
+                                margin: 0,
+                                fontSize: responsiveConfig.smallFontSize,
+                                color: token.colorText,
+                                lineHeight: 1.6
+                              }}
+                              {...createHtmlProps(renderMarkdown(displayContent))}
+                            />
+                          ) : (
+                            <Paragraph
+                              style={{
+                                margin: 0,
+                                fontSize: responsiveConfig.smallFontSize,
+                                color: token.colorText,
+                                lineHeight: 1.6
+                              }}
+                            >
+                              {displayContent}
+                            </Paragraph>
+                          )}
+                        </div>
+
+                        {/* 展开/折叠按钮 / Expand/collapse button */}
+                        {needsExpand && (
+                          <div style={{ textAlign: 'center', marginTop: token.marginXS }}>
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={isReleaseNotesExpanded ? <UpOutlined /> : <DownOutlined />}
+                              onClick={() => setIsReleaseNotesExpanded(!isReleaseNotesExpanded)}
+                              style={{
+                                fontSize: responsiveConfig.smallFontSize,
+                                color: token.colorPrimary,
+                                height: 'auto',
+                                padding: `${token.paddingXXS}px ${token.paddingXS}px`,
+                                borderRadius: token.borderRadiusSM
+                              }}
+                            >
+                              {isReleaseNotesExpanded ? '收起' : '展开更多'}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
             </Space>
@@ -551,6 +625,29 @@ export function UpdatePromptDialog({
     }
   }
 
+  // 计算对话框定位 / Calculate dialog positioning
+  const dialogPositioning = React.useMemo(() => {
+    const titleBarHeight = 32 // TitleBar 固定高度 / Fixed TitleBar height
+    const baseMargin = 20 // 基础边距 / Base margin
+
+    // 根据屏幕尺寸调整边距 / Adjust margin based on screen size
+    const getTopMargin = (): number => {
+      if (typeof responsiveConfig.width === 'number') {
+        if (responsiveConfig.width >= 800) {
+          return titleBarHeight + 28 // 大屏幕更多边距 / More margin for larger screens
+        } else if (responsiveConfig.width >= 600) {
+          return titleBarHeight + 24 // 中等屏幕适中边距 / Medium margin for medium screens
+        }
+      }
+      return titleBarHeight + baseMargin // 小屏幕基础边距 / Base margin for small screens
+    }
+
+    return {
+      top: getTopMargin(),
+      marginBottom: baseMargin
+    }
+  }, [responsiveConfig.width])
+
   // 处理用户主动关闭对话框 / Handle user-initiated dialog dismissal
   const handleCancel = (): void => {
     if (updateStatus?.status !== 'downloading') {
@@ -566,14 +663,17 @@ export function UpdatePromptDialog({
       open={isVisible}
       onCancel={updateStatus?.status !== 'downloading' ? handleCancel : undefined}
       footer={renderFooter()}
-      centered
+      centered={false}
       width={responsiveConfig.width}
       maskClosable={updateStatus?.status !== 'downloading'}
       closable={updateStatus?.status !== 'downloading'}
       style={{
         borderRadius: token.borderRadiusLG,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        top: dialogPositioning.top,
+        marginBottom: dialogPositioning.marginBottom
       }}
+      zIndex={token.zIndexPopupBase + 50} // 确保在 TitleBar 之上，但不会过高
       styles={{
         content: {
           borderRadius: token.borderRadiusLG,
