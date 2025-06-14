@@ -19,6 +19,9 @@ import {
   ExperimentOutlined
 } from '@ant-design/icons'
 import { useTheme } from '@renderer/hooks/useTheme'
+import { UpdateNotificationBadge } from '@renderer/components/UpdateNotificationBadge/UpdateNotificationBadge'
+import { useUpdateNotificationStore } from '@renderer/stores'
+import { useIsShowRedDot } from '@renderer/stores/slices/updateNotificationStore'
 
 const { Text } = Typography
 const { Option } = Select
@@ -32,6 +35,11 @@ interface UpdateSettings {
 export function UpdateSection(): React.JSX.Element {
   // 使用统一的主题系统
   const { token, styles } = useTheme()
+
+  // 使用红点可见性而不是 hasNewVersion / Use red dot visibility instead of hasNewVersion
+  const isShowUpdateRedDot = useIsShowRedDot('update_available')
+
+  const { markUpdateAsSeen } = useUpdateNotificationStore()
 
   const [updateSettings, setUpdateSettings] = useState<UpdateSettings>({
     autoUpdate: true,
@@ -91,18 +99,30 @@ export function UpdateSection(): React.JSX.Element {
     loadData()
   }, [])
 
-  // 检查更新
+  // 检查更新 / Check for updates
   const handleCheckForUpdates = async (): Promise<void> => {
     try {
       setIsCheckingForUpdates(true)
+
+      // 调用更新检查，silent: false 表示用户主动检查，会触发 UpdateNotification 显示
+      // Call update check with silent: false to indicate user-initiated check, will trigger UpdateNotification display
       const result = await window.api.update.checkForUpdates({ silent: false })
 
+      // 只有在没有可用更新时才显示"已是最新版本"的通知
+      // Only show "already latest version" notification when no updates are available
       if (result && result.status === 'not-available') {
         notification.success({
           message: '已是最新版本',
           description: '您当前使用的已经是最新版本。',
           duration: 3
         })
+      }
+      // 如果有可用更新 (result.status === 'available')，UpdateNotification 组件会自动显示对话框
+      // If updates are available (result.status === 'available'), UpdateNotification component will automatically show dialog
+      else if (result && result.status === 'available') {
+        console.log('发现可用更新，UpdateNotification 组件将自动显示更新对话框')
+        // 不需要额外的通知，因为 UpdateNotification 组件会处理
+        // No additional notification needed as UpdateNotification component will handle it
       }
     } catch (error) {
       console.error('检查更新失败:', error)
@@ -142,15 +162,43 @@ export function UpdateSection(): React.JSX.Element {
   // 更改更新渠道
   const handleUpdateChannelChange = async (channel: 'stable' | 'beta' | 'alpha'): Promise<void> => {
     try {
+      // 设置更新渠道
       await window.api.update.setUpdateChannel(channel)
       const newSettings = { ...updateSettings, updateChannel: channel }
       setUpdateSettings(newSettings)
 
       notification.success({
         message: '更新渠道已变更',
-        description: `已切换到 ${getChannelDisplayName(channel)} 渠道`,
-        duration: 3
+        description: `已切换到 ${getChannelDisplayName(channel)} 渠道，正在检查新渠道的更新...`,
+        duration: 4
       })
+
+      // 立即触发更新检查以查找新渠道的更新
+      // Immediately trigger update check to find updates in the new channel
+      try {
+        setIsCheckingForUpdates(true)
+        const result = await window.api.update.checkForUpdates({ silent: true })
+
+        if (result && result.status === 'available') {
+          notification.info({
+            message: '发现新版本',
+            description: `在 ${getChannelDisplayName(channel)} 渠道中发现可用更新`,
+            duration: 5
+          })
+        } else if (result && result.status === 'not-available') {
+          notification.success({
+            message: '渠道切换完成',
+            description: `${getChannelDisplayName(channel)} 渠道已是最新版本`,
+            duration: 3
+          })
+        }
+      } catch (updateCheckError) {
+        console.warn('切换渠道后检查更新失败:', updateCheckError)
+        // 不显示错误通知，因为渠道切换本身是成功的
+        // Don't show error notification as the channel switch itself was successful
+      } finally {
+        setIsCheckingForUpdates(false)
+      }
     } catch (error) {
       console.error('更改更新渠道失败:', error)
       notification.error({
@@ -200,15 +248,23 @@ export function UpdateSection(): React.JSX.Element {
             <Text type="secondary">上次检查: {formatLastChecked(updateSettings.lastChecked)}</Text>
           </div>
 
-          <Button
-            type="primary"
-            icon={<SyncOutlined spin={isCheckingForUpdates} />}
-            loading={isCheckingForUpdates}
-            onClick={handleCheckForUpdates}
-            style={{ marginLeft: token.marginXS, borderRadius: token.borderRadiusLG }}
-          >
-            检查更新
-          </Button>
+          <UpdateNotificationBadge showDot={isShowUpdateRedDot} offset={[-8, 8]}>
+            <Button
+              type="primary"
+              icon={<SyncOutlined spin={isCheckingForUpdates} />}
+              loading={isCheckingForUpdates}
+              onClick={() => {
+                handleCheckForUpdates()
+                // 用户点击检查更新时，标记为已查看
+                if (isShowUpdateRedDot) {
+                  markUpdateAsSeen()
+                }
+              }}
+              style={{ marginLeft: token.marginXS, borderRadius: token.borderRadiusLG }}
+            >
+              检查更新
+            </Button>
+          </UpdateNotificationBadge>
         </div>
 
         <Divider style={styles.settingsDivider} />
@@ -231,6 +287,8 @@ export function UpdateSection(): React.JSX.Element {
             value={updateSettings.updateChannel}
             onChange={handleUpdateChannelChange}
             style={componentStyles.updateChannelSelect}
+            loading={isCheckingForUpdates}
+            disabled={isCheckingForUpdates}
           >
             <Option value="stable">
               <Space>

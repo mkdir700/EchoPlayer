@@ -7,6 +7,7 @@ import { TitleBar } from '@renderer/components/TitleBar/TitleBar'
 import { HomePage } from '@renderer/pages/HomePage'
 import { PlayPage } from '@renderer/pages/PlayPage'
 import UpdateNotification from '@renderer/components/UpdateNotification'
+import { UpdateNotificationIPCProvider } from '@renderer/contexts/updateNotificationIPCContext'
 
 // 懒加载的页面组件 / Lazy-loaded page components
 const FavoritesPage = React.lazy(() =>
@@ -181,8 +182,10 @@ function App(): React.JSX.Element {
   return (
     <ThemeProvider>
       <ShortcutProvider>
-        <AppContent />
-        <UpdateNotification />
+        <UpdateNotificationIPCProvider>
+          <AppContent />
+          <UpdateNotification />
+        </UpdateNotificationIPCProvider>
       </ShortcutProvider>
     </ThemeProvider>
   )
