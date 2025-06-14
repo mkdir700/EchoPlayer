@@ -163,19 +163,40 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List build artifacts
+        shell: bash
         run: |
           echo "📦 Build artifacts in dist directory:"
-          ls -la dist/ || echo "No dist directory found"
+          if [ -d "dist" ]; then
+            if command -v ls >/dev/null 2>&1; then
+              ls -la dist/
+            else
+              # Windows fallback
+              dir dist /a
+            fi
+          else
+            echo "No dist directory found"
+          fi
           echo "📁 Current directory contents:"
-          ls -la
+          if command -v ls >/dev/null 2>&1; then
+            ls -la
+          else
+            # Windows fallback
+            dir /a
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}-artifacts
           path: |
-            dist/**/*
-            !dist/**/node_modules/**
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.AppImage
+            dist/*.deb
+            dist/latest*.yml
+            dist/latest*.yaml
+            dist/*.blockmap
           retention-days: 30
           if-no-files-found: warn
 
