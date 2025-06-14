@@ -76,11 +76,11 @@ vi.mock('../../renderer/src/utils/markdownRenderer', () => ({
 
 describe('Update Flow Integration Tests', () => {
   const mockCallbacks = {
-    onRemindLater: vi.fn(),
     onDownload: vi.fn(),
     onInstall: vi.fn(),
     onRetry: vi.fn(),
-    onDismiss: vi.fn()
+    onDismiss: vi.fn(),
+    onSkipVersion: vi.fn()
   }
 
   beforeEach(() => {
@@ -118,7 +118,7 @@ describe('Update Flow Integration Tests', () => {
       expect(screen.getByText('大小 24.4 MB')).toBeInTheDocument()
 
       // Check if action buttons are present
-      expect(screen.getByText('稍后提醒')).toBeInTheDocument()
+      expect(screen.getByText('跳过此版本')).toBeInTheDocument()
       expect(screen.getByText('立即更新')).toBeInTheDocument()
     })
 
@@ -208,8 +208,8 @@ describe('Update Flow Integration Tests', () => {
       // Check if file size is displayed
       expect(screen.getByText('大小 50.0 MB')).toBeInTheDocument()
 
-      // For mandatory updates, "Remind Later" button should not be present
-      expect(screen.queryByText('稍后提醒')).not.toBeInTheDocument()
+      // For mandatory updates, "Skip Version" button should not be present
+      expect(screen.queryByText('跳过此版本')).not.toBeInTheDocument()
 
       // But "Update Now" button should be present (mandatory updates show different text)
       expect(screen.getByText('立即更新（必需）')).toBeInTheDocument()

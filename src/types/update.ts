@@ -62,8 +62,6 @@ export interface UpdateStatus {
  * Update prompt dialog callback functions / 更新提示对话框回调函数
  */
 export interface UpdatePromptCallbacks {
-  /** Called when user chooses to remind later / 用户选择稍后提醒时调用 */
-  onRemindLater: () => void
   /** Called when user chooses to download update / 用户选择下载更新时调用 */
   onDownload: () => void
   /** Called when user chooses to install downloaded update / 用户选择安装已下载的更新时调用 */
@@ -72,6 +70,8 @@ export interface UpdatePromptCallbacks {
   onRetry: () => void
   /** Called when user dismisses the dialog / 用户主动关闭对话框时调用 */
   onDismiss?: () => void
+  /** Called when user chooses to skip this version / 用户选择跳过此版本时调用 */
+  onSkipVersion?: () => void
 }
 
 /**

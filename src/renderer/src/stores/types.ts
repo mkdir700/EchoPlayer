@@ -72,6 +72,7 @@ export interface UpdateNotificationState {
   latestVersion: string | null
   lastChecked: number | null
   lastSeenVersion: string | null
+  skippedVersions: string[] // 用户跳过的版本列表 / List of versions skipped by user
 
   // Red dots management - 红点管理
   redDots: Record<string, RedDotState> // 所有红点状态 / All red dot states
@@ -92,6 +93,8 @@ export interface UpdateNotificationActions {
   setLatestVersion: (version: string | null) => void
   setLastChecked: (timestamp: number) => void
   setLastSeenVersion: (version: string) => void
+  skipVersion: (version: string) => void // 跳过指定版本 / Skip specified version
+  isVersionSkipped: (version: string) => boolean // 检查版本是否被跳过 / Check if version is skipped
 
   // Update checking - 更新检查
   setIsCheckingForUpdates: (checking: boolean) => void

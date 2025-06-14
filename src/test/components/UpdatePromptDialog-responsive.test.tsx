@@ -64,11 +64,11 @@ describe('UpdatePromptDialog Responsive Tests', () => {
   const defaultProps: UpdatePromptDialogProps = {
     isVisible: true,
     updateStatus: mockUpdateStatus,
-    onRemindLater: vi.fn(),
     onDownload: vi.fn(),
     onInstall: vi.fn(),
     onRetry: vi.fn(),
-    onDismiss: vi.fn()
+    onDismiss: vi.fn(),
+    onSkipVersion: vi.fn()
   }
 
   beforeEach(() => {
@@ -264,16 +264,16 @@ describe('UpdatePromptDialog Responsive Tests', () => {
       expect(modal).toBeInTheDocument()
 
       // Footer buttons should be present and accessible on small screens
-      expect(screen.getByText('稍后提醒')).toBeInTheDocument()
+      expect(screen.getByText('跳过此版本')).toBeInTheDocument()
       expect(screen.getByText('立即更新')).toBeInTheDocument()
 
       // Buttons should have accessibility attributes
-      const footerButtons = screen.getByText('稍后提醒').closest('button')
+      const skipButton = screen.getByText('跳过此版本').closest('button')
       const downloadButton = screen.getByText('立即更新').closest('button')
 
-      expect(footerButtons).toBeInTheDocument()
+      expect(skipButton).toBeInTheDocument()
       expect(downloadButton).toBeInTheDocument()
-      expect(footerButtons).toHaveAttribute('type', 'button')
+      expect(skipButton).toHaveAttribute('type', 'button')
       expect(downloadButton).toHaveAttribute('type', 'button')
     })
 

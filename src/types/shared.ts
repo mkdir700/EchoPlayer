@@ -24,6 +24,17 @@ export interface ThemeCustomization {
   algorithm: 'default' | 'dark' | 'compact' | 'darkCompact'
 }
 
+// 更新通知配置接口 / Update notification configuration interface
+export interface UpdateNotificationConfig {
+  currentVersion?: string // 当前版本 / Current version
+  latestVersion?: string | null // 最新版本 / Latest version
+  lastChecked?: number | null // 上次检查时间 / Last checked time
+  lastSeenVersion?: string | null // 上次查看的版本 / Last seen version
+  skippedVersions?: string[] // 跳过的版本列表 / List of skipped versions
+  autoCheckEnabled?: boolean // 是否启用自动检查 / Whether auto check is enabled
+  checkInterval?: number // 检查间隔(毫秒) / Check interval in milliseconds
+}
+
 // 应用配置接口 / Application configuration interface
 export interface AppConfig {
   useWindowFrame?: boolean // 是否使用系统窗口框架 / Whether to use system window frame
@@ -32,6 +43,7 @@ export interface AppConfig {
   language?: 'zh-CN' | 'en-US' // 应用语言 / Application language
   dataDirectory: string // 数据存储目录 / Data storage directory (required)
   themeCustomization: ThemeCustomization // 主题自定义配置 / Theme customization configuration
+  updateNotification?: UpdateNotificationConfig // 更新通知配置 / Update notification configuration
 }
 
 // 字幕项接口

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { devtools, persist, createJSONStorage } from 'zustand/middleware'
-import { electronStorage } from '../customStorage'
+import { appConfigUpdateNotificationStorage } from '../adapters/appConfigStorage'
 import type {
   UpdateNotificationStore,
   UpdateNotificationState,
@@ -22,6 +22,7 @@ const initialState: UpdateNotificationState = {
   latestVersion: null,
   lastChecked: null,
   lastSeenVersion: null,
+  skippedVersions: [], // 用户跳过的版本列表 / List of versions skipped by user
 
   // Red dots management - 红点管理
   redDots: {},
@@ -94,7 +95,8 @@ export const useUpdateNotificationStore = create<UpdateNotificationStore>()(
             state.hasNewVersion = state.latestVersion
               ? compareVersions(version, state.latestVersion) &&
                 (!state.lastSeenVersion ||
-                  compareVersions(state.lastSeenVersion, state.latestVersion))
+                  compareVersions(state.lastSeenVersion, state.latestVersion)) &&
+                !state.skippedVersions.includes(state.latestVersion) // 检查版本是否被跳过 / Check if version is skipped
               : false
           }),
 
@@ -105,7 +107,8 @@ export const useUpdateNotificationStore = create<UpdateNotificationStore>()(
             state.hasNewVersion =
               version && state.currentVersion
                 ? compareVersions(state.currentVersion, version) &&
-                  (!state.lastSeenVersion || compareVersions(state.lastSeenVersion, version))
+                  (!state.lastSeenVersion || compareVersions(state.lastSeenVersion, version)) &&
+                  !state.skippedVersions.includes(version) // 检查版本是否被跳过 / Check if version is skipped
                 : false
 
             // Show update red dot if new version is available
@@ -132,7 +135,8 @@ export const useUpdateNotificationStore = create<UpdateNotificationStore>()(
             state.lastSeenVersion = version
             // Hide update red dot when user has seen the latest version
             state.hasNewVersion = state.latestVersion
-              ? compareVersions(version, state.latestVersion)
+              ? compareVersions(version, state.latestVersion) &&
+                !state.skippedVersions.includes(state.latestVersion) // 检查版本是否被跳过 / Check if version is skipped
               : false
 
             if (!state.hasNewVersion) {
@@ -144,6 +148,33 @@ export const useUpdateNotificationStore = create<UpdateNotificationStore>()(
               })
             }
           }),
+
+        skipVersion: (version: string) =>
+          set((state) => {
+            // Add version to skipped list if not already present
+            // 如果版本不在跳过列表中，则添加到列表中
+            if (!state.skippedVersions.includes(version)) {
+              state.skippedVersions.push(version)
+            }
+
+            // If the skipped version is the current latest version, hide update notifications
+            // 如果跳过的版本是当前最新版本，隐藏更新通知
+            if (state.latestVersion === version) {
+              state.hasNewVersion = false
+
+              // Clear update-related red dots
+              Object.keys(state.redDots).forEach((id) => {
+                if (state.redDots[id].type === 'update') {
+                  state.redDots[id].visible = false
+                }
+              })
+            }
+          }),
+
+        isVersionSkipped: (version: string) => {
+          const state = get()
+          return state.skippedVersions.includes(version)
+        },
 
         // Update checking - 更新检查
         setIsCheckingForUpdates: (checking: boolean) =>
@@ -172,7 +203,8 @@ export const useUpdateNotificationStore = create<UpdateNotificationStore>()(
                 draft.hasNewVersion = draft.currentVersion
                   ? compareVersions(draft.currentVersion, latestVersion) &&
                     (!draft.lastSeenVersion ||
-                      compareVersions(draft.lastSeenVersion, latestVersion))
+                      compareVersions(draft.lastSeenVersion, latestVersion)) &&
+                    !draft.skippedVersions.includes(latestVersion) // 检查版本是否被跳过 / Check if version is skipped
                   : false
 
                 // Show red dot if new version is available
@@ -320,17 +352,19 @@ export const useUpdateNotificationStore = create<UpdateNotificationStore>()(
         reset: () => set(() => ({ ...initialState }))
       })),
       {
-        name: 'echolab-update-notification-storage',
-        storage: createJSONStorage(() => electronStorage),
+        name: 'update-notification-config',
+        storage: createJSONStorage(() => appConfigUpdateNotificationStorage),
         partialize: (state) => ({
-          // Persist only necessary data
+          // Persist only necessary data to app config
+          // 只持久化必要数据到 app config
           currentVersion: state.currentVersion,
           latestVersion: state.latestVersion,
           lastChecked: state.lastChecked,
           lastSeenVersion: state.lastSeenVersion,
+          skippedVersions: state.skippedVersions, // 持久化跳过的版本列表 / Persist skipped versions list
           autoCheckEnabled: state.autoCheckEnabled,
-          checkInterval: state.checkInterval,
-          redDots: state.redDots
+          checkInterval: state.checkInterval
+          // 注意：红点状态不持久化，因为它们是会话级的 / Note: red dot states are not persisted as they are session-level
         })
       }
     ),

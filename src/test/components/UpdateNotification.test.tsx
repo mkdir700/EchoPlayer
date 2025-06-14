@@ -287,9 +287,7 @@ describe('UpdateNotification Integration Tests / UpdateNotification 集成测试
       expect(mockUpdateApi.checkForUpdates).toHaveBeenCalledWith({ silent: false })
     })
 
-    it('handles remind later functionality / 处理稍后提醒功能', async () => {
-      vi.useFakeTimers()
-
+    it('handles skip version functionality / 处理跳过版本功能', async () => {
       render(<UpdateNotification />)
 
       // 显示可用更新 / Show available update
@@ -297,26 +295,22 @@ describe('UpdateNotification Integration Tests / UpdateNotification 集成测试
         ipcListeners['update-status'](null, mockUpdateStatusData.available)
       })
 
-      // 点击稍后提醒按钮 / Click remind later button
-      const remindButton = await screen.findByRole('button', { name: /稍后提醒/ })
-      fireEvent.click(remindButton)
+      // 点击跳过此版本按钮 / Click skip version button
+      const skipButton = await screen.findByRole('button', { name: /跳过此版本/ })
+      fireEvent.click(skipButton)
 
       // 对话框应该关闭 / Dialog should close
       await waitFor(() => {
         expect(screen.queryByText('发现新版本')).not.toBeInTheDocument()
       })
 
-      // 模拟时间推进1小时 / Simulate time advancement of 1 hour
+      // 再次发送相同版本更新 / Send same version update again
       act(() => {
-        vi.advanceTimersByTime(60 * 60 * 1000)
+        ipcListeners['update-status'](null, mockUpdateStatusData.available)
       })
 
-      // 对话框应该重新显示 / Dialog should reappear
-      await waitFor(() => {
-        expect(screen.getByText('发现新版本')).toBeInTheDocument()
-      })
-
-      vi.useRealTimers()
+      // 对话框不应该显示，因为版本已被跳过 / Dialog should not show as version is skipped
+      expect(screen.queryByText('发现新版本')).not.toBeInTheDocument()
     })
   })
 
@@ -373,7 +367,7 @@ describe('UpdateNotification Integration Tests / UpdateNotification 集成测试
   })
 
   describe('Mandatory Updates / 强制更新', () => {
-    it('does not show remind later button for mandatory updates / 强制更新不显示稍后提醒按钮', async () => {
+    it('does not show skip version button for mandatory updates / 强制更新不显示跳过此版本按钮', async () => {
       render(<UpdateNotification />)
 
       // 显示强制更新 / Show mandatory update
@@ -381,9 +375,9 @@ describe('UpdateNotification Integration Tests / UpdateNotification 集成测试
         ipcListeners['update-status'](null, mockUpdateStatusData.mandatory)
       })
 
-      // 不应该有稍后提醒按钮 / Should not have remind later button
+      // 不应该有跳过此版本按钮 / Should not have skip version button
       await waitFor(() => {
-        expect(screen.queryByRole('button', { name: /稍后提醒/ })).not.toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: /跳过此版本/ })).not.toBeInTheDocument()
         expect(screen.getByRole('button', { name: /立即更新（必需）/ })).toBeInTheDocument()
       })
     })
@@ -411,16 +405,16 @@ describe('UpdateNotification Integration Tests / UpdateNotification 集成测试
   })
 
   describe('Version Management / 版本管理', () => {
-    it('does not show remind later for same version twice / 同一版本不重复显示稍后提醒', async () => {
+    it('does not show dialog for skipped version / 跳过的版本不显示对话框', async () => {
       render(<UpdateNotification />)
 
-      // 显示更新并稍后提醒 / Show update and remind later
+      // 显示更新并跳过版本 / Show update and skip version
       act(() => {
         ipcListeners['update-status'](null, mockUpdateStatusData.available)
       })
 
-      const remindButton = await screen.findByRole('button', { name: /稍后提醒/ })
-      fireEvent.click(remindButton)
+      const skipButton = await screen.findByRole('button', { name: /跳过此版本/ })
+      fireEvent.click(skipButton)
 
       // 再次发送相同版本 / Send same version again
       act(() => {
@@ -431,16 +425,16 @@ describe('UpdateNotification Integration Tests / UpdateNotification 集成测试
       expect(screen.queryByText('发现新版本')).not.toBeInTheDocument()
     })
 
-    it('shows dialog for new version after remind later / 稍后提醒后为新版本显示对话框', async () => {
+    it('shows dialog for new version after skipping previous version / 跳过旧版本后为新版本显示对话框', async () => {
       render(<UpdateNotification />)
 
-      // 显示1.2.0版本并稍后提醒 / Show v1.2.0 and remind later
+      // 显示1.2.0版本并跳过 / Show v1.2.0 and skip
       act(() => {
         ipcListeners['update-status'](null, mockUpdateStatusData.available)
       })
 
-      const remindButton = await screen.findByRole('button', { name: /稍后提醒/ })
-      fireEvent.click(remindButton)
+      const skipButton = await screen.findByRole('button', { name: /跳过此版本/ })
+      fireEvent.click(skipButton)
 
       // 发送新版本1.3.0 / Send new version 1.3.0
       const newVersionUpdate = {

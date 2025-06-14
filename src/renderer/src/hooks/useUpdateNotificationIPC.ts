@@ -30,7 +30,8 @@ export function useUpdateNotificationIPC(): void {
     setIsCheckingForUpdates,
     showRedDot,
     hideRedDot,
-    initialize
+    initialize,
+    isVersionSkipped
   } = useUpdateNotificationStore()
 
   /**
@@ -57,6 +58,20 @@ export function useUpdateNotificationIPC(): void {
           if (status.info?.version) {
             console.log(`[IPC] 收到新版本信息: ${status.info.version}`)
 
+            // Check if this version is skipped
+            // 检查此版本是否被跳过
+            const isSkipped = isVersionSkipped(status.info.version)
+            if (isSkipped) {
+              console.log(`[IPC] 版本 ${status.info.version} 已被跳过，不显示红点`)
+              setLatestVersion(status.info.version)
+              setLastChecked(Date.now())
+              // Hide any existing red dots for this version
+              hideRedDot('update_available')
+              hideRedDot('update_ready')
+              hideRedDot('update_downloading')
+              break
+            }
+
             // Get current state to debug
             const currentState = useUpdateNotificationStore.getState()
             console.log(`[IPC] 当前状态:`, {
@@ -78,17 +93,23 @@ export function useUpdateNotificationIPC(): void {
               hasNewVersion: afterSetState.hasNewVersion
             })
 
-            // Show update available red dot (backup mechanism)
-            showRedDot('update_available', 'update', {
-              priority: 8,
-              metadata: {
-                version: status.info.version,
-                releaseNotes: status.info.releaseNotes,
-                releaseDate: status.info.releaseDate
-              }
-            })
-
-            console.log(`[IPC] 已显示红点，发现新版本: ${status.info.version}`)
+            // Only show red dot if hasNewVersion is true (which considers skipped versions)
+            // 只有在 hasNewVersion 为 true 时才显示红点（已考虑跳过的版本）
+            if (afterSetState.hasNewVersion) {
+              showRedDot('update_available', 'update', {
+                priority: 8,
+                metadata: {
+                  version: status.info.version,
+                  releaseNotes: status.info.releaseNotes,
+                  releaseDate: status.info.releaseDate
+                }
+              })
+              console.log(`[IPC] 已显示红点，发现新版本: ${status.info.version}`)
+            } else {
+              console.log(
+                `[IPC] 版本 ${status.info.version} 不需要显示红点（可能已被跳过或已查看）`
+              )
+            }
           }
           break
 
@@ -105,6 +126,18 @@ export function useUpdateNotificationIPC(): void {
         case 'downloaded':
           // Update downloaded, ready to install
           if (status.info?.version) {
+            // Check if this version is skipped
+            // 检查此版本是否被跳过
+            const isSkipped = isVersionSkipped(status.info.version)
+            if (isSkipped) {
+              console.log(`[IPC] 版本 ${status.info.version} 已被跳过，不显示下载完成红点`)
+              // Hide any existing red dots for this version
+              hideRedDot('update_available')
+              hideRedDot('update_ready')
+              hideRedDot('update_downloading')
+              break
+            }
+
             // Update red dot to indicate ready to install
             showRedDot('update_ready', 'update', {
               priority: 9,
@@ -158,7 +191,14 @@ export function useUpdateNotificationIPC(): void {
           console.warn('未知的更新状态:', status.status)
       }
     },
-    [setLatestVersion, setLastChecked, setIsCheckingForUpdates, showRedDot, hideRedDot]
+    [
+      setLatestVersion,
+      setLastChecked,
+      setIsCheckingForUpdates,
+      showRedDot,
+      hideRedDot,
+      isVersionSkipped
+    ]
   )
 
   /**

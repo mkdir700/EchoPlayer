@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { Conf } from 'electron-conf/main'
 import * as path from 'path'
-import type { AppConfig, ThemeCustomization } from '../../../types/shared'
+import type { AppConfig, ThemeCustomization, UpdateNotificationConfig } from '../../../types/shared'
 
 // 获取默认数据目录 / Get default data directory
 export function getDefaultDataDirectory(): string {
@@ -19,6 +19,17 @@ const defaultThemeCustomization: ThemeCustomization = {
   algorithm: 'default'
 }
 
+// 默认更新通知配置 / Default update notification configuration
+const defaultUpdateNotificationConfig: UpdateNotificationConfig = {
+  currentVersion: '',
+  latestVersion: null,
+  lastChecked: null,
+  lastSeenVersion: null,
+  skippedVersions: [],
+  autoCheckEnabled: true,
+  checkInterval: 24 * 60 * 60 * 1000 // 24小时 / 24 hours
+}
+
 // 默认应用配置 / Default application configuration
 export const defaultAppConfig: AppConfig = {
   useWindowFrame: false, // 默认使用自定义标题栏 / Default to custom title bar
@@ -26,7 +37,8 @@ export const defaultAppConfig: AppConfig = {
   autoCheckUpdates: true, // 默认自动检查更新 / Default to auto check updates
   language: 'zh-CN', // 默认语言为中文 / Default language is Chinese
   dataDirectory: getDefaultDataDirectory(), // 默认数据目录使用系统位置 / Default data directory uses system location
-  themeCustomization: defaultThemeCustomization // 默认主题自定义配置 / Default theme customization configuration
+  themeCustomization: defaultThemeCustomization, // 默认主题自定义配置 / Default theme customization configuration
+  updateNotification: defaultUpdateNotificationConfig // 默认更新通知配置 / Default update notification configuration
 }
 
 // 创建主要的 store 实例（用于最近播放等数据）/ Create main store instance (for recent plays and other data)

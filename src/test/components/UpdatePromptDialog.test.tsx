@@ -47,11 +47,11 @@ vi.mock('@renderer/hooks/useTheme', () => ({
 
 describe('UpdatePromptDialog Component', () => {
   const mockCallbacks = {
-    onRemindLater: vi.fn(),
     onDownload: vi.fn(),
     onInstall: vi.fn(),
     onRetry: vi.fn(),
-    onDismiss: vi.fn()
+    onDismiss: vi.fn(),
+    onSkipVersion: vi.fn()
   }
 
   beforeEach(() => {
@@ -84,7 +84,7 @@ describe('UpdatePromptDialog Component', () => {
       expect(screen.getByText('版本 1.2.3')).toBeInTheDocument()
       expect(screen.getByText(/发布于.*1\/15\/2024/)).toBeInTheDocument()
       expect(screen.getByText('大小 24.4 MB')).toBeInTheDocument()
-      expect(screen.getByText('稍后提醒')).toBeInTheDocument()
+      expect(screen.getByText('跳过此版本')).toBeInTheDocument()
       expect(screen.getByText('立即更新')).toBeInTheDocument()
     })
   })
@@ -102,7 +102,7 @@ describe('UpdatePromptDialog Component', () => {
       expect(mockCallbacks.onDownload).toHaveBeenCalledTimes(1)
     })
 
-    it('should call onRemindLater when remind later button is clicked / 点击稍后提醒按钮应该调用onRemindLater', () => {
+    it('should call onSkipVersion when skip version button is clicked / 点击跳过此版本按钮应该调用onSkipVersion', () => {
       const updateStatus: UpdateStatus = {
         status: 'available',
         info: { version: '1.2.3' }
@@ -110,13 +110,13 @@ describe('UpdatePromptDialog Component', () => {
 
       render(<UpdatePromptDialog isVisible={true} updateStatus={updateStatus} {...mockCallbacks} />)
 
-      fireEvent.click(screen.getByText('稍后提醒'))
-      expect(mockCallbacks.onRemindLater).toHaveBeenCalledTimes(1)
+      fireEvent.click(screen.getByText('跳过此版本'))
+      expect(mockCallbacks.onSkipVersion).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('Mandatory Updates / 强制更新', () => {
-    it('should hide remind later button for mandatory updates / 强制更新应该隐藏稍后提醒按钮', () => {
+    it('should hide skip version button for mandatory updates / 强制更新应该隐藏跳过此版本按钮', () => {
       const updateStatus: UpdateStatus = {
         status: 'available',
         info: {
@@ -127,7 +127,7 @@ describe('UpdatePromptDialog Component', () => {
 
       render(<UpdatePromptDialog isVisible={true} updateStatus={updateStatus} {...mockCallbacks} />)
 
-      expect(screen.queryByText('稍后提醒')).not.toBeInTheDocument()
+      expect(screen.queryByText('跳过此版本')).not.toBeInTheDocument()
       expect(screen.getByText('立即更新（必需）')).toBeInTheDocument()
     })
   })

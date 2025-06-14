@@ -4,9 +4,9 @@ import {
   RocketOutlined,
   CloudDownloadOutlined,
   CheckCircleOutlined,
-  ClockCircleOutlined,
   InfoCircleOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  EyeInvisibleOutlined
 } from '@ant-design/icons'
 import { useTheme } from '@renderer/hooks/useTheme'
 import { useResponsiveDialog } from '@renderer/hooks/useResponsiveDialog'
@@ -32,11 +32,11 @@ const { Text, Paragraph } = Typography
 export function UpdatePromptDialog({
   isVisible,
   updateStatus,
-  onRemindLater,
   onDownload,
   onInstall,
   onRetry,
-  onDismiss
+  onDismiss,
+  onSkipVersion
 }: UpdatePromptDialogProps): React.JSX.Element {
   const { token, styles, utils } = useTheme()
   const responsiveConfig = useResponsiveDialog()
@@ -257,7 +257,7 @@ export function UpdatePromptDialog({
 
               {/* 操作提示 */}
               <Alert
-                message="点击立即更新开始下载，或选择稍后提醒延后更新。"
+                message="点击立即更新开始下载，或选择跳过此版本。"
                 type="info"
                 showIcon
                 style={{ borderRadius: token.borderRadius }}
@@ -414,20 +414,21 @@ export function UpdatePromptDialog({
     switch (updateStatus.status) {
       case 'available':
         return [
-          // 强制更新不显示"稍后提醒"按钮 / Don't show "remind later" button for mandatory updates
-          !isUpdateMandatory && (
+          // 跳过此版本按钮 / Skip this version button
+          !isUpdateMandatory && onSkipVersion && (
             <Button
-              key="remind"
-              onClick={onRemindLater}
+              key="skip"
+              onClick={onSkipVersion}
               style={{
                 ...commonButtonStyle,
                 borderColor: token.colorBorderSecondary,
+                color: token.colorTextSecondary,
                 // 在水平布局时确保按钮不会太窄
-                ...(!responsiveConfig.stackButtons && { minWidth: 100 })
+                ...(!responsiveConfig.stackButtons && { minWidth: 120 })
               }}
-              icon={<ClockCircleOutlined />}
+              icon={<EyeInvisibleOutlined />}
             >
-              稍后提醒
+              跳过此版本
             </Button>
           ),
           <Button
@@ -450,20 +451,21 @@ export function UpdatePromptDialog({
 
       case 'downloaded':
         return [
-          // 强制更新不显示"稍后安装"按钮 / Don't show "install later" button for mandatory updates
-          !isUpdateMandatory && (
+          // 跳过此版本按钮 / Skip this version button
+          !isUpdateMandatory && onSkipVersion && (
             <Button
-              key="remind"
-              onClick={onRemindLater}
+              key="skip"
+              onClick={onSkipVersion}
               style={{
                 ...commonButtonStyle,
                 borderColor: token.colorBorderSecondary,
+                color: token.colorTextSecondary,
                 // 在水平布局时确保按钮不会太窄
-                ...(!responsiveConfig.stackButtons && { minWidth: 100 })
+                ...(!responsiveConfig.stackButtons && { minWidth: 120 })
               }}
-              icon={<ClockCircleOutlined />}
+              icon={<EyeInvisibleOutlined />}
             >
-              稍后安装
+              跳过此版本
             </Button>
           ),
           <Button
@@ -490,7 +492,6 @@ export function UpdatePromptDialog({
             key="cancel"
             onClick={() => {
               onDismiss?.()
-              onRemindLater()
             }}
             style={{
               ...commonButtonStyle,
@@ -526,7 +527,6 @@ export function UpdatePromptDialog({
             key="cancel"
             onClick={() => {
               onDismiss?.()
-              onRemindLater()
             }}
             style={{
               ...commonButtonStyle,
@@ -545,7 +545,6 @@ export function UpdatePromptDialog({
             key="close"
             onClick={() => {
               onDismiss?.()
-              onRemindLater()
             }}
             style={{
               ...commonButtonStyle,
@@ -568,7 +567,6 @@ export function UpdatePromptDialog({
       if (!isUpdateMandatory) {
         onDismiss?.()
       }
-      onRemindLater()
     }
   }
 
