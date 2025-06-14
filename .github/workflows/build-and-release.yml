@@ -113,26 +113,15 @@ jobs:
           # Windows builds - 支持 x64 和 ARM64 架构
           - os: windows-latest
             platform: win
-            arch: x64
-            target: --win --x64
-          - os: windows-latest
-            platform: win
-            arch: arm64
-            target: --win --arm64
+            target: --win
           # macOS builds - 支持 Intel 和 Apple Silicon 架构
           - os: macos-latest
             platform: mac
-            arch: x64
-            target: --mac --x64
-          - os: macos-latest
-            platform: mac
-            arch: arm64
-            target: --mac --arm64
+            target: --mac
           # Linux builds - 支持 x64 和 ARM64 架构
           - os: ubuntu-latest
             platform: linux
-            arch: amd64
-            target: --linux --x64
+            target: --linux
 
     steps:
       - name: Checkout repository
@@ -164,45 +153,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build for ${{ matrix.platform }}-${{ matrix.arch }}
+      - name: Build for ${{ matrix.platform }}
         run: |
-          echo "🏗️ Building for ${{ matrix.platform }}-${{ matrix.arch }}"
-          echo "构建平台: ${{ matrix.platform }}-${{ matrix.arch }}"
+          echo "🏗️ Building for ${{ matrix.platform }}"
+          echo "构建平台: ${{ matrix.platform }}"
           pnpm build
           pnpm exec electron-builder ${{ matrix.target }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Rename artifacts
+      - name: List build artifacts
         run: |
-          echo "🔄 Renaming build artifacts..."
-          echo "重命名构建产物..."
-          pnpm exec tsx scripts/rename-artifacts.ts
-        env:
-          BUILD_ARCH: ${{ matrix.arch }}
-          BUILD_PLATFORM: ${{ matrix.platform }}
-
-      - name: Verify build artifacts
-        run: |
-          echo "🔍 Verifying build artifacts..."
-          echo "验证构建产物..."
-          pnpm exec tsx scripts/verify-build-artifacts.ts
-        env:
-          BUILD_ARCH: ${{ matrix.arch }}
-          BUILD_PLATFORM: ${{ matrix.platform }}
+          echo "📦 Build artifacts in dist directory:"
+          ls -la dist/ || echo "No dist directory found"
+          echo "📁 Current directory contents:"
+          ls -la
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-${{ matrix.arch }}-artifacts
+          name: ${{ matrix.platform }}-artifacts
           path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.zip
-            dist/*.deb
-            dist/*.appimage
-            dist/*.AppImage
-            dist/latest*.yml
+            dist/**/*
+            !dist/**/node_modules/**
           retention-days: 30
           if-no-files-found: warn
 
@@ -218,12 +191,11 @@ jobs:
             dist/*.exe
             dist/*.dmg
             dist/*.zip
-            dist/*.deb
-            dist/*.appimage
             dist/*.AppImage
-            dist/latest.yml
-            dist/latest-mac.yml
-            dist/latest-linux.yml
+            dist/*.deb
+            dist/latest*.yml
+            dist/latest*.yaml
+            dist/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
