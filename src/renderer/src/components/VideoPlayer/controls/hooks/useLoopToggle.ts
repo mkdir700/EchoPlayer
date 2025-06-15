@@ -253,7 +253,12 @@ export function useLoopToggle(fileId: string): UseLoopToggleReturn {
 
     RendererLogger.info('🔄 开始设置循环监听器')
 
-    const handleTimeUpdate = (currentTime: number): void => {
+    const handleTimeUpdate = (currentTime: number, source?: string): void => {
+      // 忽略来自循环逻辑的时间更新，避免无限递归 / Ignore time updates from loop logic to avoid infinite recursion
+      if (source === 'loop') {
+        return
+      }
+
       // 基础条件检查 / Basic condition check
       const isVideoLoaded = isVideoLoadedRef.current
       const isPlaying = isPlayingRef.current
@@ -265,11 +270,11 @@ export function useLoopToggle(fileId: string): UseLoopToggleReturn {
 
       const { getCurrentSubtitleIndex, seekTo, setIsSingleLoop, uiDispatch } = stableRefsRef.current
 
+      const currentIndex = getCurrentSubtitleIndex()
+      const currentSubtitle = subtitleItems[currentIndex]
+
       // 初始化循环状态 / Initialize loop state
       if (!playbackState.isInitialized) {
-        const currentIndex = getCurrentSubtitleIndex()
-        const currentSubtitle = subtitleItems[currentIndex]
-
         if (currentIndex >= 0 && currentSubtitle) {
           playbackDispatch({
             type: 'INITIALIZE_LOOP',
@@ -289,6 +294,34 @@ export function useLoopToggle(fileId: string): UseLoopToggleReturn {
             endTime: currentSubtitle.endTime,
             count: loopSettings.count
           })
+        }
+        return
+      }
+
+      // 检查是否需要重新初始化循环状态（用户跳转到新字幕时）/ Check if need to reinitialize loop state (when user jumps to new subtitle)
+      if (
+        source === 'user' &&
+        currentIndex >= 0 &&
+        currentSubtitle &&
+        playbackState.currentSubtitleIndex !== currentIndex
+      ) {
+        RendererLogger.info('🔄 用户跳转：重新初始化循环状态到新字幕', {
+          oldIndex: playbackState.currentSubtitleIndex,
+          newIndex: currentIndex,
+          newText: currentSubtitle.text,
+          newStartTime: currentSubtitle.startTime,
+          newEndTime: currentSubtitle.endTime
+        })
+
+        playbackDispatch({
+          type: 'INITIALIZE_LOOP',
+          subtitle: currentSubtitle,
+          index: currentIndex
+        })
+
+        // 重置剩余次数 / Reset remaining count
+        if (loopSettings.count >= 2) {
+          uiDispatch(loopToggleActions.resetRemainingCount(loopSettings.count))
         }
         return
       }
@@ -384,7 +417,7 @@ interface HandleLoopLogicParams {
   loopCount: number
   remainingCount: number
   subtitleItems: SubtitleItem[]
-  seekTo: (time: number) => void
+  seekTo: (time: number, source?: 'user' | 'loop' | 'system') => void
   setIsSingleLoop: (fileId: string, value: boolean) => void
   uiDispatch: React.Dispatch<ReturnType<(typeof loopToggleActions)[keyof typeof loopToggleActions]>>
   playbackDispatch: React.Dispatch<LoopPlaybackAction>
@@ -422,7 +455,7 @@ function handleLoopLogic(params: HandleLoopLogicParams): void {
       text: loopSubtitle.text,
       startTime: loopSubtitle.startTime
     })
-    seekTo(loopSubtitle.startTime)
+    seekTo(loopSubtitle.startTime, 'loop')
     return
   }
 
@@ -434,7 +467,7 @@ function handleLoopLogic(params: HandleLoopLogicParams): void {
         remainingCount: remainingCount - 1,
         text: loopSubtitle.text
       })
-      seekTo(loopSubtitle.startTime)
+      seekTo(loopSubtitle.startTime, 'loop')
       uiDispatch(loopToggleActions.decreaseRemainingCount())
     } else {
       // 循环次数用完，跳转到下一句 / Loop count exhausted, jump to next subtitle
@@ -446,7 +479,7 @@ function handleLoopLogic(params: HandleLoopLogicParams): void {
           nextStartTime: nextSubtitle.startTime
         })
 
-        seekTo(nextSubtitle.startTime)
+        seekTo(nextSubtitle.startTime, 'loop')
         playbackDispatch({
           type: 'MOVE_TO_NEXT_SUBTITLE',
           subtitle: nextSubtitle,
