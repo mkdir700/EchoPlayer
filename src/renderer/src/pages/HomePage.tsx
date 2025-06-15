@@ -94,8 +94,7 @@ export function HomePage({ onNavigateToPlay }: HomePageProps): React.JSX.Element
             playbackRate: 1,
             isSingleLoop: false,
             loopSettings: {
-              mode: 'off',
-              count: 3
+              count: 0 // 0表示关闭循环 / 0 means loop off
             },
             isAutoPause: false
           }
