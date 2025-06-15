@@ -68,8 +68,7 @@ const defaultVideoConfig: VideoConfig = {
   playbackRate: PLAYBACK_RATES.DEFAULT,
   isSingleLoop: false,
   loopSettings: {
-    mode: 'off',
-    count: 3
+    count: -1 // 默认无限循环 / Default infinite loop
   },
   isAutoPause: false,
   subtitleDisplay: {

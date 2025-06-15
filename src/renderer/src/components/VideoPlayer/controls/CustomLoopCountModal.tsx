@@ -64,15 +64,15 @@ export function CustomLoopCountModal({
     >
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <div>
-          <Text type="secondary">设置每句字幕的循环播放次数，范围：1-50次</Text>
+          <Text type="secondary">设置循环播放次数，范围：2-50次</Text>
         </div>
 
         <div>
           <Text strong>循环次数：</Text>
           <InputNumber
             value={count}
-            onChange={(value) => setCount(value || 1)}
-            min={1}
+            onChange={(value) => setCount(value || 2)}
+            min={2}
             max={50}
             style={{ width: '100%', marginTop: 8 }}
             placeholder="请输入循环次数"
@@ -83,7 +83,7 @@ export function CustomLoopCountModal({
 
         <div>
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            💡 提示：设置后每句字幕都会循环播放指定次数，然后自动跳转到下一句
+            💡 提示：设置为 -1 表示无限循环，2-50 表示指定次数循环
           </Text>
         </div>
       </Space>

@@ -1,12 +1,12 @@
 import React from 'react'
 import { ReloadOutlined } from '@ant-design/icons'
-import type { LoopMode } from '@types_/shared'
 
 interface LoopIconProps {
-  mode: LoopMode
-  remainingCount: number
-  isActive: boolean
-  variant?: 'compact' | 'fullscreen'
+  isSingleLoop: boolean // 是否开启循环 / Whether loop is enabled
+  count: number // 循环次数：-1=无限，2-50=指定次数 / Loop count: -1=infinite, 2-50=specific count
+  remainingCount: number // 剩余循环次数 / Remaining loop count
+  isActive: boolean // 是否激活状态 / Whether active state
+  variant?: 'compact' | 'fullscreen' // 显示变体 / Display variant
 }
 
 /**
@@ -14,7 +14,8 @@ interface LoopIconProps {
  * Loop playback icon component with support for displaying loop count
  */
 export function LoopIcon({
-  mode,
+  isSingleLoop,
+  count,
   remainingCount,
   isActive,
   variant = 'compact'
@@ -46,15 +47,15 @@ export function LoopIcon({
   }
 
   const renderCountDisplay = (): React.ReactNode => {
-    if (mode === 'off') return null
+    if (!isSingleLoop) return null // 循环关闭时不显示 / Don't display when loop is off
 
-    if (mode === 'single') {
-      // 单句循环模式显示无限符号
+    if (count === -1) {
+      // 无限循环显示无限符号 / Infinite loop shows infinity symbol
       return <span style={getCountStyle()}>∞</span>
     }
 
-    if (mode === 'count' && remainingCount > 0) {
-      // 指定次数循环模式显示剩余次数
+    if (count >= 2 && remainingCount > 0) {
+      // 指定次数循环显示剩余次数 / Specific count loop shows remaining count
       return <span style={getCountStyle()}>{remainingCount}</span>
     }
 

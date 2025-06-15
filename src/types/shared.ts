@@ -82,13 +82,9 @@ export interface SubtitleDisplaySettings {
   maskFrame: MaskFrame
 }
 
-// 循环模式类型 / Loop mode types
-export type LoopMode = 'off' | 'single' | 'count'
-
 // 循环设置接口 / Loop settings interface
 export interface LoopSettings {
-  mode: LoopMode // 循环模式：关闭、单句循环、指定次数循环
-  count: number // 循环次数（当mode为'count'时有效）
+  count: number // 循环次数：-1=无限循环，2-50=指定次数循环 / Loop count: -1=infinite loop, 2-50=specific count loop
 }
 
 // 视频级别的播放设置接口
