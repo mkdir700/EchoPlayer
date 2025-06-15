@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { devtools, persist, createJSONStorage } from 'zustand/middleware'
 import { electronStorage } from '../customStorage'
-import { VideoPlaybackSettings, SubtitleDisplaySettings } from '@types_/shared'
+import { VideoPlaybackSettings, SubtitleDisplaySettings, LoopSettings } from '@types_/shared'
 import { VOLUME_SETTINGS, PLAYBACK_RATES } from '../../constants'
 
 // 单个视频的配置接口 / Single video configuration interface
@@ -12,7 +12,8 @@ export interface VideoConfig {
   displayMode: VideoPlaybackSettings['displayMode'] // 字幕显示模式 / Subtitle display mode
   volume: VideoPlaybackSettings['volume'] // 音量设置 / Volume setting
   playbackRate: VideoPlaybackSettings['playbackRate'] // 播放速度 / Playback rate
-  isSingleLoop: VideoPlaybackSettings['isSingleLoop'] // 单句循环 / Single loop
+  isSingleLoop: VideoPlaybackSettings['isSingleLoop'] // 单句循环（保持向后兼容）/ Single loop (backward compatibility)
+  loopSettings: LoopSettings // 新的循环设置 / New loop settings
   isAutoPause: VideoPlaybackSettings['isAutoPause'] // 自动暂停 / Auto pause
   subtitleDisplay: SubtitleDisplaySettings // 字幕显示配置 / Subtitle display settings
   selectedPlaybackRates: number[] // 用户选择的播放速度选项 / User selected playback rate options
@@ -36,6 +37,7 @@ export interface VideoConfigActions {
   setVolume: (fileId: string, volume: VideoPlaybackSettings['volume']) => void
   setPlaybackRate: (fileId: string, rate: VideoPlaybackSettings['playbackRate']) => void
   setIsSingleLoop: (fileId: string, loop: VideoPlaybackSettings['isSingleLoop']) => void
+  setLoopSettings: (fileId: string, settings: LoopSettings) => void
   setIsAutoPause: (fileId: string, pause: VideoPlaybackSettings['isAutoPause']) => void
   setSubtitleDisplay: (fileId: string, settings: SubtitleDisplaySettings) => void
 
@@ -65,6 +67,10 @@ const defaultVideoConfig: VideoConfig = {
   volume: VOLUME_SETTINGS.DEFAULT,
   playbackRate: PLAYBACK_RATES.DEFAULT,
   isSingleLoop: false,
+  loopSettings: {
+    mode: 'off',
+    count: 3
+  },
   isAutoPause: false,
   subtitleDisplay: {
     margins: {
@@ -150,6 +156,14 @@ export const useVideoConfigStore = create<VideoConfigStore>()(
               state.configs[fileId] = { ...defaultVideoConfig }
             }
             state.configs[fileId].isSingleLoop = loop
+          }),
+
+        setLoopSettings: (fileId: string, settings: LoopSettings) =>
+          set((state) => {
+            if (!state.configs[fileId]) {
+              state.configs[fileId] = { ...defaultVideoConfig }
+            }
+            state.configs[fileId].loopSettings = settings
           }),
 
         setIsAutoPause: (fileId: string, pause: VideoPlaybackSettings['isAutoPause']) =>
@@ -282,6 +296,9 @@ export const usePlaybackRate = (fileId: string): VideoPlaybackSettings['playback
 export const useIsSingleLoop = (fileId: string): VideoPlaybackSettings['isSingleLoop'] =>
   useVideoConfigStore((state) => state.getVideoConfig(fileId).isSingleLoop)
 
+export const useLoopSettings = (fileId: string): LoopSettings =>
+  useVideoConfigStore((state) => state.getVideoConfig(fileId).loopSettings)
+
 export const useIsAutoPause = (fileId: string): VideoPlaybackSettings['isAutoPause'] =>
   useVideoConfigStore((state) => state.getVideoConfig(fileId).isAutoPause)
 
@@ -308,6 +325,9 @@ export const useSetIsSingleLoop = (): ((
   fileId: string,
   loop: VideoPlaybackSettings['isSingleLoop']
 ) => void) => useVideoConfigStore((state) => state.setIsSingleLoop)
+
+export const useSetLoopSettings = (): ((fileId: string, settings: LoopSettings) => void) =>
+  useVideoConfigStore((state) => state.setLoopSettings)
 
 export const useSetIsAutoPause = (): ((
   fileId: string,

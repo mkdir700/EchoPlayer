@@ -5,18 +5,20 @@ import {
   useVolume,
   usePlaybackRate,
   useIsSingleLoop,
+  useLoopSettings,
   useIsAutoPause,
   useSubtitleDisplay,
   useSetDisplayMode,
   useSetVolume,
   useSetPlaybackRate,
   useSetIsSingleLoop,
+  useSetLoopSettings,
   useSetIsAutoPause,
   useSetSubtitleDisplay,
   useSetPlaybackSettings
 } from '../stores'
 import { usePlayingVideoContext } from './usePlayingVideoContext'
-import { VideoPlaybackSettings, SubtitleDisplaySettings } from '@types_/shared'
+import { VideoPlaybackSettings, SubtitleDisplaySettings, LoopSettings } from '@types_/shared'
 
 /**
  * Hook for accessing video-specific configuration settings
@@ -40,6 +42,7 @@ export function useVideoConfig(): {
   volume: VideoPlaybackSettings['volume']
   playbackRate: VideoPlaybackSettings['playbackRate']
   isSingleLoop: VideoPlaybackSettings['isSingleLoop']
+  loopSettings: LoopSettings
   isAutoPause: VideoPlaybackSettings['isAutoPause']
   subtitleDisplay: SubtitleDisplaySettings
   // 设置函数 / Setter functions
@@ -47,6 +50,7 @@ export function useVideoConfig(): {
   setVolume: (volume: VideoPlaybackSettings['volume']) => void
   setPlaybackRate: (rate: VideoPlaybackSettings['playbackRate']) => void
   setIsSingleLoop: (loop: VideoPlaybackSettings['isSingleLoop']) => void
+  setLoopSettings: (settings: LoopSettings) => void
   setIsAutoPause: (pause: VideoPlaybackSettings['isAutoPause']) => void
   setSubtitleDisplay: (settings: SubtitleDisplaySettings) => void
   setPlaybackSettings: (
@@ -55,6 +59,7 @@ export function useVideoConfig(): {
       volume: VideoPlaybackSettings['volume']
       playbackRate: VideoPlaybackSettings['playbackRate']
       isSingleLoop: VideoPlaybackSettings['isSingleLoop']
+      loopSettings: LoopSettings
       isAutoPause: VideoPlaybackSettings['isAutoPause']
       subtitleDisplay: SubtitleDisplaySettings
     }>
@@ -68,6 +73,7 @@ export function useVideoConfig(): {
   const volume = useVolume(fileId)
   const playbackRate = usePlaybackRate(fileId)
   const isSingleLoop = useIsSingleLoop(fileId)
+  const loopSettings = useLoopSettings(fileId)
   const isAutoPause = useIsAutoPause(fileId)
   const subtitleDisplay = useSubtitleDisplay(fileId)
 
@@ -77,6 +83,7 @@ export function useVideoConfig(): {
   const setVolumeFn = useSetVolume()
   const setPlaybackRateFn = useSetPlaybackRate()
   const setIsSingleLoopFn = useSetIsSingleLoop()
+  const setLoopSettingsFn = useSetLoopSettings()
   const setIsAutoPauseFn = useSetIsAutoPause()
   const setSubtitleDisplayFn = useSetSubtitleDisplay()
   const setPlaybackSettingsFn = useSetPlaybackSettings()
@@ -94,6 +101,7 @@ export function useVideoConfig(): {
     volume,
     playbackRate,
     isSingleLoop,
+    loopSettings,
     isAutoPause,
     subtitleDisplay,
 
@@ -104,6 +112,7 @@ export function useVideoConfig(): {
       setPlaybackRateFn(fileId, rate),
     setIsSingleLoop: (loop: VideoPlaybackSettings['isSingleLoop']) =>
       setIsSingleLoopFn(fileId, loop),
+    setLoopSettings: (settings: LoopSettings) => setLoopSettingsFn(fileId, settings),
     setIsAutoPause: (pause: VideoPlaybackSettings['isAutoPause']) =>
       setIsAutoPauseFn(fileId, pause),
     setSubtitleDisplay: (settings: SubtitleDisplaySettings) =>
@@ -114,6 +123,7 @@ export function useVideoConfig(): {
         volume: VideoPlaybackSettings['volume']
         playbackRate: VideoPlaybackSettings['playbackRate']
         isSingleLoop: VideoPlaybackSettings['isSingleLoop']
+        loopSettings: LoopSettings
         isAutoPause: VideoPlaybackSettings['isAutoPause']
         subtitleDisplay: SubtitleDisplaySettings
       }>

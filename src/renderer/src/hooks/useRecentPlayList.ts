@@ -46,6 +46,10 @@ export function useRecentPlayList(): UseRecentPlayListReturn {
       volume: 1,
       playbackRate: 1,
       isSingleLoop: false,
+      loopSettings: {
+        mode: 'off',
+        count: 3
+      },
       isAutoPause: false
     },
     update: {

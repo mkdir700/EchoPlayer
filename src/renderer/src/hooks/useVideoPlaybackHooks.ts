@@ -118,15 +118,23 @@ export const useLoopAndAutoPauseControls = (): {
  * 获取当前视频播放设置的 Hook
  */
 export const useCurrentVideoPlaybackSettings = (): VideoPlaybackSettings => {
-  const { displayMode, volume, playbackRate, isSingleLoop, isAutoPause, subtitleDisplay } =
-    useVideoConfig()
+  const {
+    displayMode,
+    volume,
+    playbackRate,
+    isSingleLoop,
+    isAutoPause,
+    subtitleDisplay,
+    loopSettings
+  } = useVideoConfig()
   return {
     displayMode,
     volume,
     playbackRate,
     isSingleLoop,
     isAutoPause,
-    subtitleDisplay
+    subtitleDisplay,
+    loopSettings
   }
 }
 

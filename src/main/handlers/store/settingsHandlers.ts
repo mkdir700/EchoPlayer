@@ -17,6 +17,10 @@ export function setupSettingsHandlers(): void {
           volume: 0.8,
           playbackRate: 1.0,
           isSingleLoop: false,
+          loopSettings: {
+            mode: 'off',
+            count: 3
+          },
           isAutoPause: false
         }
       })
@@ -30,6 +34,10 @@ export function setupSettingsHandlers(): void {
           volume: 0.8,
           playbackRate: 1.0,
           isSingleLoop: false,
+          loopSettings: {
+            mode: 'off',
+            count: 3
+          },
           isAutoPause: false
         }
       }
@@ -49,6 +57,10 @@ export function setupSettingsHandlers(): void {
             volume: 0.8,
             playbackRate: 1.0,
             isSingleLoop: false,
+            loopSettings: {
+              mode: 'off',
+              count: 3
+            },
             isAutoPause: false
           },
           update: {

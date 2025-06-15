@@ -9,6 +9,7 @@ export {
   useVolume,
   usePlaybackRate,
   useIsSingleLoop,
+  useLoopSettings,
   useIsAutoPause,
   useSubtitleDisplay,
   // 设置函数选择器 / Setter function selectors
@@ -16,6 +17,7 @@ export {
   useSetVolume,
   useSetPlaybackRate,
   useSetIsSingleLoop,
+  useSetLoopSettings,
   useSetIsAutoPause,
   useSetSubtitleDisplay,
   useSetPlaybackSettings
