@@ -53,8 +53,7 @@ export function SubtitleListContent(): React.JSX.Element {
 
   // 循环播放相关状态 / Loop playback related state
   const isSingleLoop = useIsSingleLoop(fileId)
-  const loopSettings = useLoopSettings(fileId)
-
+  const { count: loopCount } = useLoopSettings(fileId)
   const {
     subtitleItemsRef,
     isAutoScrollEnabledRef,
