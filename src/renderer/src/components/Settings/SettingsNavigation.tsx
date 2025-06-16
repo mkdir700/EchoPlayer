@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { SETTINGS_SECTIONS } from '@renderer/constants/settings'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { UpdateNotificationBadge } from '@renderer/components/UpdateNotificationBadge/UpdateNotificationBadge'
 import { useIsShowRedDot } from '@renderer/stores/slices/updateNotificationStore'
 

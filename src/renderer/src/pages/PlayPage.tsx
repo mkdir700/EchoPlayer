@@ -3,14 +3,17 @@ import { VideoSection } from '@renderer/components/VideoSection/VideoSection'
 import { SidebarSectionContainer } from '@renderer/components/SidebarSection/SidebarSectionContainer'
 
 // 导入所需的 hooks
-import { useShortcutCommand, useCommandShortcuts } from '@renderer/hooks/useCommandShortcuts'
-import { usePlayStateSaver } from '@renderer/hooks/usePlayStateSaver'
-import { usePlayStateInitializer } from '@renderer/hooks/usePlayStateInitializer'
-import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
-import { usePlaybackSpeedCycleShortcuts } from '@renderer/hooks/useVideoPlaybackHooks'
-import { useTheme } from '@renderer/hooks/useTheme'
+import {
+  useShortcutCommand,
+  useCommandShortcuts
+} from '@renderer/hooks/features/shortcuts/useCommandShortcuts'
+import { usePlayStateSaver } from '@renderer/hooks/features/video/usePlayStateSaver'
+import { usePlayStateInitializer } from '@renderer/hooks/features/video/usePlayStateInitializer'
+import { useVideoControls } from '@renderer/hooks/features/video/useVideoPlayerHooks'
+import { usePlaybackSpeedCycleShortcuts } from '@renderer/hooks/features/video/useVideoPlaybackHooks'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 // 导入测试相关 hooks 和常量 / Import test-related hooks and constants
-import { useTestIds } from '@renderer/hooks/useTestIds'
+import { useTestIds } from '@renderer/hooks/utils/useTestIds'
 import { PLAY_PAGE_ELEMENTS } from '@renderer/utils/test-utils'
 import { CurrentSubtitleDisplayProvider } from '@renderer/contexts/CurrentSubtitleDisplayContext'
 import { useUIStore, useFullscreenMode } from '@renderer/stores'

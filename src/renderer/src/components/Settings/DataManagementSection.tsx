@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Space, Switch, Button, Divider, Typography, message, Input } from 'antd'
 import { DeleteOutlined, FolderOpenOutlined, ReloadOutlined } from '@ant-design/icons'
-import { useAppState } from '@renderer/hooks/useAppState'
-import { useTheme } from '@renderer/hooks/useTheme'
-import { useAppConfig } from '@renderer/hooks/useAppConfig'
+import { useAppState } from '@renderer/hooks/core/useAppState'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
+import { useAppConfig } from '@renderer/hooks/core/useAppConfig'
 import { FileSystemHelper } from '@renderer/utils/fileSystemHelper'
 
 const { Text } = Typography

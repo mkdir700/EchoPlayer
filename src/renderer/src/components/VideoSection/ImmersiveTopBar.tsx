@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react'
 import { Button, Typography, Tooltip } from 'antd'
 import { ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons'
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
-import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
+import { useFullscreenMode } from '@renderer/hooks/features/ui/useFullscreenMode'
 import { useUIStore } from '@renderer/stores'
 import { performanceMonitor } from '@renderer/utils/performance'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 const { Text } = Typography
 

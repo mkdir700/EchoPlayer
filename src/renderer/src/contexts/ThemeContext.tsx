@@ -4,7 +4,7 @@ import type { ThemeConfig } from 'antd'
 import { ThemeContext } from '@renderer/contexts/theme-context'
 import appleTheme, { appleDarkTheme } from '@renderer/styles/theme'
 import type { ThemeCustomization } from '@types_/shared'
-import { useAppConfig } from '@renderer/hooks/useAppConfig'
+import { useAppConfig } from '@renderer/hooks/core/useAppConfig'
 import { defaultThemeCustomization } from '../constants/themeConfig'
 
 // 生成主题配置

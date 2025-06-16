@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import type { ResizeHandleProps } from '../types'
 
 /**

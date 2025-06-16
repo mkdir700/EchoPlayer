@@ -1,6 +1,6 @@
 import React from 'react'
 import { PlaybackControlButtons } from './index'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 interface FullScreenCenterControlsProps {
   isVideoLoaded: boolean

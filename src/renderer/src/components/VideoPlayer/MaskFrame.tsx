@@ -1,10 +1,10 @@
 import React, { useEffect, useCallback, memo } from 'react'
-import type { SubtitleMarginsState } from '@renderer/hooks/useSubtitleState'
-import { useMaskFrame } from '@renderer/hooks/useMaskFrame'
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
-import { useTheme } from '@renderer/hooks/useTheme'
+import type { SubtitleMarginsState } from '@renderer/hooks/features/subtitle/useSubtitleState'
+import { useMaskFrame } from '@renderer/hooks/features/ui/useMaskFrame'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import RendererLogger from '@renderer/utils/logger'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
 
 interface MaskFrameProps {
   maskFrame: SubtitleMarginsState['maskFrame']

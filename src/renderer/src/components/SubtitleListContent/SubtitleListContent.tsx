@@ -6,15 +6,14 @@ import 'react-virtualized/styles.css'
 
 import { SubtitleListItem } from './SubtitleListItem'
 import { formatTime } from '@renderer/utils/helpers'
-import { useTheme } from '@renderer/hooks/useTheme'
-import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
+import { useSubtitleListContext } from '@renderer/hooks/core/useSubtitleListContext'
 
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubtitleDisplayContext'
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
+import { useVideoPlayerContext } from '@renderer/hooks/core/useVideoPlayerContext'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
 import { AimButton } from './AimButton'
 import { RendererLogger } from '@renderer/utils/logger'
-import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { useVideoControls } from '@renderer/hooks/features/video/useVideoPlayerHooks'
 import { SPACING, FONT_SIZES } from '@renderer/styles/theme'
 import { SubtitleEmptyState } from './SubtitleEmptyState'
 import { useIsSingleLoop, useLoopSettings } from '@renderer/stores/slices/videoConfigStore'
@@ -48,7 +47,6 @@ export function SubtitleListContent(): React.JSX.Element {
   const subtitleListContext = useSubtitleListContext()
   const { seekTo } = useVideoControls()
   const { currentTimeRef, subscribeToTime } = useVideoPlayerContext()
-  const { setSubtitleByIndex } = useCurrentSubtitleDisplayContext()
   const { fileId } = usePlayingVideoContext()
 
   // 循环播放相关状态 / Loop playback related state
@@ -101,11 +99,11 @@ export function SubtitleListContent(): React.JSX.Element {
         targetTime: time,
         subtitleIndex: index,
         isSingleLoop,
-        loopCount: loopSettings?.count
+        loopCount
       })
 
       // 立即显示点击的字幕 / Immediately display the clicked subtitle
-      setSubtitleByIndex(index)
+      setCurrentSubtitleIndex(index)
 
       // 跳转到指定时间点 / Jump to the specified time
       seekTo(time)
@@ -120,7 +118,7 @@ export function SubtitleListContent(): React.JSX.Element {
         })
       }
     },
-    [setSubtitleByIndex, seekTo, isSingleLoop, fileId, loopSettings]
+    [setCurrentSubtitleIndex, seekTo, isSingleLoop, fileId, loopCount]
   )
 
   // 计算可视区域内的行数

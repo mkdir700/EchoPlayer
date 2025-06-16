@@ -3,16 +3,16 @@ import React, { useMemo, useRef, memo, Suspense } from 'react'
 const WordCard = React.lazy(() =>
   import('@renderer/components/WordCard/WordCard').then((module) => ({ default: module.WordCard }))
 )
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
-import { useVideoSubtitleState } from '@renderer/hooks/useVideoSubtitleState'
-import { useSubtitleDragAndResize } from '@renderer/hooks/useSubtitleDragAndResize'
-import { useSubtitleStyles } from '@renderer/hooks/useSubtitleStyles'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
+import { useSubtitleDragAndResize } from '@renderer/hooks/features/subtitle/useSubtitleDragAndResize'
+import { useVideoSubtitleState } from '@renderer/hooks/features/video/useVideoSubtitleState'
+import { useSubtitleStyles } from '@renderer/hooks/features/subtitle/useSubtitleStyles'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { SubtitleContent } from './SubtitleContent'
 import { MaskFrame } from './MaskFrame'
 import { SubtitleContextMenu } from './SubtitleContextMenu'
 import RendererLogger from '@renderer/utils/logger'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
 
 import { MaskOverlay, ResizeHandle } from './SubtitleV3/subcomponents'
 import { useWindowDimensions, useSubtitleEventHandlers } from './SubtitleV3/hooks'

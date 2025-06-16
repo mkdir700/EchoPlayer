@@ -5,7 +5,7 @@
 
 import React from 'react'
 import { Typography } from 'antd'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 const { Text } = Typography
 

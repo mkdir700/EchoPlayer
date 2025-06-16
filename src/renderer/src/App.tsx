@@ -24,9 +24,9 @@ import { ShortcutProvider } from '@renderer/contexts/ShortcutContext'
 import { PlayingVideoProvider } from '@renderer/contexts/PlayingVideoContext'
 import { SubtitleListProvider } from '@renderer/contexts/SubtitleListContext'
 import { VideoPlayerProvider } from '@renderer/contexts/VideoPlayerContext'
-import { useSubtitleReset } from '@renderer/hooks/useSubtitleReset'
+import { useSubtitleReset } from '@renderer/hooks/features/subtitle/useSubtitleReset'
 import { ThemeProvider } from '@renderer/contexts/ThemeContext'
-import { useAppConfig } from '@renderer/hooks/useAppConfig'
+import { useAppConfig } from '@renderer/hooks/core/useAppConfig'
 
 // 导入类型
 import { PageType } from '@renderer/types'

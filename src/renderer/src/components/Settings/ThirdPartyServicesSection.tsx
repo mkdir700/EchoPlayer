@@ -16,7 +16,7 @@ import type {
   ThirdPartyServicesSettings
 } from '@renderer/types'
 import { DictionaryServiceFactory } from '@renderer/utils/dictionaryServices'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 const { Text, Link } = Typography
 

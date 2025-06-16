@@ -8,8 +8,8 @@ import {
   LeftOutlined,
   RightOutlined
 } from '@ant-design/icons'
-import { useVideoPlayState } from '@renderer/hooks/useVideoPlayerHooks'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useVideoPlayState } from '@renderer/hooks/features/video/useVideoPlayerHooks'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 interface PlaybackControlButtonsProps {
   isVideoLoaded: boolean

@@ -1,4 +1,4 @@
-import { useUpdateNotificationIPC } from '../hooks/useUpdateNotificationIPC'
+import { useUpdateNotificationIPC } from '@renderer/hooks/features/system/useUpdateNotificationIPC'
 import React from 'react'
 
 /**

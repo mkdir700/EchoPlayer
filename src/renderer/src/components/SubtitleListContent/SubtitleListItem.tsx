@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 import { Typography } from 'antd'
 import { SubtitleListItemProps } from '@renderer/types'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { COMPONENT_TOKENS } from '@renderer/styles/theme'
 
 const { Text } = Typography

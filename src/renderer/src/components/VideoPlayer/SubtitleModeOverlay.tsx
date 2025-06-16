@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useTheme } from '@renderer/hooks/useTheme'
-import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
+import { useFullscreenMode } from '@renderer/hooks/features/ui/useFullscreenMode'
 import type { DisplayMode } from '@renderer/types'
 
 interface SubtitleModeOverlayProps {

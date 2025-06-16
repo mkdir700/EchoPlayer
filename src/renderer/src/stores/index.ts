@@ -49,4 +49,4 @@ export type {
 } from './types'
 
 // Export hooks
-export { useFullscreenMode } from '../hooks/useFullscreenMode'
+export { useFullscreenMode } from '../hooks/features/ui/useFullscreenMode'

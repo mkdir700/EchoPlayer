@@ -1,5 +1,5 @@
 import React from 'react'
-import { useCurrentSubtitleDisplay } from '../hooks/useCurrentSubtitleDisplay'
+import { useCurrentSubtitleDisplay } from '@renderer/hooks/features/subtitle/useCurrentSubtitleDisplay'
 import {
   CurrentSubtitleDisplayContext,
   type ICurrentSubtitleDisplayContextType

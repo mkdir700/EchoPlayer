@@ -1,5 +1,5 @@
 import React, { useMemo, memo } from 'react'
-import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubtitleDisplayContext'
+import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/core/useCurrentSubtitleDisplayContext'
 import {
   OriginalSubtitleText,
   ChineseSubtitleText,
@@ -7,7 +7,7 @@ import {
   BilingualSubtitleLine
 } from './'
 
-import { useSubtitleDisplayModeControls } from '@renderer/hooks/useSubtitleDisplayMode'
+import { useSubtitleDisplayModeControls } from '@renderer/hooks/features/subtitle/useSubtitleDisplayMode'
 
 interface SubtitleContentProps {
   dynamicTextStyle: React.CSSProperties

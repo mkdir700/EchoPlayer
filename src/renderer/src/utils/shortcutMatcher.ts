@@ -1,4 +1,4 @@
-import { DEFAULT_SHORTCUTS } from '../hooks/useShortcutManager'
+import { DEFAULT_SHORTCUTS } from '../hooks/features/shortcuts/useShortcutManager'
 
 /**
  * 检查按键事件是否匹配指定的快捷键

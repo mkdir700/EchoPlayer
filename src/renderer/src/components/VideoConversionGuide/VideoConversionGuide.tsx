@@ -2,7 +2,7 @@ import React from 'react'
 import { Modal, Typography, Space, Button, Divider, Alert } from 'antd'
 import { CopyOutlined, DownloadOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { message } from 'antd'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 const { Title, Text, Paragraph } = Typography
 

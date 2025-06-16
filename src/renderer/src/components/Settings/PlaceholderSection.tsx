@@ -1,6 +1,6 @@
 import React from 'react'
 import { Card, Typography } from 'antd'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 const { Text } = Typography
 

@@ -11,7 +11,7 @@ import {
   isClickableWord,
   cleanWordText
 } from '@renderer/utils/subtitleTextProcessing'
-import { useSubtitleTextSelection } from '@renderer/hooks/useSubtitleTextSelection'
+import { useSubtitleTextSelection } from '@renderer/hooks/features/subtitle/useSubtitleTextSelection'
 
 export interface TextRendererProps {
   text: string
@@ -42,19 +42,35 @@ export const TextRenderer: React.FC<TextRendererProps> = ({
   const shouldSplitByCharacters = enableTextSelection && isChinese
   const words = shouldSplitByCharacters ? originalWords : originalWords
 
+  // 使用 useCallback 包装 onSelectionChange 以避免不必要的重新创建
+  // Use useCallback to wrap onSelectionChange to avoid unnecessary recreation
+  const stableOnSelectionChange = React.useCallback(
+    (selectedText: string) => {
+      if (enableTextSelection && onSelectionChange) {
+        onSelectionChange(selectedText)
+      }
+    },
+    [enableTextSelection, onSelectionChange]
+  )
+
   // 始终调用 hook，但根据 enableTextSelection 决定是否使用
   // Always call hook, but use based on enableTextSelection
   const textSelection = useSubtitleTextSelection(
     words,
-    enableTextSelection ? onSelectionChange : undefined
+    enableTextSelection ? stableOnSelectionChange : undefined
   )
+
+  // 使用 ref 来存储 clearSelection 函数，避免依赖问题
+  // Use ref to store clearSelection function to avoid dependency issues
+  const clearSelectionRef = React.useRef(textSelection.clearSelection)
+  clearSelectionRef.current = textSelection.clearSelection
 
   // 当文本变化时，清除选择状态 / Clear selection when text changes
   React.useEffect(() => {
     if (enableTextSelection) {
-      textSelection.clearSelection()
+      clearSelectionRef.current()
     }
-  }, [text, enableTextSelection, textSelection.clearSelection])
+  }, [text, enableTextSelection])
 
   if (!enableTextSelection) {
     return <>{splitTextWithTheme(text, onWordHover, onWordClick)}</>

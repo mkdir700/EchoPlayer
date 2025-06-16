@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button } from 'antd'
 import { PlayCircleOutlined } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 interface FullScreenCenterPlayButtonProps {
   isPlaying: boolean

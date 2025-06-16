@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
 import type {
   MouseInteractionState,
   MouseInteractionHandlers,

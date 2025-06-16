@@ -33,7 +33,9 @@ describe('SubtitleOverlay Component / SubtitleOverlay 组件', () => {
   })
 
   it('should render SubtitleV3 when display mode is not "none" / 当显示模式不是"none"时应该渲染SubtitleV3', async () => {
-    const { useSubtitleDisplayMode } = await import('@renderer/hooks/useVideoPlaybackHooks')
+    const { useSubtitleDisplayMode } = await import(
+      '@renderer/hooks/features/video/useVideoPlaybackHooks'
+    )
     vi.mocked(useSubtitleDisplayMode).mockReturnValue('bilingual')
 
     const { getByTestId, container } = render(<SubtitleOverlay {...defaultProps} />)
@@ -57,7 +59,9 @@ describe('SubtitleOverlay Component / SubtitleOverlay 组件', () => {
   })
 
   it('should not render SubtitleV3 when display mode is "none" / 当显示模式是"none"时不应该渲染SubtitleV3', async () => {
-    const { useSubtitleDisplayMode } = await import('@renderer/hooks/useVideoPlaybackHooks')
+    const { useSubtitleDisplayMode } = await import(
+      '@renderer/hooks/features/video/useVideoPlaybackHooks'
+    )
     vi.mocked(useSubtitleDisplayMode).mockReturnValue('none')
 
     const { queryByTestId, container } = render(<SubtitleOverlay {...defaultProps} />)
@@ -84,7 +88,9 @@ describe('SubtitleOverlay Component / SubtitleOverlay 组件', () => {
   it.each(['original', 'chinese', 'english', 'bilingual'] as DisplayMode[])(
     'should render SubtitleV3 for display mode "%s" / 应该为显示模式"%s"渲染SubtitleV3',
     async (mode) => {
-      const { useSubtitleDisplayMode } = await import('@renderer/hooks/useVideoPlaybackHooks')
+      const { useSubtitleDisplayMode } = await import(
+        '@renderer/hooks/features/video/useVideoPlaybackHooks'
+      )
       vi.mocked(useSubtitleDisplayMode).mockReturnValue(mode)
 
       const { getByTestId } = render(<SubtitleOverlay {...defaultProps} />)
@@ -94,7 +100,9 @@ describe('SubtitleOverlay Component / SubtitleOverlay 组件', () => {
   )
 
   it('should pass correct props to SubtitleV3 when rendered / 渲染时应该向SubtitleV3传递正确的props', async () => {
-    const { useSubtitleDisplayMode } = await import('@renderer/hooks/useVideoPlaybackHooks')
+    const { useSubtitleDisplayMode } = await import(
+      '@renderer/hooks/features/video/useVideoPlaybackHooks'
+    )
     vi.mocked(useSubtitleDisplayMode).mockReturnValue('bilingual')
 
     const onWordHover = vi.fn()
@@ -113,7 +121,9 @@ describe('SubtitleOverlay Component / SubtitleOverlay 组件', () => {
   })
 
   it('should log debug message when display mode is "none" / 当显示模式是"none"时应该记录调试信息', async () => {
-    const { useSubtitleDisplayMode } = await import('@renderer/hooks/useVideoPlaybackHooks')
+    const { useSubtitleDisplayMode } = await import(
+      '@renderer/hooks/features/video/useVideoPlaybackHooks'
+    )
     const RendererLogger = await import('@renderer/utils/logger')
 
     vi.mocked(useSubtitleDisplayMode).mockReturnValue('none')
@@ -126,7 +136,9 @@ describe('SubtitleOverlay Component / SubtitleOverlay 组件', () => {
   })
 
   it('should log component render with display mode / 应该记录组件渲染和显示模式', async () => {
-    const { useSubtitleDisplayMode } = await import('@renderer/hooks/useVideoPlaybackHooks')
+    const { useSubtitleDisplayMode } = await import(
+      '@renderer/hooks/features/video/useVideoPlaybackHooks'
+    )
     const RendererLogger = await import('@renderer/utils/logger')
 
     vi.mocked(useSubtitleDisplayMode).mockReturnValue('chinese')
@@ -140,7 +152,9 @@ describe('SubtitleOverlay Component / SubtitleOverlay 组件', () => {
   })
 
   it('should be memoized correctly / 应该正确被记忆化', async () => {
-    const { useSubtitleDisplayMode } = await import('@renderer/hooks/useVideoPlaybackHooks')
+    const { useSubtitleDisplayMode } = await import(
+      '@renderer/hooks/features/video/useVideoPlaybackHooks'
+    )
     vi.mocked(useSubtitleDisplayMode).mockReturnValue('bilingual')
 
     const { rerender } = render(<SubtitleOverlay {...defaultProps} />)

@@ -16,9 +16,9 @@ import {
   useIsSingleLoop,
   useSetIsSingleLoop
 } from '@renderer/stores/slices/videoConfigStore'
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { useVideoPlayerContext } from '@renderer/hooks/core/useVideoPlayerContext'
+import { useSubtitleListContext } from '@renderer/hooks/core/useSubtitleListContext'
+import { useVideoControls } from '@renderer/hooks/features/video/useVideoPlayerHooks'
 import type { LoopSettings, SubtitleItem } from '@types_/shared'
 import { RendererLogger } from '@renderer/utils/logger'
 import {

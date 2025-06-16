@@ -1,5 +1,5 @@
 import React from 'react'
-import { useVideoFile } from '../hooks/useVideoFile'
+import { useVideoFile } from '@renderer/hooks/features/video/useVideoFile'
 import { PlayingVideoContext, type IPlayingVideoContextType } from './playing-video-context'
 
 export function PlayingVideoProvider({

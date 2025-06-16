@@ -1,9 +1,9 @@
 import React, { memo, useState } from 'react'
 import { Dropdown, Button, Tooltip, Slider, Switch } from 'antd'
 import { EyeInvisibleOutlined, EyeOutlined, CloseOutlined } from '@ant-design/icons'
-import { BACKGROUND_TYPES } from '@renderer/hooks/useSubtitleState'
+import { BACKGROUND_TYPES } from '@renderer/hooks/features/subtitle/useSubtitleState'
 import { useUIStore } from '@renderer/stores/slices/uiStore'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
 
 interface SubtitleContextMenuProps {
   visible: boolean

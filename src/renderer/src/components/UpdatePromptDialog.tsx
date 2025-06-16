@@ -10,8 +10,8 @@ import {
   DownOutlined,
   UpOutlined
 } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
-import { useResponsiveDialog } from '@renderer/hooks/useResponsiveDialog'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
+import { useResponsiveDialog } from '@renderer/hooks/features/ui/useResponsiveDialog'
 import { FONT_WEIGHTS } from '@renderer/styles/theme'
 import {
   UpdatePromptDialogProps,

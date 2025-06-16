@@ -1,8 +1,8 @@
 import React from 'react'
 import { Button, Tooltip } from 'antd'
 import { FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons'
-import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useFullscreenMode } from '@renderer/hooks/features/ui/useFullscreenMode'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 interface FullscreenButtonProps {
   variant?: 'compact' | 'fullscreen' // 新增：支持不同的显示模式

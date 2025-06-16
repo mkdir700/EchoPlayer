@@ -1,10 +1,10 @@
 import React, { useCallback, useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { Button, Tooltip, Typography } from 'antd'
 import { SoundOutlined, SoundFilled } from '@ant-design/icons'
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
-import { useShortcutCommand } from '@renderer/hooks/useCommandShortcuts'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useVideoPlayerContext } from '@renderer/hooks/core/useVideoPlayerContext'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
+import { useShortcutCommand } from '@renderer/hooks/features/shortcuts/useCommandShortcuts'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { VOLUME_SETTINGS } from '@renderer/constants'
 const { Text } = Typography
 

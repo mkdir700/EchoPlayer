@@ -1,7 +1,7 @@
 import { UnlockOutlined } from '@ant-design/icons'
 import { AimOutlined } from '@ant-design/icons'
 import { Button } from 'antd'
-import { useSubtitleList } from '@renderer/hooks/useSubtitleList'
+import { useSubtitleList } from '@renderer/hooks/features/subtitle/useSubtitleList'
 
 export function AimButton(): React.JSX.Element {
   const { isAutoScrollEnabledRef, enableAutoScroll, disableAutoScroll } = useSubtitleList()

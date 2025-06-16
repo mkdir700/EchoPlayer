@@ -1,8 +1,11 @@
 import React from 'react'
 import { Button, Tooltip } from 'antd'
 import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
-import { BACKGROUND_TYPES, type BackgroundType } from '@renderer/hooks/useSubtitleState'
-import { useTheme } from '@renderer/hooks/useTheme'
+import {
+  BACKGROUND_TYPES,
+  type BackgroundType
+} from '@renderer/hooks/features/subtitle/useSubtitleState'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 interface SubtitleControlsProps {
   isMaskMode: boolean

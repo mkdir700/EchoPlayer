@@ -3,7 +3,7 @@ import { Slider, Typography } from 'antd'
 import type { VideoControlsProps } from '@renderer/types'
 
 // 导入主题样式
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 // 导入控制按钮组件
 import {
@@ -16,9 +16,9 @@ import {
   FullscreenButton,
   SettingsButton
 } from './controls'
-import { useVideoControls, useVideoTime } from '@renderer/hooks/useVideoPlayerHooks'
-import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
+import { useVideoControls, useVideoTime } from '@renderer/hooks/features/video/useVideoPlayerHooks'
+import { useSubtitleControl } from '@renderer/hooks/features/subtitle/useSubtitleControl'
+import { useVideoPlayerContext } from '@renderer/hooks/core/useVideoPlayerContext'
 
 const { Text } = Typography
 

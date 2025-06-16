@@ -1,4 +1,4 @@
-import { DEFAULT_SHORTCUTS } from '../hooks/useShortcutManager'
+import { DEFAULT_SHORTCUTS } from '../hooks/features/shortcuts/useShortcutManager'
 
 /**
  * 快捷键冲突检测结果

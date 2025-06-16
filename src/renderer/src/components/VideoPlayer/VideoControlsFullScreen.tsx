@@ -7,9 +7,12 @@ import {
   FullScreenCenterPlayButton
 } from './controls'
 // 导入必要的 hooks
-import { useVideoPlayState, useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
-import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
-import { useTheme } from '@renderer/hooks/useTheme'
+import {
+  useVideoPlayState,
+  useVideoControls
+} from '@renderer/hooks/features/video/useVideoPlayerHooks'
+import { useSubtitleControl } from '@renderer/hooks/features/subtitle/useSubtitleControl'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import type { VideoControlsProps } from '@renderer/types'
 
 // 扩展接口以包含 showControls 属性（全屏模式特有）

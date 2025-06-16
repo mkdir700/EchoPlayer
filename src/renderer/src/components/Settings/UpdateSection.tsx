@@ -18,7 +18,7 @@ import {
   WarningOutlined,
   ExperimentOutlined
 } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { UpdateNotificationBadge } from '@renderer/components/UpdateNotificationBadge/UpdateNotificationBadge'
 import { useUpdateNotificationStore } from '@renderer/stores'
 import { useIsShowRedDot } from '@renderer/stores/slices/updateNotificationStore'

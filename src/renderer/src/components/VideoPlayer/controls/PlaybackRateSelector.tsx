@@ -2,14 +2,14 @@ import React, { useCallback, useState, useEffect, useLayoutEffect, useRef } from
 import { createPortal } from 'react-dom'
 import { Button, Tooltip, Checkbox, Space } from 'antd'
 import { ThunderboltOutlined } from '@ant-design/icons'
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { useTheme } from '@renderer/hooks/useTheme'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useVideoPlayerContext } from '@renderer/hooks/core/useVideoPlayerContext'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
 import {
   useSelectedPlaybackRates,
   useSetSelectedPlaybackRates
 } from '@renderer/stores/slices/videoConfigStore'
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
 
 interface PlaybackRateSelectorProps {
   isVideoLoaded: boolean

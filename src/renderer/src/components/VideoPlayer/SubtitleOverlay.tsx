@@ -1,6 +1,6 @@
 import React, { memo } from 'react'
 import { SubtitleV3 } from './SubtitleV3'
-import { useSubtitleDisplayMode } from '@renderer/hooks/useVideoPlaybackHooks'
+import { useSubtitleDisplayMode } from '@renderer/hooks/features/video/useVideoPlaybackHooks'
 import RendererLogger from '@renderer/utils/logger'
 
 interface SubtitleOverlayProps {

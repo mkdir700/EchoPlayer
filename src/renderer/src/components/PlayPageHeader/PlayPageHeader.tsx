@@ -2,8 +2,8 @@ import React, { useCallback } from 'react'
 import { Button, Typography, Tooltip } from 'antd'
 import { ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons'
 import { performanceMonitor } from '@renderer/utils/performance'
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { useUIStore } from '@renderer/stores'
 
 const { Text } = Typography
