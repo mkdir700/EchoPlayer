@@ -9,7 +9,7 @@ vi.mock('@renderer/components/VideoPlayer/SubtitleV3', () => ({
 }))
 
 // Mock the useSubtitleDisplayMode hook / 模拟useSubtitleDisplayMode hook
-vi.mock('@renderer/hooks/useVideoPlaybackHooks', () => ({
+vi.mock('@renderer/hooks/features/video/useVideoPlaybackHooks', () => ({
   useSubtitleDisplayMode: vi.fn()
 }))
 
