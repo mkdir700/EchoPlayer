@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { DEFAULT_SHORTCUTS } from '../hooks/useShortcutManager'
+import { DEFAULT_SHORTCUTS } from '@renderer/hooks/features/shortcuts/useShortcutManager'
 import { ShortcutContext, type ShortcutContextType } from './shortcut-context'
-import { matchesShortcut as matchesShortcutUtil } from '../utils/shortcutMatcher'
+import { matchesShortcut as matchesShortcutUtil } from '@renderer/utils/shortcutMatcher'
 
 export function ShortcutProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [shortcuts, setShortcuts] = useState<Record<string, string>>(() => {

@@ -1,5 +1,5 @@
+import { UseSubtitleListReturn } from '@renderer/hooks/features/subtitle/useSubtitleList'
 import { createContext } from 'react'
-import { UseSubtitleListReturn } from '@renderer/hooks/useSubtitleList'
 
 // * 字幕列表上下文类型
 export interface ISubtitleListContextType extends UseSubtitleListReturn {}

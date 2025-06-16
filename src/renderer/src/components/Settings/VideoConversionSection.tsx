@@ -12,7 +12,7 @@ import {
   generateCompatibilityReport,
   type VideoCompatibilityReport
 } from '@renderer/utils/videoCompatibility'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 const { Title, Text, Paragraph } = Typography
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, Typography, Badge, Button } from 'antd'
 import { UpOutlined, DownOutlined, FullscreenOutlined } from '@ant-design/icons'
 import { useUIStore } from '@renderer/stores'
-import { useShortcuts } from '@renderer/hooks/useShortcuts'
+import { useShortcuts } from '@renderer/hooks/features/shortcuts/useShortcuts'
 
 const { Text } = Typography
 

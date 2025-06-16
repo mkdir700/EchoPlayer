@@ -1,5 +1,5 @@
 import React from 'react'
-import { useSubtitleList } from '../hooks/useSubtitleList'
+import { useSubtitleList } from '@renderer/hooks/features/subtitle/useSubtitleList'
 import { SubtitleListContext, type ISubtitleListContextType } from './subtitle-list-context'
 
 export function SubtitleListProvider({

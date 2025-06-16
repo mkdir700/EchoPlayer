@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { Button, message, Input, Typography, Modal } from 'antd'
 import type { InputRef } from 'antd'
 import { EditOutlined, CloseOutlined, KeyOutlined } from '@ant-design/icons'
-import { useShortcuts } from '@renderer/hooks/useShortcuts'
-import { DEFAULT_SHORTCUTS } from '@renderer/hooks/useShortcutManager'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useShortcuts } from '@renderer/hooks/features/shortcuts/useShortcuts'
+import { DEFAULT_SHORTCUTS } from '@renderer/hooks/features/shortcuts/useShortcutManager'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import {
   checkSingleShortcutConflict,
   validateShortcuts,

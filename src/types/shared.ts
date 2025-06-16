@@ -82,12 +82,18 @@ export interface SubtitleDisplaySettings {
   maskFrame: MaskFrame
 }
 
+// 循环设置接口 / Loop settings interface
+export interface LoopSettings {
+  count: number // 循环次数：-1=无限循环，2-50=指定次数循环 / Loop count: -1=infinite loop, 2-50=specific count loop
+}
+
 // 视频级别的播放设置接口
 export interface VideoPlaybackSettings {
   displayMode: 'none' | 'original' | 'chinese' | 'english' | 'bilingual' // 字幕显示模式
   volume: number // 音量设置
   playbackRate: number // 播放速度
-  isSingleLoop: boolean // 单句循环
+  isSingleLoop: boolean // 单句循环（保持向后兼容）
+  loopSettings: LoopSettings // 新的循环设置
   isAutoPause: boolean // 自动暂停
   subtitleDisplay?: SubtitleDisplaySettings // 字幕显示配置
 }
@@ -117,7 +123,8 @@ export interface GlobalPlaybackSettings {
   displayMode: 'none' | 'original' | 'chinese' | 'english' | 'bilingual' // 字幕显示模式
   volume: number // 音量
   playbackRate: number // 播放速度
-  isSingleLoop: boolean // 单句循环
+  isSingleLoop: boolean // 单句循环（保持向后兼容）
+  loopSettings: LoopSettings // 新的循环设置
   isAutoPause: boolean // 自动暂停
 }
 

@@ -1,6 +1,6 @@
 import React from 'react'
 import { LoopToggleButton, AutoPauseButton, SubtitleModeSelector } from './index'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 interface FullScreenLeftControlsProps {
   isVideoLoaded: boolean

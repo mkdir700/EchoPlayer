@@ -1,14 +1,11 @@
-import React, { useCallback, useEffect, useRef } from 'react'
-import { Button, Tooltip } from 'antd'
-import { ReloadOutlined } from '@ant-design/icons'
-import { useSubtitleControl } from '@renderer/hooks/useSubtitleControl'
-import { useTheme } from '@renderer/hooks/useTheme'
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
-import type { SubtitleItem } from '@types_/shared'
-import RendererLogger from '@renderer/utils/logger'
-import { useIsSingleLoop } from '@renderer/hooks/useVideoPlaybackHooks'
+import React from 'react'
+import { Button, Tooltip, Dropdown } from 'antd'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
+import { LoopIcon } from './LoopIcon'
+import { CustomLoopCountModal } from './CustomLoopCountModal'
+import { useLoopToggle } from './hooks/useLoopToggle'
+import { loopToggleActions } from './reducers/loopToggleReducer'
 
 interface LoopToggleButtonProps {
   isVideoLoaded: boolean
@@ -16,166 +13,154 @@ interface LoopToggleButtonProps {
 }
 
 /**
- * Renders a button that toggles single-sentence loop playback for subtitles in a video player.
+ * 循环播放切换按钮组件，支持多种循环模式和循环次数设置
+ * Loop toggle button component with support for multiple loop modes and count settings
  *
- * When enabled, the video will repeatedly loop the currently active subtitle segment. The button is disabled if the video is not loaded, and its appearance reflects the current loop state.
+ * 功能特性 / Features:
+ * - 支持关闭、单句循环、指定次数循环三种模式 / Supports off, single loop, and count loop modes
+ * - 在图标中央显示循环次数或无限符号 / Displays loop count or infinity symbol in icon center
+ * - 实时更新剩余循环次数 / Real-time updates of remaining loop count
+ * - 支持紧凑和全屏两种显示变体 / Supports compact and fullscreen display variants
+ * - 关注点分离：UI渲染与状态管理分离 / Separation of concerns: UI rendering separated from state management
  *
- * @param isVideoLoaded - Indicates whether the video is loaded and ready for interaction.
- * @param variant - Display variant: 'compact' for compact mode, 'fullscreen' for fullscreen mode.
- * @param className - Optional CSS class name to override default styles.
- * @returns The loop toggle button component.
+ * @param isVideoLoaded - 视频是否已加载 / Whether the video is loaded
+ * @param variant - 显示变体：'compact' 紧凑模式，'fullscreen' 全屏模式 / Display variant
+ * @returns 循环切换按钮组件 / Loop toggle button component
  */
 export function LoopToggleButton({
   isVideoLoaded,
   variant = 'compact'
 }: LoopToggleButtonProps): React.JSX.Element {
   const { styles } = useTheme()
-  const isLoopingDisplay = useIsSingleLoop()
-  console.log('🔄 LoopToggleButton 渲染, isLoopingDisplay:', isLoopingDisplay)
-  const subtitleControl = useSubtitleControl()
-  // const [isLoopingDisplay, setIsLoopingDisplay] = useState(settings.isSingleLoop)
-  // 单句循环相关状态
-  const { currentTimeRef, isPlayingRef, isVideoLoadedRef, subscribeToTime } =
-    useVideoPlayerContext()
-  const { subtitleItemsRef } = useSubtitleListContext()
-  const { seekTo } = useVideoControls()
+  const { fileId } = usePlayingVideoContext()
 
-  const handleLoopToggle = useCallback(() => {
-    subtitleControl.toggleSingleLoop()
-  }, [subtitleControl])
+  // 使用简化的统一 hook 管理所有状态和逻辑 / Use simplified unified hook to manage all state and logic
+  const {
+    // UI 状态 / UI state
+    remainingCount,
+    isMenuOpen,
+    isCustomModalOpen,
+    loopSettings,
+    isSingleLoop,
 
-  // 内部状态管理
-  const singleLoopSubtitleRef = useRef<SubtitleItem | null>(null)
-  const lastLoopTimeRef = useRef<number>(0)
+    // 事件处理器 / Event handlers
+    handleLoopToggle,
+    handleCountChange,
+    handleContextMenu,
+    handleMenuOpenChange,
+    handleCustomModalConfirm,
+    handleCustomModalCancel,
 
-  // 当前字幕索引的计算函数
-  const getCurrentSubtitleIndex = useCallback((): number => {
-    const currentTime = currentTimeRef.current || 0
-    const allSubtitles = subtitleItemsRef.current || []
+    // 内部方法 / Internal methods
+    dispatch
+  } = useLoopToggle(fileId || '')
 
-    for (let i = 0; i < allSubtitles.length; i++) {
-      const subtitle = allSubtitles[i]
-      if (currentTime >= subtitle.startTime && currentTime <= subtitle.endTime) {
-        return i
-      }
-    }
-    return -1
-  }, [currentTimeRef, subtitleItemsRef])
-
-  // 处理单句循环逻辑
-  useEffect(() => {
-    console.log('🔄 LoopToggleButton useEffect 触发: isLooping =', isLoopingDisplay)
-    if (!isLoopingDisplay) {
-      // 清理状态
-      singleLoopSubtitleRef.current = null
-      lastLoopTimeRef.current = 0
-      console.log('🔄 清理单句循环状态')
-      return
-    }
-
-    console.log('🔄 开始设置单句循环监听器')
-
-    const handleTimeUpdate = (currentTime: number): void => {
-      if (!isLoopingDisplay || !isVideoLoadedRef.current || !isPlayingRef.current) {
-        return
-      }
-
-      if (singleLoopSubtitleRef.current) {
-        const loopSubtitle = singleLoopSubtitleRef.current
-
-        if (currentTime > loopSubtitle.endTime) {
-          const now = Date.now()
-          if (!isLoopingDisplay || now - lastLoopTimeRef.current < 500) {
-            return
-          }
-
-          console.log('🔄 单句循环触发：跳回字幕开始', {
-            currentTime,
-            endTime: loopSubtitle.endTime,
-            startTime: loopSubtitle.startTime,
-            text: loopSubtitle.text
-          })
-
-          lastLoopTimeRef.current = now
-
-          seekTo(loopSubtitle.startTime)
-        }
-      } else {
-        const currentIndex = getCurrentSubtitleIndex()
-        const currentSubtitle = subtitleItemsRef.current?.[currentIndex]
-
-        if (currentIndex >= 0 && currentSubtitle) {
-          singleLoopSubtitleRef.current = currentSubtitle
-          console.log('🔄 单句循环：自动锁定当前字幕', {
-            index: currentIndex,
-            text: currentSubtitle.text,
-            startTime: currentSubtitle.startTime,
-            endTime: currentSubtitle.endTime
-          })
-        }
-      }
-    }
-
-    const unsubscribe = subscribeToTime(handleTimeUpdate)
-    return unsubscribe
-  }, [
-    isLoopingDisplay,
-    seekTo,
-    subscribeToTime,
-    getCurrentSubtitleIndex,
-    subtitleItemsRef,
-    isVideoLoadedRef,
-    isPlayingRef,
-    subtitleControl
-  ])
+  // 循环播放逻辑现在由 useLoopToggle hook 内部处理 / Loop playback logic is now handled internally by useLoopToggle hook
 
   // 根据变体类型选择样式 / Choose styles based on variant type
   const getButtonStyles = (): React.CSSProperties => {
+    const isActive = isSingleLoop
+
     if (variant === 'fullscreen') {
       // 全屏模式使用主题系统样式 / Fullscreen mode uses theme system styles
       return {
         ...styles.fullscreenControlBtn,
-        ...(isLoopingDisplay ? styles.fullscreenControlBtnActive : {})
+        ...(isActive ? styles.fullscreenControlBtnActive : {})
       }
     }
 
     // 默认紧凑模式样式 / Default compact mode styles
     return {
       ...styles.controlBtn,
-      ...(isLoopingDisplay ? styles.controlBtnActive : {})
+      ...(isActive ? styles.controlBtnActive : {})
     }
   }
 
-  // 获取按钮的CSS类名 / Get button CSS class name
-  const getButtonClassName = (): string => {
-    // 不再需要处理 className 和 active 类名，完全依赖主题系统
-    return ''
+  // 获取提示文本 / Get tooltip text
+  const getTooltipTitle = (): string => {
+    if (!isSingleLoop) {
+      return '开启循环播放'
+    } else {
+      const loopType = loopSettings.count === -1 ? '无限循环' : `${loopSettings.count}次循环`
+      return `关闭循环播放 (当前: ${loopType})`
+    }
   }
 
-  RendererLogger.info('LoopToggleButton', {
-    isLooping: isLoopingDisplay,
-    isVideoLoaded,
-    variant,
-    isPlaying: isPlayingRef.current,
-    currentTime: currentTimeRef.current,
-    subtitleItems: subtitleItemsRef.current
-  })
+  // 调试信息已移至内部 hook 中 / Debug info moved to internal hooks
+
+  // 创建菜单项 / Create menu items
+  const menuItems = [
+    {
+      key: 'count-title',
+      label: '设置循环次数',
+      disabled: true
+    },
+    {
+      key: 'infinite',
+      label: `无限循环${loopSettings.count === -1 ? ' ✓' : ''}`,
+      onClick: () => {
+        handleCountChange(-1)
+        dispatch(loopToggleActions.closeMenu())
+      }
+    },
+    { type: 'divider' as const },
+    ...[2, 3, 5, 10].map((count) => ({
+      key: `preset-${count}`,
+      label: `${count} 次${loopSettings.count === count ? ' ✓' : ''}`,
+      onClick: () => {
+        handleCountChange(count)
+        dispatch(loopToggleActions.closeMenu())
+      }
+    })),
+    { type: 'divider' as const },
+    {
+      key: 'custom',
+      label: '自定义次数...',
+      onClick: () => {
+        dispatch(loopToggleActions.openCustomModal())
+      }
+    }
+  ]
 
   return (
-    <Tooltip title={isLoopingDisplay ? '关闭单句循环' : '开启单句循环'}>
-      <Button
-        icon={<ReloadOutlined />}
-        onClick={(e) => {
-          console.log('🔄 点击循环按钮，当前状态:', isLoopingDisplay)
-          handleLoopToggle()
-          e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
-        }}
-        type="text"
-        style={getButtonStyles()}
-        className={getButtonClassName()}
-        disabled={!isVideoLoaded}
-        size="small"
+    <>
+      <Dropdown
+        open={isMenuOpen}
+        onOpenChange={handleMenuOpenChange}
+        trigger={['contextMenu']}
+        menu={{ items: menuItems }}
+        placement="topLeft"
+      >
+        <Tooltip title={getTooltipTitle()}>
+          <Button
+            icon={
+              <LoopIcon
+                remainingCount={remainingCount}
+                isActive={isSingleLoop}
+                variant={variant}
+                isSingleLoop={isSingleLoop}
+                count={loopSettings.count}
+              />
+            }
+            onClick={(e) => {
+              handleLoopToggle()
+              e.currentTarget.blur() // 点击后立即移除焦点，避免空格键触发
+            }}
+            onContextMenu={handleContextMenu}
+            type="text"
+            style={getButtonStyles()}
+            disabled={!isVideoLoaded}
+            size="small"
+          />
+        </Tooltip>
+      </Dropdown>
+
+      <CustomLoopCountModal
+        open={isCustomModalOpen}
+        currentCount={loopSettings.count}
+        onConfirm={handleCustomModalConfirm}
+        onCancel={handleCustomModalCancel}
       />
-    </Tooltip>
+    </>
   )
 }

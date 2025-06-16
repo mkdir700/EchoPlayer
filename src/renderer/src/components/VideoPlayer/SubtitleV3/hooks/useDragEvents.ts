@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
 import type { DragEventHandlers, UseDragEventsProps } from '../types'
 
 /**

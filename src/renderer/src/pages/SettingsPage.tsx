@@ -5,7 +5,7 @@ import { SettingsNavigation } from '@renderer/components/Settings/SettingsNaviga
 import { AppearanceSection } from '@renderer/components/Settings/AppearanceSection'
 import { ThirdPartyServicesSection } from '@renderer/components/Settings/ThirdPartyServicesSection'
 import { UpdateSection } from '@renderer/components/Settings/UpdateSection'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 /**
  * Renders the main settings page with navigation and content sections.

@@ -31,11 +31,11 @@ import {
   ExclamationCircleOutlined,
   ReloadOutlined as RestartOutlined
 } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import type { Color } from 'antd/es/color-picker'
-import { useThemeCustomization } from '@renderer/hooks/useThemeCustomization'
+import { useThemeCustomization } from '@renderer/hooks/features/ui/useThemeCustomization'
 import type { ThemeCustomization } from '@types_/shared'
-import { useAppConfig } from '@renderer/hooks/useAppConfig'
+import { useAppConfig } from '@renderer/hooks/core/useAppConfig'
 
 const { Text, Title } = Typography
 

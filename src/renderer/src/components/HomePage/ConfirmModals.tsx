@@ -1,7 +1,7 @@
 import React from 'react'
 import { Modal } from 'antd'
 import { DeleteOutlined } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { FONT_WEIGHTS } from '@renderer/styles/theme'
 
 interface ConfirmModalsProps {

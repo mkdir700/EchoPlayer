@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 export interface WordWrapperProps {
   children?: React.ReactNode

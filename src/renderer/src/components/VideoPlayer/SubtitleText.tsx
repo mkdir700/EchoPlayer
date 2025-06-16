@@ -4,7 +4,7 @@
  */
 
 import React from 'react'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { SmartTextContent } from './SmartTextContent'
 import RendererLogger from '@renderer/utils/logger'
 

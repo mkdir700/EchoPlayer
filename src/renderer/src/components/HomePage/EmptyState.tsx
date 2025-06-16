@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, Typography } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { FONT_WEIGHTS } from '@renderer/styles/theme'
 // 导入测试工具 / Import test utilities
 import { COMMON_TEST_IDS } from '@renderer/utils/test-utils'

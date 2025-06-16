@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useTheme } from '@renderer/hooks/useTheme'
-import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
+import { useFullscreenMode } from '@renderer/hooks/features/ui/useFullscreenMode'
 
 interface SpeedOverlayProps {
   speed: number // 当前播放速度 / Current playback speed

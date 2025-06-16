@@ -1,6 +1,6 @@
 import React from 'react'
 import { VolumeControl, FullscreenButton, SettingsButton, PlaybackRateSelector } from './index'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 export function FullScreenRightControls(): React.JSX.Element {
   const { styles } = useTheme()

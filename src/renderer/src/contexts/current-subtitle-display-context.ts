@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import { UseCurrentSubtitleDisplayReturn } from '@renderer/hooks/useCurrentSubtitleDisplay'
+import { UseCurrentSubtitleDisplayReturn } from '@renderer/hooks/features/subtitle/useCurrentSubtitleDisplay'
 
 export interface ICurrentSubtitleDisplayContextType extends UseCurrentSubtitleDisplayReturn {}
 

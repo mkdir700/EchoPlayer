@@ -6,16 +6,17 @@ import 'react-virtualized/styles.css'
 
 import { SubtitleListItem } from './SubtitleListItem'
 import { formatTime } from '@renderer/utils/helpers'
-import { useTheme } from '@renderer/hooks/useTheme'
-import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { useCurrentSubtitleDisplayContext } from '@renderer/hooks/useCurrentSubtitleDisplayContext'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
+import { useSubtitleListContext } from '@renderer/hooks/core/useSubtitleListContext'
+
+import { useVideoPlayerContext } from '@renderer/hooks/core/useVideoPlayerContext'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
 import { AimButton } from './AimButton'
 import { RendererLogger } from '@renderer/utils/logger'
-import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { useVideoControls } from '@renderer/hooks/features/video/useVideoPlayerHooks'
 import { SPACING, FONT_SIZES } from '@renderer/styles/theme'
 import { SubtitleEmptyState } from './SubtitleEmptyState'
+import { useIsSingleLoop, useLoopSettings } from '@renderer/stores/slices/videoConfigStore'
 
 const { Text } = Typography
 
@@ -44,11 +45,13 @@ const getItemHeight = (): number => {
 export function SubtitleListContent(): React.JSX.Element {
   const { token, styles } = useTheme()
   const subtitleListContext = useSubtitleListContext()
-  const { volume, playbackRate } = useVideoConfig()
-  const { restoreVideoState } = useVideoControls()
+  const { seekTo } = useVideoControls()
   const { currentTimeRef, subscribeToTime } = useVideoPlayerContext()
-  const { setSubtitleByIndex } = useCurrentSubtitleDisplayContext()
+  const { fileId } = usePlayingVideoContext()
 
+  // 循环播放相关状态 / Loop playback related state
+  const isSingleLoop = useIsSingleLoop(fileId)
+  const { count: loopCount } = useLoopSettings(fileId)
   const {
     subtitleItemsRef,
     isAutoScrollEnabledRef,
@@ -89,15 +92,33 @@ export function SubtitleListContent(): React.JSX.Element {
     }
   }, [])
 
-  // 点击字幕项时，恢复视频状态并立即显示对应字幕
+  // 点击字幕项时，跳转到对应时间点并重置循环播放状态 / Click subtitle item to jump to time and reset loop state
   const handleClickSubtitleItem = useCallback(
     (time: number, index: number): void => {
-      // 立即显示点击的字幕
-      setSubtitleByIndex(index)
-      // 恢复视频状态
-      restoreVideoState(time, playbackRate, volume)
+      RendererLogger.info('🎯 字幕项点击跳转:', {
+        targetTime: time,
+        subtitleIndex: index,
+        isSingleLoop,
+        loopCount
+      })
+
+      // 立即显示点击的字幕 / Immediately display the clicked subtitle
+      setCurrentSubtitleIndex(index)
+
+      // 跳转到指定时间点 / Jump to the specified time
+      seekTo(time)
+
+      // 循环播放逻辑会自动检测到时间变化并重新初始化到新的字幕位置
+      // Loop logic will automatically detect time change and reinitialize to new subtitle position
+      if (isSingleLoop && fileId) {
+        RendererLogger.info('🔄 循环播放将重新初始化到新字幕位置:', {
+          action: '用户点击字幕项跳转',
+          newSubtitleIndex: index,
+          targetTime: time
+        })
+      }
     },
-    [setSubtitleByIndex, restoreVideoState, playbackRate, volume]
+    [setCurrentSubtitleIndex, seekTo, isSingleLoop, fileId, loopCount]
   )
 
   // 计算可视区域内的行数

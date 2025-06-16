@@ -17,6 +17,9 @@ export function setupSettingsHandlers(): void {
           volume: 0.8,
           playbackRate: 1.0,
           isSingleLoop: false,
+          loopSettings: {
+            count: -1 // 默认无限循环 / Default infinite loop
+          },
           isAutoPause: false
         }
       })
@@ -30,6 +33,9 @@ export function setupSettingsHandlers(): void {
           volume: 0.8,
           playbackRate: 1.0,
           isSingleLoop: false,
+          loopSettings: {
+            count: -1 // 默认无限循环 / Default infinite loop
+          },
           isAutoPause: false
         }
       }
@@ -49,6 +55,9 @@ export function setupSettingsHandlers(): void {
             volume: 0.8,
             playbackRate: 1.0,
             isSingleLoop: false,
+            loopSettings: {
+              count: -1 // 默认无限循环 / Default infinite loop
+            },
             isAutoPause: false
           },
           update: {

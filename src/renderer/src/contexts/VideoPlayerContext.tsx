@@ -20,6 +20,9 @@ export function VideoPlayerProvider({
   // 待恢复时间状态
   const pendingRestoreTimeRef = useRef<number | null>(null)
 
+  // 跳转源标记，用于区分不同来源的时间跳转 / Seek source flag to distinguish different sources of time jumps
+  const seekSourceRef = useRef<'user' | 'loop' | 'system' | null>(null)
+
   // 订阅者集合
   const timeSubscribersRef = useRef(new Set<(time: number) => void>())
   const playStateSubscribersRef = useRef(new Set<(isPlaying: boolean) => void>())
@@ -28,8 +31,18 @@ export function VideoPlayerProvider({
   const errorSubscribersRef = useRef(new Set<(error: string | null) => void>())
 
   // 通知订阅者的方法
-  const notifyTimeSubscribers = useCallback((time: number) => {
-    timeSubscribersRef.current.forEach((callback) => callback(time))
+  const notifyTimeSubscribers = useCallback((time: number, source?: 'user' | 'loop' | 'system') => {
+    const currentSource = source || seekSourceRef.current || 'system'
+    timeSubscribersRef.current.forEach((callback) => {
+      // 如果回调函数支持接收源信息，则传递；否则只传递时间
+      if (callback.length > 1) {
+        ;(callback as (time: number, source: string) => void)(time, currentSource)
+      } else {
+        callback(time)
+      }
+    })
+    // 清除跳转源标记
+    seekSourceRef.current = null
   }, [])
 
   const notifyPlayStateSubscribers = useCallback((isPlaying: boolean) => {
@@ -169,9 +182,10 @@ export function VideoPlayerProvider({
   }, [setPlaying])
 
   const seekTo = useCallback(
-    (time: number) => {
+    (time: number, source: 'user' | 'loop' | 'system' = 'user') => {
       currentTimeRef.current = time
-      notifyTimeSubscribers(time)
+      seekSourceRef.current = source
+      notifyTimeSubscribers(time, source)
 
       // 触发实际的视频跳转
       if (playerRef.current && isVideoLoadedRef.current) {

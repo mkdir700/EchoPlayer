@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { Typography, Button, Divider, message } from 'antd'
 import { CloudUploadOutlined, GlobalOutlined, InboxOutlined } from '@ant-design/icons'
 
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { SPACING, FONT_SIZES } from '@renderer/styles/theme'
 
 const { Text } = Typography

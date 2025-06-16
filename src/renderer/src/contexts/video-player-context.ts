@@ -39,7 +39,7 @@ export interface VideoPlayerContextType {
   play: () => void
   pause: () => void
   toggle: () => void
-  seekTo: (time: number) => void
+  seekTo: (time: number, source?: 'user' | 'loop' | 'system') => void
   stepForward: () => void
   stepBackward: () => void
   restart: () => void

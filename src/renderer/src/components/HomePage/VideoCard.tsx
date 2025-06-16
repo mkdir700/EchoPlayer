@@ -1,7 +1,7 @@
 import React from 'react'
 import { Card, Tooltip, Button, Col, Typography } from 'antd'
 import { VideoCameraOutlined, PlayCircleOutlined, DeleteOutlined } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { formatTime } from '@renderer/utils/helpers'
 import { FONT_WEIGHTS } from '@renderer/styles/theme'
 import type { RecentPlayItem } from '@renderer/types'

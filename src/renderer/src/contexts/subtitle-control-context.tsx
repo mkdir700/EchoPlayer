@@ -1,10 +1,10 @@
 import React, { useCallback, useRef } from 'react'
 import type { SubtitleItem } from '@types_/shared'
 import { SubtitleControlContext, type SubtitleControlContextType } from './SubtitleControlContext'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
-import { useVideoPlayerContext } from '@renderer/hooks/useVideoPlayerContext'
-import { useSubtitleListContext } from '@renderer/hooks/useSubtitleListContext'
-import { useVideoControls } from '@renderer/hooks/useVideoPlayerHooks'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
+import { useVideoPlayerContext } from '@renderer/hooks/core/useVideoPlayerContext'
+import { useSubtitleListContext } from '@renderer/hooks/core/useSubtitleListContext'
+import { useVideoControls } from '@renderer/hooks/features/video/useVideoPlayerHooks'
 
 export function SubtitleControlProvider({
   children

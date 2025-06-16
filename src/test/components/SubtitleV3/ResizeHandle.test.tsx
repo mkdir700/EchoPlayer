@@ -3,12 +3,16 @@ import { render, fireEvent } from '@testing-library/react'
 import { ResizeHandle } from '@renderer/components/VideoPlayer/SubtitleV3/subcomponents/ResizeHandle'
 
 // Mock useTheme hook / 模拟useTheme hook
-vi.mock('@renderer/hooks/useTheme', () => ({
+vi.mock('@renderer/hooks/features/ui/useTheme', () => ({
   useTheme: () => ({
     styles: {
       subtitleResizeHandle: {
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        border: '1px solid rgba(0, 0, 0, 0.1)'
+        background: 'rgba(102, 126, 234, 0.8)',
+        border: '2px solid rgba(255, 255, 255, 0.9)',
+        position: 'absolute',
+        zIndex: 50,
+        transition: 'all 0.3s',
+        pointerEvents: 'auto'
       }
     }
   })
@@ -58,8 +62,8 @@ describe('ResizeHandle Component / ResizeHandle 组件', () => {
 
     // Check theme-provided styles / 检查主题提供的样式
     expect(handle).toHaveStyle({
-      backgroundColor: 'rgba(255, 255, 255, 0.8)',
-      border: '1px solid rgba(0, 0, 0, 0.1)'
+      background: 'rgba(102, 126, 234, 0.8)',
+      border: '2px solid rgba(255, 255, 255, 0.9)'
     })
   })
 

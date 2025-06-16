@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Button, Tooltip, Typography } from 'antd'
 import { SettingOutlined } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 const { Text } = Typography
 

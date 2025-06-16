@@ -10,7 +10,7 @@ import {
   ExclamationCircleOutlined,
   CloseOutlined
 } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 import { ffmpegNativeClient } from '@renderer/utils/ffmpegNativeClient'
 import {
   transcodeDecisionHelper,

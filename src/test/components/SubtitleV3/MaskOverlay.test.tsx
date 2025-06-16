@@ -3,10 +3,14 @@ import { render } from '@testing-library/react'
 import { MaskOverlay } from '@renderer/components/VideoPlayer/SubtitleV3/subcomponents/MaskOverlay'
 
 // Mock useTheme hook / 模拟useTheme hook
-vi.mock('@renderer/hooks/useTheme', () => ({
+vi.mock('@renderer/hooks/features/ui/useTheme', () => ({
   useTheme: () => ({
     styles: {
       subtitleMaskOverlay: {
+        boxSizing: 'border-box',
+        transition: 'all 0.3s ease-in-out',
+        animation: '0.3s ease-out fadeInMask',
+        boxShadow: 'none',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         border: '1px solid rgba(255, 255, 255, 0.2)'
       }

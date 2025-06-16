@@ -7,7 +7,7 @@ import {
   useVideoDuration,
   useVideoLoadState,
   useVideoControls
-} from '@renderer/hooks/useVideoPlayerHooks'
+} from '@renderer/hooks/features/video/useVideoPlayerHooks'
 
 const { Text } = Typography
 

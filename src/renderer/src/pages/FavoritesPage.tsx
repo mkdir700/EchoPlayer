@@ -1,7 +1,7 @@
 import React from 'react'
 import { Typography, Empty } from 'antd'
 import { HeartOutlined } from '@ant-design/icons'
-import { useTheme } from '@renderer/hooks/useTheme'
+import { useTheme } from '@renderer/hooks/features/ui/useTheme'
 
 const { Title, Text } = Typography
 

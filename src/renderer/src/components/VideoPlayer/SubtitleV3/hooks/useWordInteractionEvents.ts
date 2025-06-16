@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react'
-import { useVideoControls, useVideoPlayState } from '@renderer/hooks/useVideoPlayerHooks'
+import {
+  useVideoControls,
+  useVideoPlayState
+} from '@renderer/hooks/features/video/useVideoPlayerHooks'
 import { useUIStore } from '@renderer/stores'
 import type {
   WordInteractionState,

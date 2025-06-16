@@ -8,30 +8,30 @@ import {
   useVideoPlayerRef,
   useVideoPlayState,
   useVideoError
-} from '@renderer/hooks/useVideoPlayerHooks'
-import { usePlayingVideoContext } from '@renderer/hooks/usePlayingVideoContext'
+} from '@renderer/hooks/features/video/useVideoPlayerHooks'
+import { usePlayingVideoContext } from '@renderer/hooks/core/usePlayingVideoContext'
 // 导入新的统一控制器
-import { useReactPlayerController } from '@renderer/hooks/useReactPlayerController'
+import { useReactPlayerController } from '@renderer/hooks/features/video/useReactPlayerController'
 // 导入内聚的功能 hooks / Import cohesive functionality hooks
-import { useVideoControlsDisplay } from '@renderer/hooks/useVideoControlsDisplay'
-import { useVideoPlayerInteractions } from '@renderer/hooks/useVideoPlayerInteractions'
-import { useVideoTextSelection } from '@renderer/hooks/useVideoTextSelection'
-import { useVideoPlayerNotifications } from '@renderer/hooks/useVideoPlayerNotifications'
+import { useVideoControlsDisplay } from '@renderer/hooks/features/video/useVideoControlsDisplay'
+import { useVideoPlayerInteractions } from '@renderer/hooks/features/video/useVideoPlayerInteractions'
+import { useVideoTextSelection } from '@renderer/hooks/features/video/useVideoTextSelection'
+import { useVideoPlayerNotifications } from '@renderer/hooks/features/video/useVideoPlayerNotifications'
 
 // 导入样式
 import styles from './VideoPlayer.module.css'
 import RendererLogger from '@renderer/utils/logger'
 import { SubtitleOverlay } from '@renderer/components/VideoPlayer/SubtitleOverlay'
-import { useVideoConfig } from '@renderer/hooks/useVideoConfig'
+import { useVideoConfig } from '@renderer/hooks/features/video/useVideoConfig'
 import { CopySuccessToast } from '@renderer/components/CopySuccessToast/CopySuccessToast'
-import { useFullscreenMode } from '@renderer/hooks/useFullscreenMode'
+import { useFullscreenMode } from '@renderer/hooks/features/ui/useFullscreenMode'
 import { SpeedOverlay } from './SpeedOverlay'
-import { useSpeedOverlay } from '@renderer/hooks/useSpeedOverlay'
-import { usePlaybackSpeedMonitor } from '@renderer/hooks/usePlaybackSpeedMonitor'
+import { useSpeedOverlay } from '@renderer/hooks/features/ui/useSpeedOverlay'
+import { usePlaybackSpeedMonitor } from '@renderer/hooks/features/video/usePlaybackSpeedMonitor'
 // 导入字幕模式覆盖层相关组件和 hooks
 import { SubtitleModeOverlay } from './SubtitleModeOverlay'
-import { useSubtitleModeOverlay } from '@renderer/hooks/useSubtitleModeOverlay'
-import { useSubtitleModeMonitor } from '@renderer/hooks/useSubtitleModeMonitor'
+import { useSubtitleModeOverlay } from '@renderer/hooks/features/subtitle/useSubtitleModeOverlay'
+import { useSubtitleModeMonitor } from '@renderer/hooks/features/subtitle/useSubtitleModeMonitor'
 
 interface VideoPlayerProps {
   isVideoLoaded: boolean
