@@ -1,3 +1,9 @@
+## [v0.2.0-alpha.7](https://github.com/mkdir700/echolab/tree/v0.2.0-alpha.7)(2025-06-20)
+
+### ⚙️ 构建优化
+
+- 为 macOS 包签名以避免不信任警告
+
 ## [v0.2.0-alpha.6](https://github.com/mkdir700/echolab/tree/v0.2.0-alpha.6)(2025-06-14)
 
 ### 🐛 修复问题
