@@ -8,6 +8,10 @@ export {
   useConditionalMemoizedCallback
 } from './useMemoizedCallback'
 
-// TODO: 实现 useThrottle 相关 hooks
-// TODO: Implement useThrottle related hooks
-// export { useThrottle, useThrottledCallback } from './useThrottle'
+export {
+  useThrottle,
+  useThrottledCallback,
+  useImmediateThrottle,
+  useTrailingThrottle,
+  useControllableThrottle
+} from './useThrottle'
