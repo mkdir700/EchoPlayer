@@ -21,26 +21,26 @@ import { VideoLoadingStage } from '../../infrastructure/types/domain/video.types
  * 当前视频状态接口 / Current Video State Interface
  */
 export interface CurrentVideoState {
-  readonly fileId: string
-  readonly filePath: string
-  readonly fileName: string
-  readonly duration: number
-  readonly currentTime: number
-  readonly isPlaying: boolean
-  readonly volume: number
-  readonly playbackRate: number
-  readonly videoInfo?: VideoInfo
+  fileId: string
+  filePath: string
+  fileName: string
+  duration: number
+  currentTime: number
+  isPlaying: boolean
+  volume: number
+  playbackRate: number
+  videoInfo?: VideoInfo
 }
 
 /**
  * 视频加载状态接口 / Video Loading State Interface
  */
 export interface VideoLoadingState {
-  readonly isLoading: boolean
-  readonly stage: VideoLoadingStage
-  readonly progress: number
-  readonly error: string | null
-  readonly loadingStartTime?: number
+  isLoading: boolean
+  stage: VideoLoadingStage
+  progress: number
+  error: string | null
+  loadingStartTime?: number
 }
 
 /**
@@ -48,19 +48,19 @@ export interface VideoLoadingState {
  */
 export interface VideoState {
   // 当前视频信息 / Current video information
-  readonly currentVideo: CurrentVideoState | null
+  currentVideo: CurrentVideoState | null
 
   // 最近播放列表 / Recent plays list
-  readonly recentPlays: readonly RecentPlayItem[]
+  recentPlays: RecentPlayItem[]
 
   // 视频加载状态 / Video loading state
-  readonly loadingState: VideoLoadingState
+  loadingState: VideoLoadingState
 
   // 视频播放设置缓存 / Video playback settings cache
-  readonly playbackSettingsCache: Record<string, VideoPlaybackSettings>
+  playbackSettingsCache: Record<string, VideoPlaybackSettings>
 
   // UI配置缓存 / UI config cache
-  readonly uiConfigCache: Record<string, VideoUIConfig>
+  uiConfigCache: Record<string, VideoUIConfig>
 }
 
 /**
@@ -133,7 +133,7 @@ const initialState: VideoState = {
 const stateValidationRules = {
   currentVideo: (value: unknown): value is CurrentVideoState | null =>
     value === null || (typeof value === 'object' && value !== null && 'fileId' in value),
-  recentPlays: (value: unknown): value is readonly RecentPlayItem[] => Array.isArray(value),
+  recentPlays: (value: unknown): value is RecentPlayItem[] => Array.isArray(value),
   loadingState: (value: unknown): value is VideoLoadingState =>
     typeof value === 'object' && value !== null && 'isLoading' in value,
   playbackSettingsCache: (value: unknown): value is Record<string, VideoPlaybackSettings> =>
@@ -151,270 +151,282 @@ const stateValidationRules = {
 export const useVideoStore = create<VideoStore>()(
   V2MiddlewarePresets.persistent('video-store', {
     // 选择性持久化：只持久化最近播放列表和设置缓存 / Selective persistence: only persist recent plays and settings cache
-    partialize: (state) => ({
+    partialize: (state: VideoStore) => ({
       recentPlays: state.recentPlays,
       playbackSettingsCache: state.playbackSettingsCache,
       uiConfigCache: state.uiConfigCache
     }),
     version: 1
-  })((set, get) => ({
-    ...initialState,
+  })(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (set: any, get: () => VideoStore): VideoStore => ({
+      ...initialState,
 
-    // 视频加载操作 / Video loading operations
-    loadVideo: async (filePath: string, generateThumbnail = true) => {
-      const startTime = Date.now()
+      // 视频加载操作 / Video loading operations
+      loadVideo: async (filePath: string, generateThumbnail = true) => {
+        const startTime = Date.now()
 
-      try {
-        // 开始加载 / Start loading
-        set((state) => {
-          state.loadingState = {
+        try {
+          // 开始加载 / Start loading
+          set((state: VideoStore) => {
+            state.loadingState = {
+              isLoading: true,
+              stage: VideoLoadingStage.LOADING_METADATA,
+              progress: 0,
+              error: null,
+              loadingStartTime: startTime
+            }
+          })
+
+          StateDebug.logStateChange('VideoStore', 'loadVideo:start', get().loadingState, {
             isLoading: true,
             stage: VideoLoadingStage.LOADING_METADATA,
             progress: 0,
-            error: null,
-            loadingStartTime: startTime
-          }
-        })
-
-        StateDebug.logStateChange('VideoStore', 'loadVideo:start', get().loadingState, {
-          isLoading: true,
-          stage: VideoLoadingStage.LOADING_METADATA
-        })
-
-        // 模拟加载过程（实际实现中会调用 API）
-        // Simulate loading process (actual implementation would call API)
-
-        // 1. 加载元数据 / Load metadata
-        set((state) => {
-          state.loadingState.stage = VideoLoadingStage.LOADING_VIDEO
-          state.loadingState.progress = 30
-        })
-
-        // 2. 加载视频 / Load video
-        set((state) => {
-          state.loadingState.stage = VideoLoadingStage.PROCESSING_THUMBNAIL
-          state.loadingState.progress = 70
-        })
-
-        // 3. 处理缩略图 / Process thumbnail
-        if (generateThumbnail) {
-          set((state) => {
-            state.loadingState.progress = 90
-          })
-        }
-
-        // 4. 完成加载 / Complete loading
-        const fileName = filePath.split('/').pop() || 'Unknown'
-        const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-
-        set((state) => {
-          state.currentVideo = {
-            fileId,
-            filePath,
-            fileName,
-            duration: 0,
-            currentTime: 0,
-            isPlaying: false,
-            volume: 1,
-            playbackRate: 1
-          }
-          state.loadingState = {
-            isLoading: false,
-            stage: VideoLoadingStage.READY,
-            progress: 100,
             error: null
+          })
+
+          // 模拟加载过程（实际实现中会调用 API）
+          // Simulate loading process (actual implementation would call API)
+
+          // 1. 加载元数据 / Load metadata
+          set((state: VideoStore) => {
+            state.loadingState.stage = VideoLoadingStage.LOADING_VIDEO
+            state.loadingState.progress = 30
+          })
+
+          // 2. 加载视频 / Load video
+          set((state: VideoStore) => {
+            state.loadingState.stage = VideoLoadingStage.PROCESSING_THUMBNAIL
+            state.loadingState.progress = 70
+          })
+
+          // 3. 处理缩略图 / Process thumbnail
+          if (generateThumbnail) {
+            set((state: VideoStore) => {
+              state.loadingState.progress = 90
+            })
+          }
+
+          // 4. 完成加载 / Complete loading
+          const fileName = filePath.split('/').pop() || 'Unknown'
+          const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+
+          set((state: VideoStore) => {
+            state.currentVideo = {
+              fileId,
+              filePath,
+              fileName,
+              duration: 0,
+              currentTime: 0,
+              isPlaying: false,
+              volume: 1,
+              playbackRate: 1
+            }
+            state.loadingState = {
+              isLoading: false,
+              stage: VideoLoadingStage.READY,
+              progress: 100,
+              error: null
+            }
+          })
+
+          logger.info(`✅ 视频加载成功: ${fileName}`, {
+            filePath,
+            duration: Date.now() - startTime
+          })
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : '未知错误'
+
+          set((state: VideoStore) => {
+            state.loadingState = {
+              isLoading: false,
+              stage: VideoLoadingStage.ERROR,
+              progress: 0,
+              error: errorMessage
+            }
+          })
+
+          logger.error(`❌ 视频加载失败: ${filePath}`, error)
+          throw error
+        }
+      },
+
+      clearVideo: () => {
+        set((state: VideoStore) => {
+          state.currentVideo = null
+          state.loadingState = defaultLoadingState
+        })
+
+        StateDebug.logStateChange('VideoStore', 'clearVideo', get().currentVideo, null)
+      },
+
+      setVideoInfo: (videoInfo: VideoInfo) => {
+        set((state: VideoStore) => {
+          if (state.currentVideo) {
+            state.currentVideo.videoInfo = videoInfo
+            state.currentVideo.duration = videoInfo.duration
           }
         })
+      },
 
-        logger.info(`✅ 视频加载成功: ${fileName}`, {
-          filePath,
-          duration: Date.now() - startTime
-        })
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : '未知错误'
-
-        set((state) => {
-          state.loadingState = {
-            isLoading: false,
-            stage: VideoLoadingStage.ERROR,
-            progress: 0,
-            error: errorMessage
+      // 播放控制操作 / Playback control operations
+      setCurrentTime: (time: number) => {
+        set((state: VideoStore) => {
+          if (state.currentVideo) {
+            state.currentVideo.currentTime = Math.max(0, time)
           }
         })
+      },
 
-        logger.error(`❌ 视频加载失败: ${filePath}`, error)
-        throw error
-      }
-    },
+      setIsPlaying: (isPlaying: boolean) => {
+        set((state: VideoStore) => {
+          if (state.currentVideo) {
+            state.currentVideo.isPlaying = isPlaying
+          }
+        })
+      },
 
-    clearVideo: () => {
-      set((state) => {
-        state.currentVideo = null
-        state.loadingState = defaultLoadingState
-      })
+      setVolume: (volume: number) => {
+        set((state: VideoStore) => {
+          if (state.currentVideo) {
+            state.currentVideo.volume = Math.max(0, Math.min(1, volume))
+          }
+        })
+      },
 
-      StateDebug.logStateChange('VideoStore', 'clearVideo', get().currentVideo, null)
-    },
+      setPlaybackRate: (rate: number) => {
+        set((state: VideoStore) => {
+          if (state.currentVideo) {
+            state.currentVideo.playbackRate = Math.max(0.25, Math.min(4, rate))
+          }
+        })
+      },
 
-    setVideoInfo: (videoInfo: VideoInfo) => {
-      set((state) => {
-        if (state.currentVideo) {
-          state.currentVideo.videoInfo = videoInfo
-          state.currentVideo.duration = videoInfo.duration
-        }
-      })
-    },
+      // 加载状态操作 / Loading state operations
+      setLoadingState: (newState: Partial<VideoLoadingState>) => {
+        set((state: VideoStore) => {
+          Object.assign(state.loadingState, newState)
+        })
+      },
 
-    // 播放控制操作 / Playback control operations
-    setCurrentTime: (time: number) => {
-      set((state) => {
-        if (state.currentVideo) {
-          state.currentVideo.currentTime = Math.max(0, time)
-        }
-      })
-    },
+      setLoadingStage: (stage: VideoLoadingStage, progress = 0) => {
+        set((state: VideoStore) => {
+          state.loadingState.stage = stage
+          state.loadingState.progress = progress
+        })
+      },
 
-    setIsPlaying: (isPlaying: boolean) => {
-      set((state) => {
-        if (state.currentVideo) {
-          state.currentVideo.isPlaying = isPlaying
-        }
-      })
-    },
+      setLoadingError: (error: string | null) => {
+        set((state: VideoStore) => {
+          state.loadingState.error = error
+          if (error) {
+            state.loadingState.stage = VideoLoadingStage.ERROR
+            state.loadingState.isLoading = false
+          }
+        })
+      },
 
-    setVolume: (volume: number) => {
-      set((state) => {
-        if (state.currentVideo) {
-          state.currentVideo.volume = Math.max(0, Math.min(1, volume))
-        }
-      })
-    },
+      // 最近播放操作实现将在下一部分继续...
+      addRecentPlay: (item: RecentPlayItem) => {
+        set((state: VideoStore) => {
+          // 移除已存在的相同文件 / Remove existing same file
+          const existingIndex = state.recentPlays.findIndex(
+            (play: RecentPlayItem) => play.videoInfo.filePath === item.videoInfo.filePath
+          )
 
-    setPlaybackRate: (rate: number) => {
-      set((state) => {
-        if (state.currentVideo) {
-          state.currentVideo.playbackRate = Math.max(0.25, Math.min(4, rate))
-        }
-      })
-    },
+          if (existingIndex >= 0) {
+            state.recentPlays.splice(existingIndex, 1)
+          }
 
-    // 加载状态操作 / Loading state operations
-    setLoadingState: (newState: Partial<VideoLoadingState>) => {
-      set((state) => {
-        Object.assign(state.loadingState, newState)
-      })
-    },
+          // 添加到列表开头 / Add to beginning of list
+          state.recentPlays.unshift(item)
 
-    setLoadingStage: (stage: VideoLoadingStage, progress = 0) => {
-      set((state) => {
-        state.loadingState.stage = stage
-        state.loadingState.progress = progress
-      })
-    },
+          // 限制列表长度 / Limit list length
+          if (state.recentPlays.length > 50) {
+            state.recentPlays.splice(50)
+          }
+        })
+      },
 
-    setLoadingError: (error: string | null) => {
-      set((state) => {
-        state.loadingState.error = error
-        if (error) {
-          state.loadingState.stage = VideoLoadingStage.ERROR
-          state.loadingState.isLoading = false
-        }
-      })
-    },
+      updateRecentPlay: (fileId: string, updates: Partial<RecentPlayItem>) => {
+        set((state: VideoStore) => {
+          const index = state.recentPlays.findIndex(
+            (play: RecentPlayItem) => play.videoInfo.id === fileId
+          )
 
-    // 最近播放操作实现将在下一部分继续...
-    addRecentPlay: (item: RecentPlayItem) => {
-      set((state) => {
-        // 移除已存在的相同文件 / Remove existing same file
-        const existingIndex = state.recentPlays.findIndex(
-          (play) => play.videoInfo.filePath === item.videoInfo.filePath
+          if (index >= 0) {
+            Object.assign(state.recentPlays[index], updates)
+          }
+        })
+      },
+
+      removeRecentPlay: (fileId: string) => {
+        set((state: VideoStore) => {
+          const index = state.recentPlays.findIndex(
+            (play: RecentPlayItem) => play.videoInfo.id === fileId
+          )
+
+          if (index >= 0) {
+            state.recentPlays.splice(index, 1)
+          }
+        })
+      },
+
+      clearRecentPlays: () => {
+        set((state: VideoStore) => {
+          state.recentPlays.splice(0)
+        })
+      },
+
+      getRecentPlayByPath: (filePath: string) => {
+        const state = get()
+        return (
+          state.recentPlays.find((play: RecentPlayItem) => play.videoInfo.filePath === filePath) ||
+          null
+        )
+      },
+
+      // 设置缓存操作 / Settings cache operations
+      setPlaybackSettings: (fileId: string, settings: VideoPlaybackSettings) => {
+        set((state: VideoStore) => {
+          state.playbackSettingsCache[fileId] = settings
+        })
+      },
+
+      getPlaybackSettings: (fileId: string) => {
+        const state = get()
+        return state.playbackSettingsCache[fileId] || null
+      },
+
+      setUIConfig: (fileId: string, config: VideoUIConfig) => {
+        set((state: VideoStore) => {
+          state.uiConfigCache[fileId] = config
+        })
+      },
+
+      getUIConfig: (fileId: string) => {
+        const state = get()
+        return state.uiConfigCache[fileId] || null
+      },
+
+      // 工具方法 / Utility methods
+      validateState: () => {
+        const state = get()
+        const { isValid, invalidKeys } = StateValidation.validateStateTypes(
+          state as unknown as Record<string, unknown>,
+          stateValidationRules
         )
 
-        if (existingIndex >= 0) {
-          state.recentPlays.splice(existingIndex, 1)
+        return {
+          isValid,
+          errors: invalidKeys.map((key) => `Invalid state for key: ${key}`)
         }
+      },
 
-        // 添加到列表开头 / Add to beginning of list
-        state.recentPlays.unshift(item)
-
-        // 限制列表长度 / Limit list length
-        if (state.recentPlays.length > 50) {
-          state.recentPlays.splice(50)
-        }
-      })
-    },
-
-    updateRecentPlay: (fileId: string, updates: Partial<RecentPlayItem>) => {
-      set((state) => {
-        const index = state.recentPlays.findIndex((play) => play.videoInfo.id === fileId)
-
-        if (index >= 0) {
-          Object.assign(state.recentPlays[index], updates)
-        }
-      })
-    },
-
-    removeRecentPlay: (fileId: string) => {
-      set((state) => {
-        const index = state.recentPlays.findIndex((play) => play.videoInfo.id === fileId)
-
-        if (index >= 0) {
-          state.recentPlays.splice(index, 1)
-        }
-      })
-    },
-
-    clearRecentPlays: () => {
-      set((state) => {
-        state.recentPlays.splice(0)
-      })
-    },
-
-    getRecentPlayByPath: (filePath: string) => {
-      const state = get()
-      return state.recentPlays.find((play) => play.videoInfo.filePath === filePath) || null
-    },
-
-    // 设置缓存操作 / Settings cache operations
-    setPlaybackSettings: (fileId: string, settings: VideoPlaybackSettings) => {
-      set((state) => {
-        state.playbackSettingsCache[fileId] = settings
-      })
-    },
-
-    getPlaybackSettings: (fileId: string) => {
-      const state = get()
-      return state.playbackSettingsCache[fileId] || null
-    },
-
-    setUIConfig: (fileId: string, config: VideoUIConfig) => {
-      set((state) => {
-        state.uiConfigCache[fileId] = config
-      })
-    },
-
-    getUIConfig: (fileId: string) => {
-      const state = get()
-      return state.uiConfigCache[fileId] || null
-    },
-
-    // 工具方法 / Utility methods
-    validateState: () => {
-      const state = get()
-      const { isValid, invalidKeys } = StateValidation.validateStateTypes(
-        state,
-        stateValidationRules
-      )
-
-      return {
-        isValid,
-        errors: invalidKeys.map((key) => `Invalid state for key: ${key}`)
+      resetToDefaults: () => {
+        set(() => ({ ...initialState }))
+        logger.info('🔄 视频状态已重置为默认值')
       }
-    },
-
-    resetToDefaults: () => {
-      set(() => ({ ...initialState }))
-      logger.info('🔄 视频状态已重置为默认值')
-    }
-  }))
+    })
+  )
 )
