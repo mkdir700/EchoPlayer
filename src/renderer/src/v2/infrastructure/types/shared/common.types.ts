@@ -237,3 +237,7 @@ export type KeyValuePair<K = string, V = unknown> = {
   readonly key: K
   readonly value: V
 }
+
+export interface Serializable {
+  [key: string]: string | number | boolean | null | undefined | Serializable | Serializable[]
+}
