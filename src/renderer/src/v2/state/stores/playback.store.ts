@@ -269,15 +269,18 @@ const formatTime = (seconds: number): string => {
 export const usePlaybackControlStore = create<PlaybackControlStore>()(
   V2MiddlewarePresets.persistent('playback-control-store', {
     // 选择性持久化：只持久化配置和统计信息 / Selective persistence: only persist config and statistics
-    partialize: (state) => ({
-      controlConfig: state.controlConfig,
-      loopConfig: {
-        ...state.loopConfig,
-        remainingCount: 0, // 不持久化剩余次数 / Don't persist remaining count
-        isActive: false // 不持久化激活状态 / Don't persist active state
-      },
-      statistics: state.statistics
-    }),
+    partialize: (state: unknown) => {
+      const typedState = state as PlaybackControlState
+      return {
+        controlConfig: typedState.controlConfig,
+        loopConfig: {
+          ...typedState.loopConfig,
+          remainingCount: 0, // 不持久化剩余次数 / Don't persist remaining count
+          isActive: false // 不持久化激活状态 / Don't persist active state
+        },
+        statistics: typedState.statistics
+      }
+    },
     version: 1
   })(
     (
@@ -608,7 +611,7 @@ export const usePlaybackControlStore = create<PlaybackControlStore>()(
       validateState: () => {
         const state = get()
         const { isValid, invalidKeys } = StateValidation.validateStateTypes(
-          state,
+          state as unknown as Record<string, unknown>,
           stateValidationRules
         )
 
