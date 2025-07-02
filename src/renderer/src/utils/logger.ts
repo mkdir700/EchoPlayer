@@ -413,4 +413,5 @@ if (typeof window !== 'undefined') {
   })
 }
 
+export const logger = RendererLogger
 export default RendererLogger
