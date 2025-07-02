@@ -14,7 +14,8 @@ import type {
   VideoInfo,
   RecentPlayItem,
   VideoPlaybackSettings,
-  VideoUIConfig
+  VideoUIConfig,
+  VideoFormat
 } from '../../infrastructure/types/domain/video.types'
 import { VideoLoadingStage } from '../../infrastructure/types/domain/video.types'
 /**
@@ -24,6 +25,7 @@ export interface CurrentVideoState {
   fileId: string
   filePath: string
   fileName: string
+  format: VideoFormat
   duration: number
   currentTime: number
   isPlaying: boolean
@@ -185,7 +187,7 @@ export const useVideoStore = create<VideoStore>()(
             error: null
           })
 
-          // 模拟加载过程（实际实现中会调用 API）
+          // TODO: 模拟加载过程（实际实现中会调用 API）
           // Simulate loading process (actual implementation would call API)
 
           // 1. 加载元数据 / Load metadata
@@ -210,12 +212,14 @@ export const useVideoStore = create<VideoStore>()(
           // 4. 完成加载 / Complete loading
           const fileName = filePath.split('/').pop() || 'Unknown'
           const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+          const format = (filePath.split('.').pop() || 'Unknown') as VideoFormat
 
           set((state: VideoStore) => {
             state.currentVideo = {
               fileId,
               filePath,
               fileName,
+              format,
               duration: 0,
               currentTime: 0,
               isPlaying: false,
