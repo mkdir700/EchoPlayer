@@ -2,6 +2,7 @@
 
 // 导入electron-updater的UpdateInfo类型
 import { UpdateInfo } from 'electron-updater'
+import { RecentPlayItem } from './domain'
 
 // 标题栏覆盖选项 / Title bar overlay options
 export interface TitleBarOverlayOptions {
@@ -101,30 +102,6 @@ export interface VideoPlaybackSettings {
 // 视频级别的UI配置接口 - Video-level UI configuration interface
 export interface VideoUIConfig {
   isSubtitleLayoutLocked: boolean // 字幕布局锁定状态 / Subtitle layout lock state
-}
-
-// 最近播放项接口 / Recent Play Item Interface
-// 注意：这是主进程使用的简化版本，渲染进程使用 v2/infrastructure 中的完整版本
-// Note: This is a simplified version for main process, renderer uses full version in v2/infrastructure
-export interface RecentPlayItem {
-  readonly videoInfo: {
-    readonly id: string
-    readonly filePath: string
-    readonly fileName: string
-    readonly fileSize: number
-    readonly duration: number
-    readonly createdAt: Date
-    readonly modifiedAt: Date
-  }
-  readonly lastPlayedAt: Date
-  readonly lastPosition: number
-  readonly playCount: number
-  readonly thumbnail?: string
-  readonly subtitleFile?: string
-  readonly videoPlaybackSettings: GlobalPlaybackSettings
-  readonly videoUIConfig?: {
-    readonly isSubtitleLayoutLocked: boolean
-  }
 }
 
 // 全局播放设置接口（保持向后兼容）， 和单视频的配置区分开的
