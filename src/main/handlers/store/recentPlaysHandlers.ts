@@ -1,10 +1,6 @@
 import { ipcMain } from 'electron'
-import type {
-  RecentPlayItem,
-  ApiResponse,
-  ApiResponseWithCount,
-  VideoUIConfig
-} from '../../../types/shared'
+import type { ApiResponse, ApiResponseWithCount, VideoUIConfig } from '../../../types/shared'
+import type { RecentPlayItem } from '../../../types/video.types'
 import { mainStore, generateId } from './storeInstances'
 
 /**
@@ -15,8 +11,8 @@ export function setupRecentPlaysHandlers(): void {
   ipcMain.handle('store:get-recent-plays', (): RecentPlayItem[] => {
     try {
       const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
-      // 按最后打开时间降序排序 / Sort by last opened time in descending order
-      return recentPlays.sort((a, b) => b.lastOpenedAt - a.lastOpenedAt)
+      // 按最后播放时间降序排序 / Sort by last played time in descending order
+      return recentPlays.sort((a, b) => b.lastPlayedAt.getTime() - a.lastPlayedAt.getTime())
     } catch (error) {
       console.error('获取最近播放列表失败:', error)
       return []
@@ -26,7 +22,12 @@ export function setupRecentPlaysHandlers(): void {
   // 添加或更新最近播放项 / Add or update recent play item
   ipcMain.handle(
     'store:add-recent-play',
-    (_, item: Omit<RecentPlayItem, 'fileId' | 'lastOpenedAt'>): ApiResponse => {
+    (
+      _,
+      item: Omit<RecentPlayItem, 'videoInfo' | 'lastPlayedAt'> & {
+        videoInfo: Omit<RecentPlayItem['videoInfo'], 'id'>
+      }
+    ): ApiResponse => {
       try {
         const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
         const settings = mainStore.get('settings', { maxRecentItems: 20 }) as {
@@ -35,18 +36,22 @@ export function setupRecentPlaysHandlers(): void {
         const maxItems = settings.maxRecentItems
 
         console.log('📝 添加/更新最近播放项:', {
-          filePath: item.filePath,
-          hasSubtitles: !!item.subtitleItems,
-          subtitlesLength: item.subtitleItems?.length || 0
+          filePath: item.videoInfo.filePath,
+          hasSubtitles: !!item.subtitleFile
         })
 
         // 检查是否已存在相同文件路径的项 / Check if item with same file path already exists
-        const existingIndex = recentPlays.findIndex((play) => play.filePath === item.filePath)
+        const existingIndex = recentPlays.findIndex(
+          (play) => play.videoInfo.filePath === item.videoInfo.filePath
+        )
 
         const newItem: RecentPlayItem = {
           ...item,
-          fileId: existingIndex >= 0 ? recentPlays[existingIndex].fileId : generateId(),
-          lastOpenedAt: Date.now()
+          videoInfo: {
+            ...item.videoInfo,
+            id: existingIndex >= 0 ? recentPlays[existingIndex].videoInfo.id : generateId()
+          },
+          lastPlayedAt: new Date()
         }
 
         if (existingIndex >= 0) {
@@ -63,7 +68,7 @@ export function setupRecentPlaysHandlers(): void {
         }
 
         mainStore.set('recentPlays', recentPlays)
-        return { success: true, fileId: newItem.fileId }
+        return { success: true, fileId: newItem.videoInfo.id }
       } catch (error) {
         console.error('添加最近播放项失败:', error)
         return { success: false, error: error instanceof Error ? error.message : '未知错误' }
@@ -74,10 +79,10 @@ export function setupRecentPlaysHandlers(): void {
   // 更新最近播放项 / Update recent play item
   ipcMain.handle(
     'store:update-recent-play',
-    (_, id: string, updates: Partial<Omit<RecentPlayItem, 'fileId'>>): ApiResponse => {
+    (_, id: string, updates: Partial<Omit<RecentPlayItem, 'videoInfo'>>): ApiResponse => {
       try {
         const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
-        const index = recentPlays.findIndex((play) => play.fileId === id)
+        const index = recentPlays.findIndex((play) => play.videoInfo.id === id)
 
         if (index === -1) {
           return { success: false, error: '未找到指定的播放项' }
@@ -86,23 +91,17 @@ export function setupRecentPlaysHandlers(): void {
         console.log('🔄 更新最近播放项:', {
           id,
           updates,
-          hasSubtitles: updates.subtitleItems ? updates.subtitleItems.length : 'undefined',
-          originalSubtitles: recentPlays[index].subtitleItems
-            ? recentPlays[index].subtitleItems.length
-            : 'undefined'
+          hasSubtitles: !!updates.subtitleFile
         })
 
-        // 更新项目，但保持 lastOpenedAt 不变（除非明确指定）/ Update item, keep lastOpenedAt unchanged unless explicitly specified
+        // 更新项目，但保持 videoInfo.id 不变 / Update item, keep videoInfo.id unchanged
         recentPlays[index] = {
           ...recentPlays[index],
           ...updates
         }
         mainStore.set('recentPlays', recentPlays)
 
-        console.log(
-          '✅ 更新完成，最终字幕数量:',
-          recentPlays[index].subtitleItems ? recentPlays[index].subtitleItems.length : 'undefined'
-        )
+        console.log('✅ 更新完成')
         return { success: true }
       } catch (error) {
         console.error('更新最近播放项失败:', error)
@@ -115,7 +114,7 @@ export function setupRecentPlaysHandlers(): void {
   ipcMain.handle('store:remove-recent-play', (_, id: string): ApiResponse => {
     try {
       const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
-      const filteredPlays = recentPlays.filter((play) => play.fileId !== id)
+      const filteredPlays = recentPlays.filter((play) => play.videoInfo.id !== id)
 
       if (filteredPlays.length === recentPlays.length) {
         return { success: false, error: '未找到指定的播放项' }
@@ -144,7 +143,7 @@ export function setupRecentPlaysHandlers(): void {
   ipcMain.handle('store:get-recent-play-by-path', (_, filePath: string): RecentPlayItem | null => {
     try {
       const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
-      return recentPlays.find((play) => play.filePath === filePath) || null
+      return recentPlays.find((play) => play.videoInfo.filePath === filePath) || null
     } catch (error) {
       console.error('根据路径获取最近播放项失败:', error)
       return null
@@ -155,7 +154,7 @@ export function setupRecentPlaysHandlers(): void {
   ipcMain.handle('store:get-recent-play-by-file-id', (_, fileId: string): RecentPlayItem | null => {
     try {
       const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
-      return recentPlays.find((play) => play.fileId === fileId) || null
+      return recentPlays.find((play) => play.videoInfo.id === fileId) || null
     } catch (error) {
       console.error('根据文件ID获取最近播放项失败:', error)
       return null
@@ -166,7 +165,7 @@ export function setupRecentPlaysHandlers(): void {
   ipcMain.handle('store:remove-multiple-recent-plays', (_, ids: string[]): ApiResponseWithCount => {
     try {
       const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
-      const filteredPlays = recentPlays.filter((play) => !ids.includes(play.fileId))
+      const filteredPlays = recentPlays.filter((play) => !ids.includes(play.videoInfo.id))
       const removedCount = recentPlays.length - filteredPlays.length
 
       mainStore.set('recentPlays', filteredPlays)
@@ -190,10 +189,10 @@ export function setupRecentPlaysHandlers(): void {
       return recentPlays
         .filter(
           (play) =>
-            play.fileName.toLowerCase().includes(lowerQuery) ||
-            play.filePath.toLowerCase().includes(lowerQuery)
+            play.videoInfo.fileName.toLowerCase().includes(lowerQuery) ||
+            play.videoInfo.filePath.toLowerCase().includes(lowerQuery)
         )
-        .sort((a, b) => b.lastOpenedAt - a.lastOpenedAt)
+        .sort((a, b) => b.lastPlayedAt.getTime() - a.lastPlayedAt.getTime())
     } catch (error) {
       console.error('搜索最近播放项失败:', error)
       return []
@@ -204,7 +203,7 @@ export function setupRecentPlaysHandlers(): void {
   ipcMain.handle('store:get-video-ui-config', (_, fileId: string) => {
     try {
       const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
-      const playItem = recentPlays.find((play) => play.fileId === fileId)
+      const playItem = recentPlays.find((play) => play.videoInfo.id === fileId)
 
       if (!playItem) {
         // 返回默认配置 / Return default config
@@ -232,7 +231,7 @@ export function setupRecentPlaysHandlers(): void {
     (_, fileId: string, config: Partial<VideoUIConfig>): ApiResponse => {
       try {
         const recentPlays = mainStore.get('recentPlays', []) as RecentPlayItem[]
-        const index = recentPlays.findIndex((play) => play.fileId === fileId)
+        const index = recentPlays.findIndex((play) => play.videoInfo.id === fileId)
 
         if (index === -1) {
           return { success: false, error: '未找到指定的播放项' }
