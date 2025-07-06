@@ -30,7 +30,7 @@ import {
   type HealthCheckResult,
   type ServiceError
 } from '../../infrastructure/types/service/base.types'
-import type { RecentPlayItem } from '../../infrastructure/types/domain/video.types'
+import type { RecentPlayItem } from '@types_/domain/video.types'
 import type {
   StoreSettings,
   VideoUIConfig,

@@ -3,7 +3,7 @@
  * Domain Types Unified Export
  */
 
-export * from './video.types'
-export * from './subtitle.types'
+export * from '../video.types'
+export * from '../subtitle.types'
 export * from './playback.types'
-export * from './ui.types'
+export * from '../ui.types'
