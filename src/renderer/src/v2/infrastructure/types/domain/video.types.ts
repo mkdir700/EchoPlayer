@@ -110,9 +110,8 @@ export interface VideoUIConfig {
   readonly isSubtitleLayoutLocked: boolean
 }
 
-// 播放速度预设 / Playback Rate Presets
-export const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0] as const
-export type PlaybackRate = (typeof PLAYBACK_RATES)[number]
+// 播放速度类型 / Playback Rate Type
+export type PlaybackRate = 0.25 | 0.5 | 0.75 | 1.0 | 1.25 | 1.5 | 1.75 | 2.0
 
 // 导入依赖类型（避免循环依赖）/ Import dependent types (avoid circular dependency)
 import type { SubtitleDisplayMode, SubtitleDisplaySettings } from './subtitle.types'
