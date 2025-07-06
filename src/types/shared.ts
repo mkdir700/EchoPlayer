@@ -103,18 +103,28 @@ export interface VideoUIConfig {
   isSubtitleLayoutLocked: boolean // 字幕布局锁定状态 / Subtitle layout lock state
 }
 
-// 播放项接口
+// 最近播放项接口 / Recent Play Item Interface
+// 注意：这是主进程使用的简化版本，渲染进程使用 v2/infrastructure 中的完整版本
+// Note: This is a simplified version for main process, renderer uses full version in v2/infrastructure
 export interface RecentPlayItem {
-  fileId: string // 文件ID
-  filePath: string // 文件路径
-  fileName: string // 文件名
-  lastOpenedAt: number // 最后打开时间
-  duration?: number // 视频时长
-  currentTime?: number // 当前播放时间
-  subtitleFile?: string // 字幕文件路径
-  subtitleItems?: SubtitleItem[] // 字幕数据
-  videoPlaybackSettings: VideoPlaybackSettings // 视频级别的播放设置
-  videoUIConfig?: VideoUIConfig // 视频级别的UI配置 / Video-level UI configuration
+  readonly videoInfo: {
+    readonly id: string
+    readonly filePath: string
+    readonly fileName: string
+    readonly fileSize: number
+    readonly duration: number
+    readonly createdAt: Date
+    readonly modifiedAt: Date
+  }
+  readonly lastPlayedAt: Date
+  readonly lastPosition: number
+  readonly playCount: number
+  readonly thumbnail?: string
+  readonly subtitleFile?: string
+  readonly videoPlaybackSettings: GlobalPlaybackSettings
+  readonly videoUIConfig?: {
+    readonly isSubtitleLayoutLocked: boolean
+  }
 }
 
 // 全局播放设置接口（保持向后兼容）， 和单视频的配置区分开的
