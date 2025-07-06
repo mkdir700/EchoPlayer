@@ -1,6 +1,10 @@
 import { ipcMain } from 'electron'
-import type { ApiResponse, ApiResponseWithCount, VideoUIConfig } from '../../../types/shared'
-import type { RecentPlayItem } from '../../../types/video.types'
+import type {
+  ApiResponse,
+  ApiResponseWithCount,
+  VideoUIConfig,
+  RecentPlayItem
+} from '../../../types/shared'
 import { mainStore, generateId } from './storeInstances'
 
 /**
