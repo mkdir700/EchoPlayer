@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * IPC客户端服务集成测试
  * IPC Client Service Integration Tests

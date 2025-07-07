@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from 'vitest'
 import { PersistenceStrategy } from '@renderer/v2/state/persistence/persistence-manager'
 import {
