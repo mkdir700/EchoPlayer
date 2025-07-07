@@ -73,7 +73,7 @@ describe('ServiceRegistry', () => {
 
   beforeEach(() => {
     // Reset singleton instance
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     ;(ServiceRegistry as any)._instance = null
     registry = ServiceRegistry.getInstance()
     serviceA = new ServiceA()
