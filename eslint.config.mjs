@@ -28,5 +28,16 @@ export default tseslint.config(
       'react/prop-types': 'off'
     }
   },
+  // 测试文件的宽松规则配置
+  {
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-empty': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'off'
+    }
+  },
   eslintConfigPrettier
 )
