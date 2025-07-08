@@ -5,11 +5,16 @@
  * Contains all storage-related service interfaces and implementations
  */
 
-// 导出存储服务接口和实现
-// Export storage service interfaces and implementations
+// 导出配置存储服务 / Export configuration storage service
+export {
+  AppConfigStorageService as ConfigStorageService,
+  createConfigStorageService
+} from './app-config-storage.service'
 
-// 这里将包含具体的存储服务实现
-// This will contain specific storage service implementations
-
-// 临时导出以确保模块可用 / Temporary export to ensure module availability
-export {}
+// 导出存储服务类型 / Export storage service types
+export type {
+  IConfigStorageService,
+  ICacheStorageService,
+  IUserDataStorageService,
+  IStorageService
+} from '../../infrastructure/types/service/storage.types'
