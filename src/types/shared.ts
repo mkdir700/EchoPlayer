@@ -2,7 +2,7 @@
 
 // 导入electron-updater的UpdateInfo类型
 import { UpdateInfo } from 'electron-updater'
-import { RecentPlayItem } from './domain'
+import { RecentPlayItem } from './domain/video.types'
 
 // 标题栏覆盖选项 / Title bar overlay options
 export interface TitleBarOverlayOptions {
