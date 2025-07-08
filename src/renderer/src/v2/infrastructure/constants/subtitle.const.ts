@@ -1,4 +1,4 @@
-import { BackgroundType, SubtitleDisplayMode, SubtitleFormat } from '../types'
+import { BackgroundType, SubtitleDisplayMode, SubtitleFormat } from '@types_/domain'
 
 // 支持的字幕格式列表 / Supported Subtitle Formats List
 export const SUPPORTED_SUBTITLE_FORMATS = [

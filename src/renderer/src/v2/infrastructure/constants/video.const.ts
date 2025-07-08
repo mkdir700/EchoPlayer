@@ -1,4 +1,4 @@
-import { VideoFormat } from '../types'
+import { VideoFormat } from '@types_/domain'
 
 // 播放速度预设 / Playback Rate Presets
 export const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0] as const

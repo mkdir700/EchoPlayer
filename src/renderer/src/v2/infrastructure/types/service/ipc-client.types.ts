@@ -8,7 +8,7 @@
 
 import type { IBaseService, ServiceResult } from './base.types'
 import type { FileDialogOptions, UpdateStatus } from '../api/ipc.types'
-import type { RecentPlayItem } from '@types_/domain/index'
+import type { RecentPlayItem } from '@types_/domain/video.types'
 import type {
   StoreSettings,
   VideoUIConfig,

@@ -14,7 +14,7 @@ import {
   RecentPlayItem,
   VideoFormat,
   VideoResolution
-} from '../types/domain/video.types'
+} from '@types_/domain'
 import {
   SubtitleItem,
   SubtitleDisplaySettings,
@@ -24,15 +24,15 @@ import {
   BackgroundType,
   SubtitleMargins,
   MaskFrame
-} from '../types/domain/subtitle.types'
+} from '@types_/domain'
 import {
   LoopSettings,
   PlaybackControlSettings,
   PlayerState,
   PlaybackMode,
   SkipSettings
-} from '../types/domain/playback.types'
-import { UIState, FullscreenState, PageType, ThemeMode } from '../types/domain/ui.types'
+} from '@types_/domain'
+import { UIState, FullscreenState, PageType, ThemeMode } from '@types_/domain'
 import type { OperationResult, LoadingState, ValidationResult } from '../types/shared/common.types'
 
 // 生成唯一ID / Generate Unique ID

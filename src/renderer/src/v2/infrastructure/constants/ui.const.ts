@@ -1,4 +1,9 @@
-import { AnimationConfig, LayoutDimensions, ResponsiveBreakpoints, ZIndexLevels } from '../types'
+import {
+  AnimationConfig,
+  LayoutDimensions,
+  ResponsiveBreakpoints,
+  ZIndexLevels
+} from '@types_/domain'
 
 // 布局尺寸常量 / Layout Dimensions Constants
 export const LAYOUT_DIMENSIONS: LayoutDimensions = {
