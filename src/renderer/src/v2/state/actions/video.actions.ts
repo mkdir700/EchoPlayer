@@ -11,10 +11,8 @@ import { usePlaybackControlStore } from '../stores/playback.store'
 import { useUIStore } from '../stores/ui.store'
 import { StateDebug, StatePerformance } from '../infrastructure'
 import { logger } from '@renderer/utils/logger'
-
-// 导入类型定义 / Import type definitions
-import type { RecentPlayItem } from '../../infrastructure/types/domain/video.types'
-import { SubtitleDisplayMode } from '@renderer/v2/infrastructure'
+import { RecentPlayItem } from '@types_/shared'
+import { SubtitleDisplayMode } from '@types_/domain'
 
 /**
  * 视频操作类 / Video Actions Class
