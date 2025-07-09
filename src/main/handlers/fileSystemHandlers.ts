@@ -1,5 +1,5 @@
 import { ipcMain, dialog, shell } from 'electron'
-import { readFile, access, constants, stat, copyFile } from 'fs/promises'
+import { readFile, access, constants, stat, copyFile, readdir } from 'fs/promises'
 import { createReadStream, createWriteStream } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
@@ -76,6 +76,30 @@ export function setupFileSystemHandlers(): void {
       }
     } catch (error) {
       console.error('获取文件信息失败:', error)
+      return null
+    }
+  })
+
+  // 读取目录内容 / Read directory contents
+  ipcMain.handle('fs:read-directory', async (_, dirPath: string): Promise<string[] | null> => {
+    try {
+      // 检查目录是否存在且可访问 / Check if directory exists and is accessible
+      await access(dirPath, constants.F_OK)
+
+      // 获取目录统计信息 / Get directory stats
+      const stats = await stat(dirPath)
+      if (!stats.isDirectory()) {
+        console.error('❌ [主进程] 指定路径不是目录:', dirPath)
+        return null
+      }
+
+      // 读取目录内容 / Read directory contents
+      const files = await readdir(dirPath)
+      console.log(`📁 [主进程] 成功读取目录 ${dirPath}，包含 ${files.length} 个文件`)
+
+      return files
+    } catch (error) {
+      console.error('❌ [主进程] 读取目录失败:', error)
       return null
     }
   })

@@ -14,6 +14,7 @@ import type {
 interface FileSystemAPI {
   checkFileExists: (filePath: string) => Promise<boolean>
   readFile: (filePath: string) => Promise<string | null>
+  readDirectory: (dirPath: string) => Promise<string[] | null>
   getFileUrl: (filePath: string) => Promise<string | null>
   getFileInfo: (filePath: string) => Promise<{
     size: number
