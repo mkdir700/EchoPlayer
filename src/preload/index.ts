@@ -51,7 +51,11 @@ const fileSystemAPI = {
 
   // 在文件管理器中显示文件
   showItemInFolder: (filePath: string): Promise<boolean> =>
-    ipcRenderer.invoke('shell:showItemInFolder', filePath)
+    ipcRenderer.invoke('shell:showItemInFolder', filePath),
+
+  // 读取目录内容 / Read directory contents
+  readDirectory: (dirPath: string): Promise<string[] | null> =>
+    ipcRenderer.invoke('fs:read-directory', dirPath)
 }
 
 // 词典服务 API
