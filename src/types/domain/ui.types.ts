@@ -6,6 +6,8 @@
  * Based on existing EchoLab project's user interface features
  */
 
+import React from 'react'
+
 // 页面类型枚举 / Page Type Enum
 export enum PageType {
   HOME = 'home',

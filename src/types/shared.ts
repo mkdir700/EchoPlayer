@@ -2,7 +2,10 @@
 
 // 导入electron-updater的UpdateInfo类型
 import { UpdateInfo } from 'electron-updater'
-import { RecentPlayItem } from './domain/video.types'
+import { RecentPlayItem as DomainRecentPlayItem } from './domain/video.types'
+
+// 兼容性类型别名，保持与v2架构一致 / Compatibility type alias, consistent with v2 architecture
+export type RecentPlayItem = DomainRecentPlayItem
 
 // 标题栏覆盖选项 / Title bar overlay options
 export interface TitleBarOverlayOptions {

@@ -49,9 +49,8 @@ export interface SubtitleFileInfo {
   readonly fileName: string
   readonly format: SubtitleFormat
   readonly encoding: string
-  readonly language: SubtitleLanguage
-  readonly itemCount: number
-  readonly duration: number
+  readonly language?: SubtitleLanguage
+  readonly itemCount?: number
 }
 
 // 字幕位置接口 / Subtitle Position Interface
