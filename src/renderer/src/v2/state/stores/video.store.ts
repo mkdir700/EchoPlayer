@@ -16,8 +16,9 @@ import type {
   VideoPlaybackSettings,
   VideoUIConfig,
   VideoFormat
-} from '../../infrastructure/types/domain/video.types'
-import { VideoLoadingStage } from '../../infrastructure/types/domain/video.types'
+} from '@types_/domain'
+import { VideoLoadingStage } from '@types_/domain'
+
 /**
  * 当前视频状态接口 / Current Video State Interface
  */
