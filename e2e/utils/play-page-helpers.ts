@@ -1,6 +1,7 @@
 import { Page } from '@playwright/test'
-import { ElectronHelper } from './electron-helper'
+
 import { COMMON_TEST_IDS } from '../../src/renderer/src/utils/test-utils'
+import { ElectronHelper } from './electron-helper'
 // 导入文件选择器助手 / Import file chooser helper
 import { FileChooserHelper } from './file-chooser-helper'
 

@@ -85,7 +85,6 @@ export class FileChooserHelper {
       // 只模拟文件对话框，返回真实文件路径，其他 API 保持原样
       // Only mock file dialog to return real file path, keep other APIs unchanged
       await this.page.evaluate((testVideoPath) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = window as any
         if (win.api && win.api.fileSystem) {
           // 只保存文件对话框的原始函数 / Only save original file dialog function
@@ -125,7 +124,6 @@ export class FileChooserHelper {
   async restoreElectronFileDialog(): Promise<void> {
     try {
       await this.page.evaluate(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = window as any
         if (win.__originalFileSystemAPI && win.api && win.api.fileSystem) {
           // 恢复文件对话框原始函数 / Restore original file dialog function

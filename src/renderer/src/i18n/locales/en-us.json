@@ -1,0 +1,86 @@
+{
+  "common": {
+    "language": "language"
+  },
+  "settings": {
+    "appearance": {
+      "title": "Appearance Settings"
+    },
+    "developer": {
+      "enable_developer_mode": "Enable developer mode",
+      "title": "Developer mode"
+    },
+    "general": {
+      "title": "General settings"
+    },
+    "launch": {
+      "onboot": "Auto-start on boot",
+      "title": "start",
+      "totray": "Minimize to tray on startup"
+    },
+    "shortcuts": {
+      "action": "operation",
+      "actions": "operation",
+      "clear_shortcut": "Clear shortcut keys",
+      "clear_topic": "Clear messages",
+      "copy_last_message": "Copy the previous message",
+      "enabled": "Enable",
+      "escape_fullscreen": "Exit full screen",
+      "exit_fullscreen": "Exit full screen",
+      "label": "button",
+      "mini_window": "Quick Access Assistant",
+      "new_topic": "Create a new topic",
+      "next_subtitle": "next subtitle",
+      "play_pause": "Play/Pause",
+      "press_shortcut": "Press the shortcut key",
+      "previous_subtitle": "Previous subtitle",
+      "reset_defaults": "Reset default shortcuts",
+      "reset_defaults_confirm": "Are you sure you want to reset all shortcuts?",
+      "reset_to_default": "Reset to default",
+      "search_message": "Search messages",
+      "search_message_in_chat": "Search messages in current conversation",
+      "seek_backward": "Fast rewind",
+      "seek_forward": "fast forward",
+      "selection_assistant_select_text": "[to be translated]:划词助手：取词",
+      "selection_assistant_toggle": "Switch word selection assistant",
+      "show_app": "Show / Hide App",
+      "show_settings": "Open settings",
+      "single_loop": "Loop playback",
+      "title": "Shortcut keys",
+      "toggle_fullscreen": "Switch to fullscreen",
+      "toggle_new_context": "Clear context",
+      "toggle_show_assistants": "Toggle assistant display",
+      "toggle_show_topics": "Switch topic display",
+      "volume_down": "Decrease volume",
+      "volume_up": "Increase the volume",
+      "zoom_in": "Zoom in interface",
+      "zoom_out": "Minimize interface",
+      "zoom_reset": "Reset zoom"
+    },
+    "theme": {
+      "color_primary": "Primary color",
+      "dark": "dark color",
+      "light": "light color",
+      "system": "system",
+      "title": "Theme",
+      "window": {
+        "style": {
+          "transparent": "Window background blur"
+        }
+      }
+    },
+    "tray": {
+      "onclose": "Minimize to tray when closed",
+      "show": "Show tray icon",
+      "title": "tray"
+    }
+  },
+  "title": "Settings",
+  "translation": {
+    "tray": {
+      "quit": "Exit",
+      "show_mini_window": "Quick Assist",
+      "show_window": "Display window"
+    }
+  }
+}

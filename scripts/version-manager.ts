@@ -219,13 +219,13 @@ Examples:
 main()
 
 export {
-  parseVersion,
-  formatVersion,
   detectVersionType,
-  incrementVersion,
+  formatVersion,
   incrementPrerelease,
-  type VersionType,
   type IncrementType,
+  incrementVersion,
+  type PackageJson,
   type ParsedVersion,
-  type PackageJson
+  parseVersion,
+  type VersionType
 }

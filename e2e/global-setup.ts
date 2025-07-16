@@ -1,8 +1,8 @@
 import { FullConfig } from '@playwright/test'
-import { spawn, ChildProcess } from 'child_process'
-import { resolve } from 'path'
+import { ChildProcess, spawn } from 'child_process'
 import { existsSync } from 'fs'
 import os from 'os'
+import { resolve } from 'path'
 
 let electronProcess: ChildProcess | null = null
 

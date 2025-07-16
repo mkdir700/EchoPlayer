@@ -148,7 +148,6 @@ async function main(): Promise<void> {
         process.exit(0)
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     console.log('⚠️  无法检查 Git 状态，继续执行...')
   }
@@ -191,7 +190,6 @@ async function main(): Promise<void> {
     execCommand(`git add package.json`, '添加版本文件到 Git')
     execCommand(`git commit -m "chore: release v${newVersion}"`, '提交版本更改')
     execCommand(`git tag v${newVersion}`, '创建 Git 标签')
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     console.log('⚠️  Git 操作可能失败，继续构建...')
   }
@@ -208,7 +206,6 @@ async function main(): Promise<void> {
     try {
       execCommand('git push origin main', '推送代码到远程仓库')
       execCommand('git push origin --tags', '推送标签到远程仓库')
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       console.log('⚠️  推送失败，请手动推送')
     }

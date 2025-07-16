@@ -1,0 +1,343 @@
+@use './container.scss';
+
+#inputbar {
+  resize: none;
+}
+
+.ant-image-preview-switch-left {
+  -webkit-app-region: no-drag;
+}
+
+.ant-btn:not(:disabled):focus-visible {
+  outline: none;
+}
+
+.ant-tabs-tabpane:focus-visible {
+  outline: none;
+}
+
+.ant-tabs-tab-btn {
+  outline: none !important;
+}
+
+.ant-segmented-group {
+  gap: 4px;
+}
+
+.minapp-drawer {
+  [navbar-position='left'] & {
+    max-width: calc(100vw - var(--sidebar-width));
+    .ant-drawer-header {
+      width: calc(100vw - var(--sidebar-width));
+    }
+  }
+  [navbar-position='top'] & {
+    max-width: 100vw;
+    .ant-drawer-header {
+      width: 100vw;
+    }
+  }
+  .ant-drawer-content-wrapper {
+    box-shadow: none;
+  }
+  .ant-drawer-header {
+    position: absolute;
+    -webkit-app-region: drag;
+    min-height: calc(var(--navbar-height) + 0.5px);
+    margin-top: -0.5px;
+    border-bottom: none;
+  }
+  .ant-drawer-body {
+    padding: 0;
+    margin-top: var(--navbar-height);
+    overflow: hidden;
+    @extend #content-container;
+  }
+  .minapp-mask {
+    background-color: transparent !important;
+  }
+}
+
+.ant-drawer-header {
+  -webkit-app-region: no-drag;
+}
+
+.message-attachments {
+  .ant-upload-list-item:hover {
+    background-color: initial !important;
+  }
+}
+
+.ant-dropdown-menu .ant-dropdown-menu-sub {
+  max-height: 50vh;
+  width: max-content;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 0.5px solid var(--color-border);
+}
+.ant-dropdown {
+  background-color: var(--ant-color-bg-elevated);
+  overflow: hidden;
+  border-radius: var(--ant-border-radius-lg);
+  user-select: none;
+  .ant-dropdown-menu {
+    max-height: 50vh;
+    overflow-y: auto;
+    border: 0.5px solid var(--color-border);
+  }
+  .ant-dropdown-arrow + .ant-dropdown-menu {
+    border: none;
+  }
+}
+.ant-select-dropdown {
+  border: 0.5px solid var(--color-border);
+}
+.ant-dropdown-menu-submenu {
+  background-color: var(--ant-color-bg-elevated);
+  overflow: hidden;
+  border-radius: var(--ant-border-radius-lg);
+}
+
+.ant-popover {
+  .ant-popover-inner {
+    border: 0.5px solid var(--color-border);
+    .ant-popover-inner-content {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+  }
+  .ant-popover-arrow + .ant-popover-content {
+    .ant-popover-inner {
+      border: none;
+    }
+  }
+}
+
+/* Global Ant Modal - Glassmorphism */
+.ant-modal-root {
+  .ant-modal-mask {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .ant-modal-wrap {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+}
+
+/* Standard Modals (non-confirm) - global override */
+.ant-modal:not(.ant-modal-confirm) {
+  background: var(--modal-background-glass);
+  border: 1px solid var(--modal-border-color);
+  border-radius: 16px;
+  box-shadow: var(--modal-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+  max-width: 90vw;
+  max-height: 90vh;
+
+  .ant-modal-content {
+    background: transparent;
+    border-radius: 16px;
+    box-shadow: none;
+    padding: 0 0 8px 0;
+  }
+
+  .ant-modal-close {
+    margin-right: 2px;
+    color: var(--color-text-secondary);
+
+    &:hover {
+      color: var(--color-text);
+      background: var(--color-hover);
+    }
+
+    .ant-modal-close-x {
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+  }
+
+  .ant-modal-header {
+    background: transparent;
+    padding: 20px 24px 16px;
+    border-radius: 16px 16px 0 0;
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+
+  .ant-modal-body {
+    max-height: 80vh;
+    overflow-y: auto;
+    background: transparent;
+    padding: 20px 24px;
+    color: var(--color-text);
+    line-height: 1.6;
+  }
+
+  .ant-modal-footer {
+    background: transparent;
+    border-top: 1px solid var(--color-border-soft);
+    padding: 16px 24px 20px;
+    border-radius: 0 0 16px 16px;
+
+    .ant-btn {
+      border-radius: 8px;
+      font-weight: 500;
+      height: 36px;
+      padding: 0 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+
+      &.ant-btn-default {
+        background: var(--color-background-soft);
+        border: 1px solid var(--color-border);
+        color: var(--color-text);
+
+        &:hover {
+          background: var(--color-hover);
+          border-color: var(--color-border);
+        }
+      }
+
+      &.ant-btn-primary {
+        background: var(--color-primary);
+        border: 1px solid var(--color-primary);
+
+        &:hover {
+          background: var(--color-primary-soft);
+          border-color: var(--color-primary-soft);
+        }
+      }
+
+      &.ant-btn-dangerous {
+        background: var(--color-error);
+        border: 1px solid var(--color-error);
+
+        &:hover {
+          background: rgba(244, 67, 54, 0.8);
+          border-color: rgba(244, 67, 54, 0.8);
+        }
+      }
+    }
+  }
+
+  .ant-modal-confirm-btns {
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .ant-modal {
+      margin: 16px;
+      max-width: calc(100vw - 32px);
+    }
+
+    .ant-modal-header,
+    .ant-modal-body,
+    .ant-modal-footer {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+  }
+}
+
+/* Confirm Modals - global override */
+.ant-modal.ant-modal-confirm {
+  background: var(--modal-background-glass);
+  border: 1px solid var(--modal-border-color);
+  border-radius: 16px;
+  box-shadow: var(--modal-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+
+.ant-modal.ant-modal-confirm .ant-modal-content {
+  background: transparent;
+  box-shadow: none;
+}
+
+.ant-modal.ant-modal-confirm .ant-modal-confirm-body {
+  padding: 24px;
+}
+
+.ant-modal.ant-modal-confirm .ant-modal-confirm-title {
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.ant-modal.ant-modal-confirm .ant-modal-confirm-content {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+}
+
+.ant-modal.ant-modal-confirm .ant-modal-confirm-btns .ant-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  height: 36px;
+  margin-left: 8px;
+
+  &:first-child {
+    margin-left: 0;
+  }
+}
+
+/* Confirm Modal buttons - dark mode friendly */
+.ant-modal.ant-modal-confirm {
+  .ant-modal-confirm-btns {
+    .ant-btn.ant-btn-default {
+      background: var(--color-background-soft);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+
+      &:hover {
+        background: var(--color-hover);
+        border-color: var(--color-border);
+      }
+    }
+
+    .ant-btn.ant-btn-dangerous {
+      background: var(--color-error);
+      border: 1px solid var(--color-error);
+      color: var(--color-icon-white);
+
+      &:hover {
+        background: rgba(244, 67, 54, 0.8);
+        border-color: rgba(244, 67, 54, 0.8);
+      }
+    }
+  }
+}
+
+
+.ant-modal.ant-modal-confirm.ant-modal-confirm-confirm {
+  .ant-modal-content {
+    padding: 16px;
+  }
+}
+
+.ant-collapse:not(.ant-collapse-ghost) {
+  border: 1px solid var(--color-border);
+  .ant-color-picker & {
+    border: none;
+  }
+  .ant-collapse-content {
+    border-top: 0.5px solid var(--color-border) !important;
+    .ant-color-picker & {
+      border-top: none !important;
+    }
+  }
+}
+
+.ant-slider {
+  .ant-slider-handle::after {
+    box-shadow: 0 1px 4px 0px rgb(128 128 128 / 50%) !important;
+  }
+}

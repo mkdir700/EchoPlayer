@@ -1,112 +1,151 @@
-import { app, BrowserWindow } from 'electron'
+// don't reorder this file, it's used to initialize the app data dir and
+// other which should be run before the main process is ready
+// eslint-disable-next-line
+import './bootstrap'
+
+import '@main/config'
+
+import { loggerService } from '@logger'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
-import { createWindow } from './window/windowManager'
-import { setupFileSystemHandlers, setupDictionaryHandlers, setupStoreHandlers } from './handlers'
-import { setupLogHandlers } from './handlers/logHandlers'
-import { setupUpdateHandlers } from './handlers/updateHandlers'
-import { setupWindowHandlers, setMainWindow } from './handlers/windowHandlers'
-import { setupFFmpegHandlers } from './handlers/ffmpegHandlers'
-import { Logger } from './utils/logger'
+import { replaceDevtoolsFont } from '@main/utils/windowUtil'
+import { app } from 'electron'
+// import installExtension, {
+//   REACT_DEVELOPER_TOOLS,
+//   REDUX_DEVTOOLS
+// } from 'electron-devtools-installer'
 
-// 🔥 关键修复：命令行参数必须在 app.whenReady() 之前设置！
-// 启用 H.265/HEVC 支持的关键配置
-app.commandLine.appendSwitch('disable-web-security')
-app.commandLine.appendSwitch('allow-file-access-from-files')
-app.commandLine.appendSwitch('enable-local-file-accesses')
-app.commandLine.appendSwitch('disable-site-isolation-trials')
+import { isDev, isLinux, isWin } from './constant'
+import { registerIpc } from './ipc'
+import { configManager } from './services/ConfigManager'
+import { registerShortcuts } from './services/ShortcutService'
+import { TrayService } from './services/TrayService'
+import { windowService } from './services/WindowService'
 
-// 启用硬件加速和视频解码
-app.commandLine.appendSwitch('enable-gpu-rasterization')
-app.commandLine.appendSwitch('enable-zero-copy')
-app.commandLine.appendSwitch('enable-hardware-overlays')
-app.commandLine.appendSwitch('enable-oop-rasterization')
-app.commandLine.appendSwitch('enable-accelerated-video-decode')
-app.commandLine.appendSwitch('enable-accelerated-video-encode')
+const logger = loggerService.withContext('MainEntry')
 
-// 启用 H.265/HEVC 相关特性
-app.commandLine.appendSwitch(
-  'enable-features',
-  'VaapiVideoDecoder,VaapiVideoEncoder,PlatformHEVCDecoderSupport,MediaFoundationH264Encoding,MediaFoundationH265Encoding'
-)
-
-// Windows 特定的 H.265 支持
-if (process.platform === 'win32') {
-  app.commandLine.appendSwitch('enable-media-foundation-video-capture')
-  app.commandLine.appendSwitch('enable-win32-keyboard-lock')
-  // 强制使用 Media Foundation 进行视频解码
-  app.commandLine.appendSwitch('enable-features', 'MediaFoundationVideoCapture')
+/**
+ * Disable hardware acceleration if setting is enabled
+ */
+const disableHardwareAcceleration = configManager.getDisableHardwareAcceleration()
+if (disableHardwareAcceleration) {
+  app.disableHardwareAcceleration()
 }
 
-// macOS 特定的 H.265 支持
-if (process.platform === 'darwin') {
-  app.commandLine.appendSwitch('enable-features', 'VideoToolboxVP9Decoder,VideoToolboxH264Decoder')
+/**
+ * Disable chromium's window animations
+ * main purpose for this is to avoid the transparent window flashing when it is shown
+ * (especially on Windows for SelectionAssistant Toolbar)
+ * Know Issue: https://github.com/electron/electron/issues/12130#issuecomment-627198990
+ */
+if (isWin) {
+  app.commandLine.appendSwitch('wm-window-animations-disabled')
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  // 初始化日志系统
-  Logger.appStart()
+/**
+ * Enable GlobalShortcutsPortal for Linux Wayland Protocol
+ * see: https://www.electronjs.org/docs/latest/api/global-shortcut
+ */
+if (isLinux && process.env.XDG_SESSION_TYPE === 'wayland') {
+  app.commandLine.appendSwitch('enable-features', 'GlobalShortcutsPortal')
+}
 
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+// Enable features for unresponsive renderer js call stacks
+app.commandLine.appendSwitch('enable-features', 'DocumentPolicyIncludeJSCallStacksInCrashReports')
+app.on('web-contents-created', (_, webContents) => {
+  webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Document-Policy': ['include-js-call-stacks-in-crash-reports']
+      }
+    })
+  })
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+  webContents.on('unresponsive', async () => {
+    // Interrupt execution and collect call stack from unresponsive renderer
+    logger.error('Renderer unresponsive start')
+    const callStack = await webContents.mainFrame.collectJavaScriptCallStack()
+    logger.error(`Renderer unresponsive js call stack\n ${callStack}`)
+  })
+})
+
+// in production mode, handle uncaught exception and unhandled rejection globally
+if (!isDev) {
+  // handle uncaught exception
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error)
+  })
+
+  // handle unhandled rejection
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error(`Unhandled Rejection at: ${promise} reason: ${reason}`)
+  })
+}
+
+// Check for single instance lock
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+  process.exit(0)
+} else {
+  // This method will be called when Electron has finished
+  // initialization and is ready to create browser windows.
+  // Some APIs can only be used after this event occurs.
+
+  app.whenReady().then(async () => {
+    // Set app user model id for windows
+    electronApp.setAppUserModelId(
+      import.meta.env.VITE_MAIN_BUNDLE_ID || 'com.kangfenmao.CherryStudio'
+    )
+
+    // Mac: Hide dock icon before window creation when launch to tray is set
+    const isLaunchToTray = configManager.getLaunchToTray()
+    if (isLaunchToTray) {
+      app.dock?.hide()
+    }
+
+    const mainWindow = windowService.createMainWindow()
+    new TrayService()
+
+    // nodeTraceService.init()
+
+    app.on('activate', function () {
+      const mainWindow = windowService.getMainWindow()
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        windowService.createMainWindow()
+      } else {
+        windowService.showMainWindow()
+      }
+    })
+
+    registerShortcuts(mainWindow)
+
+    registerIpc(mainWindow, app)
+
+    replaceDevtoolsFont(mainWindow)
+
+    // Setup deep link for AppImage on Linux
+    // await setupAppImageDeepLink()
+
+    // if (isDev) {
+    //   installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
+    //     .then((name) => logger.info(`Added Extension:  ${name}`))
+    //     .catch((err) => logger.error('An error occurred: ', err))
+    // }
+  })
+
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // 文件系统相关的 IPC 处理器
-  setupFileSystemHandlers()
-
-  // 设置词典服务相关的 IPC 处理器
-  setupDictionaryHandlers()
-
-  // 设置存储相关的 IPC 处理器
-  setupStoreHandlers()
-
-  // 设置日志相关的 IPC 处理器
-  setupLogHandlers()
-
-  // 设置窗口相关的 IPC 处理器
-  setupWindowHandlers()
-
-  // 设置 FFmpeg 相关的 IPC 处理器 / Setup FFmpeg-related IPC handlers
-  setupFFmpegHandlers()
-
-  // 创建主窗口
-  const mainWindow = createWindow()
-
-  // 设置主窗口引用
-  setMainWindow(mainWindow)
-
-  // 设置更新处理器
-  setupUpdateHandlers(mainWindow)
-
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  app.on('before-quit', () => {
+    app.isQuitting = true
   })
-})
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  Logger.appShutdown()
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
+  app.on('will-quit', async () => {
+    // finish the logger
+    logger.finish()
+  })
 
-// 应用即将退出时的清理
-app.on('before-quit', () => {
-  Logger.appShutdown()
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+  // In this file you can include the rest of your app"s specific main process
+  // code. You can also put them in separate files and require them here.
+}

@@ -5,9 +5,9 @@
  * Generate Test Update Data - Create update manifest files and mock installers for local testing
  */
 
+import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
-import crypto from 'crypto'
 
 // 配置 / Configuration
 const UPDATE_DATA_DIR = path.join(__dirname, '..', 'dev-update-data')

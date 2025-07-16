@@ -14,7 +14,7 @@
  * 3. Provide testing guidance
  */
 
-import { spawn, ChildProcess } from 'child_process'
+import { ChildProcess, spawn } from 'child_process'
 
 // 配置 / Configuration
 const UPDATE_SERVER_PORT = 8384
@@ -38,7 +38,6 @@ function colorLog(color: keyof typeof colors, message: string): void {
 // 检查端口是否被占用 / Check if port is in use
 function checkPort(port: number): Promise<boolean> {
   return new Promise((resolve) => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const net = require('net')
     const server = net.createServer()
 
@@ -57,7 +56,6 @@ function waitForServer(port: number, timeout = 10000): Promise<boolean> {
     const startTime = Date.now()
 
     const checkServer = (): void => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const net = require('net')
       const socket = new net.Socket()
 

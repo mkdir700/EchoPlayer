@@ -1,0 +1,86 @@
+{
+  "common": {
+    "language": "語言"
+  },
+  "settings": {
+    "appearance": {
+      "title": "外观设置"
+    },
+    "developer": {
+      "enable_developer_mode": "啟用開發者模式",
+      "title": "開發者模式"
+    },
+    "general": {
+      "title": "通用設置"
+    },
+    "launch": {
+      "onboot": "開機自啟動",
+      "title": "啟動",
+      "totray": "啟動時最小化到托盤"
+    },
+    "shortcuts": {
+      "action": "操作",
+      "actions": "操作",
+      "clear_shortcut": "清除快捷鍵",
+      "clear_topic": "清空訊息",
+      "copy_last_message": "複製上一條訊息",
+      "enabled": "啟用",
+      "escape_fullscreen": "退出全屏",
+      "exit_fullscreen": "退出全屏",
+      "label": "按鍵",
+      "mini_window": "快捷助手",
+      "new_topic": "新建話題",
+      "next_subtitle": "下一字幕",
+      "play_pause": "播放/暫停",
+      "press_shortcut": "按下快捷鍵",
+      "previous_subtitle": "上一字幕",
+      "reset_defaults": "重置預設快速鍵",
+      "reset_defaults_confirm": "確定要重置所有快捷鍵嗎？",
+      "reset_to_default": "重置為預設",
+      "search_message": "搜尋訊息",
+      "search_message_in_chat": "在當前對話中搜尋訊息",
+      "seek_backward": "快退",
+      "seek_forward": "快進",
+      "selection_assistant_select_text": "划詞助手：取詞",
+      "selection_assistant_toggle": "开关划词助手",
+      "show_app": "顯示 / 隱藏應用",
+      "show_settings": "打開設定",
+      "single_loop": "循環播放",
+      "title": "快捷鍵",
+      "toggle_fullscreen": "切換全屏",
+      "toggle_new_context": "清除上下文",
+      "toggle_show_assistants": "切換助手顯示",
+      "toggle_show_topics": "切換話題顯示",
+      "volume_down": "减小音量",
+      "volume_up": "增大音量",
+      "zoom_in": "放大介面",
+      "zoom_out": "縮小介面",
+      "zoom_reset": "重置縮放"
+    },
+    "theme": {
+      "color_primary": "主題色",
+      "dark": "深色",
+      "light": "淺色",
+      "system": "系統",
+      "title": "主題",
+      "window": {
+        "style": {
+          "transparent": "窗口背景模糊"
+        }
+      }
+    },
+    "tray": {
+      "onclose": "關閉時最小化到托盤",
+      "show": "顯示托盤圖示",
+      "title": "托盤"
+    }
+  },
+  "title": "設定",
+  "translation": {
+    "tray": {
+      "quit": "退出",
+      "show_mini_window": "快速助手",
+      "show_window": "顯示視窗"
+    }
+  }
+}

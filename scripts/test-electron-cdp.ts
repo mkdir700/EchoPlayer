@@ -1,6 +1,6 @@
 import { spawn } from 'child_process'
-import { resolve } from 'path'
 import os from 'os'
+import { resolve } from 'path'
 
 async function testElectronCDP(): Promise<void> {
   console.log('🧪 Testing Electron CDP connection...')

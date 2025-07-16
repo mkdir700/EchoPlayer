@@ -1,0 +1,86 @@
+{
+  "common": {
+    "language": "言語"
+  },
+  "settings": {
+    "appearance": {
+      "title": "外観設定"
+    },
+    "developer": {
+      "enable_developer_mode": "開発者モードを有効にする",
+      "title": "開発者モード"
+    },
+    "general": {
+      "title": "一般的な設定"
+    },
+    "launch": {
+      "onboot": "开机自启动",
+      "title": "启动",
+      "totray": "起動時にトレイに最小化する"
+    },
+    "shortcuts": {
+      "action": "操作",
+      "actions": "操作",
+      "clear_shortcut": "クリアショートカットキー",
+      "clear_topic": "清空メッセージ",
+      "copy_last_message": "前回のメッセージをコピーする",
+      "enabled": "有効化",
+      "escape_fullscreen": "全画面表示を終了する",
+      "exit_fullscreen": "全画面表示を終了する",
+      "label": "キー",
+      "mini_window": "ショートカットアシスタント",
+      "new_topic": "新規トピックの作成",
+      "next_subtitle": "次の字幕",
+      "play_pause": "再生/一時停止",
+      "press_shortcut": "ショートカットキーを押す",
+      "previous_subtitle": "前の字幕",
+      "reset_defaults": "デフォルトのショートカットキーをリセットする",
+      "reset_defaults_confirm": "すべてのショートカットキーをリセットしてもよろしいですか？",
+      "reset_to_default": "デフォルトにリセットする",
+      "search_message": "メッセージを検索する",
+      "search_message_in_chat": "現在の会話でメッセージを検索する",
+      "seek_backward": "早戻し",
+      "seek_forward": "早送り",
+      "selection_assistant_select_text": "[を翻訳する]: ハイライトアシスタント：単語の取得",
+      "selection_assistant_toggle": "スイッチワードヘルパー",
+      "show_app": "表示 / 非表示アプリケーション",
+      "show_settings": "設定を開く",
+      "single_loop": "ループ再生",
+      "title": "ショートカットキー",
+      "toggle_fullscreen": "全画面表示に切り替えます",
+      "toggle_new_context": "上下文をクリアする",
+      "toggle_show_assistants": "アシスタント表示の切り替え",
+      "toggle_show_topics": "トピックの切り替え表示",
+      "volume_down": "音量を下げる",
+      "volume_up": "音量を大きくする",
+      "zoom_in": "拡大インターフェース",
+      "zoom_out": "縮小インターフェース",
+      "zoom_reset": "ズームをリセットする"
+    },
+    "theme": {
+      "color_primary": "テーマカラー",
+      "dark": "深色",
+      "light": "浅色",
+      "system": "システム",
+      "title": "テーマ",
+      "window": {
+        "style": {
+          "transparent": "ウィンドウの背景のぼかし"
+        }
+      }
+    },
+    "tray": {
+      "onclose": "閉じるときにトレイに最小化する",
+      "show": "トレイアイコンを表示する",
+      "title": "トレイ"
+    }
+  },
+  "title": "設定",
+  "translation": {
+    "tray": {
+      "quit": "退出",
+      "show_mini_window": "快速助手",
+      "show_window": "表示ウィンドウ"
+    }
+  }
+}

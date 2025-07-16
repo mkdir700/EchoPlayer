@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+
 import { ElectronHelper } from './utils/electron-helper'
 
 // 简化的测试，直接测试新的测试环境自动文件加载功能

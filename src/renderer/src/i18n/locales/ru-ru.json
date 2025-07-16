@@ -1,0 +1,86 @@
+{
+  "common": {
+    "language": "язык"
+  },
+  "settings": {
+    "appearance": {
+      "title": "Настройки внешнего вида"
+    },
+    "developer": {
+      "enable_developer_mode": "Включить режим разработчика",
+      "title": "Режим разработчика"
+    },
+    "general": {
+      "title": "Общие настройки"
+    },
+    "launch": {
+      "onboot": "автозапуск при включении",
+      "title": "запуск",
+      "totray": "запуск с минимизацией в трей"
+    },
+    "shortcuts": {
+      "action": "операция",
+      "actions": "операция",
+      "clear_shortcut": "Очистить сочетания клавиш",
+      "clear_topic": "Очистить сообщения",
+      "copy_last_message": "Скопировать предыдущее сообщение",
+      "enabled": "включить",
+      "escape_fullscreen": "выйти из полноэкранного режима",
+      "exit_fullscreen": "выйти из полноэкранного режима",
+      "label": "кнопка",
+      "mini_window": "Быстрый помощник",
+      "new_topic": "Новая тема",
+      "next_subtitle": "следующий субтитр",
+      "play_pause": "воспроизвести/приостановить",
+      "press_shortcut": "нажмите сочетание клавиш",
+      "previous_subtitle": "Предыдущая субтитрация",
+      "reset_defaults": "Сбросить сочетания клавиш по умолчанию",
+      "reset_defaults_confirm": "Вы уверены, что хотите сбросить все сочетания клавиш?",
+      "reset_to_default": "сбросить к значению по умолчанию",
+      "search_message": "поиск сообщений",
+      "search_message_in_chat": "Поиск сообщений в текущем диалоге",
+      "seek_backward": "откат",
+      "seek_forward": "перемотать вперед",
+      "selection_assistant_select_text": "Помощник по выделению слов: выбор слов",
+      "selection_assistant_toggle": "переключатель помощника по выделению слов",
+      "show_app": "отображать / скрывать приложение",
+      "show_settings": "открыть настройки",
+      "single_loop": "циклическое воспроизведение",
+      "title": "Горячие клавиши",
+      "toggle_fullscreen": "переключить полноэкранный режим",
+      "toggle_new_context": "Очистить контекст",
+      "toggle_show_assistants": "Переключить отображение помощника",
+      "toggle_show_topics": "переключить отображение темы",
+      "volume_down": "уменьшить громкость",
+      "volume_up": "увеличить громкость",
+      "zoom_in": "увеличить интерфейс",
+      "zoom_out": "уменьшить интерфейс",
+      "zoom_reset": "сбросить масштаб"
+    },
+    "theme": {
+      "color_primary": "основной цвет",
+      "dark": "тёмный",
+      "light": "светлый",
+      "system": "система",
+      "title": "тема",
+      "window": {
+        "style": {
+          "transparent": "размытие фона окна"
+        }
+      }
+    },
+    "tray": {
+      "onclose": "сворачивать в трей при закрытии",
+      "show": "Показать значок в трее",
+      "title": "поддон"
+    }
+  },
+  "title": "настройки",
+  "translation": {
+    "tray": {
+      "quit": "выход",
+      "show_mini_window": "Быстрый помощник",
+      "show_window": "отображать окно"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { test } from '@playwright/test'
+
 import { ElectronHelper } from './utils/electron-helper'
 
 test.describe('EchoLab Smoke Test - MVP 核心验证', () => {
