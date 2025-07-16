@@ -5,7 +5,7 @@
  * Local Update Demo Script - Demonstrates the complete local update testing workflow
  */
 
-import { spawn, ChildProcess } from 'child_process'
+import { ChildProcess, spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import readline from 'readline'

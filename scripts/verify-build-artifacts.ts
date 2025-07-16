@@ -10,9 +10,9 @@
  * 4. 验证自动更新文件 / Verify auto-update files
  */
 
+import * as crypto from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
-import * as crypto from 'crypto'
 
 // 项目根目录 / Project root directory
 const PROJECT_ROOT = path.join(process.cwd())

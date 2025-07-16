@@ -42,7 +42,8 @@ docs/.vitepress/cache/deps
 *.tsbuildinfo
 .serena
 
-# Task files
-# tasks.json
-# tasks/ 
 .promptx
+
+# Task files
+tasks.json
+tasks/ 

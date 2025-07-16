@@ -1,0 +1,128 @@
+{
+  "common": {
+    "grid_view": "矩阵视图",
+    "language": "语言",
+    "list_view": "列表视图",
+    "return": "返回",
+    "search": "搜索",
+    "search_no_results": "暂无搜索结果",
+    "search_placeholder": "搜索视频..."
+  },
+  "home": {
+    "add_video": "新增视频",
+    "title": "我的视频库",
+    "viewMode": {
+      "grid": "矩阵",
+      "list": "列表"
+    }
+  },
+  "settings": {
+    "about": {
+      "title": "关于"
+    },
+    "appearance": {
+      "title": "外观设置"
+    },
+    "developer": {
+      "enable_developer_mode": "启用开发者模式",
+      "title": "开发者模式"
+    },
+    "general": {
+      "title": "通用设置"
+    },
+    "launch": {
+      "onboot": "开机自启动",
+      "title": "启动",
+      "totray": "启动时最小化到托盘"
+    },
+    "playback": {
+      "defaultPlaybackSpeed": "播放速度",
+      "defaultVolume": "默认音量",
+      "subtitle": {
+        "backgroundType": {
+          "blur": "模糊",
+          "solid": "纯色",
+          "transparent": "透明"
+        },
+        "defaultBackgroundType": "默认背景",
+        "defaultDisplayMode": "展示方式",
+        "displayMode": {
+          "bilingual": "双语",
+          "none": "隐藏",
+          "original": "原文",
+          "translation": "译文"
+        },
+        "title": "字幕设置"
+      },
+      "title": "播放设置"
+    },
+    "shortcut": {
+      "title": "快捷键设置"
+    },
+    "shortcuts": {
+      "action": "操作",
+      "actions": "操作",
+      "clear_shortcut": "清除快捷键",
+      "clear_topic": "清空消息",
+      "copy_last_message": "复制上一条消息",
+      "enabled": "启用",
+      "escape_fullscreen": "退出全屏",
+      "exit_fullscreen": "退出全屏",
+      "label": "按键",
+      "mini_window": "快捷助手",
+      "new_topic": "新建话题",
+      "next_subtitle": "下一字幕",
+      "play_pause": "播放/暂停",
+      "press_shortcut": "按下快捷键",
+      "previous_subtitle": "上一字幕",
+      "reset_defaults": "重置默认快捷键",
+      "reset_defaults_confirm": "确定要重置所有快捷键吗？",
+      "reset_to_default": "重置为默认",
+      "search_message": "搜索消息",
+      "search_message_in_chat": "在当前对话中搜索消息",
+      "seek_backward": "快退",
+      "seek_forward": "快进",
+      "selection_assistant_select_text": "划词助手：取词",
+      "selection_assistant_toggle": "开关划词助手",
+      "show_app": "显示 / 隐藏应用",
+      "show_settings": "打开设置",
+      "single_loop": "循环播放",
+      "title": "快捷键",
+      "toggle_fullscreen": "切换全屏",
+      "toggle_new_context": "清除上下文",
+      "toggle_show_assistants": "切换助手显示",
+      "toggle_show_topics": "切换话题显示",
+      "volume_down": "减小音量",
+      "volume_up": "增大音量",
+      "zoom_in": "放大界面",
+      "zoom_out": "缩小界面",
+      "zoom_reset": "重置缩放"
+    },
+    "theme": {
+      "color_primary": "主题色",
+      "dark": "深色",
+      "light": "浅色",
+      "system": "系统",
+      "title": "主题",
+      "window": {
+        "style": {
+          "transparent": "窗口背景模糊"
+        }
+      }
+    },
+    "title": "设置",
+    "tray": {
+      "onclose": "关闭时最小化到托盘",
+      "show": "显示托盘图标",
+      "title": "托盘"
+    }
+  },
+  "title": "设置",
+  "translation": {
+    "tray": {
+      "quit": "退出",
+      "show_mini_window": "快速助手",
+      "show_window": "显示窗口"
+    }
+  }
+}

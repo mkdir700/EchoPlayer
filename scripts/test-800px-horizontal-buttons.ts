@@ -169,4 +169,4 @@ if (require.main === module) {
   verifyButtonLayoutFix()
 }
 
-export { verifyButtonLayoutFix, generateTestCases }
+export { generateTestCases, verifyButtonLayoutFix }

@@ -1,0 +1,86 @@
+{
+  "common": {
+    "language": "Langue"
+  },
+  "settings": {
+    "appearance": {
+      "title": "Paramètres d'apparence"
+    },
+    "developer": {
+      "enable_developer_mode": "Activer le mode développeur",
+      "title": "Mode développeur"
+    },
+    "general": {
+      "title": "Paramètres généraux"
+    },
+    "launch": {
+      "onboot": "Démarrage automatique avec le système",
+      "title": "Démarrage",
+      "totray": "Minimiser vers la barre d'état lors du démarrage"
+    },
+    "shortcuts": {
+      "action": "opération",
+      "actions": "opération",
+      "clear_shortcut": "Effacer le raccourci clavier",
+      "clear_topic": "Effacer les messages",
+      "copy_last_message": "Copier le dernier message",
+      "enabled": "activer",
+      "escape_fullscreen": "quitter le mode plein écran",
+      "exit_fullscreen": "quitter le mode plein écran",
+      "label": "touche",
+      "mini_window": "Assistant rapide",
+      "new_topic": "Nouveau sujet",
+      "next_subtitle": "sous-titre suivant",
+      "play_pause": "Lecture/Lecture en pause",
+      "press_shortcut": "appuyez sur le raccourci clavier",
+      "previous_subtitle": "sous-titre précédent",
+      "reset_defaults": "Réinitialiser les raccourcis par défaut",
+      "reset_defaults_confirm": "Êtes-vous sûr de vouloir réinitialiser tous les raccourcis clavier ?",
+      "reset_to_default": "Réinitialiser aux paramètres par défaut",
+      "search_message": "Rechercher des messages",
+      "search_message_in_chat": "Rechercher des messages dans la conversation actuelle",
+      "seek_backward": "Reculer rapidement",
+      "seek_forward": "avance rapide",
+      "selection_assistant_select_text": "Assistant de sélection de texte : sélection de mots",
+      "selection_assistant_toggle": "Assistant pour la sélection de mots par basculement",
+      "show_app": "afficher / masquer l'application",
+      "show_settings": "ouvrir les paramètres",
+      "single_loop": "lecture en boucle",
+      "title": "raccourcis clavier",
+      "toggle_fullscreen": "passer en plein écran",
+      "toggle_new_context": "Effacer le contexte",
+      "toggle_show_assistants": "Changer l'affichage de l'assistant",
+      "toggle_show_topics": "Afficher le changement de sujet",
+      "volume_down": "diminuer le volume",
+      "volume_up": "augmenter le volume",
+      "zoom_in": "Agrandir l'interface",
+      "zoom_out": "Réduire l'interface",
+      "zoom_reset": "réinitialiser le zoom"
+    },
+    "theme": {
+      "color_primary": "couleur thème",
+      "dark": "sombre",
+      "light": "clair",
+      "system": "système",
+      "title": "sujet",
+      "window": {
+        "style": {
+          "transparent": "Flou d'arrière-plan de la fenêtre"
+        }
+      }
+    },
+    "tray": {
+      "onclose": "Minimiser vers la barre d'état lors de la fermeture",
+      "show": "Afficher l'icône dans la barre d'état",
+      "title": "Barre d'état"
+    }
+  },
+  "title": "Paramètres",
+  "translation": {
+    "tray": {
+      "quit": "quitter",
+      "show_mini_window": "Assistant rapide",
+      "show_window": "afficher la fenêtre"
+    }
+  }
+}

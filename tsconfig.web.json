@@ -2,14 +2,18 @@
   "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
   "include": [
     "src/renderer/src/**/*",
-    "src/renderer/src/**/*.tsx",
-    "src/renderer/src/types/global.d.ts",
     "src/preload/*.d.ts",
-    "src/types/**/*",
-    "src/test/**/*"
+    "local/src/renderer/**/*",
+    "packages/shared/**/*",
+    "tests/__mocks__/**/*"
   ],
-  "types": ["vitest/globals", "@testing-library/jest-dom"],
-  "typeRoots": ["./src/preload"],
+  "types": [
+    "vitest/globals",
+    "@testing-library/jest-dom"
+  ],
+  "typeRoots": [
+    "./src/preload"
+  ],
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",
@@ -18,9 +22,15 @@
       "@renderer/*": [
         "src/renderer/src/*"
       ],
-      "@types_/*": [
-        "src/types/*"
-      ]
+      "@shared/*": [
+        "packages/shared/*"
+      ],
+      "@types": [
+        "src/renderer/src/infrastructure/types"
+      ],
+      "@logger": [
+        "src/renderer/src/services/Logger"
+      ],
     }
   }
 }

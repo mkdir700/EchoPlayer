@@ -1,7 +1,7 @@
 import { FullConfig } from '@playwright/test'
 import { ChildProcess } from 'child_process'
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function globalTeardown(_config: FullConfig) {
   console.log('🧹 Cleaning up E2E test environment...')
 

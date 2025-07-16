@@ -1,0 +1,86 @@
+{
+  "common": {
+    "language": "Idioma"
+  },
+  "settings": {
+    "appearance": {
+      "title": "Definições de aparência"
+    },
+    "developer": {
+      "enable_developer_mode": "Ativar modo de desenvolvedor",
+      "title": "Modo de Desenvolvedor"
+    },
+    "general": {
+      "title": "Configurações Gerais"
+    },
+    "launch": {
+      "onboot": "Inicialização automática ao ligar o computador",
+      "title": "Inicialização",
+      "totray": "Minimizar para a bandeja ao iniciar"
+    },
+    "shortcuts": {
+      "action": "operação",
+      "actions": "operação",
+      "clear_shortcut": "Limpar atalhos de teclado",
+      "clear_topic": "Limpar mensagens",
+      "copy_last_message": "copiar a última mensagem",
+      "enabled": "ativar",
+      "escape_fullscreen": "sair do ecrã inteiro",
+      "exit_fullscreen": "sair da tela cheia",
+      "label": "tecla",
+      "mini_window": "Assistente rápido",
+      "new_topic": "Criar novo tópico",
+      "next_subtitle": "próximo subtítulo",
+      "play_pause": "reproduzir/pausar",
+      "press_shortcut": "prima a tecla de atalho",
+      "previous_subtitle": "Legenda anterior",
+      "reset_defaults": "Redefinir atalhos predefinidos",
+      "reset_defaults_confirm": "Tem a certeza de que deseja repor todas as teclas de atalho?",
+      "reset_to_default": "repor ao padrão",
+      "search_message": "pesquisar mensagens",
+      "search_message_in_chat": "pesquisar mensagens na conversa atual",
+      "seek_backward": "recuar rapidamente",
+      "seek_forward": "avançar rapidamente",
+      "selection_assistant_select_text": "Assistente de seleção de palavras: selecionar palavras",
+      "selection_assistant_toggle": "Assistente de seleção de palavras com interruptor",
+      "show_app": "Mostrar / Ocultar aplicação",
+      "show_settings": "abrir definições",
+      "single_loop": "reprodução em loop",
+      "title": "atalhos de teclado",
+      "toggle_fullscreen": "alternar ecrã inteiro",
+      "toggle_new_context": "limpar contexto",
+      "toggle_show_assistants": "Alternar exibição do assistente",
+      "toggle_show_topics": "mostrar alternância de tópicos",
+      "volume_down": "diminuir o volume",
+      "volume_up": "aumentar o volume",
+      "zoom_in": "ampliar a interface",
+      "zoom_out": "reduzir a interface",
+      "zoom_reset": "redefinir zoom"
+    },
+    "theme": {
+      "color_primary": "cor de tema",
+      "dark": "escuro",
+      "light": "claro",
+      "system": "sistema",
+      "title": "tema",
+      "window": {
+        "style": {
+          "transparent": "Desfoque de fundo da janela"
+        }
+      }
+    },
+    "tray": {
+      "onclose": "Minimizar para a bandeja ao fechar",
+      "show": "Mostrar ícone na bandeja",
+      "title": "Bandeja"
+    }
+  },
+  "title": "Definições",
+  "translation": {
+    "tray": {
+      "quit": "sair",
+      "show_mini_window": "Assistente Rápido",
+      "show_window": "Exibir janela"
+    }
+  }
+}

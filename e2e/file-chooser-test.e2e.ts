@@ -1,7 +1,8 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+
+import { COMMON_TEST_IDS } from '../src/renderer/src/utils/test-utils'
 import { ElectronHelper } from './utils/electron-helper'
 import { FileChooserHelper } from './utils/file-chooser-helper'
-import { COMMON_TEST_IDS } from '../src/renderer/src/utils/test-utils'
 
 /**
  * 文件选择器测试 / File chooser test
@@ -46,7 +47,6 @@ test.describe('File Chooser E2E Test / 文件选择器端到端测试', () => {
     await page.evaluate(() => {
       console.log('🎯 Setting up direct API mock...')
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const win = window as any
       if (win.api && win.api.fileSystem) {
         const originalFn = win.api.fileSystem.openFileDialog
@@ -79,7 +79,6 @@ test.describe('File Chooser E2E Test / 文件选择器端到端测试', () => {
     console.log('🎯 Checking Electron API availability...')
 
     const apiInfo = await page.evaluate(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const win = window as any
 
       return {
