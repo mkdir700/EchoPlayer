@@ -1,9 +1,10 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { Check, Zap } from 'lucide-react'
-import React, { useState } from 'react'
+import React from 'react'
 import styled from 'styled-components'
 
 import { usePlayerCommandsOrchestrated } from '../../../hooks/usePlayerCommandsOrchestrated'
+import { useControlMenuManager } from '../hooks/useControlMenuManager'
 import { GlassPopup } from '../styles/controls'
 
 const RATE_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
@@ -11,7 +12,16 @@ const RATE_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 export default function PlaybackRateControl() {
   const playbackRate = usePlayerStore((s) => s.playbackRate)
   const { setPlaybackRate } = usePlayerCommandsOrchestrated()
-  const [isRateOpen, setRateOpen] = useState(false)
+
+  // 使用全局菜单管理器
+  const {
+    isMenuOpen: isRateOpen,
+    toggleMenu,
+    closeMenu,
+    containerRef
+  } = useControlMenuManager({
+    menuId: 'playback-rate'
+  })
 
   const setSpeed = (rate: number) => {
     const clampedRate = Math.max(0.25, Math.min(3, rate))
@@ -19,8 +29,8 @@ export default function PlaybackRateControl() {
   }
 
   return (
-    <PlaybackRateControlWrap>
-      <RateButton onClick={() => setRateOpen((v) => !v)} aria-label="Playback rate">
+    <PlaybackRateControlWrap ref={containerRef}>
+      <RateButton onClick={toggleMenu} aria-label="Playback rate">
         <Zap size={16} />
         <span>{playbackRate.toFixed(2).replace(/\.00$/, '')}x</span>
       </RateButton>
@@ -35,7 +45,7 @@ export default function PlaybackRateControl() {
                   $active={active}
                   onClick={() => {
                     setSpeed(opt)
-                    setRateOpen(false)
+                    closeMenu()
                   }}
                 >
                   <span>{opt}</span>
