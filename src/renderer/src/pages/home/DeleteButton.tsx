@@ -1,6 +1,6 @@
+import { DeleteOutlined } from '@ant-design/icons'
 import React from 'react'
 import styled from 'styled-components'
-import { DeleteOutlined } from '@ant-design/icons'
 
 interface DeleteButtonProps {
   onClick: (e: React.MouseEvent) => void

@@ -32,17 +32,16 @@ export class StorageEngine<T extends Serializable = Serializable> implements Per
    */
   async getItem(name: string): Promise<StorageValue<T> | null> {
     try {
-      logger.debug(`📖 从 localStorage 读取状态: ${name}`)
+      logger.silly(`📖 从 localStorage 读取状态: ${name}`)
       const storageKey = this.getStorageKey(name)
       const rawData = window.localStorage.getItem(storageKey)
 
       if (rawData) {
         const data = JSON.parse(rawData) as StorageValue<T>
-        logger.debug(`✅ 状态读取成功: ${name}`, { dataType: typeof data })
         return data
       }
 
-      logger.debug(`📭 状态不存在: ${name}`)
+      logger.silly(`📭 状态不存在: ${name}`)
       return null
     } catch (error) {
       logger.error(`❌ 读取状态失败: ${name}`, { error })
@@ -61,7 +60,6 @@ export class StorageEngine<T extends Serializable = Serializable> implements Per
       const storageKey = this.getStorageKey(name)
       const stringifiedValue = JSON.stringify(value)
       window.localStorage.setItem(storageKey, stringifiedValue)
-      logger.debug(`✅ 状态保存成功: ${name}`)
     } catch (error) {
       logger.error(`❌ 保存状态失败: ${name}`, { error })
       throw error
@@ -77,7 +75,7 @@ export class StorageEngine<T extends Serializable = Serializable> implements Per
     try {
       const storageKey = this.getStorageKey(name)
       window.localStorage.removeItem(storageKey)
-      logger.debug(`🗑️ 状态删除成功: ${name}`)
+      logger.silly(`🗑️ 状态删除成功: ${name}`)
     } catch (error) {
       logger.error(`❌ 删除状态失败: ${name}`, { error })
       throw error

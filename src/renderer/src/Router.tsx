@@ -1,7 +1,7 @@
 // import '@renderer/databases'
 
 import Sidebar from '@renderer/components/app/Sidebar'
-import { HomePage, SettingsPage, PlayerPage } from '@renderer/pages'
+import { HomePage, PlayerPage, SettingsPage } from '@renderer/pages'
 import { FC, useMemo } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 

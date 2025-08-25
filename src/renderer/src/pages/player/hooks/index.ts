@@ -1,4 +1,2 @@
-export { usePlayerControls } from './usePlayerControls'
+export { usePlayerEngine } from './usePlayerEngine'
 export { useSubtitleEngine } from './useSubtitleEngine'
-export { useSubtitleSync } from './useSubtitleSync'
-export { useVideoEvents } from './useVideoEvents'

@@ -11,13 +11,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 
 import { NavbarIcon } from '.'
-import {
-  SettingsPopover,
-  SubtitleListPanel,
-  SubtitleOverlay,
-  TransportBar,
-  VideoSurface
-} from './components'
+import { ControllerPanel, SettingsPopover, SubtitleListPanel, VideoSurface } from './components'
 import { PlayerPageProvider } from './state/player-page.provider'
 
 const logger = loggerService.withContext('PlayerPage')
@@ -172,15 +166,11 @@ function PlayerPage() {
                 <Splitter.Panel defaultSize={`${splitterSizes[0]}%`} min="40%" max="80%">
                   <LeftMain>
                     <VideoStage>
-                      <VideoSurface
-                        src={videoData.src}
-                        videoId={videoId}
-                        onError={handleVideoError}
-                      />
-                      <SubtitleOverlay />
+                      <VideoSurface src={videoData.src} onError={handleVideoError} />
+                      {/* <SubtitleOverlay /> */}
                     </VideoStage>
                     <BottomBar>
-                      <TransportBar />
+                      <ControllerPanel />
                     </BottomBar>
                   </LeftMain>
                 </Splitter.Panel>
@@ -198,6 +188,8 @@ function PlayerPage() {
     </PlayerPageProvider>
   )
 }
+
+// PlayerPage.whyDidYouRender = true
 
 export default PlayerPage
 

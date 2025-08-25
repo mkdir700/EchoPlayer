@@ -1,13 +1,13 @@
 import styled from 'styled-components'
 
-export { default as VideoSurface } from './VideoSurface'
-export { default as SubtitleOverlay } from './SubtitleOverlay'
-export { default as SubtitleListPanel } from './SubtitleListPanel'
-export { default as TransportBar } from './TransportBar'
+export { default as ControllerPanel } from './ControllerPanel'
+export { default as ImportSubtitleButton } from './ImportSubtitleButton'
+export { default as PlayerHeader } from './PlayerHeader'
 export { default as ProgressSection } from './ProgressSection'
 export { default as SettingsPopover } from './SettingsPopover'
-export { default as PlayerHeader } from './PlayerHeader'
-export { default as ImportSubtitleButton } from './ImportSubtitleButton'
+export { default as SubtitleListPanel } from './SubtitleListPanel'
+// export { default as SubtitleOverlay } from './SubtitleOverlay'
+export { default as VideoSurface } from './VideoSurface'
 
 export const NavbarIcon = styled.div`
   -webkit-app-region: none;

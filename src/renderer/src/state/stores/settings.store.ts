@@ -1,6 +1,12 @@
 import { loggerService } from '@logger'
 import { UpgradeChannel } from '@shared/config/constant'
-import { LanguageVarious, SubtitleBackgroundType, SubtitleDisplayMode, ThemeMode } from '@types'
+import {
+  LanguageVarious,
+  LoopMode,
+  SubtitleBackgroundType,
+  SubtitleDisplayMode,
+  ThemeMode
+} from '@types'
 import { create, StateCreator } from 'zustand'
 
 import { MiddlewarePresets } from '../infrastructure'
@@ -30,6 +36,9 @@ export interface SettingsState {
     defaultPlaybackSpeed: number
     defaultSubtitleDisplayMode: SubtitleDisplayMode
     defaultSubtitleBackgroundType: SubtitleBackgroundType
+    /** 循环“默认设置”（全局偏好，右键菜单可调整；用于初始化新视频时的默认值） */
+    defaultLoopMode: LoopMode
+    defaultLoopCount: number // -1=无限；1-99
   }
   autoCheckUpdate: boolean
   testPlan: boolean
@@ -62,6 +71,9 @@ type Actions = {
   setDefaultVolume: (volume: number) => void
   setDefaultSubtitleDisplayMode: (mode: SubtitleDisplayMode) => void
   setDefaultSubtitleBackgroundType: (type: SubtitleBackgroundType) => void
+  // 循环默认设置（全局偏好）
+  setDefaultLoopMode: (mode: LoopMode) => void
+  setDefaultLoopCount: (count: number) => void // -1=∞；1-99
 }
 
 export type SettingsStore = SettingsState & Actions
@@ -84,7 +96,9 @@ const initialState: SettingsState = {
     defaultPlaybackSpeed: 1.0,
     defaultSubtitleDisplayMode: DEFAULT_SUBTITLE_DISPLAY_MODE,
     defaultVolume: 1.0,
-    defaultSubtitleBackgroundType: SubtitleBackgroundType.BLUR
+    defaultSubtitleBackgroundType: SubtitleBackgroundType.BLUR,
+    defaultLoopCount: -1,
+    defaultLoopMode: LoopMode.SINGLE
   },
   autoCheckUpdate: true,
   testPlan: false,
@@ -145,7 +159,17 @@ const createSettingsStore: StateCreator<
   setDefaultSubtitleBackgroundType: (type) =>
     set((state) => ({
       playback: { ...state.playback, defaultSubtitleBackgroundType: type }
-    }))
+    })),
+  // 循环默认设置（全局偏好）
+  setDefaultLoopMode: (mode) =>
+    set((state) => ({
+      playback: { ...state.playback, defaultLoopMode: mode }
+    })),
+  setDefaultLoopCount: (count) =>
+    set((state) => {
+      const clamped = count === -1 ? -1 : Math.max(1, Math.min(99, Math.floor(count)))
+      return { playback: { ...state.playback, defaultLoopCount: clamped } }
+    })
 })
 
 export const useSettingsStore = create<SettingsStore>()(

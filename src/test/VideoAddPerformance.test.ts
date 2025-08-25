@@ -26,23 +26,24 @@ const mockVideoLibraryService = {
   addOrUpdateRecord: vi.fn()
 }
 
-// Mock logger
+// Mock logger（保留以便未来扩展，但当前未使用）
 const mockLogger = {
   info: vi.fn(),
   error: vi.fn(),
   warn: vi.fn()
 }
+void mockLogger
 
 // 设置全局 mocks
 beforeEach(() => {
   vi.clearAllMocks()
 
-  // @ts-ignore
+  // @ts-ignore - 测试环境注入 window.api 用于模拟主进程 IPC
   global.window = {
     api: mockApi
   }
 
-  // @ts-ignore
+  // @ts-ignore - 测试环境下为 performance 注入 now 方法
   global.performance = {
     now: vi.fn(() => Date.now())
   }
@@ -77,7 +78,7 @@ describe('视频添加性能测试', () => {
       return currentTime
     })
 
-    // @ts-ignore
+    // @ts-ignore - vitest/jsdom 环境下重写 performance.now 以实现可控时间推进
     global.performance.now = mockPerformanceNow
 
     // 设置 mock 返回值
@@ -116,7 +117,7 @@ describe('视频添加性能测试', () => {
 
     // 3. 文件添加到数据库
     const fileAddStart = performance.now()
-    const fileRecord = await mockFileManager.addFile(mockFile)
+    await mockFileManager.addFile(mockFile)
     const fileAddEnd = performance.now()
 
     // 4. 获取视频信息
@@ -178,7 +179,7 @@ describe('视频添加性能测试', () => {
   it('应该能够识别性能瓶颈', async () => {
     // 模拟某个步骤特别慢的情况
     const mockSlowOperation = vi.fn().mockImplementation(() => {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         setTimeout(resolve, 100) // 模拟 100ms 的延迟
       })
     })

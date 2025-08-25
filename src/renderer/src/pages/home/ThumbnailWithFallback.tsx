@@ -1,6 +1,6 @@
+import { DEFAULT_COLOR_PRIMARY } from '@renderer/infrastructure'
 import React from 'react'
 import styled from 'styled-components'
-import { DEFAULT_COLOR_PRIMARY } from '@renderer/infrastructure'
 
 export interface ThumbnailWithFallbackProps {
   src?: string
@@ -27,7 +27,10 @@ function getPrimaryColor(): string {
     const el = document.body || document.documentElement
     const v = getComputedStyle(el).getPropertyValue('--color-primary').trim()
     if (v) return v
-  } catch {}
+  } catch (_e) {
+    // 忽略：在 SSR/测试环境可能无法访问 DOM 与 CSS 变量，回退到默认主色
+    return DEFAULT_COLOR_PRIMARY
+  }
   return DEFAULT_COLOR_PRIMARY
 }
 

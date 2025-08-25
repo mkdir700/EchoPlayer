@@ -26,23 +26,25 @@ const mockVideoLibraryService = {
   addOrUpdateRecord: vi.fn()
 }
 
-// Mock antd message
+// Mock antd message（当前测试未直接使用，保留以便未来扩展示例）
 const mockMessage = {
   loading: vi.fn(() => vi.fn()),
   success: vi.fn(),
   error: vi.fn()
 }
+void mockMessage
 
-// Mock logger
+// Mock logger（当前测试未直接使用，保留以便未来扩展示例）
 const mockLogger = {
   error: vi.fn()
 }
+void mockLogger
 
 // 设置全局 mocks
 beforeEach(() => {
   vi.clearAllMocks()
 
-  // @ts-ignore
+  // @ts-ignore - 测试环境注入 window.api 用于模拟主进程 IPC
   global.window = {
     api: mockApi
   }

@@ -212,6 +212,7 @@ const StyledLink = styled.div`
   }
 `
 
+/* AppsContainer 备用占位，暂未使用，移除以消除未使用变量告警
 const AppsContainer = styled.div`
   display: flex;
   flex: 1;
@@ -225,6 +226,7 @@ const AppsContainer = styled.div`
     display: none;
   }
 `
+*/
 
 const Divider = styled.div`
   width: 50%;

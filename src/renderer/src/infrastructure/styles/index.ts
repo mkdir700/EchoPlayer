@@ -1,4 +1,4 @@
-import type { ThemeMode, ThemeStyles } from '@types'
+import type { ThemeStyles } from '@types'
 import type { GlobalToken } from 'antd'
 
 import { buildPageStyles } from './theme-page.styles'
@@ -14,11 +14,7 @@ import { buildVideoControlsStyles } from './theme-video-controls.styles'
 import { buildVideoControlsFullscreenStyles } from './theme-video-controls-fullscreen.styles'
 import { buildVideoSubtitleStyles } from './theme-video-subtitle.styles'
 
-export function buildStyles(
-  token: GlobalToken,
-  actualTheme?: ThemeMode,
-  compactMode?: boolean
-): ThemeStyles {
+export function buildStyles(token: GlobalToken): ThemeStyles {
   // Build styles from function-based modules using the token
   // 使用token从基于函数的模块构建样式
   const pageStyles = buildPageStyles(token)

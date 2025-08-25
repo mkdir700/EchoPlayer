@@ -1,7 +1,7 @@
-import { vi, beforeEach, afterEach } from 'vitest'
-
 // Mock IndexedDB for Dexie
 import 'fake-indexeddb/auto'
+
+import { afterEach, beforeEach, vi } from 'vitest'
 
 // Mock Electron APIs
 global.window = Object.assign(global.window, {

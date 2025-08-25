@@ -9,6 +9,20 @@ import React, { PropsWithChildren, useEffect, useRef } from 'react'
 
 const logger = loggerService.withContext('PlayerPageProvider')
 
+/**
+ * PlayerPageProvider - 播放器页面数据提供者
+ *
+ * 职责分工：
+ * 1. 【本组件负责】用户偏好设置的初始化和持久化（字幕显示模式、跟随设置等）
+ * 2. 【本组件负责】字幕数据的加载和管理
+ * 3. 【本组件负责】UI交互逻辑（自动隐藏控制条等）
+ * 4. 【PlayerEngine负责】播放器核心状态管理（currentTime、duration、playing、volume等）
+ * 5. 【PlayerEngine负责】播放控制命令的执行和状态同步
+ *
+ * 重要说明：
+ * - 播放状态（currentTime、duration、activeCueIndex）现由 PlayerEngine 自动管理
+ * - 避免在此处手动设置这些状态，以防止与 PlayerEngine 产生竞争条件
+ */
 export interface PlayerPageProviderProps {
   videoId: number | null
   autoHideMs?: number
@@ -20,11 +34,9 @@ export function PlayerPageProvider({
   autoHideMs
 }: PropsWithChildren<PlayerPageProviderProps>) {
   // 读取与设置 store（严格在顶层调用；使用单字段 selector 避免对象引用变化导致重渲染）
-  const setCurrentTime = usePlayerStore((s) => s.setCurrentTime)
-  const setDuration = usePlayerStore((s) => s.setDuration)
+  // 注意：currentTime、duration、activeCueIndex 现由 PlayerEngine 自动同步，这里不再需要手动设置
   const setSubtitleDisplayMode = usePlayerStore((s) => s.setSubtitleDisplayMode)
   const setSubtitleFollow = usePlayerStore((s) => s.setSubtitleFollow)
-  const setActiveCueIndexAction = usePlayerStore((s) => s.setActiveCueIndex)
 
   const getConfig = useVideoProjectStore((s) => s.getConfig)
   const updateProgress = useVideoProjectStore((s) => s.updateProgress)
@@ -36,28 +48,26 @@ export function PlayerPageProvider({
   const setSubtitles = usePlayerSubtitlesStore((s) => s.setSubtitles)
   const setSubtitlesLoading = usePlayerSubtitlesStore((s) => s.setLoading)
 
-  // 初始化：从 VideoProjectStore 应用配置 → PlayerStore
+  // 初始化：从 VideoProjectStore 应用用户偏好配置 → PlayerStore
+  // 注意：播放状态（currentTime、duration、activeCueIndex）现由 PlayerEngine 负责管理
   useEffect(() => {
     if (!videoId) return
     const cfg = getConfig(videoId)
 
-    setCurrentTime(cfg.progress.currentTime)
-    if (typeof cfg.progress.duration === 'number') {
-      setDuration(cfg.progress.duration)
-    }
-
-    // 循环/自动暂停/字幕设置
-    // 这些字段在 player.store.ts 中已有字段与 actions（此处只演示字幕设置）
+    // 只初始化用户偏好设置，播放状态由 PlayerEngine 管理
     setSubtitleDisplayMode(cfg.subtitle.displayMode)
     setSubtitleFollow(cfg.subtitle.follow)
-    setActiveCueIndexAction(cfg.subtitle.activeCueIndex)
 
     // UI 自动隐藏时间
     if (typeof autoHideMs === 'number') {
       setAutoHideMsAction(autoHideMs)
     }
 
-    logger.debug('Hydrate from project config', { videoId, cfg })
+    logger.debug('Hydrate user preferences from project config', {
+      videoId,
+      displayMode: cfg.subtitle.displayMode,
+      follow: cfg.subtitle.follow
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId])
 
@@ -150,13 +160,11 @@ export function PlayerPageProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastInteractionAt, autoHide])
 
-  // 整合 video 事件 → isLoading 与 play/pause
-  // const { handleWaiting, handleCanPlay, handlePlay, handlePause } = useVideoEvents()
-  useEffect(() => {
-    // 这里不直接绑定 DOM 事件，交给具体 Video 组件调用这些回调
-    // 仅记录存在性，供消费方获取
-    logger.debug('Video events ready')
-  }, [])
+  // 字幕同步现在由新的播放器引擎处理
+  // PlayerEngine 通过 usePlayerEngine Hook 自动处理：
+  // - 播放状态同步到 Store
+  // - 字幕索引根据播放时间自动更新
+  // - 循环、自动暂停等策略自动执行
 
   return <>{children}</>
 }

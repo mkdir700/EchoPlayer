@@ -1,15 +1,18 @@
+import { loggerService } from '@logger'
+import HomePageVideoService, { type HomePageVideoItem } from '@renderer/services/HomePageVideos'
+import { VideoLibraryService } from '@renderer/services/VideoLibrary'
 import { useSettingsStore } from '@renderer/state/stores/settings.store'
+import { message, Modal, Tooltip } from 'antd'
 import { AnimatePresence, motion } from 'framer-motion'
 import React from 'react'
-import styled from 'styled-components'
-import { Modal, Tooltip, message } from 'antd'
 import { useNavigate } from 'react-router-dom'
+import styled from 'styled-components'
 
-import HeaderNavbar from './HeaderNavbar'
-import HomePageVideoService, { type HomePageVideoItem } from '@renderer/services/HomePageVideos'
-import ThumbnailWithFallback from './ThumbnailWithFallback'
-import { VideoLibraryService } from '@renderer/services/VideoLibrary'
 import DeleteButton from './DeleteButton'
+import HeaderNavbar from './HeaderNavbar'
+import ThumbnailWithFallback from './ThumbnailWithFallback'
+
+const logger = loggerService.withContext('HomePage')
 
 // Helper function to format date (用于卡片元信息显示)
 const formatDate = (date: Date): string => {
@@ -108,7 +111,7 @@ export function HomePage(): React.JSX.Element {
 
           message.success('视频记录删除成功')
         } catch (error) {
-          console.error('删除视频记录失败:', error)
+          logger.error('删除视频记录失败', { error })
           message.error('删除失败，请重试')
         }
       }

@@ -53,7 +53,12 @@ export default defineConfig([
   {
     // LoggerService Custom Rules - only apply to src directory
     files: ['src/**/*.{ts,tsx,js,jsx}'],
-    ignores: ['src/**/__tests__/**', 'src/**/__mocks__/**', 'src/**/*.test.*', 'src/**/v1-deprecated/**'],
+    ignores: [
+      'src/**/__tests__/**',
+      'src/**/__mocks__/**',
+      'src/**/*.test.*',
+      'src/**/v1-deprecated/**'
+    ],
     rules: {
       'no-restricted-syntax': [
         process.env.PRCI ? 'error' : 'warn',
