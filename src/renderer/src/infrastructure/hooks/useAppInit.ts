@@ -1,4 +1,4 @@
-import { loggerService } from '@logger'
+// import { loggerService } from '@logger'
 // import useUpdateHandler from './useUpdateHandler'
 import { useTheme } from '@renderer/contexts'
 import i18n from '@renderer/i18n'
@@ -11,7 +11,7 @@ import { isMac } from '../constants'
 // import { useRuntime } from './useRuntime'
 import { useSettings } from './useSettings'
 
-const logger = loggerService.withContext('useAppInit')
+// const logger = loggerService.withContext('useAppInit')
 
 export function useAppInit() {
   const { language, windowStyle } = useSettings()

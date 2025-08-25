@@ -1,3 +1,4 @@
+import './wdyr'
 import './assets/styles/index.scss'
 import '@ant-design/v5-patch-for-react-19'
 

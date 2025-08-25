@@ -1,5 +1,8 @@
-import { useMemo } from 'react'
+import { usePlayerStore } from '@renderer/state'
 import type { SubtitleItem } from '@types'
+import { useMemo } from 'react'
+
+import { useSubtitles } from '../state/player-context'
 
 interface SubtitleEngine {
   subtitles: SubtitleItem[]
@@ -13,20 +16,20 @@ interface SubtitleEngine {
  * 字幕引擎 Hook
  * 提供字幕数据索引、查找和时间匹配功能
  */
-export function useSubtitleEngine(subtitles: SubtitleItem[], currentTime: number): SubtitleEngine {
-  // 防御式处理，确保始终为数组
-  const list = Array.isArray(subtitles) ? subtitles : []
+export function useSubtitleEngine(): SubtitleEngine {
+  const subtitles = useSubtitles()
+  const currentTime = usePlayerStore((s) => s.currentTime)
 
   // 创建时间索引，用于二分查找优化
   const timeIndex = useMemo(() => {
-    return list
+    return subtitles
       .map((subtitle, index) => ({
         startTime: subtitle.startTime,
         endTime: subtitle.endTime,
         index
       }))
       .sort((a, b) => a.startTime - b.startTime)
-  }, [list])
+  }, [subtitles])
 
   // 二分查找当前时间对应的字幕
   const findIndexByTime = useMemo(() => {
@@ -57,25 +60,23 @@ export function useSubtitleEngine(subtitles: SubtitleItem[], currentTime: number
         }
       }
 
-      // 如果没有精确匹配，检查最近的项是否在时间范围内
-      if (result >= 0 && result < list.length) {
-        const subtitle = list[result]
-        if (time >= subtitle.startTime && time <= subtitle.endTime) {
-          return result
-        }
+      // 如果没有精确匹配，返回最近的前一个字幕索引（即 startTime <= time 的最大项）
+      if (result >= 0 && result < subtitles.length) {
+        return result
       }
 
+      // 若 time 早于第一条字幕的开始时间，仍返回 -1，表示“尚未开始”
       return -1
     }
-  }, [timeIndex, list])
+  }, [timeIndex, subtitles])
 
   // 根据时间查找字幕
   const findSubtitleByTime = useMemo(() => {
     return (time: number): SubtitleItem | null => {
       const index = findIndexByTime(time)
-      return index >= 0 ? list[index] : null
+      return index >= 0 ? subtitles[index] : null
     }
-  }, [findIndexByTime, list])
+  }, [findIndexByTime, subtitles])
 
   // 当前字幕和索引
   const currentIndex = useMemo(() => {
@@ -83,11 +84,11 @@ export function useSubtitleEngine(subtitles: SubtitleItem[], currentTime: number
   }, [findIndexByTime, currentTime])
 
   const currentSubtitle = useMemo(() => {
-    return currentIndex >= 0 ? list[currentIndex] : null
-  }, [list, currentIndex])
+    return currentIndex >= 0 ? subtitles[currentIndex] : null
+  }, [subtitles, currentIndex])
 
   return {
-    subtitles: list,
+    subtitles,
     currentSubtitle,
     currentIndex,
     findSubtitleByTime,

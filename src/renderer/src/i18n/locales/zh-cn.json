@@ -8,6 +8,12 @@
     "search_no_results": "暂无搜索结果",
     "search_placeholder": "搜索视频..."
   },
+  "controls": {
+    "auto_pause": {
+      "resume_delay": "恢复延迟（秒）",
+      "resume_title": "自动恢复播放"
+    }
+  },
   "home": {
     "add_video": "新增视频",
     "title": "我的视频库",

@@ -65,7 +65,7 @@ export class TrayService {
 
   private updateContextMenu() {
     const locale = locales[configManager.getLanguage()]
-    const { tray: trayLocale, selection: selectionLocale } = locale.translation
+    const { tray: trayLocale } = locale.translation
 
     const template = [
       {

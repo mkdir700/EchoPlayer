@@ -1,10 +1,13 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import type { SubtitleItem } from '@types'
-import { Button } from 'antd'
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { Button, FloatButton, Tooltip } from 'antd'
+import { LocateFixed } from 'lucide-react'
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import styled from 'styled-components'
 
 import { useSubtitleEngine } from '../hooks'
+import { usePlayerCommandsOrchestrated } from '../hooks/usePlayerCommandsOrchestrated'
 import { useSubtitles } from '../state/player-context'
 import { ImportSubtitleButton } from './'
 
@@ -31,17 +34,50 @@ function SubtitleListPanel({
   emptyActions
 }: SubtitleListPannelProps) {
   const subtitles = useSubtitles()
-  const containerRef = useRef<HTMLDivElement>(null)
   const [userScrolled, setUserScrolled] = useState(false)
   const [showBackToCurrent, setShowBackToCurrent] = useState(false)
+  const virtuosoRef = useRef<VirtuosoHandle | null>(null)
+  const scrollerElRef = useRef<HTMLElement | null>(null)
+  const programmaticScrollRef = useRef(false)
+  const resetProgrammaticTimerRef = useRef<number | null>(null)
+  // 抑制“回到当前”按钮在点击后的短暂闪现
+  const suppressShowBackRef = useRef(false)
+  const suppressShowBackTimerRef = useRef<number | null>(null)
+  const prevIndexRef = useRef<number>(-1)
+  const prevTimeRef = useRef<number>(-1)
+  const viewportHeightRef = useRef<number>(0)
+  const avgItemHeightRef = useRef<number>(56) // 初始估算单项高度
+  const initialIndexRef = useRef<number | null>(null)
+  const initialCenterAppliedRef = useRef(false)
+  const isAtTopRef = useRef(false)
+  const isAtBottomRef = useRef(false)
 
   const currentTime = usePlayerStore((s) => s.currentTime)
-  const setCurrentTime = usePlayerStore((s) => s.setCurrentTime)
+  const activeCueIndex = usePlayerStore((s) => s.activeCueIndex)
+  // const setCurrentTime = usePlayerStore((s) => s.setCurrentTime) // 已迁移到 orchestrator
   const subtitleFollow = usePlayerStore((s) => s.subtitleFollow)
   const setSubtitleFollow = usePlayerStore((s) => s.setSubtitleFollow)
+  const { currentIndex } = useSubtitleEngine()
+  const { seekToSubtitle } = usePlayerCommandsOrchestrated()
 
-  // 使用字幕引擎
-  const { currentIndex } = useSubtitleEngine(subtitles, currentTime)
+  // 计算首次加载的初始索引（仅在 Virtuoso 首次挂载前生效）
+  const initialTopMostItemIndex = useMemo(() => {
+    if (subtitles.length === 0) return undefined
+    if (initialIndexRef.current === null) {
+      let idx = -1
+      if (activeCueIndex >= 0 && activeCueIndex < subtitles.length) {
+        idx = activeCueIndex
+      } else if (currentIndex >= 0) {
+        idx = currentIndex
+      } else {
+        idx = 0
+      }
+      initialIndexRef.current = idx
+    }
+    return initialIndexRef.current === null || initialIndexRef.current < 0
+      ? undefined
+      : initialIndexRef.current
+  }, [subtitles.length, activeCueIndex, currentIndex])
 
   // 格式化时间显示
   const formatTime = useCallback((time: number) => {
@@ -50,65 +86,117 @@ function SubtitleListPanel({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }, [])
 
-  // 点击字幕行跳转
+  // 点击字幕行跳转 - 使用 orchestrator 命令
   const handleSubtitleClick = useCallback(
-    (subtitle: SubtitleItem) => {
-      setCurrentTime(subtitle.startTime)
+    (index: number) => {
+      seekToSubtitle(index)
     },
-    [setCurrentTime]
+    [seekToSubtitle]
   )
 
-  // 滚动到当前字幕
-  const scrollToCurrentSubtitle = useCallback(() => {
-    if (currentIndex >= 0 && containerRef.current) {
-      const container = containerRef.current
-      const items = container.querySelectorAll('[data-subtitle-item]')
-      const currentItem = items[currentIndex] as HTMLElement
+  // 根据阶段与跳转幅度滚动到当前字幕
+  const scrollToCurrentRow = useCallback(
+    (forceImmediate?: boolean) => {
+      if (currentIndex < 0 || !virtuosoRef.current) return
 
-      if (currentItem) {
-        const containerRect = container.getBoundingClientRect()
-        const itemRect = currentItem.getBoundingClientRect()
-
-        // 检查是否需要滚动
-        const isVisible =
-          itemRect.top >= containerRect.top && itemRect.bottom <= containerRect.bottom
-
-        if (!isVisible) {
-          currentItem.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          })
+      // 测量视口高度与当前项高度（粗略）
+      const scroller = scrollerElRef.current
+      if (scroller) {
+        viewportHeightRef.current = scroller.clientHeight
+        const activeEl = scroller.querySelector(
+          `[data-subtitle-item][data-index="${currentIndex}"]`
+        ) as HTMLElement | null
+        const sampleEl =
+          activeEl || (scroller.querySelector('[data-subtitle-item]') as HTMLElement | null)
+        if (sampleEl) {
+          const h = sampleEl.offsetHeight
+          if (h > 0) avgItemHeightRef.current = h
         }
       }
-    }
-    setUserScrolled(false)
-    setShowBackToCurrent(false)
-  }, [currentIndex])
+
+      const total = subtitles.length
+      const i = currentIndex
+      const prevI = prevIndexRef.current
+      const timeJump = prevTimeRef.current >= 0 ? Math.abs(currentTime - prevTimeRef.current) : 0
+      const indexJump = prevI >= 0 ? Math.abs(i - prevI) : 0
+      const largeJump = timeJump > 2 || indexJump > 3
+
+      const viewportItems = Math.max(
+        1,
+        Math.floor(viewportHeightRef.current / Math.max(1, avgItemHeightRef.current))
+      )
+      const threshold = Math.ceil(viewportItems / 2)
+
+      // 计算阶段对齐方式（结合顶部/底部状态与索引阶段）
+      let align: 'start' | 'center' | 'end' | undefined
+      if (isAtTopRef.current) {
+        align = 'start'
+      } else if (isAtBottomRef.current) {
+        align = 'end'
+      } else if (i === 0) {
+        // 开始阶段：第一个字幕顶对齐
+        align = 'start'
+      } else if (i >= total - threshold) {
+        // 结束阶段：靠近底部时底对齐
+        align = 'end'
+      } else if (i < threshold && !largeJump) {
+        // 开始阶段过渡：不滚动，让聚焦项逐步下移到中间
+        align = undefined
+      } else {
+        // 中间阶段：保持居中
+        align = 'center'
+      }
+
+      // 执行滚动
+      if (align) {
+        programmaticScrollRef.current = true
+        if (resetProgrammaticTimerRef.current) {
+          window.clearTimeout(resetProgrammaticTimerRef.current)
+          resetProgrammaticTimerRef.current = null
+        }
+        virtuosoRef.current.scrollToIndex({
+          index: i,
+          align,
+          behavior: forceImmediate || largeJump ? 'auto' : 'smooth'
+        })
+        resetProgrammaticTimerRef.current = window.setTimeout(() => {
+          programmaticScrollRef.current = false
+        }, 200)
+        setUserScrolled(false)
+        setShowBackToCurrent(false)
+      }
+
+      // 记录历史
+      prevIndexRef.current = i
+      prevTimeRef.current = currentTime
+    },
+    [currentIndex, currentTime, subtitles.length]
+  )
 
   // 自动滚动逻辑
   useEffect(() => {
     if (subtitleFollow && !userScrolled && currentIndex >= 0) {
-      scrollToCurrentSubtitle()
+      scrollToCurrentRow()
     }
-  }, [subtitleFollow, userScrolled, currentIndex, scrollToCurrentSubtitle])
+  }, [subtitleFollow, userScrolled, currentIndex, scrollToCurrentRow])
 
-  // 监听用户滚动
-  const handleScroll = useCallback(() => {
-    if (!userScrolled) {
-      setUserScrolled(true)
-      setShowBackToCurrent(true)
-      // 暂时关闭自动跟随
-      if (subtitleFollow) {
-        setSubtitleFollow(false)
-      }
-    }
-  }, [userScrolled, subtitleFollow, setSubtitleFollow])
-
-  // 回到当前字幕
   const handleBackToCurrent = useCallback(() => {
     setSubtitleFollow(true)
-    scrollToCurrentSubtitle()
-  }, [setSubtitleFollow, scrollToCurrentSubtitle])
+    setUserScrolled(false)
+    setShowBackToCurrent(false)
+    // 在点击后的短时间内抑制按钮再次出现，避免视觉闪烁
+    suppressShowBackRef.current = true
+    if (suppressShowBackTimerRef.current) {
+      window.clearTimeout(suppressShowBackTimerRef.current)
+      suppressShowBackTimerRef.current = null
+    }
+    suppressShowBackTimerRef.current = window.setTimeout(() => {
+      suppressShowBackRef.current = false
+    }, 600)
+
+    // 使用立即滚动，避免平滑滚动期间 rangeChanged 中的临时“越界”导致按钮短暂回显
+    scrollToCurrentRow(true)
+  }, [setSubtitleFollow, scrollToCurrentRow])
 
   if (subtitles.length === 0) {
     return (
@@ -143,26 +231,108 @@ function SubtitleListPanel({
 
   return (
     <Container role="complementary" aria-label="caption-list">
-      <ScrollContainer ref={containerRef} onScroll={handleScroll}>
-        {subtitles.map((subtitle, index) => (
-          <SubtitleItem
-            key={subtitle.id}
-            data-subtitle-item
-            active={index === currentIndex}
-            onClick={() => handleSubtitleClick(subtitle)}
-          >
-            <TimesRow>
-              <TimeStamp>{formatTime(subtitle.startTime)}</TimeStamp>
-              <EndStamp>{formatTime(subtitle.endTime)}</EndStamp>
-            </TimesRow>
-            <TextContent>{subtitle.originalText}</TextContent>
-          </SubtitleItem>
-        ))}
+      <ScrollContainer>
+        <Virtuoso
+          key={
+            initialTopMostItemIndex !== undefined
+              ? `virt-${initialTopMostItemIndex}-${subtitles.length}`
+              : `virt-empty-${subtitles.length}`
+          }
+          ref={virtuosoRef as any}
+          data={subtitles}
+          totalCount={subtitles.length}
+          defaultItemHeight={avgItemHeightRef.current}
+          initialTopMostItemIndex={initialTopMostItemIndex}
+          itemContent={(index, subtitle: SubtitleItem) => (
+            <SubtitleItem
+              data-subtitle-item
+              data-index={index}
+              data-active={index === currentIndex}
+              active={index === currentIndex}
+              onClick={() => handleSubtitleClick(index)}
+            >
+              <TimesRow>
+                <TimeStamp>{formatTime(subtitle.startTime)}</TimeStamp>
+                <EndStamp>{formatTime(subtitle.endTime)}</EndStamp>
+              </TimesRow>
+              <TextContent>{subtitle.originalText}</TextContent>
+            </SubtitleItem>
+          )}
+          components={{}}
+          alignToBottom
+          increaseViewportBy={{ top: 160, bottom: 160 }}
+          computeItemKey={(index, s: SubtitleItem) => s.id ?? index}
+          atTopThreshold={24}
+          atBottomThreshold={24}
+          atTopStateChange={(atTop) => {
+            isAtTopRef.current = atTop
+          }}
+          atBottomStateChange={(atBottom) => {
+            isAtBottomRef.current = atBottom
+          }}
+          scrollerRef={(ref) => {
+            const el = (ref as HTMLElement) ?? null
+            scrollerElRef.current = el
+          }}
+          rangeChanged={({ startIndex, endIndex }) => {
+            const scroller = scrollerElRef.current
+            if (scroller) {
+              viewportHeightRef.current = scroller.clientHeight
+            }
+
+            // 初次挂载后，将初始索引项滚动到垂直居中（只执行一次）
+            if (
+              !initialCenterAppliedRef.current &&
+              initialIndexRef.current !== null &&
+              initialIndexRef.current >= 0 &&
+              virtuosoRef.current
+            ) {
+              initialCenterAppliedRef.current = true
+              programmaticScrollRef.current = true
+              if (resetProgrammaticTimerRef.current) {
+                window.clearTimeout(resetProgrammaticTimerRef.current)
+                resetProgrammaticTimerRef.current = null
+              }
+              virtuosoRef.current.scrollToIndex({
+                index: initialIndexRef.current,
+                align: 'center',
+                behavior: 'auto'
+              })
+              resetProgrammaticTimerRef.current = window.setTimeout(() => {
+                programmaticScrollRef.current = false
+              }, 200)
+              return
+            }
+
+            if (programmaticScrollRef.current) return
+            const out = currentIndex < startIndex || currentIndex > endIndex
+            if (out) {
+              if (!userScrolled && !suppressShowBackRef.current) {
+                setUserScrolled(true)
+                setShowBackToCurrent(true)
+                if (subtitleFollow) setSubtitleFollow(false)
+              }
+            } else {
+              if (userScrolled) {
+                setUserScrolled(false)
+                setShowBackToCurrent(false)
+              }
+            }
+          }}
+        />
       </ScrollContainer>
 
-      {showBackToCurrent && (
-        <BackToCurrentButton onClick={handleBackToCurrent}>回到当前</BackToCurrentButton>
-      )}
+      <BackToCurrentWrapper $visible={showBackToCurrent} aria-hidden={!showBackToCurrent}>
+        <Tooltip title="回到当前字幕">
+          <BackToCurrentFloatButton
+            type="primary"
+            shape="circle"
+            icon={<LocateFixed size={18} />}
+            onClick={handleBackToCurrent}
+            aria-label="回到当前字幕"
+          />
+        </Tooltip>
+      </BackToCurrentWrapper>
     </Container>
   )
 }
@@ -254,14 +424,12 @@ const SubtitleItem = styled.div<{ active: boolean }>`
   padding: 10px 12px;
   cursor: pointer;
   border-radius: 12px;
-  background: ${(p) =>
-    p.active ? 'var(--color-primary-bg, rgba(22,119,255,.12))' : 'transparent'};
+  background: ${(p) => (p.active ? 'var(--color-primary-mute)' : 'transparent')};
   box-shadow: ${(p) => (p.active ? '0 1px 6px rgba(0,0,0,.25)' : 'none')};
   transition: background 0.2s;
 
   &:hover {
-    background: ${(p) =>
-      p.active ? 'var(--color-primary-bg, rgba(22,119,255,.12))' : 'var(--color-bg-2, #1a1a1a)'};
+    background: ${(p) => (p.active ? 'var(--color-primary-mute)' : 'var(--color-list-item-hover)')};
   }
 `
 
@@ -289,26 +457,20 @@ const TextContent = styled.div`
   word-break: break-word;
 `
 
-const BackToCurrentButton = styled.button`
+const BackToCurrentWrapper = styled.div<{ $visible: boolean }>`
   position: absolute;
   bottom: 16px;
   right: 16px;
-  background: var(--color-primary, #1677ff);
-  color: #fff;
-  border: none;
-  border-radius: 16px;
-  padding: 8px 16px;
-  font-size: 12px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s;
 
-  &:hover {
-    background: var(--color-primary-hover, #0958d9);
-    transform: translateY(-1px);
-  }
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  transition: opacity 0.15s ease;
+  pointer-events: ${(p) => (p.$visible ? 'auto' : 'none')};
+  z-index: 2;
+`
 
-  &:active {
-    transform: translateY(0);
+const BackToCurrentFloatButton = styled(FloatButton)`
+  && {
+    position: static !important; /* 在容器内定位 */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   }
 `

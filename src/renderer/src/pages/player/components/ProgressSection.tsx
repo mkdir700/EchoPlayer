@@ -1,34 +1,62 @@
-import React, { useCallback } from 'react'
-import styled from 'styled-components'
-import { Slider } from 'antd'
 import { formatTime } from '@renderer/state/infrastructure/utils'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { PerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
+import { Slider } from 'antd'
+import React, { useCallback, useRef } from 'react'
+import styled from 'styled-components'
+
+import { usePlayerCommandsOrchestrated } from '../hooks/usePlayerCommandsOrchestrated'
 
 /**
  * 独立的进度条 + 时间显示组件
- * - 仅订阅 currentTime/duration，避免父级 TransportBar 随时间频繁重渲染
  */
 function ProgressSection() {
   const currentTime = usePlayerStore((s) => s.currentTime)
   const duration = usePlayerStore((s) => s.duration)
-  const setCurrentTime = usePlayerStore((s) => s.setCurrentTime)
+  const { seekToUser } = usePlayerCommandsOrchestrated()
 
-  const seekTo = useCallback(
-    (time: number) => {
-      setCurrentTime(Math.max(0, time))
-    },
-    [setCurrentTime]
-  )
+  // 使用 ref 来跟踪是否是第一次 onChange（开始拖拽）
+  const isFirstChange = useRef(true)
+  const dragTimeoutRef = useRef<number | null>(null)
 
   const handleProgressChange = useCallback(
     (value: number) => {
       const m = new PerformanceMonitor('handleProgressChange')
-      seekTo(value)
+
+      // 第一次改变时重置循环状态
+      if (isFirstChange.current) {
+        isFirstChange.current = false
+      }
+
+      // 清理之前的定时器
+      if (dragTimeoutRef.current) {
+        clearTimeout(dragTimeoutRef.current)
+      }
+
+      // 设置定时器，在拖拽停止后一段时间后重置状态
+      dragTimeoutRef.current = window.setTimeout(() => {
+        isFirstChange.current = true
+      }, 200)
+
+      // 使用用户跳转方法，自动管理循环禁用状态
+      seekToUser(Math.max(0, value))
+
       m.finish()
     },
-    [seekTo]
+    [seekToUser]
   )
+
+  // 处理拖拽结束
+  const handleDragEnd = useCallback(() => {
+    // 重置拖拽状态
+    isFirstChange.current = true
+
+    // 清理定时器
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current)
+      dragTimeoutRef.current = null
+    }
+  }, [])
 
   return (
     <ProgressRow>
@@ -37,7 +65,10 @@ function ProgressSection() {
         max={duration || 100}
         value={currentTime}
         onChange={handleProgressChange}
-        tooltip={{ formatter: (value) => formatTime(value || 0) }}
+        onChangeComplete={handleDragEnd}
+        tooltip={{
+          formatter: (value) => formatTime(value || 0)
+        }}
         disabled={!duration}
       />
       <TimeDisplaySpan>
@@ -112,4 +143,3 @@ const TimeDisplaySpan = styled.span`
   flex-shrink: 0;
   padding: 4px 8px;
 `
-

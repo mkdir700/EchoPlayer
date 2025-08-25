@@ -1,138 +1,168 @@
+import { loggerService } from '@logger'
+import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { useCallback, useEffect, useRef } from 'react'
 import styled from 'styled-components'
-import { usePlayerStore } from '@renderer/state/stores/player.store'
-import { loggerService } from '@logger'
-import { useVideoEvents } from '../hooks'
+
+import { usePlayerEngine } from '../hooks/usePlayerEngine'
 
 const logger = loggerService.withContext('VideoSurface')
 
 interface VideoSurfaceProps {
-  videoId: number
   src?: string
   onLoadedMetadata?: () => void
   onError?: (error: string) => void
 }
 
-function VideoSurface({ videoId, src, onLoadedMetadata, onError }: VideoSurfaceProps) {
+function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const isSeekingRef = useRef<boolean>(false)
 
+  const isMountedRef = useRef<boolean>(true)
+
+  // Player store 状态 - 只保留必要的只读状态和控制方法
   const currentTime = usePlayerStore((s) => s.currentTime)
-  const paused = usePlayerStore((s) => s.paused)
-  const volume = usePlayerStore((s) => s.volume)
-  const muted = usePlayerStore((s) => s.muted)
-  const playbackRate = usePlayerStore((s) => s.playbackRate)
   const setDuration = usePlayerStore((s) => s.setDuration)
   const pause = usePlayerStore((s) => s.pause)
 
-  // 事件处理（节流更新 currentTime 等）
-  const { handleTimeUpdate } = useVideoEvents()
+  // === 新的播放器引擎架构 ===
+  const { connectVideoElement, getMediaEventHandlers, orchestrator } = usePlayerEngine()
 
-  // 同步播放/暂停状态
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
+  // 稳定的 video 元素引用处理
+  const handleVideoRef = useCallback(
+    (node: HTMLVideoElement | null) => {
+      videoRef.current = node
 
-    if (paused) {
-      video.pause()
-    } else {
-      const playPromise = video.play()
-      // 检查 play() 是否返回 Promise（现代浏览器会返回）
-      if (playPromise && typeof playPromise.catch === 'function') {
-        playPromise.catch((error) => {
-          // 忽略常见的播放错误，避免干扰用户体验
-          if (error.name !== 'AbortError') {
-            console.error('Video play error:', error)
-            onError?.(error.message || 'Video play failed')
-          }
-        })
+      // 连接到新的播放器引擎
+      if (node) {
+        connectVideoElement(node)
+        logger.debug('视频元素已连接到播放器引擎', { src: node.src })
       }
-    }
-  }, [paused, onError])
+    },
+    [connectVideoElement]
+  )
 
-  // 同步音量
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
+  // 获取媒体事件处理器
+  const mediaEventHandlers = getMediaEventHandlers()
 
-    video.volume = muted ? 0 : volume
-    video.muted = muted
-  }, [volume, muted])
-
-  // 同步播放速度
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-
-    video.playbackRate = playbackRate
-  }, [playbackRate])
-
-  // 同步时间跳转（当外部改变 currentTime 时）
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video || isSeekingRef.current) return
-
-    const videoCurrentTime = video.currentTime
-    // 阈值：播放中放宽到 1 秒，暂停时几乎实时（避免用户微调时不同步）
-    const threshold = paused ? 0.01 : 0.5
-    if (Math.abs(videoCurrentTime - currentTime) > threshold) {
-      isSeekingRef.current = true
-      video.currentTime = currentTime
-      // 短暂延迟后重置 seeking 标志
-      setTimeout(() => {
-        isSeekingRef.current = false
-      }, 100)
-    }
-  }, [currentTime])
-
-  // 处理视频元数据加载完成
+  // 处理视频元数据加载完成 - 处理元数据并恢复时间
   const handleLoadedMetadata = useCallback(() => {
     const video = videoRef.current
-    if (!video) return
+    if (!video || !isMountedRef.current) return
+
+    logger.debug('视频元数据加载完成', {
+      duration: video.duration,
+      readyState: video.readyState,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight
+    })
 
     setDuration(video.duration)
 
-    if (currentTime > 0) {
-      isSeekingRef.current = true
-      video.currentTime = currentTime
+    // 恢复保存的播放时间（在元数据加载完成后执行，通过引擎统一调度）
+    if (currentTime > 0 && Math.abs(video.currentTime - currentTime) > 0.1) {
+      // 延迟一小段时间确保引擎完全准备就绪
       setTimeout(() => {
-        isSeekingRef.current = false
-      }, 100)
+        if (orchestrator && orchestrator.isVideoControllerConnected()) {
+          orchestrator.requestSeek(currentTime)
+          logger.debug('通过引擎恢复视频时间', {
+            restoredTime: currentTime
+          })
+        } else {
+          // 备用方案：直接设置（如果引擎未连接）
+          video.currentTime = currentTime
+          logger.debug('直接恢复视频时间', {
+            restoredTime: currentTime,
+            videoCurrentTime: video.currentTime
+          })
+        }
+      }, 50) // 短暂延迟确保引擎状态同步完成
     }
 
     onLoadedMetadata?.()
-  }, [setDuration, currentTime, onLoadedMetadata])
+  }, [setDuration, onLoadedMetadata, currentTime, orchestrator])
 
   // 处理播放结束
   const handleEnded = useCallback(() => {
+    logger.debug('视频播放结束')
     pause()
   }, [pause])
 
-  // 处理视频错误
+  // 优化的错误处理
   const handleVideoError = useCallback(() => {
     const video = videoRef.current
     if (!video || !video.error) return
 
     const error = video.error
-    const errorMessage = `Video error: ${error.message || 'Unknown error'}`
-    console.error(errorMessage)
+    let errorMessage = '视频播放错误'
+
+    // 提供更详细的错误信息
+    switch (error.code) {
+      case MediaError.MEDIA_ERR_ABORTED:
+        errorMessage = '视频加载被中断'
+        break
+      case MediaError.MEDIA_ERR_NETWORK:
+        errorMessage = '网络错误导致视频加载失败'
+        break
+      case MediaError.MEDIA_ERR_DECODE:
+        errorMessage = '视频解码错误'
+        break
+      case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+        errorMessage = '不支持的视频格式或路径'
+        break
+      default:
+        errorMessage = error.message || '未知视频错误'
+    }
+
+    logger.error('视频错误:', {
+      code: error.code,
+      message: error.message,
+      src
+    })
+
     onError?.(errorMessage)
-  }, [onError])
+  }, [onError, src])
+
+  // 组件卸载清理
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      logger.debug('VideoSurface 组件卸载清理完成')
+    }
+  }, [])
 
   return (
     <Surface role="region" aria-label="video-surface">
       <StyledVideo
-        ref={videoRef}
+        ref={handleVideoRef}
         src={src}
-        onTimeUpdate={(e) => handleTimeUpdate(e.currentTarget)}
+        onTimeUpdate={(e) => mediaEventHandlers.onTimeUpdate(e.nativeEvent)}
+        onPlay={() => mediaEventHandlers.onPlay()}
+        onPause={() => mediaEventHandlers.onPause()}
+        onEnded={() => {
+          mediaEventHandlers.onEnded()
+          handleEnded()
+        }}
+        onSeeking={() => mediaEventHandlers.onSeeking()}
+        onSeeked={(e) => mediaEventHandlers.onSeeked(e.nativeEvent)}
+        onDurationChange={(e) => mediaEventHandlers.onDurationChange(e.nativeEvent)}
+        onRateChange={(e) => mediaEventHandlers.onRateChange(e.nativeEvent)}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
         onError={handleVideoError}
         controlsList="nodownload"
         disablePictureInPicture={false}
         preload="metadata"
         playsInline
+        // 添加更多有用的事件处理
+        onCanPlay={() => {
+          logger.debug('视频可以开始播放')
+        }}
+        onWaiting={() => {
+          logger.debug('视频缓冲中')
+        }}
+        onStalled={() => {
+          logger.warn('视频数据停滞')
+        }}
       />
+      {/* <MediaClockDebugOverlay tick={lastTick} visible={true} /> */}
     </Surface>
   )
 }

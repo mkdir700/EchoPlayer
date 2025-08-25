@@ -17,9 +17,7 @@ function PlayerHeader({ title = '播放器' }: PlayerHeaderProps) {
       <BackButton onClick={handleBack} aria-label="返回">
         ←
       </BackButton>
-      <TitleArea title={title}>
-        {title}
-      </TitleArea>
+      <TitleArea title={title}>{title}</TitleArea>
       <RightTools />
     </HeaderContainer>
   )
