@@ -1,9 +1,11 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { LoopMode } from '@types'
+import { Tooltip } from 'antd'
 import { Repeat } from 'lucide-react'
 import React, { useState } from 'react'
 import styled from 'styled-components'
 
+import { useControlMenuManager } from '../hooks/useControlMenuManager'
 import { ControlToggleButton } from '../styles/controls'
 
 export default function LoopControl() {
@@ -15,133 +17,132 @@ export default function LoopControl() {
   const setLoopMode = usePlayerStore((s) => s.setLoopMode)
   const setLoopCount = usePlayerStore((s) => s.setLoopCount)
 
-  const [isLoopMenuOpen, setLoopMenuOpen] = useState(false)
   const [pendingLoopCount, setPendingLoopCount] = useState<number | null>(null)
 
-  // 打开/关闭循环菜单时的处理：打开时缓存当前次数；关闭时统一应用
-  const openLoopMenu = () => {
-    setPendingLoopCount(loopCount)
-    setLoopMenuOpen(true)
-  }
-  const closeLoopMenuAndApply = () => {
-    // 先应用次数，再关闭菜单，降低外层点击误触造成的状态竞争
-    if (pendingLoopCount !== null && pendingLoopCount !== loopCount) {
-      setLoopCount(pendingLoopCount)
+  // 使用全局菜单管理器
+  const {
+    isMenuOpen: isLoopMenuOpen,
+    closeMenu: closeLoopMenu,
+    toggleMenu,
+    containerRef
+  } = useControlMenuManager({
+    menuId: 'loop',
+    onOpen: () => {
+      setPendingLoopCount(loopCount)
+    },
+    onClose: () => {
+      // 应用挂起的循环次数
+      if (pendingLoopCount !== null && pendingLoopCount !== loopCount) {
+        setLoopCount(pendingLoopCount)
+      }
+      setPendingLoopCount(null)
     }
-    setPendingLoopCount(null)
-    setLoopMenuOpen(false)
+  })
+
+  const closeLoopMenuAndApply = () => {
+    closeLoopMenu()
   }
 
   const activeCount = isLoopMenuOpen && pendingLoopCount !== null ? pendingLoopCount : loopCount
 
   return (
-    <ControlToggleButton
-      $active={loopEnabled}
-      $menuOpen={isLoopMenuOpen}
-      onClick={() => {
-        if (isLoopMenuOpen) return // 菜单打开时，忽略外层按钮的切换，避免误触
-        setLoopEnabled(!loopEnabled)
-      }}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        if (isLoopMenuOpen) {
-          closeLoopMenuAndApply()
-        } else {
-          openLoopMenu()
-        }
-      }}
-      title="循环（右键更多选项）"
-      aria-label={
-        loopEnabled
-          ? loopRemaining === -1
-            ? '循环已开启：无限次'
-            : loopCount > 0
-              ? `循环已开启：第 ${loopCount - loopRemaining + 1}/${loopCount} 次`
-              : '循环已完成'
-          : '循环未开启'
-      }
-      aria-pressed={loopEnabled}
-    >
-      <Repeat size={18} />
-      {loopEnabled && (loopRemaining === -1 || loopRemaining > 0) && (
-        <LoopBadge $active={loopEnabled} aria-hidden="true">
-          {loopRemaining === -1
-            ? '∞'
-            : loopCount > 0
-              ? `${loopCount - loopRemaining + 1}/${loopCount}`
-              : '0'}
-        </LoopBadge>
-      )}
-      {isLoopMenuOpen && (
-        <LoopMenu
-          role="menu"
-          onMouseLeave={closeLoopMenuAndApply}
-          onClick={(e) => e.stopPropagation()}
-          onContextMenu={(e) => {
-            // 防止在菜单内部右键触发外层开关逻辑
-            e.preventDefault()
-            e.stopPropagation()
+    <div ref={containerRef}>
+      <Tooltip title="循环">
+        <ControlToggleButton
+          $active={loopEnabled}
+          $menuOpen={isLoopMenuOpen}
+          onClick={() => {
+            if (isLoopMenuOpen) return // 菜单打开时，忽略外层按钮的切换，避免误触
+            setLoopEnabled(!loopEnabled)
           }}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            toggleMenu()
+          }}
+          aria-pressed={loopEnabled}
         >
-          <MenuSection>
-            <MenuTitle>循环模式</MenuTitle>
-            <MenuRow>
-              <MenuOption
-                $active={loopMode === LoopMode.SINGLE}
-                onClick={() => {
-                  setLoopMode(LoopMode.SINGLE)
-                }}
-              >
-                单句循环
-              </MenuOption>
-              {/* 预留：AB 循环（暂不实现） */}
-              <MenuOption $disabled>AB 循环（开发中）</MenuOption>
-            </MenuRow>
-          </MenuSection>
+          <Repeat size={18} />
+          {loopEnabled && (loopRemaining === -1 || loopRemaining > 0) && (
+            <LoopBadge $active={loopEnabled} aria-hidden="true">
+              {loopRemaining === -1
+                ? '∞'
+                : loopCount > 0
+                  ? `${loopCount - loopRemaining + 1}/${loopCount}`
+                  : '0'}
+            </LoopBadge>
+          )}
+          {isLoopMenuOpen && (
+            <LoopMenu
+              role="menu"
+              onMouseLeave={closeLoopMenuAndApply}
+              onClick={(e) => e.stopPropagation()}
+              onContextMenu={(e) => {
+                // 防止在菜单内部右键触发外层开关逻辑
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+            >
+              <MenuSection>
+                <MenuTitle>循环模式</MenuTitle>
+                <MenuRow>
+                  <MenuOption
+                    $active={loopMode === LoopMode.SINGLE}
+                    onClick={() => {
+                      setLoopMode(LoopMode.SINGLE)
+                    }}
+                  >
+                    单句循环
+                  </MenuOption>
+                  {/* 预留：AB 循环（暂不实现） */}
+                  <MenuOption $disabled>AB 循环（开发中）</MenuOption>
+                </MenuRow>
+              </MenuSection>
 
-          <MenuSection>
-            <MenuTitle>循环次数</MenuTitle>
-            <MenuRow>
-              <MenuOption
-                onClick={() => {
-                  setPendingLoopCount(-1)
-                }}
-                $active={activeCount === -1}
-              >
-                ∞
-              </MenuOption>
-              {[2, 5, 10].map((n) => (
-                <MenuOption
-                  key={n}
-                  onClick={() => {
-                    setPendingLoopCount(n)
-                  }}
-                  $active={activeCount === n}
-                >
-                  {n}
-                </MenuOption>
-              ))}
-              <CustomInput
-                type="number"
-                min={1}
-                max={99}
-                placeholder=""
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const v = Number((e.target as HTMLInputElement).value)
-                    if (Number.isFinite(v)) {
-                      const n = Math.max(1, Math.min(99, Math.floor(v)))
-                      setPendingLoopCount(n)
-                    }
-                    closeLoopMenuAndApply()
-                  }
-                }}
-              />
-            </MenuRow>
-          </MenuSection>
-        </LoopMenu>
-      )}
-    </ControlToggleButton>
+              <MenuSection>
+                <MenuTitle>循环次数</MenuTitle>
+                <MenuRow>
+                  <MenuOption
+                    onClick={() => {
+                      setPendingLoopCount(-1)
+                    }}
+                    $active={activeCount === -1}
+                  >
+                    ∞
+                  </MenuOption>
+                  {[2, 5, 10].map((n) => (
+                    <MenuOption
+                      key={n}
+                      onClick={() => {
+                        setPendingLoopCount(n)
+                      }}
+                      $active={activeCount === n}
+                    >
+                      {n}
+                    </MenuOption>
+                  ))}
+                  <CustomInput
+                    type="number"
+                    min={1}
+                    max={99}
+                    placeholder=""
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const v = Number((e.target as HTMLInputElement).value)
+                        if (Number.isFinite(v)) {
+                          const n = Math.max(1, Math.min(99, Math.floor(v)))
+                          setPendingLoopCount(n)
+                        }
+                        closeLoopMenuAndApply()
+                      }
+                    }}
+                  />
+                </MenuRow>
+              </MenuSection>
+            </LoopMenu>
+          )}
+        </ControlToggleButton>
+      </Tooltip>
+    </div>
   )
 }
 

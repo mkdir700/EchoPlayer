@@ -1,9 +1,10 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { Volume1, Volume2, VolumeX } from 'lucide-react'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useRef } from 'react'
 import styled from 'styled-components'
 
 import { usePlayerCommandsOrchestrated } from '../../../hooks/usePlayerCommandsOrchestrated'
+import { useControlMenuManager } from '../hooks/useControlMenuManager'
 import { GlassPopup } from '../styles/controls'
 
 const VOLUME_KEY_POINTS = [
@@ -19,9 +20,16 @@ export default function VolumeControl() {
   const muted = usePlayerStore((s) => s.muted)
   const { changeVolumeBy, toggleMute } = usePlayerCommandsOrchestrated()
 
-  const [isVolumeOpen, setVolumeOpen] = useState(false)
-  const volumeControlRef = useRef<HTMLDivElement | null>(null)
   const sliderRef = useRef<HTMLDivElement | null>(null)
+
+  // 使用全局菜单管理器
+  const {
+    isMenuOpen: isVolumeOpen,
+    toggleMenu,
+    containerRef
+  } = useControlMenuManager({
+    menuId: 'volume'
+  })
 
   const setVolumeLevel = useCallback(
     (level: number) => {
@@ -55,23 +63,9 @@ export default function VolumeControl() {
     [muted, setVolumeLevel, toggleMute]
   )
 
-  // 点击外部关闭
-  React.useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      const volEl = volumeControlRef.current
-      if (volEl && !volEl.contains(e.target as Node)) setVolumeOpen(false)
-    }
-    document.addEventListener('mousedown', onDocClick)
-    return () => document.removeEventListener('mousedown', onDocClick)
-  }, [])
-
   return (
-    <VolumeControlWrap ref={volumeControlRef}>
-      <VolumeButton
-        onClick={() => setVolumeOpen((v) => !v)}
-        aria-label="Toggle volume panel"
-        title="音量"
-      >
+    <VolumeControlWrap ref={containerRef}>
+      <VolumeButton onClick={toggleMenu} aria-label="Toggle volume panel" title="音量">
         {muted ? (
           <VolumeX size={18} />
         ) : volume > 0.5 ? (
