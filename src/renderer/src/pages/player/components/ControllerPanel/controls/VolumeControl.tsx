@@ -1,26 +1,17 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
+import { Slider } from 'antd'
 import { Volume1, Volume2, VolumeX } from 'lucide-react'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback } from 'react'
 import styled from 'styled-components'
 
 import { usePlayerCommandsOrchestrated } from '../../../hooks/usePlayerCommandsOrchestrated'
 import { useControlMenuManager } from '../hooks/useControlMenuManager'
 import { GlassPopup } from '../styles/controls'
 
-const VOLUME_KEY_POINTS = [
-  { value: 0, label: '静音' },
-  { value: 0.25, label: '25%' },
-  { value: 0.5, label: '50%' },
-  { value: 0.75, label: '75%' },
-  { value: 1, label: '100%' }
-]
-
 export default function VolumeControl() {
   const volume = usePlayerStore((s) => s.volume)
   const muted = usePlayerStore((s) => s.muted)
   const { changeVolumeBy, toggleMute } = usePlayerCommandsOrchestrated()
-
-  const sliderRef = useRef<HTMLDivElement | null>(null)
 
   // 使用全局菜单管理器
   const {
@@ -33,34 +24,23 @@ export default function VolumeControl() {
 
   const setVolumeLevel = useCallback(
     (level: number) => {
-      const clampedLevel = Math.max(0, Math.min(1, level))
+      const normalizedLevel = level / 100 // antd Slider 使用 0-100，我们的状态使用 0-1
+      const clampedLevel = Math.max(0, Math.min(1, normalizedLevel))
       const delta = clampedLevel - volume
       changeVolumeBy(delta)
     },
     [volume, changeVolumeBy]
   )
 
-  const onSliderMouseDown = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const slider = sliderRef.current
-      if (!slider) return
-      const rect = slider.getBoundingClientRect()
-      const update = (clientX: number) => {
-        const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-        setVolumeLevel(ratio)
-        if (ratio > 0 && muted) toggleMute()
+  const handleVolumeChange = useCallback(
+    (value: number) => {
+      setVolumeLevel(value)
+      // 如果当前是静音状态且设置了音量，则取消静音
+      if (value > 0 && muted) {
+        toggleMute()
       }
-      update(e.clientX)
-
-      const onMove = (evt: MouseEvent) => update(evt.clientX)
-      const onUp = () => {
-        window.removeEventListener('mousemove', onMove)
-        window.removeEventListener('mouseup', onUp)
-      }
-      window.addEventListener('mousemove', onMove)
-      window.addEventListener('mouseup', onUp)
     },
-    [muted, setVolumeLevel, toggleMute]
+    [setVolumeLevel, muted, toggleMute]
   )
 
   return (
@@ -76,24 +56,16 @@ export default function VolumeControl() {
       </VolumeButton>
       {isVolumeOpen && (
         <VolumePopup role="dialog">
-          <CustomVolumeSlider ref={sliderRef} onMouseDown={onSliderMouseDown}>
-            <CustomVolumeTrack />
-            <CustomVolumeFill style={{ width: `${(muted ? 0 : volume) * 100}%` }} />
-            {VOLUME_KEY_POINTS.map((p) => (
-              <CustomVolumeKeyPoint
-                key={p.value}
-                style={{ left: `${p.value * 100}%` }}
-                $active={Math.abs((muted ? 0 : volume) - p.value) < 0.05}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setVolumeLevel(p.value)
-                  if (p.value > 0 && muted) toggleMute()
-                }}
-                title={p.label}
-              />
-            ))}
-            <CustomVolumeHandle style={{ left: `${(muted ? 0 : volume) * 100}%` }} />
-          </CustomVolumeSlider>
+          <StyledSlider
+            min={0}
+            max={100}
+            value={muted ? 0 : Math.round(volume * 100)}
+            onChange={handleVolumeChange}
+            tooltip={{
+              formatter: (value) => `${value}%`,
+              placement: 'top'
+            }}
+          />
         </VolumePopup>
       )}
     </VolumeControlWrap>
@@ -130,52 +102,25 @@ const VolumeButton = styled.button`
   }
 `
 
-const VolumePopup = styled(GlassPopup)``
+const VolumePopup = styled(GlassPopup)`
+  padding: 4px 12px;
+  min-width: 160px;
+`
 
-const CustomVolumeSlider = styled.div`
-  position: relative;
-  width: 180px;
-  height: 16px;
-  cursor: pointer;
-`
-const CustomVolumeTrack = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--color-border);
-  border-radius: 1.5px;
-  transform: translateY(-50%);
-`
-const CustomVolumeFill = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 0;
-  height: 3px;
-  background: var(--color-primary);
-  border-radius: 2px;
-  transform: translateY(-50%);
-  transition: width 0.15s ease;
-`
-const CustomVolumeHandle = styled.div`
-  position: absolute;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  background: var(--color-primary);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 2px 8px var(--color-border);
-`
-const CustomVolumeKeyPoint = styled.div<{ $active?: boolean }>`
-  position: absolute;
-  top: 50%;
-  width: ${(p) => (p.$active ? 8 : 6)}px;
-  height: ${(p) => (p.$active ? 8 : 6)}px;
-  background: ${(p) => (p.$active ? 'var(--color-primary)' : 'var(--color-text-3)')};
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  cursor: pointer;
-  transition: all 0.15s ease;
+const StyledSlider = styled(Slider)`
+  width: 160px;
+
+  .ant-slider-rail {
+    background-color: var(--color-border);
+    height: 3px;
+  }
+
+  .ant-slider-track {
+    background-color: var(--color-primary);
+    height: 3px;
+  }
+
+  .ant-slider-mark-text {
+    display: none; /* 隐藏标记点下方的文本 */
+  }
 `
