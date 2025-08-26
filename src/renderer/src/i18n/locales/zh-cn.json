@@ -10,8 +10,14 @@
   },
   "controls": {
     "auto_pause": {
+      "disabled": "字幕未加载",
+      "enabled": "自动暂停",
       "resume_delay": "恢复延迟（秒）",
       "resume_title": "自动恢复播放"
+    },
+    "loop": {
+      "disabled": "字幕未加载",
+      "enabled": "循环"
     }
   },
   "home": {
