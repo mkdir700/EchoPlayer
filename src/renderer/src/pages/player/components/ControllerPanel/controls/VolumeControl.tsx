@@ -57,13 +57,14 @@ export default function VolumeControl() {
       {isVolumeOpen && (
         <VolumePopup role="dialog">
           <StyledSlider
+            vertical
             min={0}
             max={100}
             value={muted ? 0 : Math.round(volume * 100)}
             onChange={handleVolumeChange}
             tooltip={{
               formatter: (value) => `${value}%`,
-              placement: 'top'
+              placement: 'left'
             }}
           />
         </VolumePopup>
@@ -103,21 +104,24 @@ const VolumeButton = styled.button`
 `
 
 const VolumePopup = styled(GlassPopup)`
-  padding: 4px 12px;
-  min-width: 160px;
+  padding: 12px 4px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `
 
 const StyledSlider = styled(Slider)`
-  width: 160px;
+  height: 80px;
 
   .ant-slider-rail {
     background-color: var(--color-border);
-    height: 3px;
+    width: 3px;
   }
 
   .ant-slider-track {
     background-color: var(--color-primary);
-    height: 3px;
+    width: 3px;
   }
 
   .ant-slider-mark-text {
