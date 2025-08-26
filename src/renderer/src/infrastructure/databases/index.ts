@@ -1,7 +1,7 @@
 import { FileMetadata, SubtitleLibraryRecord, VideoLibraryRecord } from '@types'
 import { Dexie, type EntityTable } from 'dexie'
 
-export const db = new Dexie('EchoLab') as Dexie & {
+export const db = new Dexie('EchoPlayer') as Dexie & {
   files: EntityTable<FileMetadata, 'id'>
   videoLibrary: EntityTable<VideoLibraryRecord, 'id'>
   subtitleLibrary: EntityTable<SubtitleLibraryRecord, 'id'>

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# EchoLab Release Publisher Script
+# EchoPlayer Release Publisher Script
 set -e
 
 # Colors for output
@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🚀 EchoLab Release Publisher${NC}"
+echo -e "${BLUE}🚀 EchoPlayer Release Publisher${NC}"
 echo "================================="
 
 # Get current version
@@ -56,4 +56,4 @@ echo -e "   ${YELLOW}https://github.com/$(git config --get remote.origin.url | s
 
 echo -e "\n${BLUE}🔗 Useful links:${NC}"
 echo "- Actions: https://github.com/$(git config --get remote.origin.url | sed 's/.*github.com[\/:]//;s/.git$//')/actions"
-echo "- Releases: https://github.com/$(git config --get remote.origin.url | sed 's/.*github.com[\/:]//;s/.git$//')/releases" 
+echo "- Releases: https://github.com/$(git config --get remote.origin.url | sed 's/.*github.com[\/:]//;s/.git$//')/releases"

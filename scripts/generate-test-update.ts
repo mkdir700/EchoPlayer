@@ -52,19 +52,19 @@ const PLATFORMS: PlatformConfig[] = [
   {
     name: 'macOS',
     manifestFile: `${getChannelFromVersion(TEST_VERSION)}-mac.yml`,
-    installerFile: `echolab-${TEST_VERSION}-mac.dmg`,
+    installerFile: `echoplayer-${TEST_VERSION}-mac.dmg`,
     installerSize: 150 * 1024 * 1024 // 150MB
   },
   {
     name: 'Windows',
     manifestFile: `${getChannelFromVersion(TEST_VERSION)}.yml`,
-    installerFile: `echolab-${TEST_VERSION}-setup.exe`,
+    installerFile: `echoplayer-${TEST_VERSION}-setup.exe`,
     installerSize: 120 * 1024 * 1024 // 120MB
   },
   {
     name: 'Linux',
     manifestFile: `${getChannelFromVersion(TEST_VERSION)}-linux.yml`,
-    installerFile: `echolab-${TEST_VERSION}.AppImage`,
+    installerFile: `echoplayer-${TEST_VERSION}.AppImage`,
     installerSize: 140 * 1024 * 1024 // 140MB
   }
 ]
@@ -78,7 +78,7 @@ const PLATFORMS: PlatformConfig[] = [
 function createMockInstaller(filePath: string, size: number): void {
   const buffer = Buffer.alloc(size, 0)
   // 写入一些标识信息到文件开头 / Write some identification info to the beginning
-  const header = `EchoLab Test Installer v${TEST_VERSION} - Generated at ${new Date().toISOString()}`
+  const header = `EchoPlayer Test Installer v${TEST_VERSION} - Generated at ${new Date().toISOString()}`
   buffer.write(header, 0, 'utf8')
 
   fs.writeFileSync(filePath, buffer)
@@ -131,7 +131,7 @@ function generateManifest(platform: PlatformConfig, channel: UpdateChannel): voi
 
 // 生成发布说明 / Generate release notes
 function generateReleaseNotes(): string {
-  return `# EchoLab ${TEST_VERSION} 测试版本
+  return `# EchoPlayer ${TEST_VERSION} 测试版本
 
 ## 🆕 新功能 / New Features
 - 测试自动更新功能 / Test auto-update functionality

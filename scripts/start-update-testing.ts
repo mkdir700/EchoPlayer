@@ -210,7 +210,7 @@ function cleanup(serverProcess: ChildProcess | null): void {
 
 // 主函数 / Main function
 async function main(): Promise<void> {
-  colorLog('bright', '🚀 EchoLab 更新测试环境启动器')
+  colorLog('bright', '🚀 EchoPlayer 更新测试环境启动器')
   console.log('='.repeat(50))
 
   // 检查端口是否可用

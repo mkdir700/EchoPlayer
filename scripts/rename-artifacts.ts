@@ -32,7 +32,7 @@ function getPackageInfo(): { version: string; productName: string } {
     const packageJson: PackageJson = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'))
     return {
       version: packageJson.version,
-      productName: packageJson.productName || 'echolab'
+      productName: packageJson.productName || 'echoplayer'
     }
   } catch (error) {
     console.error('❌ 无法读取 package.json:', error)

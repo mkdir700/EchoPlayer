@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# EchoLab Release Preparation Script
+# EchoPlayer Release Preparation Script
 set -e
 
 # Colors for output
@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🚀 EchoLab Release Preparation${NC}"
+echo -e "${BLUE}🚀 EchoPlayer Release Preparation${NC}"
 echo "=================================="
 
 # Get version type from argument or prompt
@@ -18,10 +18,10 @@ VERSION_TYPE=${1:-""}
 if [ -z "$VERSION_TYPE" ]; then
     echo -e "${YELLOW}Select version bump type:${NC}"
     echo "1) patch (0.1.0 -> 0.1.1)"
-    echo "2) minor (0.1.0 -> 0.2.0)" 
+    echo "2) minor (0.1.0 -> 0.2.0)"
     echo "3) major (0.1.0 -> 1.0.0)"
     read -p "Enter choice (1-3): " choice
-    
+
     case $choice in
         1) VERSION_TYPE="patch";;
         2) VERSION_TYPE="minor";;
@@ -59,4 +59,4 @@ echo "1. Review the changes"
 echo "2. Commit changes: git add . && git commit -m \"chore: bump version to v$NEW_VERSION\""
 echo "3. Create tag: git tag v$NEW_VERSION"
 echo "4. Push to repository: git push origin main --tags"
-echo -e "5. Or use: ${YELLOW}./scripts/publish-release.sh${NC}" 
+echo -e "5. Or use: ${YELLOW}./scripts/publish-release.sh${NC}"

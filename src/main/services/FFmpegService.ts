@@ -448,7 +448,7 @@ class FFmpegService {
               {
                 timeout: 30000, // 30秒连接超时
                 headers: {
-                  'User-Agent': 'EchoLab/1.0.0 (Electron FFmpeg Downloader)'
+                  'User-Agent': 'EchoPlayer/1.0.0 (Electron FFmpeg Downloader)'
                 }
               },
               (response) => {

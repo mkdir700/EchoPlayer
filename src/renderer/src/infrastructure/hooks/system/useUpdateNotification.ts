@@ -40,9 +40,9 @@ interface UpdateNotificationState {
 }
 
 const STORAGE_KEYS = {
-  LAST_SEEN_VERSION: 'echolab_last_seen_version',
-  LAST_CHECK_TIME: 'echolab_last_check_time',
-  LATEST_VERSION: 'echolab_latest_version'
+  LAST_SEEN_VERSION: 'echoplayer_last_seen_version',
+  LAST_CHECK_TIME: 'echoplayer_last_check_time',
+  LATEST_VERSION: 'echoplayer_latest_version'
 } as const
 
 /**

@@ -77,7 +77,7 @@ export default class AppUpdater {
     try {
       logger.info('get pre release version from github', channel)
       const responses = await fetch(
-        'https://api.github.com/repos/mkdir700/echolab/releases?per_page=8',
+        'https://api.github.com/repos/mkdir700/echoplayer/releases?per_page=8',
         {
           headers: {
             Accept: 'application/vnd.github+json',
@@ -98,7 +98,7 @@ export default class AppUpdater {
       }
 
       logger.info('release info', release.tag_name)
-      return `https://github.com/mkdir700/echolab/releases/download/${release.tag_name}`
+      return `https://github.com/mkdir700/echoplayer/releases/download/${release.tag_name}`
     } catch (error) {
       logger.error('Failed to get latest not draft version from github:', error)
       return null

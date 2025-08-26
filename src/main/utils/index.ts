@@ -37,7 +37,7 @@ export function debounce(func: (...args: any[]) => void, wait: number, immediate
 }
 
 export function dumpPersistState() {
-  const persistState = JSON.parse(localStorage.getItem('persist:echolab') || '{}')
+  const persistState = JSON.parse(localStorage.getItem('persist:echoplayer') || '{}')
   for (const key in persistState) {
     persistState[key] = JSON.parse(persistState[key])
   }

@@ -116,7 +116,7 @@ function suggestVersionType(): string {
 }
 
 function main(): void {
-  console.log('🔍 EchoLab 发布前检查 / Pre-release Check')
+  console.log('🔍 EchoPlayer 发布前检查 / Pre-release Check')
   console.log('=====================================')
 
   // 检查 Git 状态 / Check Git status

@@ -78,9 +78,9 @@ echo "-----------------------------------------------------"
 # 3. Determine the exact directory for the http-server
 # electron-builder for generic provider usually puts 'latest.yml' (or platform specific like 'latest-mac.yml')
 # directly in the output directory specified in publish config, or in a flat structure within directories.output.
-# Since publish.url is 'https://echolab.vip/auto-updates', electron-builder will prepare files for that structure.
+# Since publish.url is 'https://echoplayer.cc/auto-updates', electron-builder will prepare files for that structure.
 # The `latest.yml` and installers will likely be in a directory structure like:
-# release/0.2.0/echolab-0.2.0-mac.dmg
+# release/0.2.0/echoplayer-0.2.0-mac.dmg
 # release/0.2.0/latest-mac.yml
 # Or, if it's a universal build for 'generic' provider, it might be simpler.
 # We need to serve from the directory containing 'latest.yml' (or 'latest-mac.yml' etc.)

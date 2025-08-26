@@ -147,7 +147,7 @@ export const TEST_WAITS = {
 } as const
 
 // 测试标识符前缀
-const TEST_ID_PREFIX = 'echolab'
+const TEST_ID_PREFIX = 'echoplayer'
 
 /**
  * 生成标准化的测试标识符

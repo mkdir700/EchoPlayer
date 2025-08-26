@@ -8,6 +8,6 @@ url: http://localhost:8384
 channel: latest
 # 备用配置：使用 GitHub 进行测试 / Alternative config: use GitHub for testing
 # provider: github
-# repo: echolab
+# repo: echoplayer
 # owner: mkdir700
-# updaterCacheDirName: echolab-updater
+# updaterCacheDirName: echoplayer-updater
