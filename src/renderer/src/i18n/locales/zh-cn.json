@@ -1,6 +1,8 @@
 {
   "common": {
+    "favorites": "收藏",
     "grid_view": "矩阵视图",
+    "home": "主页",
     "language": "语言",
     "list_view": "列表视图",
     "return": "返回",
