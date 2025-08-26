@@ -110,7 +110,8 @@ const api = {
   //     ipcRenderer.invoke(IpcChannel.Backup_CheckS3Connection, s3Config)
   // },
   file: {
-    select: (options?: OpenDialogOptions) => ipcRenderer.invoke(IpcChannel.File_Select, options),
+    select: (options?: OpenDialogOptions): Promise<FileMetadata[] | null> =>
+      ipcRenderer.invoke(IpcChannel.File_Select, options),
     upload: (file: FileMetadata) => ipcRenderer.invoke(IpcChannel.File_Upload, file),
     delete: (fileId: string) => ipcRenderer.invoke(IpcChannel.File_Delete, fileId),
     deleteDir: (dirPath: string) => ipcRenderer.invoke(IpcChannel.File_DeleteDir, dirPath),

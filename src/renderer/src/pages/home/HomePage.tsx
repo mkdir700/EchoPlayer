@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 
 import DeleteButton from './DeleteButton'
+import EmptyState from './EmptyState'
 import HeaderNavbar from './HeaderNavbar'
 import ThumbnailWithFallback from './ThumbnailWithFallback'
 
@@ -71,17 +72,19 @@ export function HomePage(): React.JSX.Element {
   const [videos, setVideos] = React.useState<HomePageVideoItem[]>([])
   const navigate = useNavigate()
 
-  React.useEffect(() => {
-    let cancelled = false
+  const loadVideos = React.useCallback(async () => {
     const svc = new HomePageVideoService()
-    svc.getHomePageVideos(50).then((items) => {
-      if (!cancelled) setVideos(items)
-    })
-
-    return () => {
-      cancelled = true
-    }
+    const items = await svc.getHomePageVideos(50)
+    setVideos(items)
   }, [])
+
+  React.useEffect(() => {
+    loadVideos()
+  }, [loadVideos])
+
+  const handleVideoAdded = React.useCallback(() => {
+    loadVideos()
+  }, [loadVideos])
 
   // 删除视频记录
   const handleDeleteVideo = React.useCallback(async (video: HomePageVideoItem) => {
@@ -126,98 +129,102 @@ export function HomePage(): React.JSX.Element {
       />
       <ContentContainer id="content-container">
         <ContentBody>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={videoListViewMode}
-              variants={gridVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <VideoGrid viewMode={videoListViewMode}>
-                {(videos.length ? videos : []).map((video: HomePageVideoItem, index: number) => (
-                  <VideoCard
-                    key={video.id}
-                    variants={cardVariants}
-                    initial="hidden"
-                    animate="visible"
-                    custom={index}
-                    viewMode={videoListViewMode}
-                  >
-                    <CardContent
+          {videos.length === 0 ? (
+            <EmptyState onVideoAdded={handleVideoAdded} />
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={videoListViewMode}
+                variants={gridVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <VideoGrid viewMode={videoListViewMode}>
+                  {videos.map((video: HomePageVideoItem, index: number) => (
+                    <VideoCard
+                      key={video.id}
+                      variants={cardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      custom={index}
                       viewMode={videoListViewMode}
-                      onClick={() => navigate(`/player/${video.id}`)}
                     >
-                      <ThumbnailContainer viewMode={videoListViewMode}>
-                        <ThumbnailWithFallback src={video.thumbnail} alt={video.title} />
-                        <ThumbnailOverlay>
-                          <Duration>{video.durationText}</Duration>
-                          <TopRightActions>
-                            <DeleteButton onClick={() => handleDeleteVideo(video)} />
-                            <WatchedIndicator watched={video.watchProgress >= 1}>
-                              {video.watchProgress >= 1 && (
-                                <CheckIcon>
-                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <circle cx="8" cy="8" r="8" fill="#34D399" />
-                                    <path
-                                      d="m4 8 2 2 6-4"
-                                      stroke="white"
-                                      strokeWidth="1.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                </CheckIcon>
-                              )}
-                            </WatchedIndicator>
-                          </TopRightActions>
-                        </ThumbnailOverlay>
-                        <ProgressBarContainer>
-                          <MotionProgressBar
-                            progress={video.watchProgress}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${video.watchProgress * 100}%` }}
+                      <CardContent
+                        viewMode={videoListViewMode}
+                        onClick={() => navigate(`/player/${video.id}`)}
+                      >
+                        <ThumbnailContainer viewMode={videoListViewMode}>
+                          <ThumbnailWithFallback src={video.thumbnail} alt={video.title} />
+                          <ThumbnailOverlay>
+                            <Duration>{video.durationText}</Duration>
+                            <TopRightActions>
+                              <DeleteButton onClick={() => handleDeleteVideo(video)} />
+                              <WatchedIndicator watched={video.watchProgress >= 1}>
+                                {video.watchProgress >= 1 && (
+                                  <CheckIcon>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                      <circle cx="8" cy="8" r="8" fill="#34D399" />
+                                      <path
+                                        d="m4 8 2 2 6-4"
+                                        stroke="white"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  </CheckIcon>
+                                )}
+                              </WatchedIndicator>
+                            </TopRightActions>
+                          </ThumbnailOverlay>
+                          <ProgressBarContainer>
+                            <MotionProgressBar
+                              progress={video.watchProgress}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${video.watchProgress * 100}%` }}
+                              transition={{
+                                duration: 1.2,
+                                delay: index * 0.1 + 0.5,
+                                ease: [0.25, 0.46, 0.45, 0.94]
+                              }}
+                            />
+                          </ProgressBarContainer>
+                        </ThumbnailContainer>
+
+                        <VideoInfo viewMode={videoListViewMode}>
+                          <VideoContent
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{
-                              duration: 1.2,
-                              delay: index * 0.1 + 0.5,
+                              duration: 0.5,
+                              delay: index * 0.1 + 0.3,
                               ease: [0.25, 0.46, 0.45, 0.94]
                             }}
-                          />
-                        </ProgressBarContainer>
-                      </ThumbnailContainer>
-
-                      <VideoInfo viewMode={videoListViewMode}>
-                        <VideoContent
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{
-                            duration: 0.5,
-                            delay: index * 0.1 + 0.3,
-                            ease: [0.25, 0.46, 0.45, 0.94]
-                          }}
-                        >
-                          <VideoTitleTooltip
-                            title={video.title}
-                            mouseEnterDelay={0.6}
-                            placement="top"
-                            getPopupContainer={() => document.body}
                           >
-                            <VideoTitle>{video.title}</VideoTitle>
-                          </VideoTitleTooltip>
-                          <VideoMeta>
-                            <MetaRow>
-                              <MetaText>{formatDate(video.createdAt)}</MetaText>
-                              <MetaText>{video.publishedAt}</MetaText>
-                            </MetaRow>
-                          </VideoMeta>
-                        </VideoContent>
-                      </VideoInfo>
-                    </CardContent>
-                  </VideoCard>
-                ))}
-              </VideoGrid>
-            </motion.div>
-          </AnimatePresence>
+                            <VideoTitleTooltip
+                              title={video.title}
+                              mouseEnterDelay={0.6}
+                              placement="top"
+                              getPopupContainer={() => document.body}
+                            >
+                              <VideoTitle>{video.title}</VideoTitle>
+                            </VideoTitleTooltip>
+                            <VideoMeta>
+                              <MetaRow>
+                                <MetaText>{formatDate(video.createdAt)}</MetaText>
+                                <MetaText>{video.publishedAt}</MetaText>
+                              </MetaRow>
+                            </VideoMeta>
+                          </VideoContent>
+                        </VideoInfo>
+                      </CardContent>
+                    </VideoCard>
+                  ))}
+                </VideoGrid>
+              </motion.div>
+            </AnimatePresence>
+          )}
         </ContentBody>
       </ContentContainer>
     </Container>

@@ -16,6 +16,10 @@
   },
   "home": {
     "add_video": "新增视频",
+    "no_video": "空空如也",
+    "no_video_desc": "支持 MP4、AVI、MKV、MOV 等常见视频格式",
+    "processing": "处理中",
+    "select_video": "选择视频文件",
     "title": "我的视频库",
     "viewMode": {
       "grid": "矩阵",
