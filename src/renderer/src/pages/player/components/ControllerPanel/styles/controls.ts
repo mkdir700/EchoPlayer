@@ -28,14 +28,22 @@ export const ControlIconButton = styled.button`
   }
 `
 
-// 通用：可切换高亮的图标按钮（支持 $active 与 $menuOpen）
+// 通用：可切换高亮的图标按钮（支持 $active、$menuOpen 与 $disabled）
 export const ControlToggleButton = styled(ControlIconButton)<{
   $active?: boolean
   $menuOpen?: boolean
+  $disabled?: boolean
 }>`
   background: ${(p) =>
     p.$active ? 'color-mix(in srgb, var(--color-primary) 20%, transparent)' : 'transparent'};
-  color: ${(p) => (p.$active ? 'var(--color-primary)' : 'var(--color-text-2)')};
+  color: ${(p) =>
+    p.$disabled
+      ? 'var(--color-text-3)'
+      : p.$active
+        ? 'var(--color-primary)'
+        : 'var(--color-text-2)'};
+  cursor: ${(p) => (p.$disabled ? 'not-allowed' : 'pointer')};
+  opacity: ${(p) => (p.$disabled ? 0.5 : 1)};
 
   /* color-mix 不支持时的降级方案 */
   @supports not (background: color-mix(in srgb, white 10%, transparent)) {
@@ -44,26 +52,45 @@ export const ControlToggleButton = styled(ControlIconButton)<{
 
   &:hover {
     background: ${(p) =>
-      p.$active
-        ? 'color-mix(in srgb, var(--color-primary) 28%, transparent)'
-        : 'var(--color-hover)'};
-    color: ${(p) => (p.$active ? 'var(--color-primary)' : 'var(--color-text-1)')};
-    transform: ${(p) => (p.$menuOpen ? 'none' : 'scale(1.05)')};
+      p.$disabled
+        ? 'transparent'
+        : p.$active
+          ? 'color-mix(in srgb, var(--color-primary) 28%, transparent)'
+          : 'var(--color-hover)'};
+    color: ${(p) =>
+      p.$disabled
+        ? 'var(--color-text-3)'
+        : p.$active
+          ? 'var(--color-primary)'
+          : 'var(--color-text-1)'};
+    transform: ${(p) => (p.$disabled || p.$menuOpen ? 'none' : 'scale(1.05)')};
 
     @supports not (background: color-mix(in srgb, white 10%, transparent)) {
-      background: ${(p) => (p.$active ? 'var(--color-primary-soft)' : 'var(--color-hover)')};
+      background: ${(p) =>
+        p.$disabled
+          ? 'transparent'
+          : p.$active
+            ? 'var(--color-primary-soft)'
+            : 'var(--color-hover)'};
     }
   }
 
   &:active {
     background: ${(p) =>
-      p.$active
-        ? 'color-mix(in srgb, var(--color-primary) 32%, transparent)'
-        : 'var(--color-active)'};
-    transform: ${(p) => (p.$menuOpen ? 'none' : 'scale(0.95)')};
+      p.$disabled
+        ? 'transparent'
+        : p.$active
+          ? 'color-mix(in srgb, var(--color-primary) 32%, transparent)'
+          : 'var(--color-active)'};
+    transform: ${(p) => (p.$disabled || p.$menuOpen ? 'none' : 'scale(0.95)')};
 
     @supports not (background: color-mix(in srgb, white 10%, transparent)) {
-      background: ${(p) => (p.$active ? 'var(--color-primary-soft)' : 'var(--color-active)')};
+      background: ${(p) =>
+        p.$disabled
+          ? 'transparent'
+          : p.$active
+            ? 'var(--color-primary-soft)'
+            : 'var(--color-active)'};
     }
   }
 `

@@ -1,3 +1,4 @@
+import { useSubtitles } from '@renderer/pages/player/state/player-context'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { InputNumber, Switch } from 'antd'
 import { Tooltip } from 'antd'
@@ -11,6 +12,7 @@ import { ControlToggleButton } from '../styles/controls'
 
 export default function AutoPauseButton() {
   const { t } = useTranslation()
+  const subtitles = useSubtitles()
   const autoPauseEnabled = usePlayerStore((s) => s.autoPauseEnabled)
   const pauseOnSubtitleEnd = usePlayerStore((s) => s.pauseOnSubtitleEnd)
   const resumeEnabled = usePlayerStore((s) => s.resumeEnabled)
@@ -19,6 +21,9 @@ export default function AutoPauseButton() {
   const setPauseOnSubtitleEnd = usePlayerStore((s) => s.setPauseOnSubtitleEnd)
   const setResumeEnabled = usePlayerStore((s) => s.setResumeEnabled)
   const setResumeDelay = usePlayerStore((s) => s.setResumeDelay)
+
+  // 当字幕列表为空时，禁用自动暂停功能
+  const isDisabled = subtitles.length === 0
 
   const [pendingPauseOnSubtitleEnd, setPendingPauseOnSubtitleEnd] = useState(pauseOnSubtitleEnd)
   const [pendingResumeEnabled, setPendingResumeEnabled] = useState(resumeEnabled)
@@ -48,23 +53,32 @@ export default function AutoPauseButton() {
 
   return (
     <div ref={containerRef}>
-      <Tooltip title="自动暂停">
+      <Tooltip
+        title={
+          isDisabled
+            ? `${t('controls.auto_pause.disabled')}`
+            : `${t('controls.auto_pause.enabled')}`
+        }
+      >
         <ControlToggleButton
-          $active={autoPauseEnabled}
+          $active={autoPauseEnabled && !isDisabled}
           $menuOpen={isMenuOpen}
+          $disabled={isDisabled}
           onClick={() => {
-            if (isMenuOpen) return
+            if (isDisabled || isMenuOpen) return // 禁用或菜单打开时，忽略点击
             setAutoPauseEnabled(!autoPauseEnabled)
           }}
           onContextMenu={(e) => {
             e.preventDefault()
+            if (isDisabled) return // 禁用时不显示菜单
             toggleMenu()
           }}
-          aria-pressed={autoPauseEnabled}
+          aria-pressed={autoPauseEnabled && !isDisabled}
+          aria-disabled={isDisabled}
         >
           <PauseCircle size={18} />
 
-          {isMenuOpen && (
+          {isMenuOpen && !isDisabled && (
             <MenuContainer
               role="menu"
               onMouseLeave={closeMenuAndApply}

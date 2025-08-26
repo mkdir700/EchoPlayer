@@ -1,14 +1,18 @@
+import { useSubtitles } from '@renderer/pages/player/state/player-context'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { LoopMode } from '@types'
 import { Tooltip } from 'antd'
 import { Repeat } from 'lucide-react'
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
 import { useControlMenuManager } from '../hooks/useControlMenuManager'
 import { ControlToggleButton } from '../styles/controls'
 
 export default function LoopControl() {
+  const { t } = useTranslation()
+  const subtitles = useSubtitles()
   const loopEnabled = usePlayerStore((s) => s.loopEnabled)
   const loopMode = usePlayerStore((s) => s.loopMode)
   const loopCount = usePlayerStore((s) => s.loopCount)
@@ -16,6 +20,9 @@ export default function LoopControl() {
   const setLoopEnabled = usePlayerStore((s) => s.setLoopEnabled)
   const setLoopMode = usePlayerStore((s) => s.setLoopMode)
   const setLoopCount = usePlayerStore((s) => s.setLoopCount)
+
+  // 当字幕列表为空时，禁用循环功能
+  const isDisabled = subtitles.length === 0
 
   const [pendingLoopCount, setPendingLoopCount] = useState<number | null>(null)
 
@@ -47,23 +54,28 @@ export default function LoopControl() {
 
   return (
     <div ref={containerRef}>
-      <Tooltip title="循环">
+      <Tooltip
+        title={isDisabled ? `${t('controls.loop.disabled')}` : `${t('controls.loop.enabled')}`}
+      >
         <ControlToggleButton
-          $active={loopEnabled}
+          $active={loopEnabled && !isDisabled}
           $menuOpen={isLoopMenuOpen}
+          $disabled={isDisabled}
           onClick={() => {
-            if (isLoopMenuOpen) return // 菜单打开时，忽略外层按钮的切换，避免误触
+            if (isDisabled || isLoopMenuOpen) return // 禁用或菜单打开时，忽略点击
             setLoopEnabled(!loopEnabled)
           }}
           onContextMenu={(e) => {
             e.preventDefault()
+            if (isDisabled) return // 禁用时不显示菜单
             toggleMenu()
           }}
-          aria-pressed={loopEnabled}
+          aria-pressed={loopEnabled && !isDisabled}
+          aria-disabled={isDisabled}
         >
           <Repeat size={18} />
-          {loopEnabled && (loopRemaining === -1 || loopRemaining > 0) && (
-            <LoopBadge $active={loopEnabled} aria-hidden="true">
+          {loopEnabled && !isDisabled && (loopRemaining === -1 || loopRemaining > 0) && (
+            <LoopBadge $active={loopEnabled && !isDisabled} aria-hidden="true">
               {loopRemaining === -1
                 ? '∞'
                 : loopCount > 0
@@ -71,7 +83,7 @@ export default function LoopControl() {
                   : '0'}
             </LoopBadge>
           )}
-          {isLoopMenuOpen && (
+          {isLoopMenuOpen && !isDisabled && (
             <LoopMenu
               role="menu"
               onMouseLeave={closeLoopMenuAndApply}
