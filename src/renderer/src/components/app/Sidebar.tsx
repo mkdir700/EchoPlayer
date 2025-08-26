@@ -68,6 +68,7 @@ const Sidebar: FC = () => {
 const MainMenus: FC = () => {
   const { theme } = useTheme()
   const { pathname } = useLocation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const isRoute = (path: string): string => {
@@ -79,31 +80,35 @@ const MainMenus: FC = () => {
     return pathname === path || pathname.startsWith(path + '/') ? 'active' : ''
   }
 
-  const pathMap = {
-    home: '/',
-    favorites: '/favorites'
-  }
-
-  const iconMap = {
-    home: <LucideHome size={20} className="icon" />,
-    favorites: <LucideHeart size={20} className="icon" />
+  const menuItems = {
+    home: {
+      path: '/',
+      icon: <LucideHome size={20} className="icon" />,
+      label: t('common.home'),
+      disabled: false
+    },
+    favorites: {
+      path: '/favorites',
+      icon: <LucideHeart size={20} className="icon" />,
+      label: t('common.favorites'),
+      disabled: true
+    }
   }
 
   return (
     <>
-      {Object.keys(pathMap).map((key) => {
-        const isDisabled = key === 'favorites'
-        const isActive = isRoute(pathMap[key]) === 'active'
-        const tooltipTitle = isDisabled ? '' : key
+      {Object.entries(menuItems).map(([key, item]) => {
+        const isActive = isRoute(item.path) === 'active'
+        const tooltipTitle = item.disabled ? '' : item.label
 
         return (
           <Tooltip key={key} title={tooltipTitle} placement="right" mouseEnterDelay={0.8}>
             <StyledLink
-              onClick={isDisabled ? undefined : () => navigate(pathMap[key])}
+              onClick={item.disabled ? undefined : () => navigate(item.path)}
               className={isActive ? 'active' : ''}
             >
               <Icon theme={theme} className={isActive ? 'active' : ''}>
-                {iconMap[key]}
+                {item.icon}
               </Icon>
             </StyledLink>
           </Tooltip>
