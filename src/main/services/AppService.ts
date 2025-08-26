@@ -31,7 +31,7 @@ export class AppService {
         const autostartDir = path.join(os.homedir(), '.config', 'autostart')
         const desktopFile = path.join(
           autostartDir,
-          isDev ? 'echolab-dev.desktop' : 'echolab.desktop'
+          isDev ? 'echoplayer-dev.desktop' : 'echoplayer.desktop'
         )
 
         if (isLaunchOnBoot) {
@@ -55,7 +55,7 @@ export class AppService {
         Name=Echolab
         Comment=An AI-powered language learning tool
         Exec=${executablePath}
-        Icon=echolab
+        Icon=echoplayer
         Terminal=false
         StartupNotify=false
         Categories=Development;Utility;

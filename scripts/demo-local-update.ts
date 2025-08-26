@@ -27,7 +27,7 @@ class LocalUpdateDemo {
 
   // 运行演示 / Run demo
   async runDemo(): Promise<void> {
-    console.log('🎬 EchoLab 本地更新功能演示')
+    console.log('🎬 EchoPlayer 本地更新功能演示')
     console.log('='.repeat(50))
     console.log('这个演示将引导您完成本地更新测试的完整流程\n')
 
@@ -40,7 +40,7 @@ class LocalUpdateDemo {
       await this.step6_Cleanup()
 
       console.log('\n🎉 演示完成！')
-      console.log('您现在已经了解了如何在本地测试 EchoLab 的更新功能。')
+      console.log('您现在已经了解了如何在本地测试 EchoPlayer 的更新功能。')
     } catch (error) {
       console.error('\n❌ 演示过程中发生错误:', error)
     } finally {
@@ -56,7 +56,7 @@ class LocalUpdateDemo {
     console.log('本地更新测试包含以下组件:')
     console.log('• 测试数据生成器 - 创建模拟的更新文件')
     console.log('• 本地更新服务器 - 提供更新文件的HTTP服务')
-    console.log('• EchoLab应用 - 在开发模式下连接本地服务器')
+    console.log('• EchoPlayer应用 - 在开发模式下连接本地服务器')
     console.log('')
 
     await this.waitForUser('按回车键继续...')
@@ -152,10 +152,10 @@ class LocalUpdateDemo {
 
   // 步骤5: 在应用中测试 / Step 5: Test in app
   private async step5_TestInApp(): Promise<void> {
-    console.log('📱 步骤 5: 在EchoLab应用中测试更新')
+    console.log('📱 步骤 5: 在EchoPlayer应用中测试更新')
     console.log('─'.repeat(30))
 
-    console.log('现在您需要启动EchoLab应用来测试更新功能:')
+    console.log('现在您需要启动EchoPlayer应用来测试更新功能:')
     console.log('')
     console.log('1. 打开新的终端窗口')
     console.log('2. 运行命令: npm run dev')

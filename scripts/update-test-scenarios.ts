@@ -29,7 +29,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     description: '正常更新 - 有新版本可用',
     version: '1.1.0',
     hasUpdate: true,
-    releaseNotes: `# 🎉 EchoLab v1.1.0
+    releaseNotes: `# 🎉 EchoPlayer v1.1.0
 
 ## ✨ 新功能
 - 🎵 新增智能音频分析功能
@@ -58,7 +58,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     version: '1.2.0',
     hasUpdate: true,
     isMandatory: true,
-    releaseNotes: `# 🚨 EchoLab v1.2.0 - 重要安全更新
+    releaseNotes: `# 🚨 EchoPlayer v1.2.0 - 重要安全更新
 
 ## 🔒 安全修复
 - **重要**: 修复了关键安全漏洞
@@ -76,7 +76,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     description: '大型更新 - 测试下载进度',
     version: '2.0.0',
     hasUpdate: true,
-    releaseNotes: `# 🚀 EchoLab v2.0.0 - 重大版本更新
+    releaseNotes: `# 🚀 EchoPlayer v2.0.0 - 重大版本更新
 
 ## 🎯 重大更新
 - 🔄 全新架构重构
@@ -96,7 +96,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     description: '测试版更新 - Beta 渠道',
     version: '1.1.0-beta.1',
     hasUpdate: true,
-    releaseNotes: `# 🧪 EchoLab v1.1.0-beta.1
+    releaseNotes: `# 🧪 EchoPlayer v1.1.0-beta.1
 
 ## 🧪 测试版功能
 - 🆕 实验性AI音频分析
@@ -138,15 +138,15 @@ function generateManifest(scenario: TestScenario): void {
 
     const fileInfo = {
       win: {
-        url: `echolab-${scenario.version}-setup.exe`,
+        url: `echoplayer-${scenario.version}-setup.exe`,
         size: scenario.fileSize || 85000000
       },
       mac: {
-        url: `echolab-${scenario.version}.dmg`,
+        url: `echoplayer-${scenario.version}.dmg`,
         size: scenario.fileSize || 120000000
       },
       linux: {
-        url: `echolab-${scenario.version}.AppImage`,
+        url: `echoplayer-${scenario.version}.AppImage`,
         size: scenario.fileSize || 95000000
       }
     }
@@ -162,7 +162,7 @@ files:
 path: ${file.url}
 sha512: ${sha512}
 releaseDate: '${new Date().toISOString()}'
-releaseName: 'EchoLab v${scenario.version}'`
+releaseName: 'EchoPlayer v${scenario.version}'`
 
     if (scenario.releaseNotes) {
       yamlContent += `\nreleaseNotes: |\n${scenario.releaseNotes
@@ -244,7 +244,7 @@ function main(): void {
   const args = process.argv.slice(2)
   const currentVersion = getCurrentVersion()
 
-  console.log(`🚀 EchoLab 更新测试场景工具`)
+  console.log(`🚀 EchoPlayer 更新测试场景工具`)
   console.log(`📦 当前版本: ${currentVersion}`)
 
   if (args.length === 0) {

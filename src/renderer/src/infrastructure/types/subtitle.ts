@@ -2,8 +2,8 @@
  * 字幕领域类型定义
  * Subtitle Domain Type Definitions
  *
- * 基于现有 EchoLab 项目的字幕处理功能设计
- * Based on existing EchoLab project's subtitle processing features
+ * 基于现有 EchoPlayer 项目的字幕处理功能设计
+ * Based on existing EchoPlayer project's subtitle processing features
  */
 
 // 字幕项接口 / Subtitle Item Interface

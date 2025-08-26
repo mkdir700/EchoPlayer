@@ -200,7 +200,7 @@ function generateIndexHtml(channelData: ChannelData): string {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>EchoLab 开发更新服务器</title>
+    <title>EchoPlayer 开发更新服务器</title>
     <meta charset="utf-8">
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; }
@@ -242,7 +242,7 @@ function generateIndexHtml(channelData: ChannelData): string {
     </style>
 </head>
 <body>
-    <h1 class="header">🚀 EchoLab 开发更新服务器</h1>
+    <h1 class="header">🚀 EchoPlayer 开发更新服务器</h1>
     <div class="status">
         <strong>服务器状态:</strong> 运行中 | <strong>端口:</strong> ${PORT} | <strong>数据目录:</strong> ${UPDATE_DATA_DIR}
     </div>
@@ -269,9 +269,13 @@ function generateIndexHtml(channelData: ChannelData): string {
                         <div class="file-item">
                             <div>
                                 <div class="file-name">
-                                    <a href="/${channel}/${file.name}" target="_blank">${file.name}</a>
+                                    <a href="/${channel}/${file.name}" target="_blank">${
+                          file.name
+                        }</a>
                                 </div>
-                                <div class="file-info">大小: ${(file.size / 1024).toFixed(2)} KB</div>
+                                <div class="file-info">大小: ${(file.size / 1024).toFixed(
+                                  2
+                                )} KB</div>
                             </div>
                             <div class="file-info">
                                 修改时间: ${new Date(file.modified).toLocaleString('zh-CN')}
@@ -307,7 +311,7 @@ function generateIndexHtml(channelData: ChannelData): string {
 
 // 启动服务器 / Start server
 server.listen(PORT, () => {
-  console.log(`🚀 EchoLab 开发更新服务器已启动`)
+  console.log(`🚀 EchoPlayer 开发更新服务器已启动`)
   console.log(`📍 地址: http://localhost:${PORT}`)
   console.log(`📁 数据目录: ${UPDATE_DATA_DIR}`)
   console.log(`💡 在浏览器中打开 http://localhost:${PORT} 查看可用文件`)

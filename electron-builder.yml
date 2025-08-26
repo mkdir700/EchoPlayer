@@ -1,5 +1,5 @@
-appId: vip.echolab.app
-productName: echolab
+appId: cc.echoplayer.app
+productName: EchoPlayer
 directories:
   buildResources: build
 icon: icons
@@ -13,9 +13,9 @@ files:
 asarUnpack:
   - resources/**
 asar: true
-copyright: Copyright © 2025 EchoLab
+copyright: Copyright © 2025 EchoPlayer
 win:
-  executableName: echolab
+  executableName: EchoPlayer
   icon: icons/win/icon.ico
   artifactName: ${productName}-${version}-${arch}.${ext}
   target:
@@ -77,7 +77,7 @@ npmRebuild: false
 publish:
   provider: github
   owner: mkdir700
-  repo: echolab
+  repo: echoplayer
   vPrefixedTagName: true
   releaseType: draft
   publishAutoUpdate: true

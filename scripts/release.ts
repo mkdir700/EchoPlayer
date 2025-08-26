@@ -128,7 +128,7 @@ async function selectReleaseChannel(): Promise<string> {
 }
 
 async function main(): Promise<void> {
-  console.log('🎯 EchoLab 自动化发布工具 / Automated Release Tool')
+  console.log('🎯 EchoPlayer 自动化发布工具 / Automated Release Tool')
   console.log('=====================================')
 
   // 检查当前版本 / Check current version
