@@ -1,11 +1,32 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { LoopMode } from '@types'
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest'
 
 import { PlayerOrchestrator, StateUpdater, VideoController } from '../PlayerOrchestrator'
 
 describe('PlayerOrchestrator - 命令系统测试', () => {
   let orchestrator: PlayerOrchestrator
-  let mockVideoController: jest.Mocked<VideoController>
-  let mockStateUpdater: jest.Mocked<StateUpdater>
+  let mockVideoController: Mocked<VideoController>
+  let mockStateUpdater: Mocked<StateUpdater>
+  const context = {
+    currentTime: 10,
+    duration: 100,
+    paused: false,
+    playbackRate: 1.25,
+    activeCueIndex: 2,
+    subtitles: [
+      { id: '1', startTime: 0, endTime: 5, originalText: '字幕1' },
+      { id: '2', startTime: 5, endTime: 10, originalText: '字幕2' },
+      { id: '3', startTime: 10, endTime: 15, originalText: '字幕3' }
+    ],
+    loopEnabled: true,
+    loopMode: LoopMode.SINGLE,
+    loopCount: 3,
+    loopRemainingCount: 2,
+    autoPauseEnabled: false,
+    pauseOnSubtitleEnd: false,
+    resumeEnabled: false,
+    resumeDelay: 3000
+  }
 
   beforeEach(() => {
     // 创建 mock VideoController
@@ -30,7 +51,6 @@ describe('PlayerOrchestrator - 命令系统测试', () => {
       setDuration: vi.fn(),
       setPlaying: vi.fn(),
       setActiveCueIndex: vi.fn(),
-      decrementLoopRemaining: vi.fn(),
       updateLoopRemaining: vi.fn(),
       // 新增的状态同步方法
       setPlaybackRate: vi.fn(),
@@ -41,9 +61,7 @@ describe('PlayerOrchestrator - 命令系统测试', () => {
     }
 
     // 初始化 orchestrator
-    orchestrator = new PlayerOrchestrator({
-      enableDebugLogs: false
-    })
+    orchestrator = new PlayerOrchestrator({ ...context })
 
     orchestrator.connectVideoController(mockVideoController)
     orchestrator.connectStateUpdater(mockStateUpdater)
@@ -139,7 +157,7 @@ describe('PlayerOrchestrator - 命令系统测试', () => {
       expect(orchestrator.isVideoControllerConnected()).toBe(true)
 
       // 测试未连接状态
-      const newOrchestrator = new PlayerOrchestrator()
+      const newOrchestrator = new PlayerOrchestrator(context)
       expect(newOrchestrator.isVideoControllerConnected()).toBe(false)
     })
   })
@@ -154,7 +172,7 @@ describe('PlayerOrchestrator - 命令系统测试', () => {
     })
 
     it('should handle commands when video controller not connected', () => {
-      const newOrchestrator = new PlayerOrchestrator()
+      const newOrchestrator = new PlayerOrchestrator({ ...context })
 
       // 应该不会抛出异常
       expect(() => newOrchestrator.requestPause()).not.toThrow()
@@ -199,28 +217,6 @@ describe('PlayerOrchestrator - 命令系统测试', () => {
 
   describe('上下文更新', () => {
     it('should update playback context', () => {
-      const context = {
-        currentTime: 10,
-        duration: 100,
-        paused: false,
-        playbackRate: 1.25,
-        activeCueIndex: 2,
-        subtitles: [
-          { start: 0, end: 5, content: '字幕1' },
-          { start: 5, end: 10, content: '字幕2' },
-          { start: 10, end: 15, content: '字幕3' }
-        ],
-        subtitleDisplayMode: 'bilingual' as const,
-        loopEnabled: true,
-        loopMode: 'single' as const,
-        loopCount: 3,
-        loopRemainingCount: 2,
-        autoPauseEnabled: false,
-        pauseOnSubtitleEnd: false,
-        resumeEnabled: false,
-        resumeDelay: 3000
-      }
-
       expect(() => orchestrator.updateContext(context)).not.toThrow()
     })
   })
