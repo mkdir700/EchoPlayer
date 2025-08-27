@@ -447,6 +447,10 @@ export class PlayerOrchestrator {
     return this.videoController?.isMuted() ?? false
   }
 
+  isPaused(): boolean {
+    return this.videoController?.isPaused() ?? false
+  }
+
   isVideoControllerConnected(): boolean {
     return this.videoController !== null
   }
