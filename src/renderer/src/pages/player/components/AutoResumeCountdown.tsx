@@ -1,10 +1,14 @@
+import { loggerService } from '@logger'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { Button } from 'antd'
 import { Play, X } from 'lucide-react'
 import React, { useCallback, useEffect, useState } from 'react'
 import styled, { keyframes } from 'styled-components'
 
+import { usePlayerEngine } from '../hooks'
 import { usePlayerCommandsOrchestrated } from '../hooks/usePlayerCommandsOrchestrated'
+
+const logger = loggerService.withContext('AutoResumeCountdown')
 
 /**
  * 自动恢复倒计时通知组件
@@ -16,6 +20,7 @@ import { usePlayerCommandsOrchestrated } from '../hooks/usePlayerCommandsOrchest
  * - 便捷的交互：一键取消或立即恢复
  */
 export default function AutoResumeCountdown() {
+  const { orchestrator } = usePlayerEngine()
   const isAutoResumeCountdownOpen = usePlayerStore((s) => s.isAutoResumeCountdownOpen)
   const closeAutoResumeCountdown = usePlayerStore((s) => s.closeAutoResumeCountdown)
   const resumeDelay = usePlayerStore((s) => s.resumeDelay)
@@ -72,7 +77,21 @@ export default function AutoResumeCountdown() {
       clearTimeout(countdownTimer)
       clearInterval(progressTimer)
     }
-  }, [isAutoResumeCountdownOpen, resumeDelay, resumePlay])
+  }, [isAutoResumeCountdownOpen, resumeDelay, resumePlay, cancelAutoResume])
+
+  // 监听 paused 状态变更：当正在倒计时且 paused 变为 false 时，关闭倒计时
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (isAutoResumeCountdownOpen && !orchestrator.isPaused()) {
+        logger.info(`用户手动恢复播放, 关闭倒计时`)
+        closeAutoResumeCountdown()
+      }
+    }, 100)
+
+    return () => {
+      clearInterval(id)
+    }
+  }, [orchestrator, isAutoResumeCountdownOpen, closeAutoResumeCountdown])
 
   if (!isAutoResumeCountdownOpen) {
     return null
