@@ -71,6 +71,8 @@ export interface PlayerState {
   // UI 短时态（与字幕设置面板联动）
   isSettingsOpen: boolean
   wasPlayingBeforeOpen: boolean
+  /** 自动恢复倒计时 */
+  isAutoResumeCountdownOpen: boolean
 }
 
 export interface PlayerActions {
@@ -112,6 +114,8 @@ export interface PlayerActions {
   // 面板联动
   openSettingsPanel: () => void
   closeSettingsPanel: (autoResume?: boolean) => void
+  openAutoResumeCountdown: () => void
+  closeAutoResumeCountdown: () => void
 }
 
 export type PlayerStore = PlayerState & PlayerActions
@@ -144,7 +148,8 @@ const initialState: PlayerState = {
   activeCueIndex: -1,
 
   isSettingsOpen: false,
-  wasPlayingBeforeOpen: false
+  wasPlayingBeforeOpen: false,
+  isAutoResumeCountdownOpen: false
 }
 
 const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [], PlayerStore> = (
@@ -253,6 +258,14 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
       s.isSettingsOpen = false
       if (shouldResume) s.paused = false
       s.wasPlayingBeforeOpen = false
+    }),
+  openAutoResumeCountdown: () =>
+    set((s: Draft<PlayerStore>) => {
+      s.isAutoResumeCountdownOpen = true
+    }),
+  closeAutoResumeCountdown: () =>
+    set((s: Draft<PlayerStore>) => {
+      s.isAutoResumeCountdownOpen = false
     })
 })
 

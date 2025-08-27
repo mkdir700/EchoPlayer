@@ -56,6 +56,7 @@ export interface StateUpdater {
   setMuted(muted: boolean): void
   setSeeking?(seeking: boolean): void
   setEnded?(ended: boolean): void
+  updateUIState(updates: { openAutoResumeCountdown?: boolean }): void
 }
 
 /**
@@ -72,6 +73,7 @@ interface StateChanges {
   externalStateUpdates?: {
     activeCueIndex?: number
     loopRemaining?: number
+    uiUpdates?: Record<string, any>
   }
   fsmActions?: {
     type: 'lock' | 'unlock'
@@ -921,6 +923,11 @@ export class PlayerOrchestrator {
       changes.contextUpdates!.loopRemainingCount = resolution.loop.remaining
     }
 
+    // 处理UI状态更新
+    if (resolution.ui?.updates) {
+      changes.externalStateUpdates!.uiUpdates = resolution.ui.updates
+    }
+
     return changes
   }
 
@@ -992,6 +999,16 @@ export class PlayerOrchestrator {
       if (this.config.enableDebugLogs) {
         logger.debug('阶段6-更新循环剩余计数', {
           remaining: plan.stateChanges.externalStateUpdates.loopRemaining
+        })
+      }
+    }
+
+    // 处理UI状态更新
+    if (plan.stateChanges.externalStateUpdates?.uiUpdates) {
+      this.stateUpdater?.updateUIState(plan.stateChanges.externalStateUpdates.uiUpdates)
+      if (this.config.enableDebugLogs) {
+        logger.debug('阶段6-更新UI状态', {
+          updates: plan.stateChanges.externalStateUpdates.uiUpdates
         })
       }
     }
