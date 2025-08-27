@@ -129,6 +129,7 @@ export interface PlaybackContext {
   duration: number
   paused: boolean
   playbackRate: number
+  volume: number
 
   // 字幕相关
   activeCueIndex: number

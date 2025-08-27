@@ -114,6 +114,7 @@ export class PlayerOrchestrator {
     duration: 0,
     paused: true,
     playbackRate: 1,
+    volume: 1,
     activeCueIndex: -1,
     subtitles: [],
     loopEnabled: false,
@@ -184,6 +185,11 @@ export class PlayerOrchestrator {
 
     // 启动调度器
     this.clockScheduler.start()
+
+    // 初始化播放器的状态
+    controller.seek(this.context.currentTime)
+    controller.setPlaybackRate(this.context.playbackRate)
+    controller.setVolume(this.context.volume)
     logger.debug('ClockScheduler started')
   }
 
