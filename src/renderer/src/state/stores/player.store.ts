@@ -87,7 +87,6 @@ export interface PlayerActions {
   setVolume: (v: number) => void // 引擎专用：通过 orchestrator.requestSetVolume() 调用
   setMuted: (m: boolean) => void // 引擎专用：通过 orchestrator.requestToggleMute() 调用
   setPlaybackRate: (r: number) => void // 引擎专用：通过 orchestrator.requestSetPlaybackRate() 调用
-  setFullscreen: (f: boolean) => void // 可以由组件调用（全屏与浏览器 API 相关）
 
   // === 循环控制 ===
   // 组件可调用：用户设置
@@ -116,6 +115,7 @@ export interface PlayerActions {
   closeSettingsPanel: (autoResume?: boolean) => void
   openAutoResumeCountdown: () => void
   closeAutoResumeCountdown: () => void
+  setFullscreen: (f: boolean) => void // 可以由组件调用（全屏与浏览器 API 相关）
 }
 
 export type PlayerStore = PlayerState & PlayerActions

@@ -1,3 +1,4 @@
+import { useControlMenuManager } from '@renderer/pages/player/hooks/useControlMenuManager'
 import { useSubtitles } from '@renderer/pages/player/state/player-context'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { LoopMode } from '@types'
@@ -7,7 +8,6 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
-import { useControlMenuManager } from '../hooks/useControlMenuManager'
 import { ControlToggleButton } from '../styles/controls'
 
 export default function LoopControl() {

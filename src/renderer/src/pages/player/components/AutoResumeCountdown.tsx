@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import styled, { keyframes } from 'styled-components'
 
 import { usePlayerEngine } from '../hooks'
-import { usePlayerCommandsOrchestrated } from '../hooks/usePlayerCommandsOrchestrated'
+import { usePlayerCommands } from '../hooks/usePlayerCommands'
 
 const logger = loggerService.withContext('AutoResumeCountdown')
 
@@ -31,7 +31,7 @@ export default function AutoResumeCountdown() {
   const [isHovered, setIsHovered] = useState(false)
 
   // 播放器命令 Hook
-  const { playPause } = usePlayerCommandsOrchestrated()
+  const { playPause } = usePlayerCommands()
 
   // 计算显示值
   const remainingSeconds = Math.ceil(remainingTime / 1000)

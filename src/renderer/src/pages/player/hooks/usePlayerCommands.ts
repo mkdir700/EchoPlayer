@@ -1,4 +1,5 @@
 import { loggerService } from '@logger'
+import { usePlayerStore } from '@renderer/state'
 import { usePlayerSubtitlesStore } from '@renderer/state/stores/player-subtitles.store'
 import { useCallback } from 'react'
 
@@ -14,9 +15,11 @@ const DEFAULT_VOLUME_STEP = 0.05
  * 基于引擎的播放器命令 Hook
  * 所有命令通过 orchestrator 统一调度，不直接操作 store 或 video 元素
  */
-export function usePlayerCommandsOrchestrated() {
+export function usePlayerCommands() {
   const { orchestrator } = usePlayerEngine()
   const subtitles = usePlayerSubtitlesStore((s) => s.subtitles)
+  const toggleLoopEnabled = usePlayerStore((s) => s.toggleLoopEnabled)
+  const setFullscreen = usePlayerStore((s) => s.setFullscreen)
 
   // 播放/暂停
   const playPause = useCallback(async () => {
@@ -187,6 +190,24 @@ export function usePlayerCommandsOrchestrated() {
     }
   }, [orchestrator, subtitles])
 
+  const replayBySubtitle = useCallback(() => {
+    if (!orchestrator || !subtitles || subtitles.length === 0) {
+      logger.warn('Prerequisites not available for replayBySubtitle command')
+      return
+    }
+
+    const context = orchestrator.getContext()
+    const activeCueIndex = context.activeCueIndex
+
+    if (activeCueIndex >= 0) {
+      orchestrator.requestUserSeekBySubtitleIndex(activeCueIndex)
+      logger.info('Command: replayBySubtitle executed', {
+        to: subtitles[activeCueIndex].startTime,
+        index: activeCueIndex
+      })
+    }
+  }, [orchestrator, subtitles])
+
   return {
     // 基础控制
     playPause,
@@ -198,6 +219,7 @@ export function usePlayerCommandsOrchestrated() {
     seekToSubtitle,
     seekBackwardByStep,
     seekForwardByStep,
+    replayBySubtitle,
 
     // 音量控制
     changeVolumeBy,
@@ -210,6 +232,10 @@ export function usePlayerCommandsOrchestrated() {
 
     // 字幕导航
     goToPreviousSubtitle,
-    goToNextSubtitle
+    goToNextSubtitle,
+
+    // 功能控制
+    toggleLoopEnabled,
+    setFullscreen
   }
 }

@@ -42,14 +42,14 @@ export const DEFAULT_SHORTCUTS: Shortcut[] = [
   },
   {
     key: 'previous_subtitle',
-    shortcut: ['H'],
+    shortcut: ['A'],
     editable: true,
     enabled: true,
     system: false
   },
   {
     key: 'next_subtitle',
-    shortcut: ['L'],
+    shortcut: ['D'],
     editable: true,
     enabled: true,
     system: false
@@ -57,6 +57,13 @@ export const DEFAULT_SHORTCUTS: Shortcut[] = [
   {
     key: 'single_loop',
     shortcut: ['R'],
+    editable: true,
+    enabled: true,
+    system: false
+  },
+  {
+    key: 'replay_current_subtitle',
+    shortcut: ['S'],
     editable: true,
     enabled: true,
     system: false

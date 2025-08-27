@@ -1,6 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 
+import { usePlayerShortcuts } from '../../hooks/usePlayerShortcuts'
 import ProgressSection from '../ProgressSection'
 import CaptionsButton from './controls/CaptionsButton'
 import FullscreenButton from './controls/FullscreenButton'
@@ -10,7 +11,6 @@ import PlaybackRateControl from './controls/PlaybackRateControl'
 import SettingsButton from './controls/SettingsButton'
 import TransportControls from './controls/TransportControls'
 import VolumeControl from './controls/VolumeControl'
-import { usePlayerShortcuts } from './hooks/usePlayerShortcuts'
 
 function ControllerPanel() {
   // 注册快捷键（仅在播放器页面挂载时生效）

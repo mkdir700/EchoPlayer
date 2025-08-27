@@ -10,7 +10,7 @@ import {
 import React from 'react'
 import styled from 'styled-components'
 
-import { usePlayerCommandsOrchestrated } from '../../../hooks/usePlayerCommandsOrchestrated'
+import { usePlayerCommands } from '../../../hooks/usePlayerCommands'
 import {
   ControlCircleButton,
   ControlIconButton,
@@ -19,7 +19,7 @@ import {
 
 export default function TransportControls() {
   const paused = usePlayerStore((s) => s.paused)
-  const cmd = usePlayerCommandsOrchestrated()
+  const cmd = usePlayerCommands()
 
   return (
     <CenterControls>

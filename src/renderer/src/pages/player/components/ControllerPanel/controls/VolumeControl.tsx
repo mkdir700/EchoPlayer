@@ -4,14 +4,14 @@ import { Volume1, Volume2, VolumeX } from 'lucide-react'
 import React, { useCallback } from 'react'
 import styled from 'styled-components'
 
-import { usePlayerCommandsOrchestrated } from '../../../hooks/usePlayerCommandsOrchestrated'
-import { useControlMenuManager } from '../hooks/useControlMenuManager'
+import { useControlMenuManager } from '../../../hooks/useControlMenuManager'
+import { usePlayerCommands } from '../../../hooks/usePlayerCommands'
 import { GlassPopup } from '../styles/controls'
 
 export default function VolumeControl() {
   const volume = usePlayerStore((s) => s.volume)
   const muted = usePlayerStore((s) => s.muted)
-  const { changeVolumeBy, toggleMute } = usePlayerCommandsOrchestrated()
+  const { changeVolumeBy, toggleMute } = usePlayerCommands()
 
   // 使用全局菜单管理器
   const {

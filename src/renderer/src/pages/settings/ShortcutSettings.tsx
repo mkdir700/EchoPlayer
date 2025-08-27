@@ -17,20 +17,12 @@ import { SettingContainer, SettingDivider, SettingGroup, SettingTitle } from '.'
 const ShortcutSettings: FC = () => {
   const { t } = useTranslation()
   const { theme } = useTheme()
-  const { shortcuts: originalShortcuts } = useShortcuts()
+  const { shortcuts } = useShortcuts()
   const updateShortcut = useShortcutsStore.getState().updateShortcut
   const resetShortcuts = useShortcutsStore.getState().resetShortcuts
   const toggleShortcut = useShortcutsStore.getState().toggleShortcut
   const inputRefs = useRef<Record<string, InputRef>>({})
   const [editingKey, setEditingKey] = useState<string | null>(null)
-
-  //if shortcut is not available on all the platforms, block the shortcut here
-  let shortcuts = originalShortcuts
-  if (!isWin && !isMac) {
-    //Selection Assistant only available on Windows now
-    const excludedShortcuts = ['selection_assistant_toggle', 'selection_assistant_select_text']
-    shortcuts = shortcuts.filter((s) => !excludedShortcuts.includes(s.key))
-  }
 
   const handleClear = (record: Shortcut) => {
     updateShortcut({

@@ -5,7 +5,7 @@ import { Slider } from 'antd'
 import React, { useCallback, useRef } from 'react'
 import styled from 'styled-components'
 
-import { usePlayerCommandsOrchestrated } from '../hooks/usePlayerCommandsOrchestrated'
+import { usePlayerCommands } from '../hooks/usePlayerCommands'
 
 /**
  * 独立的进度条 + 时间显示组件
@@ -13,7 +13,7 @@ import { usePlayerCommandsOrchestrated } from '../hooks/usePlayerCommandsOrchest
 function ProgressSection() {
   const currentTime = usePlayerStore((s) => s.currentTime)
   const duration = usePlayerStore((s) => s.duration)
-  const { seekToUser } = usePlayerCommandsOrchestrated()
+  const { seekToUser } = usePlayerCommands()
 
   // 使用 ref 来跟踪是否是第一次 onChange（开始拖拽）
   const isFirstChange = useRef(true)
