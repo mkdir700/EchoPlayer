@@ -170,6 +170,7 @@ const shortcutKeyMap = {
   previous_subtitle: 'settings.shortcuts.previous_subtitle',
   next_subtitle: 'settings.shortcuts.next_subtitle',
   single_loop: 'settings.shortcuts.single_loop',
+  replay_current_subtitle: 'settings.shortcuts.replay_current_subtitle',
   toggle_fullscreen: 'settings.shortcuts.toggle_fullscreen',
   escape_fullscreen: 'settings.shortcuts.escape_fullscreen'
 } as const

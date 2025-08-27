@@ -3,15 +3,15 @@ import { Check, Zap } from 'lucide-react'
 import React from 'react'
 import styled from 'styled-components'
 
-import { usePlayerCommandsOrchestrated } from '../../../hooks/usePlayerCommandsOrchestrated'
-import { useControlMenuManager } from '../hooks/useControlMenuManager'
+import { useControlMenuManager } from '../../../hooks/useControlMenuManager'
+import { usePlayerCommands } from '../../../hooks/usePlayerCommands'
 import { GlassPopup } from '../styles/controls'
 
 const RATE_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
 export default function PlaybackRateControl() {
   const playbackRate = usePlayerStore((s) => s.playbackRate)
-  const { setPlaybackRate } = usePlayerCommandsOrchestrated()
+  const { setPlaybackRate } = usePlayerCommands()
 
   // 使用全局菜单管理器
   const {

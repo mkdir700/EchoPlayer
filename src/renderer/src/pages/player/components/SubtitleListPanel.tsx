@@ -7,7 +7,7 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import styled from 'styled-components'
 
 import { useSubtitleEngine } from '../hooks'
-import { usePlayerCommandsOrchestrated } from '../hooks/usePlayerCommandsOrchestrated'
+import { usePlayerCommands } from '../hooks/usePlayerCommands'
 import { useSubtitles } from '../state/player-context'
 import { ImportSubtitleButton } from './'
 
@@ -58,7 +58,7 @@ function SubtitleListPanel({
   const subtitleFollow = usePlayerStore((s) => s.subtitleFollow)
   const setSubtitleFollow = usePlayerStore((s) => s.setSubtitleFollow)
   const { currentIndex } = useSubtitleEngine()
-  const { seekToSubtitle } = usePlayerCommandsOrchestrated()
+  const { seekToSubtitle } = usePlayerCommands()
 
   // 计算首次加载的初始索引（仅在 Virtuoso 首次挂载前生效）
   const initialTopMostItemIndex = useMemo(() => {
