@@ -70,19 +70,29 @@ export class AutoPauseStrategy extends BaseStrategy {
 
     // 如果启用了自动恢复播放
     if (context.resumeEnabled && context.resumeDelay > 0) {
+      // 通知 UI 层打开倒计时面板
       intents.push({
-        domain: 'schedule',
-        action: 'play',
-        delayMs: context.resumeDelay,
-        priority: this.priority,
-        reason: `自动恢复播放 (延迟: ${context.resumeDelay}ms)`
+        domain: 'ui',
+        updateState: {
+          openAutoResumeCountdown: true
+        },
+        reason: '请求打开自动恢复倒计时面板'
       })
+      this.logger.debug('请求打开自动恢复倒计时面板')
 
-      this.logger.debug('安排自动恢复播放', {
-        delay: context.resumeDelay,
-        cueEnd: currentCue.endTime,
-        timeWindow: [currentCue.startTime, currentCue.endTime]
-      })
+      // intents.push({
+      //   domain: 'schedule',
+      //   action: 'play',
+      //   delayMs: context.resumeDelay,
+      //   priority: this.priority,
+      //   reason: `自动恢复播放 (延迟: ${context.resumeDelay}ms)`
+      // })
+
+      // this.logger.debug('安排自动恢复播放', {
+      //   delay: context.resumeDelay,
+      //   cueEnd: currentCue.endTime,
+      //   timeWindow: [currentCue.startTime, currentCue.endTime]
+      // })
     }
 
     this.logger.debug('执行自动暂停 (TimeMath边界跨越)', {
@@ -96,6 +106,16 @@ export class AutoPauseStrategy extends BaseStrategy {
 
     return intents
   }
+
+  // onDeactivate(context: PlaybackContext): Intent[] {
+  //   return [
+  //     {
+  //       domain: 'schedule',
+  //       action 'cancelAutoResume',
+  //       reason: '自动恢复播放已停止，取消自动恢复播放计划'
+  //     }
+  //   ]
+  // }
 
   dispose(): void {
     // 清理状态

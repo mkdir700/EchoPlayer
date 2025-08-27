@@ -53,6 +53,15 @@ function getOrCreateGlobalStateUpdater(): StateUpdater {
       setEnded: (ended: boolean) => {
         // TODO: 如果需要，可以在 player store 中添加 ended 状态
         logger.debug('Ended state updated:', { ended })
+      },
+      // UI状态更新处理
+      updateUIState: (updates: { openAutoResumeCountdown?: boolean }) => {
+        logger.debug('Processing UI state updates:', { updates })
+
+        // 处理自动恢复倒计时相关更新
+        if (updates.openAutoResumeCountdown) {
+          usePlayerStore.getState().openAutoResumeCountdown()
+        }
       }
     }
     logger.debug('Global StateUpdater created')

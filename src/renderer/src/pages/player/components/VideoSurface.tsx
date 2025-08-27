@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 
 import { usePlayerEngine } from '../hooks/usePlayerEngine'
+import AutoResumeCountdown from './AutoResumeCountdown'
 
 const logger = loggerService.withContext('VideoSurface')
 
@@ -163,6 +164,7 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
         }}
       />
       {/* <MediaClockDebugOverlay tick={lastTick} visible={true} /> */}
+      <AutoResumeCountdown />
     </Surface>
   )
 }

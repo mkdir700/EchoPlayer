@@ -9,7 +9,8 @@ import {
   ScheduleIntent,
   SeekIntent,
   SubtitleIntent,
-  TransportIntent
+  TransportIntent,
+  UIIntent
 } from './types'
 
 const logger = loggerService.withContext('DomainReducer')
@@ -193,17 +194,36 @@ export const scheduleReducer: DomainReducer<'schedule'> = (intents, _ctx) => {
     }
   }
 
-  // 转换为决议格式，按 delayMs 排序
-  const schedules = Array.from(uniqueSchedules.values())
-    .sort((a, b) => a.delayMs - b.delayMs)
-    .map((s) => ({
-      action: s.action,
-      delayMs: s.delayMs,
-      params: s.params
-    }))
+  // 转换为决议格式，按 delayMs 排序；保留原意图的完整字段（包含 domain 等）
+  const schedules = Array.from(uniqueSchedules.values()).sort((a, b) => a.delayMs - b.delayMs)
 
   return {
     schedule: schedules
+  }
+}
+
+/**
+ * UI状态归约器（可并行领域）
+ * 收集所有UI状态更新，支持合并
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const uiReducer: DomainReducer<'ui'> = (intents, _ctx) => {
+  const uiIntents = intents.filter((i) => i.domain === 'ui') as UIIntent[]
+  if (uiIntents.length === 0) return {}
+
+  // 合并所有UI状态更新
+  const updates: Record<string, any> = {}
+
+  for (const intent of uiIntents) {
+    if (intent.updateState) {
+      Object.assign(updates, intent.updateState)
+    }
+  }
+
+  return {
+    ui: {
+      updates
+    }
   }
 }
 
@@ -216,7 +236,8 @@ export const DOMAIN_REDUCERS = {
   seek: seekReducer,
   subtitle: subtitleReducer,
   loop: loopReducer,
-  schedule: scheduleReducer
+  schedule: scheduleReducer,
+  ui: uiReducer
 } as const
 
 /**

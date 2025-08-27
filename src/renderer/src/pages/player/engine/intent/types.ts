@@ -63,6 +63,7 @@ export interface LoopIntent extends IntentBase<'loop'> {
 export interface ScheduleIntent extends IntentBase<'schedule'> {
   action: 'play' | 'pause' | 'seek'
   delayMs: number
+  reason?: string
   params?: any
 }
 
@@ -70,7 +71,9 @@ export interface ScheduleIntent extends IntentBase<'schedule'> {
  * UI状态意图（可并行领域，可选）
  */
 export interface UIIntent extends IntentBase<'ui'> {
-  updateState?: Record<string, any>
+  updateState?: {
+    openAutoResumeCountdown?: boolean
+  }
 }
 
 /**
@@ -109,11 +112,7 @@ export type ResolutionByDomain = {
     remaining?: number
     mode?: LoopMode
   }
-  schedule?: Array<{
-    action: 'play' | 'pause' | 'seek'
-    delayMs: number
-    params?: any
-  }>
+  schedule?: Array<ScheduleIntent>
   ui?: {
     updates?: Record<string, any>
   }
@@ -156,18 +155,29 @@ export type DomainReducer<D extends Domain> = (
   ctx: PlaybackContext
 ) => Partial<Pick<ResolutionByDomain, D>>
 
-/**
- * 效果/命令类型
- */
-export interface Effect {
-  type: 'play' | 'pause' | 'seek' | 'schedule'
-  payload?: any
+interface EffectBase {
   reason?: string
   // 增强追踪字段
   source?: string // 来源策略名称
   sourceIntent?: string // 来源意图ID（用于追踪）
   executionId?: string // 执行唯一标识
 }
+
+interface PlayPauseEffect extends EffectBase {
+  type: 'play' | 'pause'
+}
+
+interface SeekEffect extends EffectBase {
+  type: 'seek'
+  payload: NonNullable<ResolutionByDomain['seek']>
+}
+
+interface ScheduleEffect extends EffectBase {
+  type: 'schedule'
+  payload: NonNullable<ScheduleIntent>
+}
+
+export type Effect = PlayPauseEffect | SeekEffect | ScheduleEffect
 
 /**
  * Effect 执行结果
