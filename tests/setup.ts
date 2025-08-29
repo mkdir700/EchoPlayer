@@ -1,6 +1,3 @@
-// Mock IndexedDB for Dexie
-import 'fake-indexeddb/auto'
-
 import { afterEach, beforeEach, vi } from 'vitest'
 
 // Mock Electron APIs
@@ -11,6 +8,28 @@ global.window = Object.assign(global.window, {
       binaryImage: vi.fn(),
       base64File: vi.fn(),
       delete: vi.fn()
+    },
+    db: {
+      files: {
+        add: vi.fn(),
+        findByPath: vi.fn(),
+        findByType: vi.fn(),
+        delete: vi.fn()
+      },
+      videoLibrary: {
+        upsert: vi.fn(),
+        findByFileId: vi.fn(),
+        getRecentlyPlayed: vi.fn(),
+        getFavorites: vi.fn(),
+        updatePlayProgress: vi.fn(),
+        toggleFavorite: vi.fn()
+      },
+      subtitleLibrary: {
+        add: vi.fn(),
+        findByVideoId: vi.fn(),
+        findByVideoIdAndPath: vi.fn(),
+        delete: vi.fn()
+      }
     },
     recentPlays: {
       getRecentPlays: vi.fn(),

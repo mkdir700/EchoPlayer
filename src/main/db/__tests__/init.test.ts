@@ -3,14 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { initDatabase } from '../init'
 
 // Mock dependencies
-vi.mock('@main/services/LoggerService', () => ({
-  loggerService: {
-    withContext: vi.fn(() => ({
-      info: vi.fn(),
-      error: vi.fn()
-    }))
+vi.mock('@main/services/LoggerService', () => {
+  const mockLogger = {
+    info: vi.fn(),
+    error: vi.fn()
   }
-}))
+
+  return {
+    loggerService: {
+      withContext: vi.fn(() => mockLogger)
+    },
+    __mockLogger: mockLogger
+  }
+})
 
 vi.mock('../index', () => ({
   openDatabase: vi.fn()
@@ -21,23 +26,22 @@ vi.mock('../migrate', () => ({
 }))
 
 describe('Database Init', () => {
-  const mockLogger = {
-    info: vi.fn(),
-    error: vi.fn()
-  }
-
+  let mockLogger: any
   const mockOpenDatabase = vi.fn()
   const mockRunMigrations = vi.fn()
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
 
-    // Setup mocks
-    vi.mocked(require('@main/services/LoggerService').loggerService.withContext).mockReturnValue(
-      mockLogger
-    )
-    vi.mocked(require('../index').openDatabase).mockImplementation(mockOpenDatabase)
-    vi.mocked(require('../migrate').runMigrations).mockImplementation(mockRunMigrations)
+    // 获取 mock logger 实例
+    const loggerServiceMock = await import('@main/services/LoggerService')
+    mockLogger = (loggerServiceMock as any).__mockLogger
+
+    const indexModule = await import('../index')
+    vi.mocked(indexModule.openDatabase).mockImplementation(mockOpenDatabase)
+
+    const migrateModule = await import('../migrate')
+    vi.mocked(migrateModule.runMigrations).mockImplementation(mockRunMigrations)
   })
 
   describe('initDatabase', () => {

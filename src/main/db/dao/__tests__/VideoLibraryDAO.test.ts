@@ -2,12 +2,11 @@ import type { Kysely } from 'kysely'
 import type { DB, VideoLibraryTable } from 'packages/shared/schema'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import * as dbIndex from '../../index'
 import { VideoLibraryDAO } from '../VideoLibraryDAO'
 
 // Mock getKysely
-vi.mock('../../index', () => ({
-  getKysely: vi.fn()
-}))
+vi.mock('../../index')
 
 describe('VideoLibraryDAO', () => {
   let dao: VideoLibraryDAO
@@ -49,7 +48,7 @@ describe('VideoLibraryDAO', () => {
       end: vi.fn()
     }
 
-    vi.mocked(require('../../index').getKysely).mockReturnValue(mockKysely)
+    vi.mocked(dbIndex.getKysely).mockReturnValue(mockKysely)
     dao = new VideoLibraryDAO()
     vi.clearAllMocks()
   })
@@ -65,7 +64,7 @@ describe('VideoLibraryDAO', () => {
     it('应该使用默认数据库实例', () => {
       const defaultDao = new VideoLibraryDAO()
 
-      expect(require('../../index').getKysely).toHaveBeenCalledTimes(1)
+      expect(dbIndex.getKysely).toHaveBeenCalledTimes(1)
       expect(defaultDao).toBeInstanceOf(VideoLibraryDAO)
     })
   })
@@ -328,15 +327,26 @@ describe('VideoLibraryDAO', () => {
 
       await dao.toggleFavorite('test-file-id')
 
-      // Verify the case expression chain
-      expect(mockKysely.case).toHaveBeenCalledTimes(1)
+      // Verify that set was called with a function
+      expect(mockKysely.set).toHaveBeenCalledWith(expect.any(Function))
 
       // Get the function passed to set() and call it with a mock expression builder
       const setCall = mockKysely.set.mock.calls[0][0]
-      const mockEB = { case: vi.fn().mockReturnValue(mockKysely) }
+      const mockEB = {
+        case: vi.fn().mockReturnValue({
+          when: vi.fn().mockReturnValue({
+            then: vi.fn().mockReturnValue({
+              else: vi.fn().mockReturnValue({
+                end: vi.fn().mockReturnValue('mock-case-result')
+              })
+            })
+          })
+        })
+      }
       const result = setCall(mockEB)
 
-      expect(result).toEqual({ isFavorite: mockKysely })
+      expect(result).toEqual({ isFavorite: 'mock-case-result' })
+      expect(mockEB.case).toHaveBeenCalledTimes(1)
     })
 
     it('应该处理切换失败', async () => {

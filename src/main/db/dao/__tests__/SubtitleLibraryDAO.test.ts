@@ -2,12 +2,11 @@ import type { Kysely } from 'kysely'
 import type { DB, SubtitleLibraryTable } from 'packages/shared/schema'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import * as dbIndex from '../../index'
 import { SubtitleLibraryDAO } from '../SubtitleLibraryDAO'
 
 // Mock getKysely
-vi.mock('../../index', () => ({
-  getKysely: vi.fn()
-}))
+vi.mock('../../index')
 
 describe('SubtitleLibraryDAO', () => {
   let dao: SubtitleLibraryDAO
@@ -37,7 +36,7 @@ describe('SubtitleLibraryDAO', () => {
       executeTakeFirstOrThrow: vi.fn()
     }
 
-    vi.mocked(require('../../index').getKysely).mockReturnValue(mockKysely)
+    vi.mocked(dbIndex.getKysely).mockReturnValue(mockKysely)
     dao = new SubtitleLibraryDAO()
     vi.clearAllMocks()
   })
@@ -53,7 +52,7 @@ describe('SubtitleLibraryDAO', () => {
     it('应该使用默认数据库实例', () => {
       const defaultDao = new SubtitleLibraryDAO()
 
-      expect(require('../../index').getKysely).toHaveBeenCalledTimes(1)
+      expect(dbIndex.getKysely).toHaveBeenCalledTimes(1)
       expect(defaultDao).toBeInstanceOf(SubtitleLibraryDAO)
     })
   })

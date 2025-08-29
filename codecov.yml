@@ -28,7 +28,7 @@ comment:
   require_head: no # 不要求头部分支覆盖率
 
 ignore:
-  - 'src/test/'
+  - 'tests'
   - '**/*.test.ts'
   - '**/*.test.tsx'
   - '**/*.spec.ts'
