@@ -11,7 +11,7 @@ import { replaceDevtoolsFont } from '@main/utils/windowUtil'
 import { app } from 'electron'
 import installExtension, { REDUX_DEVTOOLS } from 'electron-devtools-installer'
 
-import { isDev, isLinux, isWin } from './constant'
+import { isDev, isLinux, isWin, isWSL } from './constant'
 import { registerIpc } from './ipc'
 import { configManager } from './services/ConfigManager'
 import { registerShortcuts } from './services/ShortcutService'
@@ -21,11 +21,16 @@ import { windowService } from './services/WindowService'
 const logger = loggerService.withContext('MainEntry')
 
 /**
- * Disable hardware acceleration if setting is enabled
+ * Disable hardware acceleration if setting is enabled or in WSL environment
  */
 const disableHardwareAcceleration = configManager.getDisableHardwareAcceleration()
-if (disableHardwareAcceleration) {
+if (disableHardwareAcceleration || isWSL) {
   app.disableHardwareAcceleration()
+}
+
+if (isWSL) {
+  app.commandLine.appendSwitch('disable-gpu')
+  logger.info('WSL environment detected, hardware acceleration disabled')
 }
 
 /**
