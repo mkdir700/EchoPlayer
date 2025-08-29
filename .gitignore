@@ -47,7 +47,3 @@ docs/.vitepress/cache/deps
 .claudepoint/
 
 .mcp.json
-
-# Task files
-tasks.json
-tasks/ 
