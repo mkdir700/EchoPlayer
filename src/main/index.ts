@@ -17,6 +17,7 @@ import { configManager } from './services/ConfigManager'
 import { registerShortcuts } from './services/ShortcutService'
 import { TrayService } from './services/TrayService'
 import { windowService } from './services/WindowService'
+import { initDatabase } from './db/init'
 
 const logger = loggerService.withContext('MainEntry')
 
@@ -99,6 +100,14 @@ if (!app.requestSingleInstanceLock()) {
       import.meta.env.VITE_MAIN_BUNDLE_ID || 'com.kangfenmao.CherryStudio'
     )
 
+    // Initialize database
+    try {
+      await initDatabase()
+    } catch (error) {
+      logger.error('Failed to initialize database:', { error })
+      // Continue app initialization even if database fails
+    }
+
     // Mac: Hide dock icon before window creation when launch to tray is set
     const isLaunchToTray = configManager.getLaunchToTray()
     if (isLaunchToTray) {
@@ -146,6 +155,15 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.on('will-quit', async () => {
+    // Close database connections
+    try {
+      const { closeDatabase } = await import('./db/index')
+      closeDatabase()
+      logger.info('Database connections closed')
+    } catch (error) {
+      logger.error('Error closing database connections:', { error })
+    }
+
     // finish the logger
     logger.finish()
   })
