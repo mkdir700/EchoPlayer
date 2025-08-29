@@ -14,55 +14,61 @@ import {
 } from '../migrate'
 
 // Mock dependencies
-vi.mock('@main/services/LoggerService', () => ({
-  loggerService: {
-    withContext: vi.fn(() => ({
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn()
-    }))
-  }
-}))
-
-vi.mock('../index', () => ({
-  openDatabase: vi.fn(),
-  getKysely: vi.fn()
-}))
-
-// Mock kysely
-const mockMigrator = {
-  migrateToLatest: vi.fn(),
-  migrateTo: vi.fn(),
-  getMigrations: vi.fn()
-}
-
-vi.mock('kysely', async () => {
-  const actual = await vi.importActual('kysely')
-  return {
-    ...actual,
-    Migrator: vi.fn(() => mockMigrator),
-    FileMigrationProvider: vi.fn()
-  }
-})
-
-describe('Database Migrate', () => {
+vi.mock('@main/services/LoggerService', () => {
   const mockLogger = {
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn()
   }
 
-  const mockKysely = {} as Kysely<any>
+  return {
+    loggerService: {
+      withContext: vi.fn(() => mockLogger)
+    },
+    __mockLogger: mockLogger // 导出 mock logger 供测试使用
+  }
+})
 
-  beforeEach(() => {
+vi.mock('../index', () => ({
+  openDatabase: vi.fn(),
+  getKysely: vi.fn()
+}))
+
+// Mock kysely - 需要在mock内部定义mockMigrator
+vi.mock('kysely', async () => {
+  const actual = await vi.importActual('kysely')
+  const mockMigrator = {
+    migrateToLatest: vi.fn(),
+    migrateTo: vi.fn(),
+    getMigrations: vi.fn()
+  }
+  return {
+    ...actual,
+    Migrator: vi.fn(() => mockMigrator),
+    FileMigrationProvider: vi.fn(),
+    __mockMigrator: mockMigrator // 导出mock实例供测试使用
+  }
+})
+
+describe('Database Migrate', () => {
+  const mockKysely = {} as Kysely<any>
+  let mockMigrator: any
+  let mockLogger: any
+
+  beforeEach(async () => {
     vi.clearAllMocks()
 
-    // Setup mocks
-    vi.mocked(require('@main/services/LoggerService').loggerService.withContext).mockReturnValue(
-      mockLogger
-    )
-    vi.mocked(require('../index').getKysely).mockReturnValue(mockKysely)
-    vi.mocked(require('../index').openDatabase).mockReturnValue(mockKysely)
+    // 获取mock migrator实例
+    const kyselyMock = await import('kysely')
+    mockMigrator = (kyselyMock as any).__mockMigrator
+
+    // 获取 mock logger 实例
+    const loggerServiceMock = await import('@main/services/LoggerService')
+    mockLogger = (loggerServiceMock as any).__mockLogger
+
+    const indexModule = await import('../index')
+    vi.mocked(indexModule.getKysely).mockReturnValue(mockKysely)
+    vi.mocked(indexModule.openDatabase).mockReturnValue(mockKysely)
 
     // Mock fs
     vi.spyOn(fs, 'existsSync').mockReturnValue(true)

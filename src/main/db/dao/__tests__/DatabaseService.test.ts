@@ -2,6 +2,7 @@ import type { Kysely } from 'kysely'
 import type { DB } from 'packages/shared/schema'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import * as dbIndex from '../../index'
 import { DatabaseService, db } from '../DatabaseService'
 import { FileDAO } from '../FileDAO'
 import { SubtitleLibraryDAO } from '../SubtitleLibraryDAO'
@@ -12,9 +13,8 @@ vi.mock('../FileDAO')
 vi.mock('../VideoLibraryDAO')
 vi.mock('../SubtitleLibraryDAO')
 
-vi.mock('../../index', () => ({
-  getKysely: vi.fn()
-}))
+// Mock the database index module
+vi.mock('../../index')
 
 describe('DatabaseService', () => {
   const mockKysely = {
@@ -25,7 +25,7 @@ describe('DatabaseService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(require('../../index').getKysely).mockReturnValue(mockKysely)
+    vi.mocked(dbIndex.getKysely).mockReturnValue(mockKysely)
   })
 
   describe('constructor', () => {
@@ -44,7 +44,7 @@ describe('DatabaseService', () => {
     it('应该使用默认数据库实例', () => {
       const service = new DatabaseService()
 
-      expect(require('../../index').getKysely).toHaveBeenCalledTimes(1)
+      expect(dbIndex.getKysely).toHaveBeenCalledTimes(1)
       expect(FileDAO).toHaveBeenCalledWith(mockKysely)
       expect(VideoLibraryDAO).toHaveBeenCalledWith(mockKysely)
       expect(SubtitleLibraryDAO).toHaveBeenCalledWith(mockKysely)
@@ -59,14 +59,18 @@ describe('DatabaseService', () => {
       const service = new DatabaseService(mockKysely)
       const callback = vi.fn().mockResolvedValue('result')
       const mockTransaction = {
-        execute: vi.fn().mockImplementation((cb) => cb('transaction-db'))
+        execute: vi.fn().mockImplementation(async (cb) => await cb('transaction-db'))
       }
 
-      mockKysely.transaction = vi.fn().mockReturnValue(mockTransaction)
+      // Mock getKysely to return a kysely instance with transaction method
+      const mockTransactionKysely = {
+        transaction: vi.fn().mockReturnValue(mockTransaction)
+      } as unknown as Kysely<DB>
+      vi.mocked(dbIndex.getKysely).mockReturnValue(mockTransactionKysely)
 
       const result = await service.transaction(callback)
 
-      expect(mockKysely.transaction).toHaveBeenCalledTimes(1)
+      expect(mockTransactionKysely.transaction).toHaveBeenCalledTimes(1)
       expect(mockTransaction.execute).toHaveBeenCalledWith(callback)
       expect(callback).toHaveBeenCalledWith('transaction-db')
       expect(result).toBe('result')
@@ -77,10 +81,14 @@ describe('DatabaseService', () => {
       const error = new Error('Transaction failed')
       const callback = vi.fn().mockRejectedValue(error)
       const mockTransaction = {
-        execute: vi.fn().mockImplementation((cb) => cb('transaction-db'))
+        execute: vi.fn().mockImplementation(async (cb) => await cb('transaction-db'))
       }
 
-      mockKysely.transaction = vi.fn().mockReturnValue(mockTransaction)
+      // Mock getKysely to return a kysely instance with transaction method
+      const mockTransactionKysely = {
+        transaction: vi.fn().mockReturnValue(mockTransaction)
+      } as unknown as Kysely<DB>
+      vi.mocked(dbIndex.getKysely).mockReturnValue(mockTransactionKysely)
 
       await expect(service.transaction(callback)).rejects.toThrow('Transaction failed')
       expect(mockTransaction.execute).toHaveBeenCalledWith(callback)
@@ -89,10 +97,19 @@ describe('DatabaseService', () => {
     it('应该使用默认数据库实例进行事务', async () => {
       const service = new DatabaseService()
       const callback = vi.fn().mockResolvedValue('result')
+      const mockTransaction = {
+        execute: vi.fn().mockImplementation(async (cb) => await cb('transaction-db'))
+      }
+
+      // Mock getKysely to return a kysely instance with transaction method
+      const mockTransactionKysely = {
+        transaction: vi.fn().mockReturnValue(mockTransaction)
+      } as unknown as Kysely<DB>
+      vi.mocked(dbIndex.getKysely).mockReturnValue(mockTransactionKysely)
 
       await service.transaction(callback)
 
-      expect(mockKysely.transaction).toHaveBeenCalledTimes(1)
+      expect(mockTransactionKysely.transaction).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -104,11 +121,12 @@ describe('DatabaseService', () => {
       expect(db.subtitleLibrary).toBeInstanceOf(SubtitleLibraryDAO)
     })
 
-    it('应该复用单例实例', () => {
-      const { db: db1 } = require('../DatabaseService')
-      const { db: db2 } = require('../DatabaseService')
+    it('应该复用单例实例', async () => {
+      // Import the module dynamically to test singleton behavior
+      const module1 = await import('../DatabaseService')
+      const module2 = await import('../DatabaseService')
 
-      expect(db1).toBe(db2)
+      expect(module1.db).toBe(module2.db)
     })
   })
 

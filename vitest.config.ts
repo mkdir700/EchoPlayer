@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ['./tests/setup.ts'],
     typecheck: {
       enabled: true,
       tsconfig: './tsconfig.web.json'
@@ -18,7 +18,7 @@ export default defineConfig({
       reportsDirectory: './coverage',
       exclude: [
         'node_modules/',
-        'src/test/',
+        'tests',
         '**/*.d.ts',
         '**/*.config.*',
         'out/',

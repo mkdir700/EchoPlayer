@@ -2,12 +2,11 @@ import type { Kysely } from 'kysely'
 import type { DB, FileMetadataTable, FileTypes } from 'packages/shared/schema'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import * as dbIndex from '../../index'
 import { FileDAO } from '../FileDAO'
 
 // Mock getKysely
-vi.mock('../../index', () => ({
-  getKysely: vi.fn()
-}))
+vi.mock('../../index')
 
 describe('FileDAO', () => {
   let dao: FileDAO
@@ -39,7 +38,7 @@ describe('FileDAO', () => {
       executeTakeFirstOrThrow: vi.fn()
     }
 
-    vi.mocked(require('../../index').getKysely).mockReturnValue(mockKysely)
+    vi.mocked(dbIndex.getKysely).mockReturnValue(mockKysely)
     dao = new FileDAO()
     vi.clearAllMocks()
   })
@@ -55,7 +54,7 @@ describe('FileDAO', () => {
     it('应该使用默认数据库实例', () => {
       const defaultDao = new FileDAO()
 
-      expect(require('../../index').getKysely).toHaveBeenCalledTimes(1)
+      expect(dbIndex.getKysely).toHaveBeenCalledTimes(1)
       expect(defaultDao).toBeInstanceOf(FileDAO)
     })
   })

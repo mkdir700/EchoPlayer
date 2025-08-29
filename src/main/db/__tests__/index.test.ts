@@ -42,6 +42,9 @@ describe('Database Index', () => {
 
     // Reset database instances
     closeDatabase()
+
+    // 重新设置 Database mock 在每个测试之前
+    vi.mocked(Database).mockImplementation(() => mockSqlite as any)
   })
 
   afterEach(() => {
@@ -83,6 +86,9 @@ describe('Database Index', () => {
     beforeEach(() => {
       mkdirSyncSpy = vi.spyOn(fs, 'mkdirSync').mockImplementation(() => {})
       existsSyncSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(false)
+
+      // 确保 Database constructor 返回正确的 mock
+      vi.mocked(Database).mockImplementation(() => mockSqlite as any)
     })
 
     it('应该创建数据库目录如果不存在', () => {
@@ -107,6 +113,7 @@ describe('Database Index', () => {
     it('应该配置SQLite PRAGMA设置', () => {
       openDatabase()
 
+      expect(Database).toHaveBeenCalledTimes(1)
       expect(mockSqlite.pragma).toHaveBeenCalledWith('journal_mode = WAL')
       expect(mockSqlite.pragma).toHaveBeenCalledWith('synchronous = normal')
       expect(mockSqlite.pragma).toHaveBeenCalledWith('foreign_keys = ON')
@@ -149,7 +156,7 @@ describe('Database Index', () => {
   })
 
   describe('closeDatabase', () => {
-    it('应该关闭数据库连接', async () => {
+    it('应该关闭数据库连接', () => {
       const kysely = openDatabase()
       const destroySpy = vi.spyOn(kysely, 'destroy').mockResolvedValue()
 
