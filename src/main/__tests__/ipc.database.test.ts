@@ -436,7 +436,7 @@ describe('IPC Database Handlers', () => {
         const { db } = await import('../db/dao')
         vi.mocked(db.videoLibrary.upsertVideoRecord).mockResolvedValue(mockResult as any)
 
-        const handler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Upsert)!
+        const handler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Add)!
         const result = await handler({}, mockRecord)
 
         expect(db.videoLibrary.upsertVideoRecord).toHaveBeenCalledWith(mockRecord)
@@ -459,7 +459,7 @@ describe('IPC Database Handlers', () => {
         const { db } = await import('../db/dao')
         vi.mocked(db.videoLibrary.upsertVideoRecord).mockRejectedValue(mockError)
 
-        const handler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Upsert)!
+        const handler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Add)!
 
         await expect(handler({}, mockRecord)).rejects.toThrow('Upsert failed')
       })
@@ -990,7 +990,7 @@ describe('IPC Database Handlers', () => {
 
         // 执行组合操作
         const fileHandler = ipcHandlers.get(IpcChannel.DB_Files_Add)!
-        const videoHandler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Upsert)!
+        const videoHandler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Add)!
         const subtitleHandler = ipcHandlers.get(IpcChannel.DB_SubtitleLibrary_Add)!
 
         const fileResult = await fileHandler({}, mockFile)
@@ -1029,7 +1029,7 @@ describe('IPC Database Handlers', () => {
         vi.mocked(db.videoLibrary.upsertVideoRecord).mockRejectedValue(mockError)
 
         const fileHandler = ipcHandlers.get(IpcChannel.DB_Files_Add)!
-        const videoHandler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Upsert)!
+        const videoHandler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Add)!
 
         // 第一个操作应该成功
         const fileResult = await fileHandler({}, mockFile)

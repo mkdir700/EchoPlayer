@@ -3,8 +3,8 @@ import FileManager from '@renderer/services/FileManager'
 import { VideoLibraryService } from '@renderer/services/VideoLibrary'
 import { createPerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
 import { videoExts } from '@shared/config/constant'
-import { FileMetadata, VideoLibraryRecord } from '@types'
 import { message } from 'antd'
+import type { FileMetadata, VideoLibraryRecord } from 'packages/shared/types/database'
 import { useCallback, useState } from 'react'
 
 const logger = loggerService.withContext('useVideoFileSelect')
@@ -35,10 +35,7 @@ export function useVideoFileSelect(
         const monitor = createPerformanceMonitor('视频添加流程')
 
         logger.info('📄 选中的文件信息:', {
-          name: file.name,
-          path: file.path,
-          size: file.size,
-          ext: file.ext
+          file: file
         })
 
         try {
@@ -53,7 +50,7 @@ export function useVideoFileSelect(
 
           // 2. 将文件添加到文件数据库
           monitor.startTiming('文件数据库添加', { fileName: file.name, fileSize: file.size })
-          const fileRecord = await FileManager.addFile(file)
+          const addedFile = await FileManager.addFile(file)
           monitor.endTiming('文件数据库添加')
 
           // 3. 解析视频文件信息，包括：分辨率、码率、时长等
@@ -76,7 +73,7 @@ export function useVideoFileSelect(
           monitor.startTiming('视频库记录添加')
           const videoLibraryService = new VideoLibraryService()
           const videoRecord: Omit<VideoLibraryRecord, 'id'> = {
-            fileId: fileRecord.id,
+            fileId: addedFile.id,
             currentTime: 0,
             duration: videoInfo.duration,
             playedAt: Date.now(),
@@ -84,10 +81,10 @@ export function useVideoFileSelect(
             playCount: 0,
             isFinished: false,
             isFavorite: false,
-            thumbnailPath: undefined
+            thumbnailPath: null
           }
 
-          await videoLibraryService.addOrUpdateRecord(videoRecord)
+          await videoLibraryService.addRecord(videoRecord)
           monitor.endTiming('视频库记录添加')
 
           // 生成性能报告
@@ -95,13 +92,10 @@ export function useVideoFileSelect(
 
           const totalTimeMs = Math.round(report.totalDuration)
           logger.info(`视频文件添加成功！总耗时: ${totalTimeMs}ms`)
-          message.success('视频文件添加成功！')
-
           // 调用成功回调
           onSuccess?.()
         } catch (error) {
           logger.error('处理视频文件失败:', { error: error as Error })
-          message.error(`处理视频文件失败: ${error instanceof Error ? error.message : '未知错误'}`)
           throw error
         }
       } catch (error) {
@@ -133,10 +127,11 @@ export function useVideoFileSelect(
       if (files && files.length > 0) {
         const file = files[0]
         await processVideoFile(file)
+        message.success('视频文件添加成功！')
       }
     } catch (error) {
-      logger.error('选择文件失败:', { error: error as Error })
-      message.error('选择文件失败')
+      logger.error('添加文件失败:', { error: error as Error })
+      message.error('添加文件失败')
     } finally {
       setIsProcessing(false)
     }

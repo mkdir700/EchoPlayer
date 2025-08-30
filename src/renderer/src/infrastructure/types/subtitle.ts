@@ -122,10 +122,3 @@ export interface SubtitleNavigationState {
   readonly canJumpToNext: boolean
   readonly canJumpToPrev: boolean
 }
-
-export interface SubtitleLibraryRecord {
-  id: number
-  videoId: number
-  filePath: string
-  created_at: number
-}

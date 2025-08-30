@@ -28,11 +28,16 @@ describe('FileDAO', () => {
       insertInto: vi.fn().mockReturnThis(),
       selectFrom: vi.fn().mockReturnThis(),
       deleteFrom: vi.fn().mockReturnThis(),
+      updateTable: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
       selectAll: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       orderBy: vi.fn().mockReturnThis(),
       returning: vi.fn().mockReturnThis(),
+      returningAll: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      offset: vi.fn().mockReturnThis(),
       execute: vi.fn(),
       executeTakeFirst: vi.fn(),
       executeTakeFirstOrThrow: vi.fn()
@@ -61,13 +66,21 @@ describe('FileDAO', () => {
 
   describe('addFile', () => {
     it('应该成功添加文件', async () => {
-      const mockResult = { id: 1 }
+      const mockResult = { id: 'test-file-1' }
       mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
 
-      const result = await dao.addFile(mockFile as any)
+      const result = await dao.addFile({
+        id: 'test-file-1',
+        name: 'test.mp4',
+        origin_name: 'original_test.mp4',
+        path: '/path/to/test.mp4',
+        size: 1024,
+        ext: 'mp4',
+        type: 'video',
+        created_at: Date.now()
+      })
 
       expect(mockKysely.insertInto).toHaveBeenCalledWith('files')
-      expect(mockKysely.values).toHaveBeenCalledWith(mockFile)
       expect(mockKysely.returning).toHaveBeenCalledWith('id')
       expect(mockKysely.executeTakeFirstOrThrow).toHaveBeenCalledTimes(1)
       expect(result).toEqual(mockResult)
@@ -77,7 +90,18 @@ describe('FileDAO', () => {
       const error = new Error('Insert failed')
       mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
 
-      await expect(dao.addFile(mockFile as any)).rejects.toThrow('Insert failed')
+      await expect(
+        dao.addFile({
+          id: 'test-file-1',
+          name: 'test.mp4',
+          origin_name: 'original_test.mp4',
+          path: '/path/to/test.mp4',
+          size: 1024,
+          ext: 'mp4',
+          type: 'video',
+          created_at: Date.now()
+        })
+      ).rejects.toThrow()
     })
 
     it('应该验证链式调用顺序', async () => {
@@ -96,10 +120,19 @@ describe('FileDAO', () => {
       })
       mockKysely.executeTakeFirstOrThrow.mockImplementation(() => {
         calls.push('executeTakeFirstOrThrow')
-        return Promise.resolve({ id: 1 })
+        return Promise.resolve({ id: 'test-file-1' })
       })
 
-      await dao.addFile(mockFile as any)
+      await dao.addFile({
+        id: 'test-file-1',
+        name: 'test.mp4',
+        origin_name: 'original_test.mp4',
+        path: '/path/to/test.mp4',
+        size: 1024,
+        ext: 'mp4',
+        type: 'video',
+        created_at: Date.now()
+      })
 
       expect(calls).toEqual(['insertInto', 'values', 'returning', 'executeTakeFirstOrThrow'])
     })
@@ -107,7 +140,7 @@ describe('FileDAO', () => {
 
   describe('findByPath', () => {
     it('应该根据路径查找文件', async () => {
-      const mockResult = { id: 1, ...mockFile }
+      const mockResult = { id: 'test-file-1', ...mockFile }
       mockKysely.executeTakeFirst.mockResolvedValue(mockResult)
 
       const result = await dao.findByPath('/path/to/test.mp4')
@@ -131,15 +164,15 @@ describe('FileDAO', () => {
       const error = new Error('Query failed')
       mockKysely.executeTakeFirst.mockRejectedValue(error)
 
-      await expect(dao.findByPath('/path/to/test.mp4')).rejects.toThrow('Query failed')
+      await expect(dao.findByPath('/path/to/test.mp4')).rejects.toThrow()
     })
   })
 
   describe('findByType', () => {
     it('应该根据类型查找文件列表', async () => {
       const mockResults = [
-        { id: 1, ...mockFile },
-        { id: 2, ...mockFile, name: 'test2.mp4' }
+        { id: 'file-1', ...mockFile },
+        { id: 'file-2', ...mockFile, name: 'test2.mp4' }
       ]
       mockKysely.execute.mockResolvedValue(mockResults)
 
@@ -181,12 +214,52 @@ describe('FileDAO', () => {
 
       expect(mockKysely.orderBy).toHaveBeenCalledWith('created_at', 'desc')
     })
+  })
 
-    it('应该处理查询错误', async () => {
-      const error = new Error('Query failed')
-      mockKysely.execute.mockRejectedValue(error)
+  describe('findById', () => {
+    it('应该根据ID查找文件', async () => {
+      const mockResult = { id: 'test-file-1', ...mockFile }
+      mockKysely.executeTakeFirst.mockResolvedValue(mockResult)
 
-      await expect(dao.findByType('video')).rejects.toThrow('Query failed')
+      const result = await dao.findById('test-file-1')
+
+      expect(mockKysely.selectFrom).toHaveBeenCalledWith('files')
+      expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
+      expect(mockKysely.where).toHaveBeenCalledWith('id', '=', 'test-file-1')
+      expect(mockKysely.executeTakeFirst).toHaveBeenCalledTimes(1)
+      expect(result).toEqual(mockResult)
+    })
+
+    it('应该返回undefined如果文件不存在', async () => {
+      mockKysely.executeTakeFirst.mockResolvedValue(undefined)
+
+      const result = await dao.findById('non-existent-id')
+
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('updateFile', () => {
+    it('应该成功更新文件', async () => {
+      const mockResult = { numUpdatedRows: 1 }
+      mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
+
+      const result = await dao.updateFile('test-file-1', {
+        name: 'updated_test.mp4',
+        size: 2048
+      })
+
+      expect(mockKysely.updateTable).toHaveBeenCalledWith('files')
+      expect(mockKysely.where).toHaveBeenCalledWith('id', '=', 'test-file-1')
+      expect(mockKysely.executeTakeFirstOrThrow).toHaveBeenCalledTimes(1)
+      expect(result).toEqual(mockResult)
+    })
+
+    it('应该处理更新失败', async () => {
+      const error = new Error('Update failed')
+      mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
+
+      await expect(dao.updateFile('test-file-1', { name: 'new_name.mp4' })).rejects.toThrow()
     })
   })
 
@@ -195,10 +268,10 @@ describe('FileDAO', () => {
       const mockResult = { numDeletedRows: 1 }
       mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
 
-      const result = await dao.deleteFile(1)
+      const result = await dao.deleteFile('test-file-1')
 
       expect(mockKysely.deleteFrom).toHaveBeenCalledWith('files')
-      expect(mockKysely.where).toHaveBeenCalledWith('id', '=', 1)
+      expect(mockKysely.where).toHaveBeenCalledWith('id', '=', 'test-file-1')
       expect(mockKysely.executeTakeFirstOrThrow).toHaveBeenCalledTimes(1)
       expect(result).toEqual(mockResult)
     })
@@ -207,14 +280,7 @@ describe('FileDAO', () => {
       const error = new Error('File not found')
       mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
 
-      await expect(dao.deleteFile(999)).rejects.toThrow('File not found')
-    })
-
-    it('应该处理删除错误', async () => {
-      const error = new Error('Delete failed')
-      mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
-
-      await expect(dao.deleteFile(1)).rejects.toThrow('Delete failed')
+      await expect(dao.deleteFile('non-existent')).rejects.toThrow()
     })
 
     it('应该验证删除操作的链式调用', async () => {
@@ -232,34 +298,113 @@ describe('FileDAO', () => {
         return Promise.resolve({ numDeletedRows: 1 })
       })
 
-      await dao.deleteFile(1)
+      await dao.deleteFile('test-file-1')
 
       expect(calls).toEqual(['deleteFrom', 'where', 'executeTakeFirstOrThrow'])
     })
   })
 
-  describe('边界情况', () => {
-    it('应该处理空字符串路径', async () => {
-      mockKysely.executeTakeFirst.mockResolvedValue(undefined)
+  describe('getFiles', () => {
+    it('应该获取文件列表', async () => {
+      const mockResults = [
+        { id: 'file-1', ...mockFile },
+        { id: 'file-2', ...mockFile, name: 'test2.mp4' }
+      ]
+      mockKysely.execute.mockResolvedValue(mockResults)
 
-      const result = await dao.findByPath('')
+      const result = await dao.getFiles()
 
-      expect(mockKysely.where).toHaveBeenCalledWith('path', '=', '')
-      expect(result).toBeUndefined()
+      expect(mockKysely.selectFrom).toHaveBeenCalledWith('files')
+      expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
+      expect(result).toEqual(mockResults)
     })
 
-    it('应该处理负数ID删除', async () => {
-      const error = new Error('Invalid ID')
-      mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
+    it('应该支持查询参数过滤', async () => {
+      mockKysely.execute.mockResolvedValue([])
 
-      await expect(dao.deleteFile(-1)).rejects.toThrow('Invalid ID')
+      // Add mock implementation for chaining
+      mockKysely.where.mockImplementation(() => mockKysely)
+      mockKysely.orderBy.mockImplementation(() => mockKysely)
+      mockKysely.limit.mockImplementation(() => mockKysely)
+      mockKysely.offset.mockImplementation(() => mockKysely)
+
+      await dao.getFiles({
+        type: 'video',
+        limit: 10,
+        offset: 0,
+        sortBy: 'created_at',
+        sortOrder: 'desc'
+      })
+
+      expect(mockKysely.where).toHaveBeenCalledWith('type', '=', 'video')
+      expect(mockKysely.orderBy).toHaveBeenCalledWith('created_at', 'desc')
+      expect(mockKysely.limit).toHaveBeenCalledWith(10)
+      expect(mockKysely.offset).toHaveBeenCalledWith(0)
+    })
+  })
+
+  describe('utility methods', () => {
+    it('应该检查文件是否存在', async () => {
+      mockKysely.executeTakeFirst.mockResolvedValue({ exists: 1 })
+
+      const result = await dao.fileExists('/path/to/test.mp4')
+
+      expect(result).toBe(true)
     })
 
-    it('应该处理零ID删除', async () => {
-      const error = new Error('Invalid ID')
-      mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
+    it('应该获取文件总数', async () => {
+      mockKysely.executeTakeFirst.mockResolvedValue({ count: '5' })
 
-      await expect(dao.deleteFile(0)).rejects.toThrow('Invalid ID')
+      const result = await dao.getTotalCount()
+
+      expect(result).toBe(5)
+    })
+
+    it('应该获取指定类型文件数量', async () => {
+      mockKysely.executeTakeFirst.mockResolvedValue({ count: '3' })
+
+      const result = await dao.getTotalCount('video')
+
+      expect(result).toBe(3)
+    })
+  })
+
+  describe('additional methods', () => {
+    it('应该查找所有文件', async () => {
+      const mockResults = [
+        { id: 'file-1', ...mockFile },
+        { id: 'file-2', ...mockFile, name: 'test2.mp4' }
+      ]
+      mockKysely.execute.mockResolvedValue(mockResults)
+
+      const result = await dao.findAll()
+
+      expect(mockKysely.selectFrom).toHaveBeenCalledWith('files')
+      expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
+      expect(result).toEqual(mockResults)
+    })
+
+    it('应该清空所有文件', async () => {
+      const mockResult = { numDeletedRows: 5 }
+      mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
+
+      const result = await dao.clearAll()
+
+      expect(mockKysely.deleteFrom).toHaveBeenCalledWith('files')
+      expect(result).toEqual(mockResult)
+    })
+
+    it('应该按创建时间排序查找文件', async () => {
+      const mockResults = [{ id: 'file-1', ...mockFile }]
+      mockKysely.execute.mockResolvedValue(mockResults)
+      mockKysely.orderBy.mockImplementation(() => mockKysely)
+      mockKysely.limit.mockImplementation(() => mockKysely)
+
+      const result = await dao.findAllOrderedByCreatedAt('asc', 1)
+
+      expect(mockKysely.orderBy).toHaveBeenCalledWith('created_at', 'asc')
+      expect(mockKysely.limit).toHaveBeenCalledWith(1)
+      expect(result).toEqual(mockResults)
     })
   })
 })

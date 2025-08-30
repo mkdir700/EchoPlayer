@@ -1,6 +1,6 @@
 import { loggerService } from '@logger'
-import db from '@renderer/infrastructure/databases'
-import { SubtitleLibraryRecord } from '@types'
+import db from '@renderer/databases'
+import type { SubtitleLibraryRecord } from 'packages/shared/types/database'
 
 const logger = loggerService.withContext('SubtitleLibraryService')
 
@@ -43,10 +43,10 @@ export class SubtitleLibraryService {
       })
 
       const queryStart = performance.now()
-      const existing = await db.subtitleLibrary
-        .where('[videoId+filePath]' as any)
-        .equals([record.videoId, record.filePath] as any)
-        .first()
+      const existing = await db.subtitleLibrary.getSubtitleByVideoIdAndPath(
+        record.videoId,
+        record.filePath
+      )
       const queryEnd = performance.now()
       logger.info(`🔍 字幕记录查询耗时: ${(queryEnd - queryStart).toFixed(2)}ms`)
 
@@ -56,16 +56,14 @@ export class SubtitleLibraryService {
       }
 
       const addStart = performance.now()
-      const newRecord: Omit<SubtitleLibraryRecord, 'id'> = {
+      const newRecord = {
         videoId: record.videoId,
-        filePath: record.filePath,
-        created_at: Date.now()
+        filePath: record.filePath
       }
-      const id = await db.subtitleLibrary.add(newRecord)
+      const result = await db.subtitleLibrary.addSubtitle(newRecord)
       const addEnd = performance.now()
 
       const resultQueryStart = performance.now()
-      const result = await db.subtitleLibrary.get(id)
       const resultQueryEnd = performance.now()
 
       const totalTime = performance.now() - startTime
@@ -91,22 +89,19 @@ export class SubtitleLibraryService {
       const { videoId, limit = 20, offset = 0, sortOrder = 'desc', searchQuery } = params
       logger.info('📋 获取字幕记录列表:', params)
 
-      let collection = videoId
-        ? db.subtitleLibrary.where('videoId').equals(videoId)
-        : db.subtitleLibrary.toCollection()
+      let records: SubtitleLibraryRecord[] = []
+
+      if (videoId) {
+        records = await db.subtitleLibrary.getSubtitlesByVideoId(videoId)
+      } else {
+        records = await db.subtitleLibrary.getSubtitlesOrderedByCreatedAt(sortOrder)
+      }
 
       // 搜索（按 filePath 模糊匹配）
       if (searchQuery && searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
-        collection = collection.filter((r) => r.filePath.toLowerCase().includes(q))
+        records = records.filter((r) => r.filePath.toLowerCase().includes(q))
       }
-
-      const records = await collection.toArray()
-
-      // 按创建时间排序
-      records.sort((a, b) =>
-        sortOrder === 'desc' ? b.created_at - a.created_at : a.created_at - b.created_at
-      )
 
       const result = records.slice(offset, offset + limit)
       logger.info(`✅ 成功获取 ${result.length} 条字幕记录`)
@@ -122,7 +117,7 @@ export class SubtitleLibraryService {
   async getRecordById(id: number): Promise<SubtitleLibraryRecord | null> {
     try {
       logger.info('🔍 根据ID获取字幕记录:', { id })
-      const record = await db.subtitleLibrary.get(id)
+      const record = await db.subtitleLibrary.getSubtitleById(id)
       if (!record) {
         logger.warn('⚠️ 未找到指定的字幕记录')
       } else {
@@ -143,12 +138,11 @@ export class SubtitleLibraryService {
   ): Promise<SubtitleLibraryRecord> {
     try {
       logger.info('📝 更新字幕记录:', { id, updates })
-      const existing = await db.subtitleLibrary.get(id)
+      const existing = await db.subtitleLibrary.getSubtitleById(id)
       if (!existing) {
         throw new SubtitleLibraryServiceError('字幕记录不存在', 'RECORD_NOT_FOUND')
       }
-      await db.subtitleLibrary.update(id, updates)
-      const updated = await db.subtitleLibrary.get(id)
+      const updated = await db.subtitleLibrary.updateSubtitle(id, updates)
       logger.info('✅ 字幕记录更新成功')
       return updated!
     } catch (error) {
@@ -162,12 +156,12 @@ export class SubtitleLibraryService {
   async deleteRecord(id: number): Promise<boolean> {
     try {
       logger.info('🗑️ 删除字幕记录:', { id })
-      const existing = await db.subtitleLibrary.get(id)
+      const existing = await db.subtitleLibrary.getSubtitleById(id)
       if (!existing) {
         logger.warn('⚠️ 要删除的字幕记录不存在')
         return false
       }
-      await db.subtitleLibrary.delete(id)
+      await db.subtitleLibrary.deleteSubtitle(id)
       logger.info('✅ 字幕记录删除成功')
       return true
     } catch (error) {
@@ -199,9 +193,9 @@ export class SubtitleLibraryService {
   async clearAllRecords(): Promise<number> {
     try {
       logger.info('🧹 清空所有字幕记录')
-      const all = await db.subtitleLibrary.toArray()
+      const all = await db.subtitleLibrary.getAllSubtitles()
       const count = all.length
-      await db.subtitleLibrary.clear()
+      await db.subtitleLibrary.clearAllSubtitles()
       logger.info(`✅ 成功清空 ${count} 条字幕记录`)
       return count
     } catch (error) {
@@ -215,11 +209,7 @@ export class SubtitleLibraryService {
   async getRecentRecords(limit: number = 10): Promise<SubtitleLibraryRecord[]> {
     try {
       logger.info('📋 获取最近字幕记录:', { limit })
-      const records = await db.subtitleLibrary
-        .orderBy('created_at')
-        .reverse()
-        .limit(limit)
-        .toArray()
+      const records = await db.subtitleLibrary.getSubtitlesOrderedByCreatedAt('desc', limit)
       logger.info(`✅ 成功获取 ${records.length} 条最近字幕记录`)
       return records
     } catch (error) {
@@ -237,9 +227,7 @@ export class SubtitleLibraryService {
   async getRecordsByVideoId(videoId: number): Promise<SubtitleLibraryRecord[]> {
     try {
       logger.info('📋 按视频ID获取字幕记录:', { videoId })
-      const records = await db.subtitleLibrary.where('videoId').equals(videoId).toArray()
-      // 倒序按时间
-      records.sort((a, b) => b.created_at - a.created_at)
+      const records = await db.subtitleLibrary.getSubtitlesByVideoId(videoId)
       logger.info(`✅ 成功获取 ${records.length} 条字幕记录`)
       return records
     } catch (error) {
@@ -255,13 +243,8 @@ export class SubtitleLibraryService {
       logger.info('🔍 搜索字幕记录 (基础版本):', { query, limit })
       if (!query.trim()) return []
       const q = query.toLowerCase()
-      const records = await db.subtitleLibrary
-        .toCollection()
-        .filter((r) => r.filePath.toLowerCase().includes(q))
-        .limit(limit)
-        .toArray()
-      // 按创建时间倒序
-      records.sort((a, b) => b.created_at - a.created_at)
+      const allRecords = await db.subtitleLibrary.getSubtitlesOrderedByCreatedAt('desc')
+      const records = allRecords.filter((r) => r.filePath.toLowerCase().includes(q)).slice(0, limit)
       logger.info(`✅ 搜索完成，找到 ${records.length} 条字幕记录`)
       return records
     } catch (error) {

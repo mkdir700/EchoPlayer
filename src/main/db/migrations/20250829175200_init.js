@@ -1,34 +1,36 @@
-import type { Kysely } from 'kysely'
-import { sql } from 'kysely'
-
 /**
  * Migration: Initial database schema
  */
-export async function up(db: Kysely<any>): Promise<void> {
+async function up(db) {
   // 创建文件表
   await db.schema
     .createTable('files')
-    .addColumn('id', 'integer', (col) => col.primaryKey().autoIncrement())
+    .ifNotExists()
+    .addColumn('id', 'text', (col) => col.primaryKey().notNull())
     .addColumn('name', 'text', (col) => col.notNull())
     .addColumn('origin_name', 'text', (col) => col.notNull())
     .addColumn('path', 'text', (col) => col.notNull().unique())
     .addColumn('size', 'integer', (col) => col.notNull())
     .addColumn('ext', 'text', (col) => col.notNull())
-    .addColumn('type', 'text', (col) =>
-      col.notNull().check(sql`type IN ('video', 'audio', 'subtitle', 'image')`)
-    )
-    .addColumn('created_at', 'text', (col) => col.notNull().defaultTo(sql`datetime('now')`))
+    .addColumn('type', 'text', (col) => col.notNull())
+    .addColumn('created_at', 'integer', (col) => col.notNull().defaultTo('unixepoch()'))
     .execute()
 
   // 创建文件表索引
-  await db.schema.createIndex('idx_files_name').on('files').column('name').execute()
-  await db.schema.createIndex('idx_files_type').on('files').column('type').execute()
-  await db.schema.createIndex('idx_files_created_at').on('files').column('created_at').execute()
-  await db.schema.createIndex('idx_files_ext').on('files').column('ext').execute()
+  await db.schema.createIndex('idx_files_name').ifNotExists().on('files').column('name').execute()
+  await db.schema.createIndex('idx_files_type').ifNotExists().on('files').column('type').execute()
+  await db.schema
+    .createIndex('idx_files_created_at')
+    .ifNotExists()
+    .on('files')
+    .column('created_at')
+    .execute()
+  await db.schema.createIndex('idx_files_ext').ifNotExists().on('files').column('ext').execute()
 
   // 创建视频库表
   await db.schema
     .createTable('videoLibrary')
+    .ifNotExists()
     .addColumn('id', 'integer', (col) => col.primaryKey().autoIncrement())
     .addColumn('fileId', 'text', (col) => col.notNull())
     .addColumn('currentTime', 'real', (col) => col.notNull().defaultTo(0))
@@ -44,21 +46,25 @@ export async function up(db: Kysely<any>): Promise<void> {
   // 创建视频库表索引
   await db.schema
     .createIndex('idx_videoLibrary_fileId_playedAt')
+    .ifNotExists()
     .on('videoLibrary')
     .columns(['fileId', 'playedAt'])
     .execute()
   await db.schema
     .createIndex('idx_videoLibrary_playedAt')
+    .ifNotExists()
     .on('videoLibrary')
     .column('playedAt')
     .execute()
   await db.schema
     .createIndex('idx_videoLibrary_playCount')
+    .ifNotExists()
     .on('videoLibrary')
     .column('playCount')
     .execute()
   await db.schema
     .createIndex('idx_videoLibrary_isFavorite')
+    .ifNotExists()
     .on('videoLibrary')
     .column('isFavorite')
     .execute()
@@ -66,26 +72,29 @@ export async function up(db: Kysely<any>): Promise<void> {
   // 创建字幕库表
   await db.schema
     .createTable('subtitleLibrary')
+    .ifNotExists()
     .addColumn('id', 'integer', (col) => col.primaryKey().autoIncrement())
     .addColumn('videoId', 'integer', (col) => col.notNull())
     .addColumn('filePath', 'text', (col) => col.notNull())
-    .addColumn('created_at', 'text', (col) => col.notNull().defaultTo(sql`datetime('now')`))
+    .addColumn('created_at', 'integer', (col) => col.notNull().defaultTo('unixepoch()'))
     .execute()
 
   // 创建字幕库表索引
   await db.schema
     .createIndex('idx_subtitleLibrary_videoId_filePath')
+    .ifNotExists()
     .on('subtitleLibrary')
     .columns(['videoId', 'filePath'])
     .execute()
   await db.schema
     .createIndex('idx_subtitleLibrary_created_at')
+    .ifNotExists()
     .on('subtitleLibrary')
     .column('created_at')
     .execute()
 }
 
-export async function down(db: Kysely<any>): Promise<void> {
+async function down(db) {
   // 删除所有索引
   await db.schema.dropIndex('idx_subtitleLibrary_created_at').ifExists().execute()
   await db.schema.dropIndex('idx_subtitleLibrary_videoId_filePath').ifExists().execute()
@@ -103,3 +112,5 @@ export async function down(db: Kysely<any>): Promise<void> {
   await db.schema.dropTable('videoLibrary').ifExists().execute()
   await db.schema.dropTable('files').ifExists().execute()
 }
+
+module.exports = { up, down }

@@ -5,8 +5,7 @@ import {
   getTempDir,
   readTextFileWithAutoEncoding
 } from '@main/utils/file'
-import { MB } from '@shared/config/constant'
-import { FileMetadata } from '@types'
+import { FileMetadata } from '@shared/types/database'
 import * as crypto from 'crypto'
 import {
   dialog,
@@ -81,7 +80,7 @@ class FileStorage {
             origin_name: file,
             name: file + ext,
             path: storedFilePath,
-            created_at: storedStats.birthtime.toISOString(),
+            created_at: storedStats.birthtime,
             size: storedStats.size,
             ext,
             type: getFileType(ext)
@@ -119,40 +118,14 @@ class FileStorage {
         origin_name: path.basename(filePath),
         name: path.basename(filePath),
         path: filePath,
-        created_at: stats.birthtime.toISOString(),
+        created_at: stats.birthtime,
         size: stats.size,
         ext: ext,
-        type: fileType,
-        count: 1
+        type: fileType
       }
     })
 
     return Promise.all(fileMetadataPromises)
-  }
-
-  private async compressImage(sourcePath: string, destPath: string): Promise<void> {
-    try {
-      const stats = fs.statSync(sourcePath)
-      const fileSizeInMB = stats.size / MB
-
-      // 如果图片大于1MB才进行压缩
-      if (fileSizeInMB > 1) {
-        try {
-          await fs.promises.copyFile(sourcePath, destPath)
-          logger.debug(`Image compressed successfully: ${sourcePath}`)
-        } catch (jimpError) {
-          logger.error('Image compression failed:', jimpError as Error)
-          await fs.promises.copyFile(sourcePath, destPath)
-        }
-      } else {
-        // 小图片直接复制
-        await fs.promises.copyFile(sourcePath, destPath)
-      }
-    } catch (error) {
-      logger.error('Image handling failed:', error as Error)
-      // 错误情况下直接复制原文件
-      await fs.promises.copyFile(sourcePath, destPath)
-    }
   }
 
   public uploadFile = async (
@@ -188,7 +161,7 @@ class FileStorage {
       origin_name,
       name: uuid + ext,
       path: destPath,
-      created_at: stats.birthtime.toISOString(),
+      created_at: stats.birthtime,
       size: stats.size,
       ext: ext,
       type: fileType
@@ -216,7 +189,7 @@ class FileStorage {
       origin_name: path.basename(filePath),
       name: path.basename(filePath),
       path: filePath,
-      created_at: stats.birthtime.toISOString(),
+      created_at: stats.birthtime,
       size: stats.size,
       ext: ext,
       type: fileType
@@ -322,7 +295,7 @@ class FileStorage {
             origin_name: name,
             name,
             path: fullPath,
-            created_at: stats.birthtime.toISOString(),
+            created_at: stats.birthtime,
             size: stats.size,
             ext,
             type
@@ -408,7 +381,7 @@ class FileStorage {
         origin_name: uuid + ext,
         name: uuid + ext,
         path: destPath,
-        created_at: new Date().toISOString(),
+        created_at: new Date(),
         size: buffer.length,
         ext: ext.slice(1),
         type: getFileType(ext)
@@ -629,7 +602,7 @@ class FileStorage {
         origin_name: filename,
         name: uuid + ext,
         path: destPath,
-        created_at: stats.birthtime.toISOString(),
+        created_at: stats.birthtime,
         size: stats.size,
         ext: ext,
         type: fileType

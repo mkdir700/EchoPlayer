@@ -111,6 +111,45 @@ export enum IpcChannel {
   // shortcut
   Shortcuts_Update = 'shortcuts:update',
 
+  // 数据库相关 IPC 通道 / Database-related IPC channels
+  // Files DAO
+  DB_Files_Add = 'db:files:add',
+  DB_Files_FindByPath = 'db:files:find-by-path',
+  DB_Files_FindByType = 'db:files:find-by-type',
+  DB_Files_FindById = 'db:files:find-by-id',
+  DB_Files_Update = 'db:files:update',
+  DB_Files_Delete = 'db:files:delete',
+
+  // VideoLibrary DAO
+  DB_VideoLibrary_Add = 'db:video-library:add',
+  DB_VideoLibrary_FindByFileId = 'db:video-library:find-by-file-id',
+  DB_VideoLibrary_GetRecentlyPlayed = 'db:video-library:get-recently-played',
+  DB_VideoLibrary_GetFavorites = 'db:video-library:get-favorites',
+  DB_VideoLibrary_UpdatePlayProgress = 'db:video-library:update-play-progress',
+  DB_VideoLibrary_ToggleFavorite = 'db:video-library:toggle-favorite',
+  DB_VideoLibrary_GetRecords = 'db:video-library:get-records',
+  DB_VideoLibrary_FindById = 'db:video-library:find-by-id',
+  DB_VideoLibrary_UpdateRecord = 'db:video-library:update-record',
+  DB_VideoLibrary_DeleteRecord = 'db:video-library:delete-record',
+  DB_VideoLibrary_DeleteRecords = 'db:video-library:delete-records',
+  DB_VideoLibrary_ClearAll = 'db:video-library:clear-all',
+  DB_VideoLibrary_SearchRecords = 'db:video-library:search-records',
+  DB_VideoLibrary_GetMostPlayed = 'db:video-library:get-most-played',
+
+  // SubtitleLibrary DAO
+  DB_SubtitleLibrary_Add = 'db:subtitle-library:add',
+  DB_SubtitleLibrary_FindByVideoId = 'db:subtitle-library:find-by-video-id',
+  DB_SubtitleLibrary_FindByVideoIdAndPath = 'db:subtitle-library:find-by-video-id-and-path',
+  DB_SubtitleLibrary_FindById = 'db:subtitle-library:find-by-id',
+  DB_SubtitleLibrary_Update = 'db:subtitle-library:update',
+  DB_SubtitleLibrary_FindAll = 'db:subtitle-library:find-all',
+  DB_SubtitleLibrary_Clear = 'db:subtitle-library:clear',
+  DB_SubtitleLibrary_FindAllOrderedByCreatedAt = 'db:subtitle-library:find-all-ordered-by-created-at',
+  DB_SubtitleLibrary_Delete = 'db:subtitle-library:delete',
+
+  // Database Transaction
+  DB_Transaction = 'db:transaction',
+
   // events
   ThemeUpdated = 'theme:updated',
   UpdateDownloadedCancelled = 'update-downloaded-cancelled',

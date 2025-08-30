@@ -1,6 +1,5 @@
 export * from './dictionary'
 export * from './ffmpeg'
-export * from './file'
 export * from './notification'
 export * from './shortcuts'
 export * from './subtitle'

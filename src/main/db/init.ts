@@ -11,19 +11,19 @@ const logger = loggerService.withContext('Database')
  */
 export async function initDatabase() {
   try {
-    logger.info('[Database] Initializing database...')
+    logger.info('Initializing database...')
 
     // 打开数据库连接
     openDatabase()
-    logger.info('[Database] Database connection established')
+    logger.info('Database connection established')
 
     // 运行迁移
     await runMigrations()
-    logger.info('[Database] Migrations completed')
+    logger.info('Migrations completed')
 
-    logger.info('[Database] Database initialization completed successfully')
+    logger.info('Database initialization completed successfully')
   } catch (error) {
-    logger.error('[Database] Failed to initialize database:', { error })
+    logger.error('Failed to initialize database:', { error })
     throw error
   }
 }
