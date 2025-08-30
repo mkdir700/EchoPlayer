@@ -4,26 +4,16 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { loggerService } from '@logger'
-import { audioExts, MB, videoExts } from '@shared/config/constant'
-import { FileMetadata, FileTypes } from '@types'
+import { MB } from '@shared/config/constant'
+import { FileTypes } from '@shared/schema'
 import { app } from 'electron'
 import iconv from 'iconv-lite'
 import * as jschardet from 'jschardet'
-import { v4 as uuidv4 } from 'uuid'
 
 const logger = loggerService.withContext('Utils:File')
 
 // 创建文件类型映射表，提高查找效率
 const fileTypeMap = new Map<string, FileTypes>()
-
-// 初始化映射表
-function initFileTypeMap() {
-  videoExts.forEach((ext) => fileTypeMap.set(ext, FileTypes.VIDEO))
-  audioExts.forEach((ext) => fileTypeMap.set(ext, FileTypes.AUDIO))
-}
-
-// 初始化映射表
-initFileTypeMap()
 
 export function hasWritePermission(path: string) {
   try {
@@ -36,7 +26,7 @@ export function hasWritePermission(path: string) {
 
 export function getFileType(ext: string): FileTypes {
   ext = ext.toLowerCase()
-  return fileTypeMap.get(ext) || FileTypes.OTHER
+  return fileTypeMap.get(ext) || 'other'
 }
 
 export function getFileDir(filePath: string) {
@@ -49,47 +39,6 @@ export function getFileName(filePath: string) {
 
 export function getFileExt(filePath: string) {
   return path.extname(filePath)
-}
-
-export function getAllFiles(dirPath: string, arrayOfFiles: FileMetadata[] = []): FileMetadata[] {
-  const files = fs.readdirSync(dirPath)
-
-  files.forEach((file) => {
-    if (file.startsWith('.')) {
-      return
-    }
-
-    const fullPath = path.join(dirPath, file)
-    if (fs.statSync(fullPath).isDirectory()) {
-      arrayOfFiles = getAllFiles(fullPath, arrayOfFiles)
-    } else {
-      const ext = path.extname(file)
-      const fileType = getFileType(ext)
-
-      if ([FileTypes.OTHER, FileTypes.VIDEO, FileTypes.AUDIO].includes(fileType)) {
-        return
-      }
-
-      const name = path.basename(file)
-      const size = fs.statSync(fullPath).size
-
-      const fileItem: FileMetadata = {
-        id: uuidv4(),
-        name,
-        path: fullPath,
-        size,
-        ext,
-        count: 1,
-        origin_name: name,
-        type: fileType,
-        created_at: new Date().toISOString()
-      }
-
-      arrayOfFiles.push(fileItem)
-    }
-  })
-
-  return arrayOfFiles
 }
 
 export function getTempDir() {

@@ -1,12 +1,13 @@
 import type { ColumnType, Generated } from 'kysely'
+import { SqlBool } from 'kysely'
 
-export type FileTypes = 'video' | 'audio' | 'subtitle' | 'image'
+export type FileTypes = 'video' | 'audio' | 'subtitle' | 'image' | 'other'
 
 export interface FileMetadataTable {
   /**
    * 文件的唯一标识符
    */
-  id: Generated<number>
+  id: string
   /**
    * 文件名
    */
@@ -33,8 +34,9 @@ export interface FileMetadataTable {
   type: FileTypes
   /**
    * 文件创建时间的ISO字符串
+   * SelectType | InsertType | UpdateType
    */
-  created_at: ColumnType<Date, string | undefined, never>
+  created_at: ColumnType<Date, number | undefined, never>
 }
 
 export interface VideoLibraryTable {
@@ -53,18 +55,18 @@ export interface VideoLibraryTable {
   /** 播放次数 */
   playCount: number
   /** 是否已播放完毕 */
-  isFinished: boolean
+  isFinished: Generated<SqlBool>
   /** 是否收藏 */
-  isFavorite: boolean
+  isFavorite: Generated<SqlBool>
   /** 缩略图路径 */
-  thumbnailPath?: string
+  thumbnailPath: string | null
 }
 
 export interface SubtitleLibraryTable {
   id: Generated<number>
   videoId: number
   filePath: string
-  created_at: ColumnType<Date, string | undefined, never>
+  created_at: ColumnType<Date, number | undefined, never>
 }
 
 export interface DB {

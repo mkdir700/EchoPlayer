@@ -16,6 +16,7 @@ import { arch } from 'os'
 import path from 'path'
 
 import { isLinux, isMac, isPortable, isWin } from './constant'
+import { db } from './db/dao'
 import appService from './services/AppService'
 import AppUpdater from './services/AppUpdater'
 import { configManager } from './services/ConfigManager'
@@ -70,18 +71,12 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
         if (process.platform === 'win32' && localPath.startsWith('/')) {
           localPath = localPath.substring(1)
         }
-
-        console.log('URL路径转换:', {
-          原始URL: filePath,
-          转换后路径: localPath
-        })
       }
 
       shell.showItemInFolder(localPath)
-      console.log('在文件管理器中显示文件:', localPath)
       return true
     } catch (error) {
-      console.error('显示文件位置失败:', error)
+      logger.error('显示文件位置失败:', { error })
       return false
     }
   })
@@ -444,4 +439,347 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
       registerShortcuts(mainWindow)
     }
   })
+
+  // 数据库相关 IPC 处理程序 / Database-related IPC handlers
+
+  // Files DAO
+  ipcMain.handle(IpcChannel.DB_Files_Add, async (_, file) => {
+    try {
+      logger.info('Attempting to insert file with data:', {
+        name: typeof file.name,
+        origin_name: typeof file.origin_name,
+        path: typeof file.path,
+        size: typeof file.size,
+        ext: typeof file.ext,
+        type: typeof file.type,
+        created_at: typeof file.created_at,
+        values: file
+      })
+
+      const result = await db.files.addFile(file)
+      logger.info('File added to database:', { fileId: result.id })
+      return result
+    } catch (error) {
+      logger.error('Failed to add file to database:', { error, file })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_Files_FindByPath, async (_, path: string) => {
+    try {
+      const result = await db.files.findByPath(path)
+      return result
+    } catch (error) {
+      logger.error('Failed to find file by path:', { error, path })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_Files_FindByType, async (_, type) => {
+    try {
+      const result = await db.files.findByType(type)
+      return result
+    } catch (error) {
+      logger.error('Failed to find files by type:', { error, type })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_Files_FindById, async (_, id: string) => {
+    try {
+      const result = await db.files.findById(id)
+      return result
+    } catch (error) {
+      logger.error('Failed to find file by ID:', { error, fileId: id })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_Files_Update, async (_, id: string, data) => {
+    try {
+      const result = await db.files.updateFile(id, data)
+      logger.info('File updated in database:', { fileId: id })
+      return result
+    } catch (error) {
+      logger.error('Failed to update file in database:', { error, fileId: id })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_Files_Delete, async (_, id: string) => {
+    try {
+      const result = await db.files.deleteFile(id)
+      logger.info('File deleted from database:', { fileId: id })
+      return result
+    } catch (error) {
+      logger.error('Failed to delete file from database:', { error, fileId: id })
+      throw error
+    }
+  })
+
+  // VideoLibrary DAO
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_Add, async (_, record): Promise<{ id: number }> => {
+    return await db.videoLibrary.addVideoRecord(record)
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_FindByFileId, async (_, fileId: string) => {
+    try {
+      const result = await db.videoLibrary.findByFileId(fileId)
+      return result
+    } catch (error) {
+      logger.error('Failed to find video by file ID:', { error, fileId })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_GetRecentlyPlayed, async (_, limit: number = 10) => {
+    try {
+      const result = await db.videoLibrary.getRecentlyPlayed(limit)
+      return result
+    } catch (error) {
+      logger.error('Failed to get recently played videos:', { error, limit })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_GetFavorites, async () => {
+    try {
+      const result = await db.videoLibrary.getFavorites()
+      return result
+    } catch (error) {
+      logger.error('Failed to get favorite videos:', { error })
+      throw error
+    }
+  })
+
+  ipcMain.handle(
+    IpcChannel.DB_VideoLibrary_UpdatePlayProgress,
+    async (_, fileId: string, currentTime: number, isFinished?: boolean) => {
+      try {
+        const result = await db.videoLibrary.updatePlayProgress(fileId, currentTime, isFinished)
+        logger.info('Video play progress updated:', { fileId, currentTime, isFinished })
+        return result
+      } catch (error) {
+        logger.error('Failed to update video play progress:', { error, fileId, currentTime })
+        throw error
+      }
+    }
+  )
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_ToggleFavorite, async (_, fileId: string) => {
+    try {
+      const result = await db.videoLibrary.toggleFavorite(fileId)
+      logger.info('Video favorite status toggled:', { fileId })
+      return result
+    } catch (error) {
+      logger.error('Failed to toggle video favorite status:', { error, fileId })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_GetRecords, async (_, params) => {
+    try {
+      const result = await db.videoLibrary.getRecords(params)
+      return result
+    } catch (error) {
+      logger.error('Failed to get video records:', { error, params })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_FindById, async (_, id: number) => {
+    try {
+      const result = await db.videoLibrary.findById(id)
+      return result
+    } catch (error) {
+      logger.error('Failed to find video by ID:', { error, id })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_UpdateRecord, async (_, id: number, updates: any) => {
+    try {
+      const result = await db.videoLibrary.updateRecord(id, updates)
+      logger.info('Video record updated:', { id })
+      return result
+    } catch (error) {
+      logger.error('Failed to update video record:', { error, id })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_DeleteRecord, async (_, id: number) => {
+    try {
+      const result = await db.videoLibrary.deleteRecord(id)
+      logger.info('Video record deleted:', { id })
+      return result
+    } catch (error) {
+      logger.error('Failed to delete video record:', { error, id })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_DeleteRecords, async (_, ids: number[]) => {
+    try {
+      const result = await db.videoLibrary.deleteRecords(ids)
+      logger.info('Video records deleted:', { count: ids.length })
+      return result
+    } catch (error) {
+      logger.error('Failed to delete video records:', { error, ids })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_ClearAll, async () => {
+    try {
+      const result = await db.videoLibrary.clearAll()
+      logger.info('All video records cleared')
+      return result
+    } catch (error) {
+      logger.error('Failed to clear all video records:', { error })
+      throw error
+    }
+  })
+
+  ipcMain.handle(
+    IpcChannel.DB_VideoLibrary_SearchRecords,
+    async (_, query: string, limit: number) => {
+      try {
+        const result = await db.videoLibrary.searchRecords(query, limit)
+        logger.info('Video records searched:', { query, count: result.length })
+        return result
+      } catch (error) {
+        logger.error('Failed to search video records:', { error, query })
+        throw error
+      }
+    }
+  )
+
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_GetMostPlayed, async (_, limit: number = 10) => {
+    try {
+      const result = await db.videoLibrary.getMostPlayed(limit)
+      return result
+    } catch (error) {
+      logger.error('Failed to get most played videos:', { error, limit })
+      throw error
+    }
+  })
+
+  // SubtitleLibrary DAO
+  ipcMain.handle(IpcChannel.DB_SubtitleLibrary_Add, async (_, subtitle) => {
+    try {
+      const result = await db.subtitleLibrary.addSubtitle(subtitle)
+      logger.info('Subtitle added to database:', { subtitleId: result.id })
+      return result
+    } catch (error) {
+      logger.error('Failed to add subtitle to database:', { error })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_SubtitleLibrary_FindByVideoId, async (_, videoId: number) => {
+    try {
+      const result = await db.subtitleLibrary.findByVideoId(videoId)
+      return result
+    } catch (error) {
+      logger.error('Failed to find subtitles by video ID:', { error, videoId })
+      throw error
+    }
+  })
+
+  ipcMain.handle(
+    IpcChannel.DB_SubtitleLibrary_FindByVideoIdAndPath,
+    async (_, videoId: number, filePath: string) => {
+      try {
+        const result = await db.subtitleLibrary.findByVideoIdAndPath(videoId, filePath)
+        return result
+      } catch (error) {
+        logger.error('Failed to find subtitle by video ID and path:', { error, videoId, filePath })
+        throw error
+      }
+    }
+  )
+
+  ipcMain.handle(IpcChannel.DB_SubtitleLibrary_FindById, async (_, id: number) => {
+    try {
+      const result = await db.subtitleLibrary.findById(id)
+      return result
+    } catch (error) {
+      logger.error('Failed to find subtitle by ID:', { error, subtitleId: id })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_SubtitleLibrary_Update, async (_, id: number, updates: any) => {
+    try {
+      const result = await db.subtitleLibrary.updateSubtitle(id, updates)
+      logger.info('Subtitle updated in database:', { subtitleId: id })
+      return result
+    } catch (error) {
+      logger.error('Failed to update subtitle:', { error, subtitleId: id })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_SubtitleLibrary_FindAll, async () => {
+    try {
+      const result = await db.subtitleLibrary.findAll()
+      return result
+    } catch (error) {
+      logger.error('Failed to find all subtitles:', { error })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_SubtitleLibrary_Clear, async () => {
+    try {
+      const result = await db.subtitleLibrary.clearAll()
+      logger.info('All subtitles cleared from database')
+      return result
+    } catch (error) {
+      logger.error('Failed to clear all subtitles:', { error })
+      throw error
+    }
+  })
+
+  ipcMain.handle(
+    IpcChannel.DB_SubtitleLibrary_FindAllOrderedByCreatedAt,
+    async (_, order: 'asc' | 'desc' = 'desc', limit?: number) => {
+      try {
+        const result = await db.subtitleLibrary.findAllOrderedByCreatedAt(order, limit)
+        return result
+      } catch (error) {
+        logger.error('Failed to find subtitles ordered by created_at:', { error })
+        throw error
+      }
+    }
+  )
+
+  ipcMain.handle(IpcChannel.DB_SubtitleLibrary_Delete, async (_, id: number) => {
+    try {
+      const result = await db.subtitleLibrary.deleteSubtitle(id)
+      logger.info('Subtitle deleted from database:', { subtitleId: id })
+      return result
+    } catch (error) {
+      logger.error('Failed to delete subtitle from database:', { error, subtitleId: id })
+      throw error
+    }
+  })
+
+  // Database Transaction
+  // ipcMain.handle(IpcChannel.DB_Transaction, async (_, callback: string) => {
+  //   try {
+  //     // 注意：由于 IPC 的限制，我们不能直接传递函数，这里需要根据实际需要实现
+  //     // 可以传递一个操作标识符，然后在 main 进程中执行对应的事务操作
+  //     logger.warn(
+  //       'Database transaction via IPC is not implemented - consider specific operations instead'
+  //     )
+  //     throw new Error(
+  //       'Database transaction via IPC is not supported. Use specific database operations instead.'
+  //     )
+  //   } catch (error) {
+  //     logger.error('Failed to execute database transaction:', { error })
+  //     throw error
+  //   }
+  // })
 }

@@ -1,5 +1,5 @@
 import { loggerService } from '@logger'
-import { useShortcut } from '@renderer/infrastructure/hooks/system/useShortcust'
+import { useShortcut } from '@renderer/infrastructure/hooks/useShortcust'
 
 import { usePlayerCommands } from './usePlayerCommands'
 
