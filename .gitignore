@@ -37,7 +37,6 @@ node_modules/
 # OS specific
 docs/.vitepress/cache/deps
 
-.taskmaster/
 .cursor/mcp.json
 *.tsbuildinfo
 .serena
@@ -47,7 +46,4 @@ docs/.vitepress/cache/deps
 # ClaudePoint checkpoint system
 .claudepoint/
 
-# Task files
-tasks.json
-tasks/
 .mcp.json

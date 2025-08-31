@@ -1,6 +1,6 @@
 import { loggerService } from '@logger'
 import { Navbar, NavbarCenter, NavbarLeft } from '@renderer/components/app/Navbar'
-import db from '@renderer/infrastructure/databases'
+import db from '@renderer/databases'
 import { VideoLibraryService } from '@renderer/services'
 import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
 import { Splitter, Tooltip } from 'antd'
@@ -61,7 +61,7 @@ function PlayerPage() {
         const record = await videoLibService.getRecordById(recordId)
         if (!record) throw new Error('视频不存在')
 
-        const file = await db.files.get(record.fileId)
+        const file = await db.files.getFile(record.fileId)
         if (!file) throw new Error('关联文件不存在')
 
         logger.info(`从数据库加载视频文件:`, { file })

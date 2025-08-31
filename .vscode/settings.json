@@ -8,6 +8,9 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
   "i18n-ally.displayLanguage": "zh-cn",
   "i18n-ally.enabledFrameworks": [
     "react-i18next",

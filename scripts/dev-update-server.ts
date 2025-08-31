@@ -270,8 +270,8 @@ function generateIndexHtml(channelData: ChannelData): string {
                             <div>
                                 <div class="file-name">
                                     <a href="/${channel}/${file.name}" target="_blank">${
-                          file.name
-                        }</a>
+                                      file.name
+                                    }</a>
                                 </div>
                                 <div class="file-info">大小: ${(file.size / 1024).toFixed(
                                   2

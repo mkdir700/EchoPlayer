@@ -1,6 +1,6 @@
 import { loggerService } from '@logger'
-import db from '@renderer/infrastructure/databases'
-import { VideoLibraryRecord, VideoLibraryRecordQueryParams } from '@types'
+import type { VideoLibraryRecordQueryParams } from '@types'
+import type { VideoLibraryRecord } from 'packages/shared/types/database'
 
 const logger = loggerService.withContext('PlaybackRecordService')
 
@@ -25,69 +25,20 @@ export class VideoLibraryService {
    * @param record 播放记录数据
    * @returns 添加或更新后的播放记录
    */
-  async addOrUpdateRecord(record: Omit<VideoLibraryRecord, 'id'>): Promise<VideoLibraryRecord> {
+  async addRecord(record: Omit<VideoLibraryRecord, 'id'>): Promise<{ id: number }> {
     try {
-      const startTime = performance.now()
       logger.info('📝 开始添加或更新播放记录:', { fileId: record.fileId })
 
-      // 检查是否已存在该文件的播放记录
-      const queryStartTime = performance.now()
-      const existingRecord = await db.videoLibrary.where('fileId').equals(record.fileId).first()
-      const queryEndTime = performance.now()
-      logger.info(`🔍 播放记录查询耗时: ${(queryEndTime - queryStartTime).toFixed(2)}ms`)
-
-      if (existingRecord) {
-        // 更新现有记录
-        const updateStartTime = performance.now()
-        const updatedRecord: Partial<VideoLibraryRecord> = {
-          ...record,
-          playCount: existingRecord.playCount + 1,
-          playedAt: Date.now(),
-          // 保持首次播放时间不变
-          firstPlayedAt: existingRecord.firstPlayedAt
-        }
-
-        await db.videoLibrary.update(existingRecord.id!, updatedRecord)
-        const updateEndTime = performance.now()
-
-        const resultQueryStartTime = performance.now()
-        const result = await db.videoLibrary.get(existingRecord.id!)
-        const resultQueryEndTime = performance.now()
-
-        const totalTime = performance.now() - startTime
-        logger.info(`✅ 播放记录更新成功，总耗时: ${totalTime.toFixed(2)}ms`, {
-          查询耗时: `${(queryEndTime - queryStartTime).toFixed(2)}ms`,
-          更新耗时: `${(updateEndTime - updateStartTime).toFixed(2)}ms`,
-          结果查询耗时: `${(resultQueryEndTime - resultQueryStartTime).toFixed(2)}ms`,
-          总耗时: `${totalTime.toFixed(2)}ms`
-        })
-        return result!
-      } else {
-        // 添加新记录
-        const addStartTime = performance.now()
-        const newRecord: Omit<VideoLibraryRecord, 'id'> = {
-          ...record,
-          playCount: 1,
-          firstPlayedAt: Date.now(),
-          playedAt: Date.now()
-        }
-
-        const id = await db.videoLibrary.add(newRecord)
-        const addEndTime = performance.now()
-
-        const resultQueryStartTime = performance.now()
-        const result = await db.videoLibrary.get(id)
-        const resultQueryEndTime = performance.now()
-
-        const totalTime = performance.now() - startTime
-        logger.info(`✅ 播放记录添加成功，总耗时: ${totalTime.toFixed(2)}ms`, {
-          查询耗时: `${(queryEndTime - queryStartTime).toFixed(2)}ms`,
-          添加耗时: `${(addEndTime - addStartTime).toFixed(2)}ms`,
-          结果查询耗时: `${(resultQueryEndTime - resultQueryStartTime).toFixed(2)}ms`,
-          总耗时: `${totalTime.toFixed(2)}ms`
-        })
-        return result!
+      // 添加新记录
+      const newRecord = {
+        ...record,
+        playCount: 1,
+        firstPlayedAt: Date.now(),
+        playedAt: Date.now()
       }
+
+      logger.info('➕ 添加新播放记录:', newRecord)
+      return await window.api.db.videoLibrary.add(newRecord)
     } catch (error) {
       const errorMessage = `添加或更新播放记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 添加或更新播放记录失败:', { error })
@@ -102,64 +53,12 @@ export class VideoLibraryService {
    */
   async getRecords(params: VideoLibraryRecordQueryParams = {}): Promise<VideoLibraryRecord[]> {
     try {
-      const {
-        limit = 20,
-        offset = 0,
-        sortBy = 'playedAt',
-        sortOrder = 'desc',
-        favoritesOnly = false,
-        searchQuery
-      } = params
-
       logger.info('📋 获取播放记录列表:', params)
 
-      let query = db.videoLibrary.toCollection()
+      const records = await window.api.db.videoLibrary.getRecords(params)
 
-      // 应用收藏过滤
-      if (favoritesOnly) {
-        query = query.filter((record) => record.isFavorite)
-      }
-
-      // 注意：搜索功能现在需要使用 searchRecordsWithFileInfo 方法
-      // 这里暂时跳过搜索过滤，因为需要关联文件表才能搜索文件名
-      if (searchQuery) {
-        logger.warn('⚠️ getRecords 方法不支持搜索，请使用 searchRecordsWithFileInfo 方法')
-      }
-
-      // 获取所有匹配的记录
-      const records = await query.toArray()
-
-      // 应用排序
-      records.sort((a, b) => {
-        let aValue: number
-        let bValue: number
-
-        switch (sortBy) {
-          case 'playCount':
-            aValue = a.playCount
-            bValue = b.playCount
-            break
-          case 'firstPlayedAt':
-            aValue = a.firstPlayedAt
-            bValue = b.firstPlayedAt
-            break
-          case 'duration':
-            aValue = a.duration
-            bValue = b.duration
-            break
-          default: // 'playedAt'
-            aValue = a.playedAt
-            bValue = b.playedAt
-        }
-
-        return sortOrder === 'desc' ? bValue - aValue : aValue - bValue
-      })
-
-      // 应用分页
-      const result = records.slice(offset, offset + limit)
-
-      logger.info(`✅ 成功获取 ${result.length} 条播放记录`)
-      return result
+      logger.info(`✅ 成功获取 ${records.length} 条播放记录`)
+      return records as VideoLibraryRecord[]
     } catch (error) {
       const errorMessage = `获取播放记录列表失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 获取播放记录列表失败:', { error })
@@ -176,7 +75,7 @@ export class VideoLibraryService {
     try {
       logger.info('🔍 根据ID获取播放记录:', { id })
 
-      const record = await db.videoLibrary.get(id)
+      const record = await window.api.db.videoLibrary.findById(id)
 
       if (record) {
         logger.info('✅ 播放记录获取成功')
@@ -184,7 +83,7 @@ export class VideoLibraryService {
         logger.warn('⚠️ 未找到指定的播放记录')
       }
 
-      return record || null
+      return record as VideoLibraryRecord | null
     } catch (error) {
       const errorMessage = `根据ID获取播放记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 根据ID获取播放记录失败:', { error })
@@ -205,13 +104,13 @@ export class VideoLibraryService {
     try {
       logger.info('📝 更新播放记录:', { id, updates })
 
-      const existingRecord = await db.videoLibrary.get(id)
+      const existingRecord = await window.api.db.videoLibrary.findById(id)
       if (!existingRecord) {
         throw new VideoLibraryServiceError('播放记录不存在', 'RECORD_NOT_FOUND')
       }
 
-      await db.videoLibrary.update(id, updates)
-      const updatedRecord = await db.videoLibrary.get(id)
+      await window.api.db.videoLibrary.updateRecord(id, updates)
+      const updatedRecord = await window.api.db.videoLibrary.findById(id)
 
       logger.info('✅ 播放记录更新成功')
       return updatedRecord!
@@ -231,13 +130,13 @@ export class VideoLibraryService {
     try {
       logger.info('🗑️ 删除播放记录:', { id })
 
-      const existingRecord = await db.videoLibrary.get(id)
+      const existingRecord = await window.api.db.videoLibrary.findById(id)
       if (!existingRecord) {
         logger.warn('⚠️ 要删除的播放记录不存在')
         return false
       }
 
-      await db.videoLibrary.delete(id)
+      await window.api.db.videoLibrary.deleteRecord(id)
       logger.info('✅ 播放记录删除成功')
       return true
     } catch (error) {
@@ -256,16 +155,10 @@ export class VideoLibraryService {
     try {
       logger.info('🗑️ 批量删除播放记录:', { count: ids.length })
 
-      let deletedCount = 0
-      for (const id of ids) {
-        const success = await this.deleteRecord(id)
-        if (success) {
-          deletedCount++
-        }
-      }
+      await window.api.db.videoLibrary.deleteRecords(ids)
 
-      logger.info(`✅ 批量删除完成，成功删除 ${deletedCount} 条记录`)
-      return deletedCount
+      logger.info(`✅ 批量删除完成，成功删除 ${ids.length} 条记录`)
+      return ids.length
     } catch (error) {
       const errorMessage = `批量删除播放记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 批量删除播放记录失败:', { error })
@@ -281,10 +174,13 @@ export class VideoLibraryService {
     try {
       logger.info('🧹 清空所有播放记录')
 
-      const allRecords = await db.videoLibrary.toArray()
+      // 先获取记录数量
+      const allRecords = await window.api.db.videoLibrary.getRecords({
+        limit: Number.MAX_SAFE_INTEGER
+      })
       const count = allRecords.length
 
-      await db.videoLibrary.clear()
+      await window.api.db.videoLibrary.clearAll()
 
       logger.info(`✅ 成功清空 ${count} 条播放记录`)
       return count
@@ -311,20 +207,10 @@ export class VideoLibraryService {
         return []
       }
 
-      // 由于移除了冗余字段，这里只能通过 fileId 进行基础搜索
-      // 实际的文件名搜索需要使用 searchRecordsWithFileInfo 方法
-      const searchLower = query.toLowerCase()
-      const records = await db.videoLibrary
-        .toCollection()
-        .filter((record) => record.fileId.toLowerCase().includes(searchLower))
-        .limit(limit)
-        .toArray()
-
-      // 按播放时间倒序排序
-      records.sort((a, b) => b.playedAt - a.playedAt)
+      const records = await window.api.db.videoLibrary.searchRecords(query, limit)
 
       logger.info(`✅ 搜索完成，找到 ${records.length} 条记录`)
-      return records
+      return records as VideoLibraryRecord[]
     } catch (error) {
       const errorMessage = `搜索播放记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 搜索播放记录失败:', { error })
@@ -341,10 +227,10 @@ export class VideoLibraryService {
     try {
       logger.info('📋 获取最近播放记录:', { limit })
 
-      const records = await db.videoLibrary.orderBy('playedAt').reverse().limit(limit).toArray()
+      const records = await window.api.db.videoLibrary.getRecentlyPlayed(limit)
 
       logger.info(`✅ 成功获取 ${records.length} 条最近播放记录`)
-      return records
+      return records as VideoLibraryRecord[]
     } catch (error) {
       const errorMessage = `获取最近播放记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 获取最近播放记录失败:', { error })
@@ -361,10 +247,10 @@ export class VideoLibraryService {
     try {
       logger.info('📋 获取最常播放记录:', { limit })
 
-      const records = await db.videoLibrary.orderBy('playCount').reverse().limit(limit).toArray()
+      const records = await window.api.db.videoLibrary.getMostPlayed(limit)
 
       logger.info(`✅ 成功获取 ${records.length} 条最常播放记录`)
-      return records
+      return records as VideoLibraryRecord[]
     } catch (error) {
       const errorMessage = `获取最常播放记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 获取最常播放记录失败:', { error })
@@ -385,16 +271,13 @@ export class VideoLibraryService {
     try {
       logger.info('⭐ 获取收藏播放记录:', { limit })
 
-      let query = db.videoLibrary.where('isFavorite').equals(1).reverse()
+      const records = await window.api.db.videoLibrary.getFavorites()
 
-      if (limit) {
-        query = query.limit(limit)
-      }
+      // 如果指定了限制，应用限制
+      const result = limit ? records.slice(0, limit) : records
 
-      const records = await query.toArray()
-
-      logger.info(`✅ 成功获取 ${records.length} 条收藏记录`)
-      return records
+      logger.info(`✅ 成功获取 ${result.length} 条收藏记录`)
+      return result as VideoLibraryRecord[]
     } catch (error) {
       const errorMessage = `获取收藏记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 获取收藏记录失败:', { error })
@@ -415,13 +298,13 @@ export class VideoLibraryService {
     try {
       logger.info('⭐ 切换收藏状态:', { id })
 
-      const record = await db.videoLibrary.get(id)
+      const record = await window.api.db.videoLibrary.findById(id)
       if (!record) {
         throw new VideoLibraryServiceError('播放记录不存在', 'RECORD_NOT_FOUND')
       }
 
       const newFavoriteStatus = !record.isFavorite
-      await db.videoLibrary.update(id, { isFavorite: newFavoriteStatus })
+      await window.api.db.videoLibrary.updateRecord(id, { isFavorite: newFavoriteStatus })
 
       logger.info(`✅ 收藏状态已更新为: ${newFavoriteStatus ? '收藏' : '取消收藏'}`)
       return newFavoriteStatus

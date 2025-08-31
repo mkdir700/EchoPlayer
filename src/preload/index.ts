@@ -1,9 +1,19 @@
 import { electronAPI } from '@electron-toolkit/preload'
+import { FileMetadataSelect } from '@main/db/schemas'
 import { UpgradeChannel } from '@shared/config/constant'
 import { LogLevel, LogSourceWithContext } from '@shared/config/logger'
 import { IpcChannel } from '@shared/IpcChannel'
-import { FFmpegVideoInfo, FileMetadata, Shortcut, ThemeMode, TranscodeOptions } from '@types'
+import { FFmpegVideoInfo, Shortcut, ThemeMode, TranscodeOptions } from '@types'
 import { contextBridge, ipcRenderer, OpenDialogOptions, shell, webUtils } from 'electron'
+import type {
+  FileMetadata,
+  FileMetadataInsert,
+  FileMetadataRecord,
+  SubtitleLibraryInsert,
+  SubtitleLibraryRecord,
+  VideoLibraryInsert,
+  VideoLibraryRecord
+} from 'packages/shared/types/database'
 
 const api = {
   getAppInfo: () => ipcRenderer.invoke(IpcChannel.App_Info),
@@ -280,6 +290,125 @@ const api = {
   shell: {
     openExternal: (url: string, options?: Electron.OpenExternalOptions) =>
       shell.openExternal(url, options)
+  },
+
+  // 数据库相关 API
+  db: {
+    // 文件 DAO
+    files: {
+      add: (file: FileMetadataInsert): Promise<{ id: string }> =>
+        ipcRenderer.invoke(IpcChannel.DB_Files_Add, file),
+
+      findByPath: (path: string): Promise<FileMetadataRecord | null> =>
+        ipcRenderer.invoke(IpcChannel.DB_Files_FindByPath, path),
+
+      findByType: (type: string): Promise<FileMetadataRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_Files_FindByType, type),
+
+      findById: (id: string): Promise<FileMetadataRecord | null> =>
+        ipcRenderer.invoke(IpcChannel.DB_Files_FindById, id),
+
+      update: (id: string, data: Partial<FileMetadata>): Promise<FileMetadataSelect> =>
+        ipcRenderer.invoke(IpcChannel.DB_Files_Update, id, data),
+
+      delete: (id: string | number): Promise<void> =>
+        ipcRenderer.invoke(IpcChannel.DB_Files_Delete, id)
+    },
+
+    // 视频库 DAO
+    videoLibrary: {
+      add: (record: VideoLibraryInsert): Promise<{ id: number }> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_Add, record),
+
+      findByFileId: (fileId: string): Promise<VideoLibraryRecord | null> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_FindByFileId, fileId),
+
+      getRecentlyPlayed: (limit: number = 10): Promise<VideoLibraryRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_GetRecentlyPlayed, limit),
+
+      getFavorites: (): Promise<VideoLibraryRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_GetFavorites),
+
+      updatePlayProgress: (
+        fileId: string,
+        currentTime: number,
+        isFinished?: boolean
+      ): Promise<void> =>
+        ipcRenderer.invoke(
+          IpcChannel.DB_VideoLibrary_UpdatePlayProgress,
+          fileId,
+          currentTime,
+          isFinished
+        ),
+
+      toggleFavorite: (fileId: string): Promise<void> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_ToggleFavorite, fileId),
+
+      getRecords: (params?: {
+        limit?: number
+        offset?: number
+        sortBy?: 'playedAt' | 'playCount' | 'firstPlayedAt' | 'duration'
+        sortOrder?: 'asc' | 'desc'
+        favoritesOnly?: boolean
+        searchQuery?: string
+      }): Promise<VideoLibraryRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_GetRecords, params),
+
+      findById: (id: number): Promise<VideoLibraryRecord | null> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_FindById, id),
+
+      updateRecord: (id: number, updates: any): Promise<{ id: number }> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_UpdateRecord, id, updates),
+
+      deleteRecord: (id: number): Promise<void> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_DeleteRecord, id),
+
+      deleteRecords: (ids: number[]): Promise<void> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_DeleteRecords, ids),
+
+      clearAll: (): Promise<void> => ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_ClearAll),
+
+      searchRecords: (query: string, limit?: number): Promise<VideoLibraryRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_SearchRecords, query, limit),
+
+      getMostPlayed: (limit?: number): Promise<VideoLibraryRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_GetMostPlayed, limit)
+    },
+
+    // 字幕库 DAO
+    subtitleLibrary: {
+      add: (subtitle: SubtitleLibraryInsert): Promise<SubtitleLibraryRecord> =>
+        ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_Add, subtitle),
+
+      findByVideoId: (videoId: number): Promise<SubtitleLibraryRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_FindByVideoId, videoId),
+
+      findByVideoIdAndPath: (
+        videoId: number,
+        filePath: string
+      ): Promise<SubtitleLibraryRecord | null> =>
+        ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_FindByVideoIdAndPath, videoId, filePath),
+
+      findById: (id: number): Promise<SubtitleLibraryRecord | null> =>
+        ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_FindById, id),
+
+      update: (id: number, updates: Partial<Pick<SubtitleLibraryRecord, 'videoId' | 'filePath'>>) =>
+        ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_Update, id, updates),
+
+      findAll: (): Promise<SubtitleLibraryRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_FindAll),
+
+      clear: (): Promise<void> => ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_Clear),
+
+      findAllOrderedByCreatedAt: (
+        order: 'asc' | 'desc' = 'desc',
+        limit?: number
+      ): Promise<SubtitleLibraryRecord[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_FindAllOrderedByCreatedAt, order, limit),
+
+      delete: (id: number): Promise<void> =>
+        ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_Delete, id)
+    }
   }
   // Binary related APIs
   // isBinaryExist: (name: string) => ipcRenderer.invoke(IpcChannel.App_IsBinaryExist, name),
