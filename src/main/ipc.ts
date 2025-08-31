@@ -37,6 +37,18 @@ const fileManager = new FileStorage()
 const dictionaryService = new DictionaryService()
 const ffmpegService = new FFmpegService()
 
+/**
+ * Register all IPC handlers used by the main process.
+ *
+ * Initializes updater and notification services and wires a comprehensive set of ipcMain.handle
+ * handlers exposing application control, system info, theming/language, spell-check, cache and
+ * file operations, dictionary lookups, FFmpeg operations, shortcut management, and database DAOs
+ * (Files, VideoLibrary, SubtitleLibrary) to renderer processes.
+ *
+ * This function has side effects: it registers handlers on ipcMain, may attach an app 'before-quit'
+ * listener when requested, and mutates Electron state (e.g., app paths, sessions). Call from the
+ * Electron main process once (typically during app initialization).
+ */
 export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   const appUpdater = new AppUpdater(mainWindow)
   const notificationService = new NotificationService(mainWindow)

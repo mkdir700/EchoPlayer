@@ -6,8 +6,11 @@ import { runMigrations } from './migrate'
 const logger = loggerService.withContext('Database')
 
 /**
- * 初始化数据库
- * 在主进程启动时调用
+ * Initialize the database by opening the connection and running migrations.
+ *
+ * Called during main-process startup. If any step fails, the error is logged and rethrown so callers can handle shutdown or retry.
+ *
+ * @throws Any error encountered while opening the database or running migrations.
  */
 export async function initDatabase() {
   try {
