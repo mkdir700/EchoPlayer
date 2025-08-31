@@ -1,5 +1,8 @@
 /**
- * Migration: Initial database schema
+ * Apply the initial database schema migration.
+ *
+ * Creates the tables `files`, `videoLibrary`, and `subtitleLibrary` (if not exists)
+ * and their associated indices. Designed to be run as the migration "up" step.
  */
 async function up(db) {
   // 创建文件表
@@ -94,6 +97,15 @@ async function up(db) {
     .execute()
 }
 
+/**
+ * Reverts the migration by removing created indices and tables.
+ *
+ * Drops the migration's indices (using `ifExists`) in a safe order, then drops
+ * the tables `subtitleLibrary`, `videoLibrary`, and `files` (also using `ifExists`).
+ * The operation is idempotent and intended to fully revert the schema changes made by `up`.
+ *
+ * @returns {Promise<void>} Resolves when all drop statements have completed.
+ */
 async function down(db) {
   // 删除所有索引
   await db.schema.dropIndex('idx_subtitleLibrary_created_at').ifExists().execute()

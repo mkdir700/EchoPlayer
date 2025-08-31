@@ -185,7 +185,16 @@ export class DataTransforms {
 }
 
 /**
- * 类型安全的数据转换装饰器
+ * Create a type-safe data-transformation decorator around a Zod schema.
+ *
+ * Returns an object with two helpers:
+ * - `forInsert(data)` — validates/transforms `data` for insertion using `schema.parse`.
+ * - `fromSelect(data)` — validates/transforms `data` returned from the database using `schema.parse`.
+ *
+ * Both methods accept `unknown` and return the parsed type `T`; they will throw if validation fails.
+ *
+ * @param schema - Zod schema used to validate and transform input/output data
+ * @returns An object containing `forInsert` and `fromSelect` methods that parse data to type `T`
  */
 export function withDataTransforms<T extends Record<string, any>>(schema: z.ZodSchema<T>) {
   return {

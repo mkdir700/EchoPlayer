@@ -19,8 +19,19 @@ export interface UseVideoFileSelectReturn {
 }
 
 /**
- * 视频文件选择和处理的 Hook
- * 提供统一的文件选择、验证、添加到数据库的功能
+ * Hook to select a video file, validate/process it, and add it to the video library.
+ *
+ * Opens a file picker restricted to configured video extensions, verifies FFmpeg availability,
+ * persists the file via FileManager, extracts video metadata (duration, codec, resolution)
+ * using FFmpeg, creates a VideoLibrary record, and invokes an optional success callback.
+ * Exposes a function to trigger the flow and a flag that indicates ongoing processing to
+ * prevent concurrent operations.
+ *
+ * @param options - Optional settings.
+ * @param options.onSuccess - Callback invoked after a video file is successfully processed and recorded.
+ * @returns An object containing:
+ *  - `selectVideoFile`: async function that opens the file picker and runs the processing flow for the first selected file.
+ *  - `isProcessing`: boolean flag that is true while a file is being processed.
  */
 export function useVideoFileSelect(
   options: UseVideoFileSelectOptions = {}
