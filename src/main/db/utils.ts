@@ -243,7 +243,14 @@ export const dbBackup = new DatabaseBackup()
 export const dbMigrationManager = new DatabaseMigrationManager()
 
 /**
- * 数据库健康检查
+ * Perform a health check of the database subsystem.
+ *
+ * Runs a set of checks including: presence of the database file, pending migrations,
+ * validity of migration files, and basic backup availability. Aggregates any detected
+ * issues and returns actionable recommendations.
+ *
+ * @returns An object describing overall health (`healthy`), a list of detected `issues`,
+ * and `recommendations` to remediate them.
  */
 export async function performHealthCheck(): Promise<{
   healthy: boolean

@@ -181,36 +181,62 @@ class DatabaseMigrator {
 const migrator = new DatabaseMigrator()
 
 /**
- * 运行数据库升级迁移
- * 替代原有的 runMigrations 函数
+ * Run any pending database migrations to bring the schema up to the latest version.
+ *
+ * This delegates to the module's DatabaseMigrator and applies all pending migrations in order.
  */
 export async function runMigrations(): Promise<void> {
   await migrator.migrateUp()
 }
 
 /**
- * 升级数据库到最新版本
+ * Upgrade the database to the latest available migration.
+ *
+ * Executes migrations up to the latest and returns the migrator's result set
+ * containing per-migration outcomes and any errors.
+ *
+ * @returns The MigrationResultSet produced by Kysely's migrator.
  */
 export async function upgradeDatabase(): Promise<MigrationResultSet> {
   return await migrator.migrateUp()
 }
 
 /**
- * 回退数据库到指定版本
+ * Downgrades the database to a specified migration or, if omitted, rolls back one migration.
+ *
+ * If `targetMigration` is provided, the migrator will migrate to that exact migration name; otherwise the migrator will
+ * attempt to roll back a single applied migration (the previous executed migration). The function returns the Kysely
+ * MigrationResultSet describing per-migration outcomes and any errors encountered.
+ *
+ * @param targetMigration - Optional migration name (timestamped prefix + identifier) to migrate to. If omitted, a single-step downgrade is performed.
+ * @returns The MigrationResultSet produced by the migrator containing results for each attempted migration operation.
  */
 export async function downgradeDatabase(targetMigration?: string): Promise<MigrationResultSet> {
   return await migrator.migrateDown(targetMigration)
 }
 
 /**
- * 获取数据库迁移状态
+ * Retrieve the current migration status from the migrator.
+ *
+ * @returns An object with three lists:
+ *  - `executed`: migrations that have been applied (contain `executedAt`)
+ *  - `pending`: migrations that are not yet applied
+ *  - `all`: all discovered migrations in the migrations directory
  */
 export async function getMigrationStatus() {
   return await migrator.getMigrationStatus()
 }
 
 /**
- * 创建新的迁移文件
+ * Create a new timestamped migration file in the configured migrations directory.
+ *
+ * The function sanitizes `name` (lowercases, removes invalid chars, converts spaces/dashes to underscores),
+ * prefixes it with a 14-digit timestamp (YYYYMMDDHHMMSS), ensures the migrations directory exists,
+ * and writes a JavaScript migration template exposing `up` and `down` functions.
+ *
+ * @param name - Human-readable migration name used to build the filename (will be sanitized)
+ * @throws Error if a migration file with the generated name already exists
+ * @throws Any filesystem or I/O errors encountered while creating the directory or writing the file
  */
 export async function createMigration(name: string): Promise<void> {
   try {
@@ -277,7 +303,21 @@ export async function down(db) {
 }
 
 /**
- * 验证所有迁移文件的完整性
+ * Validates all migration files in the configured migrations directory.
+ *
+ * Performs checks on file presence, filename format, exported `up`/`down` functions,
+ * JS syntax via dynamic import (for .js files), timestamp uniqueness, and chronological order.
+ *
+ * @returns An object describing validation results:
+ *  - `valid`: true if no errors were found.
+ *  - `errors`: list of fatal validation errors (e.g., missing `up`, invalid exports, syntax errors, duplicate timestamps).
+ *  - `warnings`: non-fatal issues (e.g., missing `down`, no migration files, timestamps out of order).
+ *  - `migrations`: metadata for each discovered migration file with:
+ *      - `name`: filename
+ *      - `path`: full file path
+ *      - `hasUp`: whether an exported `up` function was detected
+ *      - `hasDown`: whether an exported `down` function was detected
+ *      - `syntaxValid`: whether dynamic import/inspection succeeded for JS files
  */
 export async function validateMigrations(): Promise<{
   valid: boolean

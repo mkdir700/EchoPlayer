@@ -193,6 +193,17 @@ function getChannelData(): ChannelData {
   return channelData
 }
 
+/**
+ * Generate an HTML index page listing available update files grouped by channel.
+ *
+ * Produces a complete HTML document that shows server status (port and data directory),
+ * a section per supported channel with file counts, and a file list with links to
+ * /{channel}/{filename}. File entries display size (KB) and localized modification time.
+ * The template reads global constants like `PORT`, `UPDATE_DATA_DIR`, and `SUPPORTED_CHANNELS`.
+ *
+ * @param channelData - Mapping from channel name to an array of file metadata to render.
+ * @returns The rendered HTML page as a string.
+ */
 function generateIndexHtml(channelData: ChannelData): string {
   const totalFiles = Object.values(channelData).reduce((sum, files) => sum + files.length, 0)
 

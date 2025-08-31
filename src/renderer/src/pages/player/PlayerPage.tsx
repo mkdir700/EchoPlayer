@@ -24,8 +24,23 @@ interface VideoData {
 }
 
 /**
- * PlayerPage 播放器主页面
- * 集成视频播放、字幕显示、控制条等功能
+ * Player page component that loads a video by ID from the route and renders the video player UI.
+ *
+ * This component:
+ * - Reads the `id` route parameter and loads the corresponding video record and file from the database.
+ * - Constructs a file:// URL as the video source, stores per-page VideoData in local state and synchronizes it to the global per-video session store.
+ * - Renders a top navbar with a back button and title, a two-pane Splitter layout with the video surface and controls on the left and a subtitle list on the right, and a settings popover.
+ * - Shows a centered loading view while fetching data and an error view with a back button if loading fails or the video is missing.
+ * - Cleans up the per-video session state on unmount.
+ *
+ * Side effects:
+ * - Performs async data fetches from the VideoLibraryService and the app database.
+ * - Updates a global player session store with the loaded VideoData and clears it when the component unmounts.
+ *
+ * Error handling:
+ * - Loading or playback errors set local error state and cause the component to render the error view.
+ *
+ * Note: This is a React component (returns JSX) and does not accept props; it derives the target video ID from route params.
  */
 function PlayerPage() {
   const navigate = useNavigate()
