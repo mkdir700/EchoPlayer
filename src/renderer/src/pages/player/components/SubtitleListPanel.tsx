@@ -6,7 +6,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import styled from 'styled-components'
 
-import { useSubtitleEngine } from '../hooks'
+import { usePlayerEngine, useSubtitleEngine } from '../hooks'
 import { usePlayerCommands } from '../hooks/usePlayerCommands'
 import { useSubtitles } from '../state/player-context'
 import { ImportSubtitleButton } from './'
@@ -36,6 +36,7 @@ function SubtitleListPanel({
   const subtitles = useSubtitles()
   const [userScrolled, setUserScrolled] = useState(false)
   const [showBackToCurrent, setShowBackToCurrent] = useState(false)
+  usePlayerEngine()
   const virtuosoRef = useRef<VirtuosoHandle | null>(null)
   const scrollerElRef = useRef<HTMLElement | null>(null)
   const programmaticScrollRef = useRef(false)
@@ -53,18 +54,17 @@ function SubtitleListPanel({
   const isAtBottomRef = useRef(false)
 
   const currentTime = usePlayerStore((s) => s.currentTime)
-  const activeCueIndex = usePlayerStore((s) => s.activeCueIndex)
-  // const setCurrentTime = usePlayerStore((s) => s.setCurrentTime) // 已迁移到 orchestrator
-  const subtitleFollow = usePlayerStore((s) => s.subtitleFollow)
-  const setSubtitleFollow = usePlayerStore((s) => s.setSubtitleFollow)
+  const { orchestrator } = usePlayerEngine()
   const { currentIndex } = useSubtitleEngine()
   const { seekToSubtitle } = usePlayerCommands()
+  const [subtitleFollow, setSubtitleFollow] = useState(false)
 
   // 计算首次加载的初始索引（仅在 Virtuoso 首次挂载前生效）
   const initialTopMostItemIndex = useMemo(() => {
     if (subtitles.length === 0) return undefined
     if (initialIndexRef.current === null) {
       let idx = -1
+      const activeCueIndex = orchestrator.getActiveSubtitleIndex()
       if (activeCueIndex >= 0 && activeCueIndex < subtitles.length) {
         idx = activeCueIndex
       } else if (currentIndex >= 0) {
@@ -77,7 +77,7 @@ function SubtitleListPanel({
     return initialIndexRef.current === null || initialIndexRef.current < 0
       ? undefined
       : initialIndexRef.current
-  }, [subtitles.length, activeCueIndex, currentIndex])
+  }, [subtitles.length, orchestrator, currentIndex])
 
   // 格式化时间显示
   const formatTime = useCallback((time: number) => {

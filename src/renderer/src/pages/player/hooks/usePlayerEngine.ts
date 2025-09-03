@@ -15,7 +15,7 @@ let globalStateUpdater: StateUpdater | null = null
 /**
  * 获取或创建全局 PlayerOrchestrator 实例
  */
-function getOrCreateGlobalOrchestrator(context: PlaybackContext): PlayerOrchestrator {
+function getOrCreateGlobalOrchestrator(context: Partial<PlaybackContext>): PlayerOrchestrator {
   if (!globalOrchestrator) {
     globalOrchestrator = new PlayerOrchestrator(context, {
       enableDebugLogs: process.env.NODE_ENV === 'development'
@@ -31,13 +31,14 @@ function getOrCreateGlobalOrchestrator(context: PlaybackContext): PlayerOrchestr
 function getOrCreateGlobalStateUpdater(): StateUpdater {
   if (!globalStateUpdater) {
     globalStateUpdater = {
-      setCurrentTime: (time: number) => usePlayerStore.getState().setCurrentTime(time),
+      setCurrentTime: (time: number) => {
+        usePlayerStore.getState().setCurrentTime(time)
+      },
       setDuration: (dur: number) => usePlayerStore.getState().setDuration(dur),
       setPlaying: (playing: boolean) => {
         if (playing) usePlayerStore.getState().play()
         else usePlayerStore.getState().pause()
       },
-      setActiveCueIndex: (index: number) => usePlayerStore.getState().setActiveCueIndex(index),
       updateLoopRemaining: (count: number) => {
         usePlayerStore.setState((s) => ({ ...s, loopRemainingCount: count }))
       },
@@ -107,20 +108,16 @@ export function usePlayerEngine() {
   const resumeEnabled = usePlayerStore((s) => s.resumeEnabled)
   const resumeDelay = usePlayerStore((s) => s.resumeDelay)
 
-  // 字幕设置
-  const activeCueIndex = usePlayerStore((s) => s.activeCueIndex)
-
   // 字幕数据
   const subtitles = usePlayerSubtitlesStore((s) => s.subtitles)
 
   // 构建上下文
-  const context: PlaybackContext = {
+  const context = {
     currentTime,
     duration,
     paused,
     volume,
     playbackRate,
-    activeCueIndex,
     subtitles,
     loopEnabled,
     loopMode,
@@ -152,7 +149,6 @@ export function usePlayerEngine() {
       paused,
       playbackRate,
       volume,
-      activeCueIndex,
       subtitles,
       loopEnabled,
       loopMode,
@@ -170,7 +166,6 @@ export function usePlayerEngine() {
     paused,
     playbackRate,
     volume,
-    activeCueIndex,
     subtitles,
     loopEnabled,
     loopMode,

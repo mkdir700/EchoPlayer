@@ -99,7 +99,7 @@ export class VideoLibraryDAO extends BaseDAO<
   /**
    * 更新播放进度
    */
-  async updatePlayProgress(fileId: string, currentTime: number, isFinished?: boolean) {
+  async updatePlayProgress(videoId: number, currentTime: number, isFinished?: boolean) {
     const now = Date.now()
 
     const updateData: Partial<VideoLibraryUpdate> = {
@@ -114,27 +114,22 @@ export class VideoLibraryDAO extends BaseDAO<
     return await this.db
       .updateTable('videoLibrary')
       .set({
-        ...sqlUpdateData,
-        playCount: this.db
-          .selectFrom('videoLibrary')
-          .select((eb) => eb('playCount', '+', 1).as('newCount'))
-          .where('fileId', '=', fileId)
-          .limit(1) as any
+        ...sqlUpdateData
       } as any)
-      .where('fileId', '=', fileId)
+      .where('id', '=', videoId)
       .execute()
   }
 
   /**
    * 切换收藏状态
    */
-  async toggleFavorite(fileId: string) {
+  async toggleFavorite(videoId: number) {
     return await this.db
       .updateTable('videoLibrary')
       .set((eb) => ({
         isFavorite: eb.case().when('isFavorite', '=', 1).then(0).else(1).end() as any
       }))
-      .where('fileId', '=', fileId)
+      .where('id', '=', videoId)
       .execute()
   }
 

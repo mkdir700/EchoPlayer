@@ -13,3 +13,6 @@ export * from './file-metadata'
 
 // SubtitleLibrary 表 Schema
 export * from './subtitle-library'
+
+// PlayerSettings 表 Schema
+export * from './player-settings'

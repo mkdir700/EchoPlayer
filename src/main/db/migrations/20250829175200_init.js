@@ -1,3 +1,5 @@
+const { sql } = require('kysely')
+
 /**
  * Apply the initial database schema migration.
  *
@@ -16,7 +18,7 @@ async function up(db) {
     .addColumn('size', 'integer', (col) => col.notNull())
     .addColumn('ext', 'text', (col) => col.notNull())
     .addColumn('type', 'text', (col) => col.notNull())
-    .addColumn('created_at', 'integer', (col) => col.notNull().defaultTo('unixepoch()'))
+    .addColumn('created_at', 'integer', (col) => col.notNull().defaultTo(sql`(unixepoch())`))
     .execute()
 
   // 创建文件表索引
@@ -79,7 +81,7 @@ async function up(db) {
     .addColumn('id', 'integer', (col) => col.primaryKey().autoIncrement())
     .addColumn('videoId', 'integer', (col) => col.notNull())
     .addColumn('filePath', 'text', (col) => col.notNull())
-    .addColumn('created_at', 'integer', (col) => col.notNull().defaultTo('unixepoch()'))
+    .addColumn('created_at', 'integer', (col) => col.notNull().defaultTo(sql`(unixepoch())`))
     .execute()
 
   // 创建字幕库表索引

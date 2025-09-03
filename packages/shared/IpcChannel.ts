@@ -147,6 +147,13 @@ export enum IpcChannel {
   DB_SubtitleLibrary_FindAllOrderedByCreatedAt = 'db:subtitle-library:find-all-ordered-by-created-at',
   DB_SubtitleLibrary_Delete = 'db:subtitle-library:delete',
 
+  // PlayerSettings DAO
+  DB_PlayerSettings_Get = 'db:player-settings:get',
+  DB_PlayerSettings_Save = 'db:player-settings:save',
+  DB_PlayerSettings_Delete = 'db:player-settings:delete',
+  DB_PlayerSettings_GetByVideoIds = 'db:player-settings:get-by-video-ids',
+  DB_PlayerSettings_Has = 'db:player-settings:has',
+
   // Database Transaction
   DB_Transaction = 'db:transaction',
 

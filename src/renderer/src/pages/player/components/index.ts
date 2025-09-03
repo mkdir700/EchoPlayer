@@ -5,8 +5,10 @@ export { default as ImportSubtitleButton } from './ImportSubtitleButton'
 export { default as PlayerHeader } from './PlayerHeader'
 export { default as ProgressSection } from './ProgressSection'
 export { default as SettingsPopover } from './SettingsPopover'
+export { default as SubtitleContent } from './SubtitleContent'
+export { default as SubtitleControls } from './SubtitleControls'
 export { default as SubtitleListPanel } from './SubtitleListPanel'
-// export { default as SubtitleOverlay } from './SubtitleOverlay'
+export { default as SubtitleOverlay } from './SubtitleOverlay'
 export { default as VideoSurface } from './VideoSurface'
 
 export const NavbarIcon = styled.div`

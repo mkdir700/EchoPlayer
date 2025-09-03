@@ -5,6 +5,7 @@ import styled from 'styled-components'
 
 import { usePlayerEngine } from '../hooks/usePlayerEngine'
 import AutoResumeCountdown from './AutoResumeCountdown'
+import SubtitleOverlay from './SubtitleOverlay'
 
 const logger = loggerService.withContext('VideoSurface')
 
@@ -16,12 +17,12 @@ interface VideoSurfaceProps {
 
 function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const surfaceRef = useRef<HTMLDivElement>(null) // Container ref for SubtitleOverlay
 
   const isMountedRef = useRef<boolean>(true)
 
   // Player store 状态 - 只保留必要的只读状态和控制方法
   const currentTime = usePlayerStore((s) => s.currentTime)
-  const setDuration = usePlayerStore((s) => s.setDuration)
   const pause = usePlayerStore((s) => s.pause)
 
   // === 新的播放器引擎架构 ===
@@ -56,8 +57,6 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
       videoHeight: video.videoHeight
     })
 
-    setDuration(video.duration)
-
     // 恢复保存的播放时间（在元数据加载完成后执行，通过引擎统一调度）
     if (currentTime > 0 && Math.abs(video.currentTime - currentTime) > 0.1) {
       // 延迟一小段时间确保引擎完全准备就绪
@@ -79,7 +78,7 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
     }
 
     onLoadedMetadata?.()
-  }, [setDuration, onLoadedMetadata, currentTime, orchestrator])
+  }, [onLoadedMetadata, currentTime, orchestrator])
 
   // 处理播放结束
   const handleEnded = useCallback(() => {
@@ -131,7 +130,7 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
   }, [])
 
   return (
-    <Surface role="region" aria-label="video-surface">
+    <Surface ref={surfaceRef} role="region" aria-label="video-surface" data-testid="video-surface">
       <StyledVideo
         ref={handleVideoRef}
         src={src}
@@ -153,17 +152,18 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
         preload="metadata"
         playsInline
         // 添加更多有用的事件处理
-        onCanPlay={() => {
-          logger.debug('视频可以开始播放')
-        }}
-        onWaiting={() => {
-          logger.debug('视频缓冲中')
-        }}
-        onStalled={() => {
-          logger.warn('视频数据停滞')
-        }}
+        // onCanPlay={() => {
+        //   logger.debug('视频可以开始播放')
+        // }}
+        // onWaiting={() => {
+        //   logger.debug('视频缓冲中')
+        // }}
+        // onStalled={() => {
+        //   logger.warn('视频数据停滞')
+        // }}
       />
-      {/* <MediaClockDebugOverlay tick={lastTick} visible={true} /> */}
+      {/* 字幕覆盖层 - 传递容器引用以进行边界计算 */}
+      <SubtitleOverlay containerRef={surfaceRef} />
       <AutoResumeCountdown />
     </Surface>
   )
@@ -178,6 +178,9 @@ const Surface = styled.div`
   align-items: center;
   justify-content: center;
   background: #000;
+
+  /* 为字幕覆盖层提供定位上下文 */
+  overflow: hidden;
 `
 
 const StyledVideo = styled.video`

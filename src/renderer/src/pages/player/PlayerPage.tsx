@@ -2,10 +2,13 @@ import { loggerService } from '@logger'
 import { Navbar, NavbarCenter, NavbarLeft } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
 import { VideoLibraryService } from '@renderer/services'
+import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
+import { playerSettingsPersistenceService } from '@renderer/services/PlayerSettingsSaver'
+import { usePlayerStore } from '@renderer/state'
 import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
 import { Splitter, Tooltip } from 'antd'
 import { ArrowLeft } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
@@ -45,7 +48,14 @@ interface VideoData {
 function PlayerPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  const videoId = Number(id)
+
+  // 安全地转换 videoId，避免 NaN 导致的无限循环
+  const videoId = useMemo(() => {
+    if (!id) return 0
+    const parsed = parseInt(id, 10)
+    return isNaN(parsed) ? 0 : parsed
+  }, [id])
+
   const [splitterSizes, setSplitterSizes] = useState<[number, number]>([70, 30])
   const { t } = useTranslation()
 
@@ -54,7 +64,7 @@ function PlayerPage() {
   const [error, setError] = useState<string | null>(null)
   // const { pokeInteraction } = usePlayerUI()
 
-  // 加载视频数据并绑定 per-video 配置
+  // 加载视频数据
   useEffect(() => {
     const loadData = async () => {
       if (!id) {
@@ -67,14 +77,21 @@ function PlayerPage() {
         setLoading(true)
         setError(null)
 
-        const recordId = parseInt(id, 10)
-        if (isNaN(recordId)) {
+        const videoId = parseInt(id, 10)
+        if (isNaN(videoId)) {
           throw new Error('无效的视频 ID')
         }
 
         const videoLibService = new VideoLibraryService()
-        const record = await videoLibService.getRecordById(recordId)
+        const record = await videoLibService.getRecordById(videoId)
         if (!record) throw new Error('视频不存在')
+
+        const playerSettings = await PlayerSettingsService.load(videoId)
+        if (playerSettings) {
+          // 因为 currentTime 和 duration 是存储在 PlayerState 中的，所以需要手动注入
+          playerSettings.currentTime = record.currentTime
+          playerSettings.duration = record.duration
+        }
 
         const file = await db.files.getFile(record.fileId)
         if (!file) throw new Error('关联文件不存在')
@@ -94,8 +111,11 @@ function PlayerPage() {
         setVideoData(vd)
         // 同步到全局会话 store，供任意组件访问
         usePlayerSessionStore.getState().setVideo(vd)
-
-        // per-video 编排已迁移至 PlayerPageProvider
+        // 注入播放器设置
+        usePlayerStore.getState().loadSettings(playerSettings)
+        // 监听设置和视频进度变化
+        playerSettingsPersistenceService.attach(videoId)
+        logger.info('已加载视频数据:', { vd, playerSettings })
       } catch (err) {
         logger.error(`加载视频数据失败: ${err}`)
         setError(err instanceof Error ? err.message : '加载失败')
@@ -108,6 +128,7 @@ function PlayerPage() {
     return () => {
       // 页面卸载时清理会话态
       usePlayerSessionStore.getState().clear()
+      playerSettingsPersistenceService.detach()
     }
   }, [id])
 
@@ -182,7 +203,6 @@ function PlayerPage() {
                   <LeftMain>
                     <VideoStage>
                       <VideoSurface src={videoData.src} onError={handleVideoError} />
-                      {/* <SubtitleOverlay /> */}
                     </VideoStage>
                     <BottomBar>
                       <ControllerPanel />
