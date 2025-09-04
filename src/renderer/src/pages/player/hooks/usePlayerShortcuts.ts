@@ -1,15 +1,15 @@
 import { loggerService } from '@logger'
 import { useShortcut } from '@renderer/infrastructure/hooks/useShortcust'
-import { useSubtitleOverlayStore } from '@renderer/state'
 import { SubtitleDisplayMode } from '@types'
 
 import { usePlayerCommands } from './usePlayerCommands'
+import useSubtitleOverlay from './useSubtitleOverlayIntegration'
 
 const logger = loggerService.withContext('TransportBar')
 
 export function usePlayerShortcuts() {
   const cmd = usePlayerCommands()
-  const setDisplayMode = useSubtitleOverlayStore((s) => s.setDisplayMode)
+  const { setDisplayMode } = useSubtitleOverlay()
 
   useShortcut('play_pause', () => {
     cmd.playPause()

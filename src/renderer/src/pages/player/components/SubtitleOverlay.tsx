@@ -11,12 +11,12 @@
  */
 
 import { loggerService } from '@logger'
-import { useSubtitleOverlayStore } from '@renderer/state'
+import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import styled, { css } from 'styled-components'
 
-import { useSubtitleOverlayIntegration } from '../hooks'
+import { useSubtitleOverlay, useSubtitleOverlayUI } from '../hooks'
 import SubtitleContent from './SubtitleContent'
 import SubtitleControls from './SubtitleControls'
 
@@ -34,151 +34,6 @@ export interface SubtitleOverlayProps {
   debug?: boolean
 }
 
-// === 样式组件 ===
-const OverlayContainer = styled.div<{
-  $position: { x: number; y: number }
-  $size: { width: number; height: number }
-  $showBoundaries: boolean
-  $isDragging: boolean
-  $isResizing: boolean
-  $isHovered: boolean
-  $backgroundType: SubtitleBackgroundType
-  $opacity: number
-}>`
-  /* 基础定位和尺寸 */
-  position: absolute;
-  left: ${(props) => props.$position.x}%;
-  top: ${(props) => props.$position.y}%;
-  width: ${(props) => props.$size.width}%;
-  min-height: 60px;
-  max-height: 200px;
-
-  /* 层级控制 */
-  z-index: ${(props) => (props.$isDragging ? 1100 : 1000)};
-
-  /* 基础样式 */
-  pointer-events: auto;
-  user-select: none;
-  border-radius: 8px;
-
-  /* 交互状态样式 */
-  cursor: ${(props) => {
-    if (props.$isDragging) return 'grabbing'
-    if (props.$isResizing) return 'nw-resize'
-    return 'grab'
-  }};
-
-  /* 边界显示 */
-  border: ${(props) =>
-    props.$showBoundaries || props.$isHovered
-      ? '2px dashed rgba(102, 126, 234, 0.6)'
-      : '2px dashed transparent'};
-
-  /* 拖拽状态特效 */
-  ${(props) =>
-    props.$isDragging &&
-    css`
-      transform: rotate(1deg);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      border-color: rgba(102, 126, 234, 0.8);
-    `}
-
-  /* 动画过渡 */
-  transition: all 200ms ease-out;
-`
-
-const ContentContainer = styled.div<{
-  $backgroundType: SubtitleBackgroundType
-  $opacity: number
-}>`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 16px;
-  border-radius: 8px;
-  box-sizing: border-box;
-  position: relative;
-
-  /* 背景样式 */
-  ${(props) => {
-    switch (props.$backgroundType) {
-      case SubtitleBackgroundType.TRANSPARENT:
-        return css`
-          background: transparent;
-          backdrop-filter: none;
-        `
-      case SubtitleBackgroundType.BLUR:
-        return css`
-          background: rgba(0, 0, 0, ${props.$opacity * 0.6});
-          backdrop-filter: blur(12px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow:
-            0 8px 32px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        `
-      case SubtitleBackgroundType.SOLID_BLACK:
-        return css`
-          background: rgba(0, 0, 0, ${props.$opacity});
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          box-shadow:
-            0 4px 16px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        `
-      case SubtitleBackgroundType.SOLID_GRAY:
-        return css`
-          background: rgba(128, 128, 128, ${props.$opacity});
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow:
-            0 4px 16px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        `
-      default:
-        return css`
-          background: transparent;
-        `
-    }
-  }}
-
-  /* 文本选中支持 */
-  user-select: text;
-  -webkit-user-select: text;
-`
-
-const ResizeHandle = styled.div<{ $visible: boolean }>`
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  width: 12px;
-  height: 12px;
-  background: rgba(102, 126, 234, 0.8);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  cursor: nw-resize;
-  opacity: ${(props) => (props.$visible ? 1 : 0)};
-  transition: all 200ms ease;
-
-  &:hover {
-    background: #007aff;
-    transform: scale(1.2);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-  }
-`
-
-const DebugInfo = styled.div`
-  position: absolute;
-  top: -24px;
-  left: 0;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(0, 0, 0, 0.8);
-  padding: 2px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-`
-
 // === 组件实现 ===
 export const SubtitleOverlay = memo(function SubtitleOverlay({
   containerRef,
@@ -187,37 +42,33 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   debug = false
 }: SubtitleOverlayProps) {
   // === 状态集成（重构版） ===
-  const integration = useSubtitleOverlayIntegration()
+  const integration = useSubtitleOverlay()
 
-  // === UI 状态（来自重构后的 Store） ===
-  const isDragging = useSubtitleOverlayStore((s) => s.isDragging)
-  const isResizing = useSubtitleOverlayStore((s) => s.isResizing)
-  const showBoundaries = useSubtitleOverlayStore((s) => s.showBoundaries)
-  const isHovered = useSubtitleOverlayStore((s) => s.isHovered)
-  const containerBounds = useSubtitleOverlayStore((s) => s.containerBounds)
-
-  // === UI 操作（来自重构后的 Store） ===
-  const startDragging = useSubtitleOverlayStore((s) => s.startDragging)
-  const stopDragging = useSubtitleOverlayStore((s) => s.stopDragging)
-  const startResizing = useSubtitleOverlayStore((s) => s.startResizing)
-  const stopResizing = useSubtitleOverlayStore((s) => s.stopResizing)
-  const setHovered = useSubtitleOverlayStore((s) => s.setHovered)
-  const setSelectedText = useSubtitleOverlayStore((s) => s.setSelectedText)
-  const updateContainerBounds = useSubtitleOverlayStore((s) => s.updateContainerBounds)
-  const adaptToContainerResize = useSubtitleOverlayStore((s) => s.adaptToContainerResize)
-  const avoidCollision = useSubtitleOverlayStore((s) => s.avoidCollision)
-  const calculateOptimalPosition = useSubtitleOverlayStore((s) => s.calculateOptimalPosition)
+  // === UI 状态和操作（来自新的 Hook） ===
+  const {
+    isDragging,
+    isResizing,
+    showBoundaries,
+    isHovered,
+    containerBounds,
+    startDragging,
+    stopDragging,
+    startResizing,
+    stopResizing,
+    setHovered,
+    setSelectedText,
+    updateContainerBounds,
+    adaptToContainerResize,
+    avoidCollision,
+    calculateOptimalPosition
+  } = useSubtitleOverlayUI()
 
   // === 配置数据（来自当前视频项目） ===
-  const currentConfig = integration.currentConfig
-  const displayMode = currentConfig?.displayMode ?? SubtitleDisplayMode.NONE
-  const position = currentConfig?.position ?? { x: 10, y: 75 }
-  const size = currentConfig?.size ?? { width: 80, height: 20 }
-  const backgroundStyle = currentConfig?.backgroundStyle ?? {
-    type: SubtitleBackgroundType.BLUR,
-    opacity: 0.8
-  }
-  const isConfigLoaded = integration.isConfigLoaded
+  const currentConfig = usePlayerStore((s) => s.subtitleOverlay)
+  const displayMode = currentConfig.displayMode
+  const position = currentConfig.position
+  const size = currentConfig.size
+  const backgroundStyle = currentConfig.backgroundStyle
 
   // === 配置操作（通过 integration） ===
   const setPosition = integration.setPosition
@@ -228,9 +79,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 
   // === 初始化和容器边界更新 ===
   useEffect(() => {
-    // 只有配置加载完成后才进行初始化
-    if (!isConfigLoaded) return
-
     let resizeTimer: NodeJS.Timeout
 
     const updateBounds = (isInitial = false) => {
@@ -291,7 +139,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     updateContainerBounds,
     adaptToContainerResize,
     calculateOptimalPosition,
-    isConfigLoaded,
     currentConfig?.isInitialized
   ])
 
@@ -484,16 +331,11 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 
   // === 条件渲染：配置未加载或隐藏模式不显示 ===
   const shouldRender = useMemo(
-    () => isConfigLoaded && displayMode !== SubtitleDisplayMode.NONE && integration.shouldShow,
-    [isConfigLoaded, displayMode, integration.shouldShow]
+    () => displayMode !== SubtitleDisplayMode.NONE && integration.shouldShow,
+    [displayMode, integration.shouldShow]
   )
 
   if (!shouldRender) {
-    if (!isConfigLoaded) {
-      logger.debug('字幕配置未加载，不渲染覆盖层')
-    } else {
-      logger.debug('字幕模式为隐藏或无字幕内容，不渲染覆盖层')
-    }
     return null
   }
 
@@ -503,10 +345,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     size,
     isDragging,
     isResizing,
-    showBoundaries,
-    isConfigLoaded,
-    currentVideoId: integration.currentVideoId,
-    currentSubtitle: integration.currentSubtitle?.originalText?.substring(0, 50)
+    showBoundaries
   })
 
   return (
@@ -559,3 +398,148 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 })
 
 export default SubtitleOverlay
+
+// === 样式组件 ===
+const OverlayContainer = styled.div<{
+  $position: { x: number; y: number }
+  $size: { width: number; height: number }
+  $showBoundaries: boolean
+  $isDragging: boolean
+  $isResizing: boolean
+  $isHovered: boolean
+  $backgroundType: SubtitleBackgroundType
+  $opacity: number
+}>`
+  /* 基础定位和尺寸 */
+  position: absolute;
+  left: ${(props) => props.$position.x}%;
+  top: ${(props) => props.$position.y}%;
+  width: ${(props) => props.$size.width}%;
+  min-height: 60px;
+  max-height: 200px;
+
+  /* 层级控制 */
+  z-index: ${(props) => (props.$isDragging ? 1100 : 1000)};
+
+  /* 基础样式 */
+  pointer-events: auto;
+  user-select: none;
+  border-radius: 8px;
+
+  /* 交互状态样式 */
+  cursor: ${(props) => {
+    if (props.$isDragging) return 'grabbing'
+    if (props.$isResizing) return 'nw-resize'
+    return 'grab'
+  }};
+
+  /* 边界显示 */
+  border: ${(props) =>
+    props.$showBoundaries || props.$isHovered
+      ? '2px dashed rgba(102, 126, 234, 0.6)'
+      : '2px dashed transparent'};
+
+  /* 拖拽状态特效 */
+  ${(props) =>
+    props.$isDragging &&
+    css`
+      transform: rotate(1deg);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border-color: rgba(102, 126, 234, 0.8);
+    `}
+
+  /* 动画过渡 */
+  transition: all 200ms ease-out;
+`
+
+const ContentContainer = styled.div<{
+  $backgroundType: SubtitleBackgroundType
+  $opacity: number
+}>`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  position: relative;
+
+  /* 背景样式 */
+  ${(props) => {
+    switch (props.$backgroundType) {
+      case SubtitleBackgroundType.TRANSPARENT:
+        return css`
+          background: transparent;
+          backdrop-filter: none;
+        `
+      case SubtitleBackgroundType.BLUR:
+        return css`
+          background: rgba(0, 0, 0, ${props.$opacity * 0.6});
+          backdrop-filter: blur(12px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        `
+      case SubtitleBackgroundType.SOLID_BLACK:
+        return css`
+          background: rgba(0, 0, 0, ${props.$opacity});
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow:
+            0 4px 16px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        `
+      case SubtitleBackgroundType.SOLID_GRAY:
+        return css`
+          background: rgba(128, 128, 128, ${props.$opacity});
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow:
+            0 4px 16px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        `
+      default:
+        return css`
+          background: transparent;
+        `
+    }
+  }}
+
+  /* 文本选中支持 */
+  user-select: text;
+  -webkit-user-select: text;
+`
+
+const ResizeHandle = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: rgba(102, 126, 234, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  cursor: nw-resize;
+  opacity: ${(props) => (props.$visible ? 1 : 0)};
+  transition: all 200ms ease;
+
+  &:hover {
+    background: #007aff;
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  }
+`
+
+const DebugInfo = styled.div`
+  position: absolute;
+  top: -24px;
+  left: 0;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+`

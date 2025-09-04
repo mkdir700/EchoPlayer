@@ -1,3 +1,4 @@
 export { usePlayerEngine } from './usePlayerEngine'
 export { useSubtitleEngine } from './useSubtitleEngine'
-export { useSubtitleOverlayIntegration } from './useSubtitleOverlayIntegration'
+export { useSubtitleOverlay } from './useSubtitleOverlayIntegration'
+export { useSubtitleOverlayUI } from './useSubtitleOverlayUI'

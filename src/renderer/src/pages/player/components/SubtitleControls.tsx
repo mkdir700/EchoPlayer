@@ -11,11 +11,12 @@
  */
 
 import { loggerService } from '@logger'
+import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import React, { memo, useMemo } from 'react'
 import styled, { css } from 'styled-components'
 
-import { useSubtitleOverlayIntegration } from '../hooks'
+import { useSubtitleOverlay } from '../hooks'
 
 const logger = loggerService.withContext('SubtitleControls')
 
@@ -35,11 +36,10 @@ export const SubtitleControls = memo(function SubtitleControls({
   className,
   style
 }: SubtitleControlsProps) {
-  // === 集成状态（重构版） ===
-  const integration = useSubtitleOverlayIntegration()
+  const integration = useSubtitleOverlay()
 
   // === 配置数据（来自当前视频项目） ===
-  const currentConfig = integration.currentConfig
+  const currentConfig = usePlayerStore((s) => s.subtitleOverlay)
   const displayMode = currentConfig?.displayMode ?? SubtitleDisplayMode.NONE
   const backgroundStyle = currentConfig?.backgroundStyle ?? {
     type: SubtitleBackgroundType.BLUR,
@@ -49,9 +49,6 @@ export const SubtitleControls = memo(function SubtitleControls({
   // === 配置操作（通过 integration） ===
   const setDisplayMode = integration.setDisplayMode
   const setBackgroundType = integration.setBackgroundType
-
-  // === 检查配置是否已加载 ===
-  const isConfigLoaded = integration.isConfigLoaded
 
   // === 显示模式选项 ===
   const displayModes = useMemo(
@@ -103,25 +100,18 @@ export const SubtitleControls = memo(function SubtitleControls({
     []
   )
 
-  // 如果配置未加载，不显示控制面板
-  if (!isConfigLoaded) {
-    return null
-  }
-
   // === 事件处理器 ===
   const handleModeChange = (mode: SubtitleDisplayMode) => {
     setDisplayMode(mode)
     logger.info('字幕显示模式已切换', {
-      mode,
-      videoId: integration.currentVideoId
+      mode
     })
   }
 
   const handleBackgroundChange = (type: SubtitleBackgroundType) => {
     setBackgroundType(type)
     logger.info('字幕背景类型已切换', {
-      type,
-      videoId: integration.currentVideoId
+      type
     })
   }
 
