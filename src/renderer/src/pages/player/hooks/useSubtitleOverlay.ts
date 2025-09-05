@@ -92,9 +92,11 @@ export function useSubtitleOverlay(): SubtitleOverlay {
 
   const setBackgroundTypeHandler = useCallback(
     (type: SubtitleBackgroundType) => {
-      const backgroundStyle = subtitleOverlayConfig.backgroundStyle
-      backgroundStyle.type = type
-      setSubtitleOverlay({ backgroundStyle: backgroundStyle })
+      const newBackgroundStyle = {
+        ...subtitleOverlayConfig.backgroundStyle,
+        type
+      }
+      setSubtitleOverlay({ backgroundStyle: newBackgroundStyle })
       logger.info('设置字幕背景类型', { type })
     },
     [setSubtitleOverlay, subtitleOverlayConfig]
@@ -102,9 +104,11 @@ export function useSubtitleOverlay(): SubtitleOverlay {
 
   const setOpacityHandler = useCallback(
     (opacity: number) => {
-      const backgroundStyle = subtitleOverlayConfig.backgroundStyle
-      backgroundStyle.opacity = opacity
-      setSubtitleOverlay({ backgroundStyle: backgroundStyle })
+      const newBackgroundStyle = {
+        ...subtitleOverlayConfig.backgroundStyle,
+        opacity
+      }
+      setSubtitleOverlay({ backgroundStyle: newBackgroundStyle })
       logger.debug('设置字幕透明度', { opacity })
     },
     [setSubtitleOverlay, subtitleOverlayConfig]

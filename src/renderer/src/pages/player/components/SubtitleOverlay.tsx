@@ -18,7 +18,6 @@ import styled, { css } from 'styled-components'
 
 import { useSubtitleOverlay, useSubtitleOverlayUI } from '../hooks'
 import SubtitleContent from './SubtitleContent'
-import SubtitleControls from './SubtitleControls'
 
 const logger = loggerService.withContext('SubtitleOverlay')
 
@@ -377,9 +376,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           onTextSelection={handleTextSelection}
         />
       </ContentContainer>
-
-      {/* 字幕控制面板 */}
-      <SubtitleControls visible={isHovered || isDragging || isResizing} />
 
       <ResizeHandle
         $visible={isHovered || isDragging || isResizing}
