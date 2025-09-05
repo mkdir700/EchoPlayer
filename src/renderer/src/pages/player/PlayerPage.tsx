@@ -74,7 +74,6 @@ function PlayerPage() {
       }
 
       try {
-        setLoading(true)
         setError(null)
 
         const videoId = parseInt(id, 10)
@@ -116,6 +115,7 @@ function PlayerPage() {
         // 监听设置和视频进度变化
         playerSettingsPersistenceService.attach(videoId)
         logger.info('已加载视频数据:', { vd, playerSettings })
+        setLoading(true)
       } catch (err) {
         logger.error(`加载视频数据失败: ${err}`)
         setError(err instanceof Error ? err.message : '加载失败')

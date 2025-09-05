@@ -21,11 +21,9 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
 
   const isMountedRef = useRef<boolean>(true)
 
-  // Player store 状态 - 只保留必要的只读状态和控制方法
   const currentTime = usePlayerStore((s) => s.currentTime)
   const pause = usePlayerStore((s) => s.pause)
 
-  // === 新的播放器引擎架构 ===
   const { connectVideoElement, getMediaEventHandlers, orchestrator } = usePlayerEngine()
 
   // 稳定的 video 元素引用处理
