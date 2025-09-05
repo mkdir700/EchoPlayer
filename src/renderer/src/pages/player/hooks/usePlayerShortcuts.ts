@@ -3,7 +3,7 @@ import { useShortcut } from '@renderer/infrastructure/hooks/useShortcust'
 import { SubtitleDisplayMode } from '@types'
 
 import { usePlayerCommands } from './usePlayerCommands'
-import useSubtitleOverlay from './useSubtitleOverlayIntegration'
+import useSubtitleOverlay from './useSubtitleOverlay'
 
 const logger = loggerService.withContext('TransportBar')
 
