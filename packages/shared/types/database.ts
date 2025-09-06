@@ -3,6 +3,7 @@ import type { Insertable, Selectable, Updateable } from 'kysely'
 import type {
   FileMetadataTable,
   FileTypes,
+  PlayerSettingsTable,
   SubtitleLibraryTable,
   VideoLibraryTable
 } from '../schema'
@@ -32,3 +33,7 @@ export type FileMetadataUpdate = Updateable<FileMetadataTable>
 export type SubtitleLibraryRecord = Selectable<SubtitleLibraryTable>
 export type SubtitleLibraryInsert = Insertable<SubtitleLibraryTable>
 export type SubtitleLibraryUpdate = Updateable<SubtitleLibraryTable>
+
+export type PlayerSettingsRecord = Selectable<PlayerSettingsTable>
+export type PlayerSettingsInsert = Insertable<PlayerSettingsTable>
+export type PlayerSettingsUpdate = Updateable<PlayerSettingsTable>

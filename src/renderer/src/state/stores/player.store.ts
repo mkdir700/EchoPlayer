@@ -1,35 +1,44 @@
-/**
- * 播放器状态管理 Store
- *
- * ⚠️ 重要架构说明：
- *
- * 本 Store 分为两类 actions：
- * 1. 【引擎专用】- 标记为 "引擎专用" 的方法应该只由 PlayerOrchestrator 引擎调用
- *    用于引擎将决策结果写回到状态，组件不应直接调用
- *
- * 2. 【组件可调用】- 用户设置类的方法，组件可以直接调用来更新用户配置
- *
- * 对于播放控制（播放/暂停/跳转/音量等），组件应该：
- * ✅ 使用：usePlayerCommandsOrchestrated() 发送命令
- * ❌ 避免：直接调用 store 的播放控制 actions
- *
- * 这样可以确保所有播放控制都通过引擎统一调度，避免多入口控制的问题。
- */
-
-import { LoopMode, SubtitleDisplayMode } from '@types'
+import { LoopMode, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import { Draft } from 'immer'
 import { create, StateCreator } from 'zustand'
 
 import { MiddlewarePresets } from '../infrastructure'
 
+/**
+ * 字幕覆盖层配置接口
+ */
+export interface SubtitleOverlayConfig {
+  /** 显示模式 */
+  displayMode: SubtitleDisplayMode
+  /** 背景样式配置 */
+  backgroundStyle: {
+    type: SubtitleBackgroundType
+    opacity: number
+    customValue?: string
+  }
+  /** 位置（百分比） */
+  position: {
+    x: number // 0-100%
+    y: number // 0-100%
+  }
+  /** 尺寸（百分比） */
+  size: {
+    width: number // 10-100%
+    height: number // 5-50%
+  }
+  /** 是否启用自动定位 */
+  autoPositioning: boolean
+  /** 是否已初始化 */
+  isInitialized: boolean
+}
+
 export interface PlayerState {
   // 播放核心状态
-  currentTime: number // 仅用于 UI
+  currentTime: number
   duration: number
   paused: boolean
   volume: number // 0–1
   muted: boolean
-  isFullscreen: boolean
 
   /** 播放速度 */
   playbackRate: number
@@ -60,19 +69,14 @@ export interface PlayerState {
   /** 恢复播放延迟（毫秒） */
   resumeDelay: number
 
-  // === 字幕设置 / Subtitle Settings ===
-  /** 字幕显示模式 */
-  subtitleDisplayMode: SubtitleDisplayMode
-
-  // 字幕联动
-  subtitleFollow: boolean // 字幕列表是否自动跟随
-  activeCueIndex: number // 当前字幕行索引（无则 -1）
+  subtitleOverlay: SubtitleOverlayConfig
 
   // UI 短时态（与字幕设置面板联动）
-  isSettingsOpen: boolean
-  wasPlayingBeforeOpen: boolean
+  isFullscreen?: boolean
+  isSettingsOpen?: boolean
+  wasPlayingBeforeOpen?: boolean
   /** 自动恢复倒计时 */
-  isAutoResumeCountdownOpen: boolean
+  isAutoResumeCountdownOpen?: boolean
 }
 
 export interface PlayerActions {
@@ -104,11 +108,9 @@ export interface PlayerActions {
   setPauseOnSubtitleEnd: (enabled: boolean) => void
   setResumeEnabled: (enabled: boolean) => void
   setResumeDelay: (delay: number) => void
+  setSubtitleOverlay: (overlayConfig: Partial<SubtitleOverlayConfig>) => void
 
-  // === 字幕联动 ===
-  setSubtitleFollow: (follow: boolean) => void // 组件可调用：用户设置
-  setActiveCueIndex: (idx: number) => void // 引擎专用：由策略系统更新当前字幕索引
-  setSubtitleDisplayMode: (mode: SubtitleDisplayMode) => void // 组件可调用：用户设置
+  loadSettings: (settings: Partial<PlayerState> | null) => void
 
   // 面板联动
   openSettingsPanel: () => void
@@ -141,16 +143,39 @@ const initialState: PlayerState = {
   resumeEnabled: false, // 是否启用自动恢复播放
   resumeDelay: 5000, // 5秒
 
-  // === 字幕设置 / Subtitle Settings ===
-  subtitleDisplayMode: SubtitleDisplayMode.BILINGUAL,
-
-  subtitleFollow: true,
-  activeCueIndex: -1,
+  subtitleOverlay: {
+    displayMode: SubtitleDisplayMode.BILINGUAL,
+    backgroundStyle: {
+      type: SubtitleBackgroundType.BLUR,
+      opacity: 0.8
+    },
+    position: { x: 10, y: 75 },
+    size: { width: 80, height: 20 },
+    autoPositioning: true,
+    isInitialized: false
+  },
 
   isSettingsOpen: false,
   wasPlayingBeforeOpen: false,
   isAutoResumeCountdownOpen: false
 }
+
+// 仅包含需要持久化到数据库的设置切片类型
+export type PlayerSettings = Pick<
+  PlayerState,
+  | 'volume'
+  | 'muted'
+  | 'playbackRate'
+  | 'loopEnabled'
+  | 'loopMode'
+  | 'loopCount'
+  | 'loopRemainingCount'
+  | 'autoPauseEnabled'
+  | 'pauseOnSubtitleEnd'
+  | 'resumeEnabled'
+  | 'resumeDelay'
+  | 'subtitleOverlay'
+>
 
 const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [], PlayerStore> = (
   set
@@ -168,17 +193,6 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
   setPlaybackRate: (r) =>
     set((s: Draft<PlayerStore>) => void (s.playbackRate = Math.max(0.25, Math.min(3, r)))),
   setFullscreen: (f) => set((s: Draft<PlayerStore>) => void (s.isFullscreen = !!f)),
-
-  // 字幕联动
-  setSubtitleFollow: (follow) => set((s: Draft<PlayerStore>) => void (s.subtitleFollow = follow)),
-  setActiveCueIndex: (idx) =>
-    set((s: Draft<PlayerStore>) => {
-      if (s.activeCueIndex !== idx) {
-        s.activeCueIndex = idx
-      }
-    }),
-  setSubtitleDisplayMode: (mode) =>
-    set((s: Draft<PlayerStore>) => void (s.subtitleDisplayMode = mode)),
 
   // 循环控制
   toggleLoopEnabled: () =>
@@ -245,6 +259,62 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
       s.resumeDelay = delay
     }),
 
+  setSubtitleOverlay: (overlayConfig: Partial<SubtitleOverlayConfig>) =>
+    set((s: Draft<PlayerStore>) => {
+      const overlay = { ...s.subtitleOverlay, ...overlayConfig }
+      s.subtitleOverlay = overlay
+    }),
+
+  /** 批量应用持久化设置（一次性 set，避免多次触发保存） */
+  loadSettings: (settings: Partial<PlayerState> | null) =>
+    set((s: Draft<PlayerStore>) => {
+      if (!settings) {
+        settings = initialState
+      }
+      if (settings.currentTime !== undefined) {
+        s.currentTime = settings.currentTime
+      }
+      if (settings.duration !== undefined) {
+        s.duration = settings.duration
+      }
+      if (settings.volume !== undefined) {
+        s.volume = settings.volume
+      }
+      if (settings.muted !== undefined) {
+        s.muted = settings.muted
+      }
+      if (settings.playbackRate !== undefined) {
+        s.playbackRate = settings.playbackRate
+      }
+      if (settings.loopEnabled !== undefined) {
+        s.loopEnabled = settings.loopEnabled
+      }
+      if (settings.loopMode !== undefined) {
+        s.loopMode = settings.loopMode
+      }
+      if (settings.loopCount !== undefined) {
+        s.loopCount = settings.loopCount
+      }
+      if (settings.loopRemainingCount !== undefined) {
+        s.loopRemainingCount = settings.loopRemainingCount
+      }
+      if (settings.autoPauseEnabled !== undefined) {
+        s.autoPauseEnabled = settings.autoPauseEnabled
+      }
+      if (settings.pauseOnSubtitleEnd !== undefined) {
+        s.pauseOnSubtitleEnd = settings.pauseOnSubtitleEnd
+      }
+      if (settings.resumeEnabled !== undefined) {
+        s.resumeEnabled = settings.resumeEnabled
+      }
+      if (settings.resumeDelay !== undefined) {
+        s.resumeDelay = settings.resumeDelay
+      }
+      if (settings.subtitleOverlay !== undefined) {
+        s.subtitleOverlay = settings.subtitleOverlay
+      }
+    }),
+
   // 面板联动
   openSettingsPanel: () =>
     set((s: Draft<PlayerStore>) => {
@@ -269,25 +339,8 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
     })
 })
 
-// 仅持久化与"偏好"相关的少量字段：playbackRate / volume / muted / subtitleFollow
 export const usePlayerStore = create<PlayerStore>()(
-  MiddlewarePresets.full<PlayerStore>('player', {
-    partialize: (state) => ({
-      playbackRate: state.playbackRate,
-      volume: state.volume,
-      muted: state.muted,
-      subtitleFollow: state.subtitleFollow,
-      loopEnabled: state.loopEnabled,
-      loopCount: state.loopCount,
-      loopMode: state.loopMode,
-      loopRemainingCount: state.loopRemainingCount,
-      // 自动暂停设置持久化
-      autoPauseEnabled: state.autoPauseEnabled,
-      pauseOnSubtitleEnd: state.pauseOnSubtitleEnd,
-      resumeEnabled: state.resumeEnabled,
-      resumeDelay: state.resumeDelay
-    })
-  })(createPlayerStore)
+  MiddlewarePresets.temporary<PlayerStore>('player-settings')(createPlayerStore)
 )
 
 export default usePlayerStore

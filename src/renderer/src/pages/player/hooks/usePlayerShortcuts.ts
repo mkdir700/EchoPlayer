@@ -1,12 +1,15 @@
 import { loggerService } from '@logger'
 import { useShortcut } from '@renderer/infrastructure/hooks/useShortcust'
+import { SubtitleDisplayMode } from '@types'
 
 import { usePlayerCommands } from './usePlayerCommands'
+import useSubtitleOverlay from './useSubtitleOverlay'
 
 const logger = loggerService.withContext('TransportBar')
 
 export function usePlayerShortcuts() {
   const cmd = usePlayerCommands()
+  const { setDisplayMode } = useSubtitleOverlay()
 
   useShortcut('play_pause', () => {
     cmd.playPause()
@@ -43,5 +46,26 @@ export function usePlayerShortcuts() {
   // 单句循环
   useShortcut('single_loop', () => {
     cmd.toggleLoopEnabled()
+  })
+
+  // 字幕显示模式切换
+  useShortcut('subtitle_mode_none', () => {
+    setDisplayMode(SubtitleDisplayMode.NONE)
+    logger.info('字幕显示模式切换: 隐藏')
+  })
+
+  useShortcut('subtitle_mode_original', () => {
+    setDisplayMode(SubtitleDisplayMode.ORIGINAL)
+    logger.info('字幕显示模式切换: 仅原文')
+  })
+
+  useShortcut('subtitle_mode_translated', () => {
+    setDisplayMode(SubtitleDisplayMode.TRANSLATED)
+    logger.info('字幕显示模式切换: 仅译文')
+  })
+
+  useShortcut('subtitle_mode_bilingual', () => {
+    setDisplayMode(SubtitleDisplayMode.BILINGUAL)
+    logger.info('字幕显示模式切换: 双语显示')
   })
 }

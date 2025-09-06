@@ -18,6 +18,7 @@ import {
 } from './intent'
 import { createSubtitleLockFSM, SubtitleLockFSM } from './intent/SubtitleLockFSM'
 import { MediaClock, MediaClockEvent } from './MediaClock'
+import { SubtitleIndexCalculator } from './utils'
 
 const logger = loggerService.withContext('PlayerOrchestrator')
 
@@ -49,7 +50,6 @@ export interface StateUpdater {
   setCurrentTime(time: number): void
   setDuration(duration: number): void
   setPlaying(playing: boolean): void
-  setActiveCueIndex(index: number): void
   updateLoopRemaining(count: number): void
   setPlaybackRate(rate: number): void
   setVolume(volume: number): void
@@ -146,8 +146,13 @@ export class PlayerOrchestrator {
   // 资源管理
   private disposers: Array<() => void> = []
 
-  constructor(context: PlaybackContext, config: PlayerOrchestratorConfig = {}) {
-    this.context = context
+  constructor(context: Partial<PlaybackContext>, config: PlayerOrchestratorConfig = {}) {
+    // 通过 currentTime 计算出初始的字幕索引
+    const activeCueIndex = SubtitleIndexCalculator.computeInitialCueIndex(
+      context.currentTime || 0,
+      context.subtitles || []
+    )
+    this.context = { ...this.context, ...context, activeCueIndex }
     this.config = {
       clockThrottleMs: 50,
       enableDebugLogs: false,
@@ -441,6 +446,13 @@ export class PlayerOrchestrator {
 
   getCurrentVolume(): number {
     return this.videoController?.getVolume() ?? 0
+  }
+
+  getActiveSubtitleIndex(): number {
+    return SubtitleIndexCalculator.computeActiveCueIndex(
+      this.context.currentTime,
+      this.context.subtitles
+    )
   }
 
   isMuted(): boolean {
@@ -973,8 +985,6 @@ export class PlayerOrchestrator {
       const applied = this.subtitleLockFSM.suggestIndex(req.requested)
 
       if (applied !== undefined && applied !== req.before) {
-        // 更新外部状态
-        this.stateUpdater?.setActiveCueIndex(applied)
         // 更新内部上下文
         this.updateContext({ activeCueIndex: applied })
 

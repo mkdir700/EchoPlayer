@@ -566,25 +566,25 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
 
   ipcMain.handle(
     IpcChannel.DB_VideoLibrary_UpdatePlayProgress,
-    async (_, fileId: string, currentTime: number, isFinished?: boolean) => {
+    async (_, videoId: number, currentTime: number, isFinished?: boolean) => {
       try {
-        const result = await db.videoLibrary.updatePlayProgress(fileId, currentTime, isFinished)
-        logger.info('Video play progress updated:', { fileId, currentTime, isFinished })
+        const result = await db.videoLibrary.updatePlayProgress(videoId, currentTime, isFinished)
+        logger.info('Video play progress updated:', { videoId, currentTime, isFinished })
         return result
       } catch (error) {
-        logger.error('Failed to update video play progress:', { error, fileId, currentTime })
+        logger.error('Failed to update video play progress:', { error, videoId, currentTime })
         throw error
       }
     }
   )
 
-  ipcMain.handle(IpcChannel.DB_VideoLibrary_ToggleFavorite, async (_, fileId: string) => {
+  ipcMain.handle(IpcChannel.DB_VideoLibrary_ToggleFavorite, async (_, videoId: number) => {
     try {
-      const result = await db.videoLibrary.toggleFavorite(fileId)
-      logger.info('Video favorite status toggled:', { fileId })
+      const result = await db.videoLibrary.toggleFavorite(videoId)
+      logger.info('Video favorite status toggled:', { videoId })
       return result
     } catch (error) {
-      logger.error('Failed to toggle video favorite status:', { error, fileId })
+      logger.error('Failed to toggle video favorite status:', { error, videoId })
       throw error
     }
   })
@@ -774,6 +774,66 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
       return result
     } catch (error) {
       logger.error('Failed to delete subtitle from database:', { error, subtitleId: id })
+      throw error
+    }
+  })
+
+  // PlayerSettings DAO
+  ipcMain.handle(IpcChannel.DB_PlayerSettings_Get, async (_, videoId: number) => {
+    try {
+      const result = await db.playerSettings.getPlayerSettingsByVideoId(videoId)
+      logger.debug('Player settings retrieved:', { videoId, found: !!result })
+      return result
+    } catch (error) {
+      logger.error('Failed to get player settings:', { error, videoId })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_PlayerSettings_Save, async (_, videoId: number, settings: any) => {
+    try {
+      const result = await db.playerSettings.savePlayerSettings(videoId, settings)
+      logger.info('Player settings saved:', { videoId })
+      return result
+    } catch (error) {
+      logger.error('Failed to save player settings:', { error, videoId })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_PlayerSettings_Delete, async (_, videoId: number) => {
+    try {
+      const result = await db.playerSettings.deletePlayerSettings(videoId)
+      const deleted = Number(result.numDeletedRows || 0) > 0
+      logger.info('Player settings deleted:', { videoId, deleted })
+      return deleted
+    } catch (error) {
+      logger.error('Failed to delete player settings:', { error, videoId })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_PlayerSettings_GetByVideoIds, async (_, videoIds: number[]) => {
+    try {
+      const result = await db.playerSettings.getPlayerSettingsByVideoIds(videoIds)
+      logger.debug('Player settings retrieved for multiple videos:', {
+        count: videoIds.length,
+        results: result.length
+      })
+      return result
+    } catch (error) {
+      logger.error('Failed to get player settings for multiple videos:', { error, videoIds })
+      throw error
+    }
+  })
+
+  ipcMain.handle(IpcChannel.DB_PlayerSettings_Has, async (_, videoId: number) => {
+    try {
+      const result = await db.playerSettings.hasPlayerSettings(videoId)
+      logger.debug('Player settings existence check:', { videoId, exists: result })
+      return result
+    } catch (error) {
+      logger.error('Failed to check player settings existence:', { error, videoId })
       throw error
     }
   })

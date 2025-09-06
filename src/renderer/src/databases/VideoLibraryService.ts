@@ -50,12 +50,12 @@ export class VideoLibraryService {
    * 更新视频播放进度
    */
   async updateVideoPlayProgress(
-    fileId: string,
+    videoId: number,
     currentTime: number,
     isFinished?: boolean
   ): Promise<void> {
     try {
-      await window.api.db.videoLibrary.updatePlayProgress(fileId, currentTime, isFinished)
+      await window.api.db.videoLibrary.updatePlayProgress(videoId, currentTime, isFinished)
     } catch (error) {
       logger.error('Failed to update video play progress:', { error })
       throw error
@@ -65,9 +65,9 @@ export class VideoLibraryService {
   /**
    * 切换视频收藏状态
    */
-  async toggleVideoFavorite(fileId: string): Promise<void> {
+  async toggleVideoFavorite(videoId: number): Promise<void> {
     try {
-      await window.api.db.videoLibrary.toggleFavorite(fileId)
+      await window.api.db.videoLibrary.toggleFavorite(videoId)
     } catch (error) {
       logger.error('Failed to toggle video favorite:', { error })
       throw error

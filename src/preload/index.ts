@@ -1,5 +1,5 @@
 import { electronAPI } from '@electron-toolkit/preload'
-import { FileMetadataSelect } from '@main/db/schemas'
+import { FileMetadataSelect, PlayerSettingsSelect } from '@main/db/schemas'
 import { UpgradeChannel } from '@shared/config/constant'
 import { LogLevel, LogSourceWithContext } from '@shared/config/logger'
 import { IpcChannel } from '@shared/IpcChannel'
@@ -9,6 +9,8 @@ import type {
   FileMetadata,
   FileMetadataInsert,
   FileMetadataRecord,
+  PlayerSettingsInsert,
+  PlayerSettingsUpdate,
   SubtitleLibraryInsert,
   SubtitleLibraryRecord,
   VideoLibraryInsert,
@@ -330,19 +332,19 @@ const api = {
         ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_GetFavorites),
 
       updatePlayProgress: (
-        fileId: string,
+        videoId: number,
         currentTime: number,
         isFinished?: boolean
       ): Promise<void> =>
         ipcRenderer.invoke(
           IpcChannel.DB_VideoLibrary_UpdatePlayProgress,
-          fileId,
+          videoId,
           currentTime,
           isFinished
         ),
 
-      toggleFavorite: (fileId: string): Promise<void> =>
-        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_ToggleFavorite, fileId),
+      toggleFavorite: (videoId: number): Promise<void> =>
+        ipcRenderer.invoke(IpcChannel.DB_VideoLibrary_ToggleFavorite, videoId),
 
       getRecords: (params?: {
         limit?: number
@@ -408,6 +410,27 @@ const api = {
 
       delete: (id: number): Promise<void> =>
         ipcRenderer.invoke(IpcChannel.DB_SubtitleLibrary_Delete, id)
+    },
+
+    // 播放器设置 DAO
+    playerSettings: {
+      get: (videoId: number): Promise<PlayerSettingsSelect | null> =>
+        ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Get, videoId),
+
+      save: (
+        videoId: number,
+        settings: PlayerSettingsInsert | PlayerSettingsUpdate
+      ): Promise<PlayerSettingsSelect> =>
+        ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Save, videoId, settings),
+
+      delete: (videoId: number): Promise<boolean> =>
+        ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Delete, videoId),
+
+      getByVideoIds: (videoIds: number[]): Promise<PlayerSettingsSelect[]> =>
+        ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_GetByVideoIds, videoIds),
+
+      has: (videoId: number): Promise<boolean> =>
+        ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Has, videoId)
     }
   }
   // Binary related APIs

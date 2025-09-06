@@ -3,6 +3,7 @@ import type { DB } from 'packages/shared/schema'
 
 import { getKysely } from '../index'
 import { FileDAO } from './FileDAO'
+import { PlayerSettingsDAO } from './PlayerSettingsDAO'
 import { SubtitleLibraryDAO } from './SubtitleLibraryDAO'
 import { VideoLibraryDAO } from './VideoLibraryDAO'
 
@@ -13,12 +14,14 @@ export class DatabaseService {
   public files: FileDAO
   public videoLibrary: VideoLibraryDAO
   public subtitleLibrary: SubtitleLibraryDAO
+  public playerSettings: PlayerSettingsDAO
 
   constructor(db?: Kysely<DB>) {
     const kysely = db || getKysely()
     this.files = new FileDAO(kysely)
     this.videoLibrary = new VideoLibraryDAO(kysely)
     this.subtitleLibrary = new SubtitleLibraryDAO(kysely)
+    this.playerSettings = new PlayerSettingsDAO(kysely)
   }
 
   /**

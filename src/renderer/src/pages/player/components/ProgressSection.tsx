@@ -7,6 +7,10 @@ import styled from 'styled-components'
 
 import { usePlayerCommands } from '../hooks/usePlayerCommands'
 
+const formatProgress = (currentTime: number, duration: number): string => {
+  return `${formatTime(currentTime)} / ${formatTime(duration)}`
+}
+
 /**
  * 独立的进度条 + 时间显示组件
  */
@@ -67,13 +71,10 @@ function ProgressSection() {
         onChange={handleProgressChange}
         onChangeComplete={handleDragEnd}
         tooltip={{
-          formatter: (value) => formatTime(value || 0)
+          formatter: (value) => formatProgress(value || 0, duration || 0)
         }}
         disabled={!duration}
       />
-      <TimeDisplaySpan>
-        {formatTime(currentTime)} / {formatTime(duration)}
-      </TimeDisplaySpan>
     </ProgressRow>
   )
 }
@@ -131,15 +132,4 @@ const ProgressRow = styled.div`
       }
     }
   }
-`
-
-const TimeDisplaySpan = styled.span`
-  min-width: 100px;
-  text-align: center;
-  color: var(--color-text-2);
-  font-size: 13px;
-  font-weight: 500;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-  flex-shrink: 0;
-  padding: 4px 8px;
 `

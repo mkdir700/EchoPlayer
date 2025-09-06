@@ -81,5 +81,33 @@ export const DEFAULT_SHORTCUTS: Shortcut[] = [
     editable: false,
     enabled: true,
     system: true
+  },
+  {
+    key: 'subtitle_mode_none',
+    shortcut: ['CommandOrControl', '1'],
+    editable: true,
+    enabled: true,
+    system: false
+  },
+  {
+    key: 'subtitle_mode_original',
+    shortcut: ['CommandOrControl', '2'],
+    editable: true,
+    enabled: true,
+    system: false
+  },
+  {
+    key: 'subtitle_mode_translated',
+    shortcut: ['CommandOrControl', '3'],
+    editable: true,
+    enabled: true,
+    system: false
+  },
+  {
+    key: 'subtitle_mode_bilingual',
+    shortcut: ['CommandOrControl', '4'],
+    editable: true,
+    enabled: true,
+    system: false
   }
 ]
