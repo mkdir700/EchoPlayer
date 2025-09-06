@@ -1,6 +1,6 @@
 {
   "name": "echoplayer",
-  "version": "1.0.0-alpha.1",
+  "version": "0.1.0-alpha.1",
   "description": "EchoPlayer is a video player designed for language learners, helping users learn foreign languages efficiently through sentence-by-sentence intensive listening.",
   "main": "./out/main/index.js",
   "author": "echoplayer.cc",
@@ -80,7 +80,6 @@
     "react-hotkeys-hook": "^5.1.0",
     "react-player": "^2.16.1",
     "react-virtualized": "^9.22.6",
-    "zod": "^4.1.5",
     "zustand": "^5.0.6"
   },
   "devDependencies": {
@@ -132,6 +131,7 @@
     "lucide-react": "^0.536.0",
     "msw": "^2.10.4",
     "openai": "^5.11.0",
+    "p-queue": "^8.1.0",
     "prettier": "^3.6.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -147,7 +147,8 @@
     "vite": "^6.3.5",
     "vitest": "^2.1.9",
     "winston-daily-rotate-file": "^5.0.0",
-    "yaml": "^2.8.0"
+    "yaml": "^2.8.0",
+    "zod": "^3.25.74"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

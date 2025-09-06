@@ -77,7 +77,7 @@ npmRebuild: false
 publish:
   provider: github
   owner: mkdir700
-  repo: echoplayer
+  repo: EchoPlayer
   vPrefixedTagName: true
   releaseType: draft
   publishAutoUpdate: true

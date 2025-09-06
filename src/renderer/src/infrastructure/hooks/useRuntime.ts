@@ -1,4 +1,5 @@
 import { type UpdateState, useRuntimeStore } from '@renderer/state/stores/runtime'
+import { UpdateInfo } from 'electron-updater'
 
 /**
  * Runtime hook that provides convenient access to runtime state and actions
@@ -70,7 +71,7 @@ export function useRuntime() {
     /**
      * Set update info from electron updater
      */
-    setUpdateInfo: (info: any) => {
+    setUpdateInfo: (info: UpdateInfo) => {
       store.setUpdateInfo(info)
     },
 

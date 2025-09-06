@@ -73,11 +73,13 @@ export default class AppUpdater {
     this.autoUpdater = autoUpdater
   }
 
-  private async _getPreReleaseVersionFromGithub(channel: UpgradeChannel) {
+  private async _getPreReleaseVersionFromGithub(
+    channel: UpgradeChannel
+  ): Promise<GithubReleaseInfo | null> {
     try {
       logger.info('get pre release version from github', channel)
       const responses = await fetch(
-        'https://api.github.com/repos/mkdir700/echoplayer/releases?per_page=8',
+        'https://api.github.com/repos/mkdir700/EchoPlayer/releases?per_page=8',
         {
           headers: {
             Accept: 'application/vnd.github+json',
@@ -92,13 +94,7 @@ export default class AppUpdater {
       })
 
       logger.info('release info', release)
-
-      if (!release) {
-        return null
-      }
-
-      logger.info('release info', release.tag_name)
-      return `https://github.com/mkdir700/echoplayer/releases/download/${release.tag_name}`
+      return release ? release : null
     } catch (error) {
       logger.error('Failed to get latest not draft version from github:', error)
       return null
@@ -144,7 +140,7 @@ export default class AppUpdater {
     return UpgradeChannel.LATEST
   }
 
-  private _getTestChannel() {
+  private _getTestChannel(): UpgradeChannel {
     const currentChannel = this._getChannelByVersion(app.getVersion())
     const savedChannel = configManager.getTestChannel()
 
@@ -160,37 +156,64 @@ export default class AppUpdater {
     return UpgradeChannel.LATEST
   }
 
-  private async _setFeedUrl() {
-    const testPlan = configManager.getTestPlan()
-    if (testPlan) {
-      const channel = this._getTestChannel()
+  private async _setFeedUrl(
+    channel: UpgradeChannel,
+    testPlan: boolean,
+    release: GithubReleaseInfo | null = null
+  ) {
+    logger.info('Setting feed URL - testPlan:', testPlan)
+    if (channel === UpgradeChannel.LATEST) {
+      this.autoUpdater.channel = UpgradeChannel.LATEST
+      this.autoUpdater.setFeedURL(FeedUrl.GITHUB_LATEST)
+      logger.info('Using GitHub latest releases for test plan')
+      return
+    }
 
-      if (channel === UpgradeChannel.LATEST) {
-        this.autoUpdater.channel = UpgradeChannel.LATEST
-        this.autoUpdater.setFeedURL(FeedUrl.GITHUB_LATEST)
-        return
-      }
-
-      const preReleaseUrl = await this._getPreReleaseVersionFromGithub(channel)
+    if (testPlan && release) {
+      const preReleaseUrl = `https://github.com/mkdir700/EchoPlayer/releases/download/${release.tag_name}`
       if (preReleaseUrl) {
         this.autoUpdater.setFeedURL(preReleaseUrl)
-        this.autoUpdater.channel = channel
+        // Keep channel as 'latest' because GitHub releases only have latest-mac.yml, not alpha-mac.yml
+        this.autoUpdater.channel = UpgradeChannel.LATEST
+        logger.info(
+          `Using pre-release URL: ${preReleaseUrl} with channel: ${UpgradeChannel.LATEST}`
+        )
         return
       }
 
       // if no prerelease url, use lowest prerelease version to avoid error
+      logger.warn('No prerelease URL found, falling back to lowest prerelease version')
       this.autoUpdater.setFeedURL(FeedUrl.PRERELEASE_LOWEST)
       this.autoUpdater.channel = UpgradeChannel.LATEST
       return
     }
 
+    // Production mode
     this.autoUpdater.channel = UpgradeChannel.LATEST
     this.autoUpdater.setFeedURL(FeedUrl.PRODUCTION)
+    logger.info('Using production feed URL')
 
     const ipCountry = await this._getIpCountry()
-    logger.info('ipCountry', ipCountry)
+    logger.info('Detected IP country:', ipCountry)
     if (ipCountry.toLowerCase() !== 'cn') {
       this.autoUpdater.setFeedURL(FeedUrl.GITHUB_LATEST)
+      logger.info('Using GitHub releases for non-CN region')
+    }
+  }
+
+  public async downloadUpdate() {
+    if (!this.updateCheckResult?.isUpdateAvailable) {
+      logger.warn('No update available to download')
+      return false
+    }
+
+    try {
+      logger.info('Starting manual download of update')
+      await this.autoUpdater.downloadUpdate(this.cancellationToken)
+      return true
+    } catch (error) {
+      logger.error('Failed to download update:', error)
+      return false
     }
   }
 
@@ -210,7 +233,12 @@ export default class AppUpdater {
       }
     }
 
-    await this._setFeedUrl()
+    const channel = this._getTestChannel()
+    const releaseInfo = await this._getPreReleaseVersionFromGithub(channel)
+    const testPlan = configManager.getTestPlan()
+    logger.info('Check for updates - testPlan:', testPlan, 'releaseInfo:', releaseInfo)
+
+    await this._setFeedUrl(channel, testPlan, releaseInfo)
 
     // disable downgrade after change the channel
     this.autoUpdater.allowDowngrade = false
@@ -225,6 +253,11 @@ export default class AppUpdater {
         // do not use await, because it will block the return of this function
         logger.info('downloadUpdate manual by check for updates', this.cancellationToken)
         this.autoUpdater.downloadUpdate(this.cancellationToken)
+      }
+
+      const updateInfo = this.updateCheckResult?.updateInfo
+      if (updateInfo && !updateInfo.releaseNotes) {
+        updateInfo.releaseNotes = releaseInfo?.body || 'No release notes available'
       }
 
       return {
@@ -286,9 +319,24 @@ export default class AppUpdater {
   }
 }
 interface GithubReleaseInfo {
+  id: number
+  tag_name: string
+  name: string
+  body: string
   draft: boolean
   prerelease: boolean
-  tag_name: string
+  created_at: string
+  published_at: string | null
+  html_url: string
+  assets: Array<{
+    id: number
+    name: string
+    browser_download_url: string
+    content_type: string
+    size: number
+    download_count: number
+    created_at: string
+  }>
 }
 interface ReleaseNoteInfo {
   readonly version: string

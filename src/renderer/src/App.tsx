@@ -1,5 +1,5 @@
 import { loggerService } from '@logger'
-import { AntdProvider, ThemeProvider } from '@renderer/contexts'
+import { AntdProvider, NotificationProvider, ThemeProvider } from '@renderer/contexts'
 import { configSyncService } from '@renderer/services'
 import React, { useEffect, useState } from 'react'
 
@@ -63,15 +63,17 @@ function App(): React.JSX.Element {
   return (
     <ThemeProvider>
       <AntdProvider>
-        <TopViewContainer>
-          <Router />
-          <SearchOverlay />
-          <SplashScreen
-            isVisible={splashVisible}
-            isExiting={splashExiting}
-            onAnimationEnd={handleSplashAnimationEnd}
-          />
-        </TopViewContainer>
+        <NotificationProvider>
+          <TopViewContainer>
+            <Router />
+            <SearchOverlay />
+            <SplashScreen
+              isVisible={splashVisible}
+              isExiting={splashExiting}
+              onAnimationEnd={handleSplashAnimationEnd}
+            />
+          </TopViewContainer>
+        </NotificationProvider>
       </AntdProvider>
     </ThemeProvider>
   )

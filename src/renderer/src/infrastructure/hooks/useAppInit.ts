@@ -1,5 +1,4 @@
 // import { loggerService } from '@logger'
-// import useUpdateHandler from './useUpdateHandler'
 import { useTheme } from '@renderer/contexts'
 import i18n from '@renderer/i18n'
 import { defaultLanguage } from '@shared/config/constant'
@@ -10,6 +9,7 @@ import { isMac } from '../constants'
 // import useFullScreenNotice from './useFullScreenNotice'
 // import { useRuntime } from './useRuntime'
 import { useSettings } from './useSettings'
+import useUpdateHandler from './useUpdateHandler'
 
 // const logger = loggerService.withContext('useAppInit')
 
@@ -40,7 +40,7 @@ export function useAppInit() {
   //   })
   // }, [])
 
-  // useUpdateHandler()
+  useUpdateHandler()
   // useFullScreenNotice()
 
   useEffect(() => {

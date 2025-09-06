@@ -60,10 +60,20 @@ const AboutSettings: FC = () => {
       try {
         await window.api.checkForUpdate()
       } catch (error) {
+        logger.error('Check for update failed:', { error })
         window.message.error(t('settings.about.updateError'))
+        // Reset state on error
+        setUpdateState({
+          checking: false,
+          available: false,
+          downloading: false,
+          downloaded: false,
+          downloadProgress: 0
+        })
       }
 
-      setUpdateState({ checking: false })
+      // Note: Don't set checking: false here anymore,
+      // let the IPC event handlers manage the state
     },
     2000,
     { leading: true, trailing: false }

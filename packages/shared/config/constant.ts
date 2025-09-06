@@ -7,9 +7,9 @@ export const GB = 1024 * MB
 export const defaultLanguage = 'zh-CN'
 
 export enum FeedUrl {
-  PRODUCTION = 'https://releases.cherry-ai.com',
-  GITHUB_LATEST = 'https://github.com/CherryHQ/cherry-studio/releases/latest/download',
-  PRERELEASE_LOWEST = 'https://github.com/CherryHQ/cherry-studio/releases/download/v1.4.0'
+  PRODUCTION = 'https://releases.echoplayer.cc',
+  GITHUB_LATEST = 'https://github.com/mkdir700/EchoPlayer/releases/latest/download',
+  PRERELEASE_LOWEST = 'https://github.com/mkdir700/EchoPlayer/releases/download/v0.1.0'
 }
 
 export enum UpgradeChannel {
