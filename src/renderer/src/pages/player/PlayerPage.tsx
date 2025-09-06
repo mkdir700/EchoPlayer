@@ -1,23 +1,41 @@
 import { loggerService } from '@logger'
-import { Navbar, NavbarCenter, NavbarLeft } from '@renderer/components/app/Navbar'
+import { Navbar, NavbarCenter, NavbarLeft, NavbarRight } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
 import { VideoLibraryService } from '@renderer/services'
 import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
 import { playerSettingsPersistenceService } from '@renderer/services/PlayerSettingsSaver'
 import { usePlayerStore } from '@renderer/state'
 import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
-import { Splitter, Tooltip } from 'antd'
-import { ArrowLeft } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Layout, Tooltip } from 'antd'
+
+const { Content, Sider } = Layout
+import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 
 import { NavbarIcon } from '.'
-import { ControllerPanel, SettingsPopover, SubtitleListPanel, VideoSurface } from './components'
+import {
+  ControllerPanel,
+  ProgressBar,
+  SettingsPopover,
+  SubtitleListPanel,
+  VideoSurface
+} from './components'
 import { PlayerPageProvider } from './state/player-page.provider'
 
 const logger = loggerService.withContext('PlayerPage')
+
+// 浏览器兼容的文件路径转换函数
+function toFileUrl(filePath: string): string {
+  if (!filePath) return ''
+  if (filePath.startsWith('file://')) return filePath
+
+  // 处理Windows路径
+  const normalizedPath = filePath.replace(/\\/g, '/')
+  return `file://${normalizedPath.startsWith('/') ? '' : '/'}${normalizedPath}`
+}
 
 interface VideoData {
   id: number
@@ -56,8 +74,8 @@ function PlayerPage() {
     return isNaN(parsed) ? 0 : parsed
   }, [id])
 
-  const [splitterSizes, setSplitterSizes] = useState<[number, number]>([70, 30])
   const { t } = useTranslation()
+  const { subtitlePanelVisible, toggleSubtitlePanel } = usePlayerStore()
 
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -66,9 +84,12 @@ function PlayerPage() {
 
   // 加载视频数据
   useEffect(() => {
+    let cancelled = false
     const loadData = async () => {
-      if (!id) {
+      setLoading(true)
+      if (!videoId) {
         setError('无效的视频 ID')
+        setVideoData(null)
         setLoading(false)
         return
       }
@@ -76,10 +97,7 @@ function PlayerPage() {
       try {
         setError(null)
 
-        const videoId = parseInt(id, 10)
-        if (isNaN(videoId)) {
-          throw new Error('无效的视频 ID')
-        }
+        // 使用上面已计算的 videoId
 
         const videoLibService = new VideoLibraryService()
         const record = await videoLibService.getRecordById(videoId)
@@ -97,8 +115,8 @@ function PlayerPage() {
 
         logger.info(`从数据库加载视频文件:`, { file })
 
-        // 将 path 转为 file:// URL
-        const fileUrl = new URL(`file://${file.path}`).href
+        // 将 path 转为 file:// URL (Windows-safe)
+        const fileUrl = toFileUrl(file.path)
 
         // 构造页面所需的视频数据
         const vd = {
@@ -107,42 +125,36 @@ function PlayerPage() {
           src: fileUrl,
           duration: record.duration
         } as const
-        setVideoData(vd)
+        if (!cancelled) setVideoData(vd)
         // 同步到全局会话 store，供任意组件访问
-        usePlayerSessionStore.getState().setVideo(vd)
+        if (!cancelled) usePlayerSessionStore.getState().setVideo(vd)
         // 注入播放器设置
-        usePlayerStore.getState().loadSettings(playerSettings)
+        if (playerSettings) {
+          usePlayerStore.getState().loadSettings(playerSettings)
+        }
         // 监听设置和视频进度变化
         playerSettingsPersistenceService.attach(videoId)
         logger.info('已加载视频数据:', { vd, playerSettings })
-        setLoading(true)
       } catch (err) {
         logger.error(`加载视频数据失败: ${err}`)
         setError(err instanceof Error ? err.message : '加载失败')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     loadData()
     return () => {
+      cancelled = true
       // 页面卸载时清理会话态
       usePlayerSessionStore.getState().clear()
       playerSettingsPersistenceService.detach()
     }
-  }, [id])
+  }, [videoId])
 
   const handleVideoError = (errorMessage: string) => {
     setError(errorMessage)
   }
-
-  // 处理 Splitter 尺寸变化（仅在尺寸实际变化时更新，避免无效重复渲染）
-  const handleSplitterResize = useCallback((sizes: number[]) => {
-    if (sizes.length >= 2) {
-      const next: [number, number] = [sizes[0], sizes[1]]
-      setSplitterSizes((prev) => (prev[0] === next[0] && prev[1] === next[1] ? prev : next))
-    }
-  }, [])
 
   if (loading) {
     return (
@@ -165,7 +177,7 @@ function PlayerPage() {
     )
   }
 
-  if (!videoData || videoId === undefined) {
+  if (!videoData) {
     return (
       <Container>
         <ErrorContainer>
@@ -190,31 +202,58 @@ function PlayerPage() {
           <NavbarCenter>
             <NavTitle title={videoData.title}>{videoData.title}</NavTitle>
           </NavbarCenter>
+          <NavbarRight>
+            <Tooltip
+              title={
+                subtitlePanelVisible
+                  ? t('player.subtitles.hide', '隐藏字幕列表')
+                  : t('player.subtitles.show', '显示字幕列表')
+              }
+            >
+              <NavbarIcon onClick={toggleSubtitlePanel}>
+                {subtitlePanelVisible ? (
+                  <PanelRightClose size={18} />
+                ) : (
+                  <PanelRightOpen size={18} />
+                )}
+              </NavbarIcon>
+            </Tooltip>
+          </NavbarRight>
         </Navbar>
         <ContentContainer id="content-container">
           <ContentBody>
             <MainArea>
-              <Splitter
-                layout="horizontal"
-                onResize={handleSplitterResize}
-                style={{ height: '100%' }}
-              >
-                <Splitter.Panel defaultSize={`${splitterSizes[0]}%`} min="40%" max="80%">
+              <Layout style={{ height: '100%' }}>
+                <Content>
                   <LeftMain>
                     <VideoStage>
                       <VideoSurface src={videoData.src} onError={handleVideoError} />
                     </VideoStage>
+                    <ProgressBarArea>
+                      <ProgressBar />
+                    </ProgressBarArea>
                     <BottomBar>
                       <ControllerPanel />
                     </BottomBar>
                   </LeftMain>
-                </Splitter.Panel>
-                <Splitter.Panel defaultSize={`${splitterSizes[1]}%`} min="20%" max="60%">
+                </Content>
+                <Sider
+                  width="30%"
+                  collapsedWidth={0}
+                  collapsed={!subtitlePanelVisible}
+                  trigger={null}
+                  collapsible={false}
+                  style={{
+                    background: 'transparent',
+                    overflow: 'hidden',
+                    flexShrink: 0
+                  }}
+                >
                   <RightSidebar>
                     <SubtitleListPanel />
                   </RightSidebar>
-                </Splitter.Panel>
-              </Splitter>
+                </Sider>
+              </Layout>
             </MainArea>
           </ContentBody>
           <SettingsPopover />
@@ -310,10 +349,25 @@ const MainArea = styled.div`
   box-sizing: border-box;
   overflow: hidden;
 
-  /* Splitter 组件会处理布局 */
-  .ant-splitter {
-    width: 100%;
-    height: 100%;
+  /* Antd Layout 组件样式 */
+  .ant-layout {
+    background: transparent;
+  }
+
+  .ant-layout-content {
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .ant-layout-sider {
+    background: transparent !important;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .ant-layout-sider-collapsed {
+    min-width: 0 !important;
+    max-width: 0 !important;
+    width: 0 !important;
   }
 
   /* 小屏幕时的单列布局样式 */
@@ -337,7 +391,7 @@ const VideoStage = styled.div`
   width: 100%;
   flex: 1;
   min-height: 0;
-  border-radius: var(--panel-radius, 12px) 0 0 0;
+  border-radius: 0;
   background: #000;
   overflow: hidden;
 `
@@ -366,7 +420,12 @@ const RightSidebar = styled.aside`
   }
 `
 
+const ProgressBarArea = styled.div`
+  flex: 0 0 auto;
+  background: transparent;
+  position: relative;
+`
+
 const BottomBar = styled.div`
   flex: 0 0 auto;
-  padding: 0;
 `

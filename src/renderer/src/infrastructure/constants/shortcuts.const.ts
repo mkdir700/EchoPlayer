@@ -109,5 +109,12 @@ export const DEFAULT_SHORTCUTS: Shortcut[] = [
     editable: true,
     enabled: true,
     system: false
+  },
+  {
+    key: 'toggle_subtitle_panel',
+    shortcut: ['CommandOrControl', 'BracketRight'],
+    editable: true,
+    enabled: true,
+    system: false
   }
 ]
