@@ -204,11 +204,7 @@ function PlayerPage() {
           </NavbarCenter>
           <NavbarRight>
             <Tooltip
-              title={
-                subtitlePanelVisible
-                  ? t('player.subtitles.hide', '隐藏字幕列表')
-                  : t('player.subtitles.show', '显示字幕列表')
-              }
+              title={subtitlePanelVisible ? t('player.subtitles.hide') : t('player.subtitles.show')}
             >
               <NavbarIcon onClick={toggleSubtitlePanel}>
                 {subtitlePanelVisible ? (

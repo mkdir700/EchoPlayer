@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid'
+
 export * from './file'
 
 /**
@@ -8,3 +10,5 @@ export * from './file'
 export const runAsyncFunction = async (fn: () => void): Promise<void> => {
   await fn()
 }
+
+export const uuid = () => uuidv4()

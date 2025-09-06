@@ -1,9 +1,14 @@
 {
+  "button": {
+    "update_available": "有可用更新"
+  },
   "common": {
+    "cancel": "取消",
     "favorites": "收藏",
     "grid_view": "矩阵视图",
     "home": "主页",
     "language": "语言",
+    "later": "稍后",
     "list_view": "列表视图",
     "return": "返回",
     "search": "搜索",
@@ -41,6 +46,12 @@
       "list": "列表"
     }
   },
+  "player": {
+    "subtitles": {
+      "hide": "隐藏字幕列表",
+      "show": "展开字幕列表"
+    }
+  },
   "settings": {
     "about": {
       "checkUpdate": {
@@ -51,20 +62,33 @@
         "button": "发送邮件",
         "title": "联系支持"
       },
+      "currentVersion": "当前版本",
       "debug": {
         "open": "打开开发工具",
         "title": "开发者工具"
       },
       "description": "EchoPlayer 是为语言学习者设计的视频播放器",
+      "downloadFailed": "下载失败，请重试",
+      "downloadNow": "立即下载",
+      "downloadUpdate": {
+        "label": "点击更新"
+      },
       "downloading": "下载中...",
+      "downloadingProgress": "正在下载更新，请稍候...",
+      "downloadingUpdate": "正在下载更新 {{version}}",
       "feedback": {
         "button": "报告问题",
         "title": "问题反馈"
       },
+      "installNow": "立即安装",
       "license": {
         "button": "查看许可证",
         "title": "许可证"
       },
+      "newVersion": "新版本",
+      "noReleaseNotes": "暂无更新说明",
+      "readyToInstall": "更新已就绪 {{version}}",
+      "releaseNotes": "更新日志",
       "releases": {
         "button": "查看发行说明",
         "title": "发行说明"
@@ -72,6 +96,7 @@
       "title": "关于我们",
       "updateAvailable": "发现更新 {{version}}",
       "updateError": "更新检查失败",
+      "updateNotAvailable": "当前已是最新版本",
       "website": {
         "button": "访问网站",
         "title": "官方网站"

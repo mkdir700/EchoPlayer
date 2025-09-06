@@ -1,7 +1,21 @@
 appId: cc.echoplayer.app
 productName: EchoPlayer
+electronLanguages:
+  - zh-CN
+  - zh-TW
+  - en-US
+  - ja # macOS/linux/win
+  - ru # macOS/linux/win
+  - zh_CN # for macOS
+  - zh_TW # for macOS
+  - en # for macOS
 directories:
   buildResources: build
+
+protocols:
+  - name: EchoPlayer
+    schemes:
+      - echoplayer
 icon: icons
 files:
   - '!**/.vscode/*'
@@ -10,28 +24,53 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!docs'
+  - '!scripts'
+  - '!.swc'
+  - '!.bin'
+  - '!*.log'
+  - '!*.md'
+  - '!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}'
+  - '!**/*.{map,ts,tsx,jsx,less,scss,sass,css.d.ts,d.cts,d.mts,md,markdown,yaml,yml}'
+  - '!**/{test,tests,__tests__,powered-test,coverage}/**'
+  - '!**/{example,examples}/**'
+  - '!**/*.{spec,test}.{js,jsx,ts,tsx}'
+  - '!**/*.min.*.map'
+  - '!**/*.d.ts'
+  - '!**/dist/es6/**'
+  - '!**/dist/demo/**'
+  - '!**/*.{h,iobj,ipdb,tlog,recipe,vcxproj,vcxproj.filters,Makefile,*.Makefile}' # filter .node build files
+  - '!**/{.DS_Store,Thumbs.db,thumbs.db,__pycache__}'
 asarUnpack:
   - resources/**
-asar: true
+  - '**/*.{metal,exp,lib}'
 copyright: Copyright © 2025 EchoPlayer
 win:
   executableName: EchoPlayer
   icon: icons/win/icon.ico
-  artifactName: ${productName}-${version}-${arch}.${ext}
+  artifactName: ${productName}-${version}-${arch}-setup.${ext}
   target:
     - target: nsis
       arch:
         - x64
-        - arm64
+    - target: portable
+      arch:
+        - x64
+  signtoolOptions:
+    sign: scripts/win-sign.js
+  verifyUpdateCodeSignature: false
 nsis:
-  oneClick: false
-  perMachine: false
-  allowToChangeInstallationDirectory: true
-  deleteAppDataOnUninstall: true
   artifactName: ${productName}-${version}-${arch}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  allowToChangeInstallationDirectory: true
+  oneClick: false
+  include: build/nsis-installer.nsh
+  buildUniversalInstaller: false
+portable:
+  artifactName: ${productName}-${version}-${arch}-portable.${ext}
+  buildUniversalInstaller: false
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   icon: icons/mac/icon.icns
@@ -69,15 +108,15 @@ linux:
   category: Education
   icon: icons/png
   artifactName: ${productName}-${version}-${arch}.${ext}
-appImage:
-  artifactName: ${productName}-${version}-${arch}.${ext}
-deb:
-  artifactName: ${productName}-${version}-${arch}.${ext}
-npmRebuild: false
+  desktop:
+    entry:
+      StartupWMClass: EchoPlayer
+  mimeTypes:
+    - x-scheme-handler/echoplayer
 publish:
   provider: github
   owner: mkdir700
-  repo: echoplayer
+  repo: EchoPlayer
   vPrefixedTagName: true
   releaseType: draft
   publishAutoUpdate: true

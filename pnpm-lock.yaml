@@ -65,9 +65,6 @@ importers:
       react-virtualized:
         specifier: ^9.22.6
         version: 9.22.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      zod:
-        specifier: ^4.1.5
-        version: 4.1.5
       zustand:
         specifier: ^5.0.6
         version: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)
@@ -215,7 +212,10 @@ importers:
         version: 2.10.5(@types/node@22.18.0)(typescript@5.9.2)
       openai:
         specifier: ^5.11.0
-        version: 5.16.0(ws@8.18.3)(zod@4.1.5)
+        version: 5.16.0(ws@8.18.3)(zod@3.25.74)
+      p-queue:
+        specifier: ^8.1.0
+        version: 8.1.0
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -264,6 +264,9 @@ importers:
       yaml:
         specifier: ^2.8.0
         version: 2.8.1
+      zod:
+        specifier: ^3.25.74
+        version: 3.25.74
 
 packages:
 
@@ -4330,6 +4333,14 @@ packages:
     resolution: {integrity: sha512-/bjOqmgETBYB5BoEeGVea8dmvHb2m9GLy1E9W43yeyfP6QQCZGFNa+XRceJEuDB6zqr+gKpIAmlLebMpykw/MQ==}
     engines: {node: '>=10'}
 
+  p-queue@8.1.0:
+    resolution: {integrity: sha512-mxLDbbGIBEXTJL0zEx8JIylaj3xQ7Z/7eEVjcF9fJX4DBiH9oqe+oahYnlKKxm0Ci9TlWTyhSHgygxMxjIB2jw==}
+    engines: {node: '>=18'}
+
+  p-timeout@6.1.4:
+    resolution: {integrity: sha512-MyIV3ZA/PmyBN/ud8vV9XzwTrNtR4jFrObymZYnZqMmW0zA8Z17vnT0rBgFE/TlohB+YCHqXMgZzb3Csp49vqg==}
+    engines: {node: '>=14.16'}
+
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
@@ -6048,6 +6059,9 @@ packages:
   yoctocolors-cjs@2.1.3:
     resolution: {integrity: sha512-U/PBtDf35ff0D8X8D0jfdzHYEPFxAI7jJlxZXwCSez5M3190m+QobIfh+sWDWSHMCWWJN2AWamkegn6vr6YBTw==}
     engines: {node: '>=18'}
+
+  zod@3.25.74:
+    resolution: {integrity: sha512-J8poo92VuhKjNknViHRAIuuN6li/EwFbAC8OedzI8uxpEPGiXHGQu9wemIAioIpqgfB4SySaJhdk0mH5Y4ICBg==}
 
   zod@4.1.5:
     resolution: {integrity: sha512-rcUUZqlLJgBC33IT3PNMgsCq6TzLQEG/Ei/KTCU0PedSWRMAXoOUN+4t/0H+Q8bdnLPdqUYnvboJT0bn/229qg==}
@@ -10883,10 +10897,10 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  openai@5.16.0(ws@8.18.3)(zod@4.1.5):
+  openai@5.16.0(ws@8.18.3)(zod@3.25.74):
     optionalDependencies:
       ws: 8.18.3
-      zod: 4.1.5
+      zod: 3.25.74
 
   optionator@0.9.4:
     dependencies:
@@ -10944,6 +10958,13 @@ snapshots:
   p-map@4.0.0:
     dependencies:
       aggregate-error: 3.1.0
+
+  p-queue@8.1.0:
+    dependencies:
+      eventemitter3: 5.0.1
+      p-timeout: 6.1.4
+
+  p-timeout@6.1.4: {}
 
   package-json-from-dist@1.0.1: {}
 
@@ -12893,6 +12914,8 @@ snapshots:
   yocto-queue@1.2.1: {}
 
   yoctocolors-cjs@2.1.3: {}
+
+  zod@3.25.74: {}
 
   zod@4.1.5: {}
 

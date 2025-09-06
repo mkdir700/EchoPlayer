@@ -403,9 +403,6 @@ const OverlayContainer = styled.div<{
   min-height: 60px;
   max-height: 200px;
 
-  /* 层级控制 */
-  z-index: ${(props) => (props.$isDragging ? 1100 : 1000)};
-
   /* 基础样式 */
   pointer-events: auto;
   user-select: none;

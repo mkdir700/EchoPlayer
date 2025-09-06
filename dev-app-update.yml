@@ -3,11 +3,11 @@
 # This file is used to test update functionality in development environment without actual packaging
 
 # 使用本地服务器进行测试 / Use local server for testing
-provider: generic
-url: http://localhost:8384
-channel: latest
-# 备用配置：使用 GitHub 进行测试 / Alternative config: use GitHub for testing
-# provider: github
-# repo: echoplayer
-# owner: mkdir700
-# updaterCacheDirName: echoplayer-updater
+# provider: generic
+# url: http://localhost:8384
+# channel: latest
+
+provider: github
+repo: EchoPlayer
+owner: mkdir700
+updaterCacheDirName: echoplayer-updater
