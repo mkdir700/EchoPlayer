@@ -21,6 +21,13 @@ export interface RuntimeState {
 export interface RuntimeActions {
   setUpdateInfo: (info: UpdateInfo | null) => void
   setFilePath: (path: string) => void
+  setUpdateState: (updates: Partial<UpdateState>) => void
+  setChecking: (checking: boolean) => void
+  setDownloading: (downloading: boolean) => void
+  setDownloaded: (downloaded: boolean) => void
+  setDownloadProgress: (progress: number) => void
+  setAvailable: (available: boolean) => void
+  clearUpdateState: () => void
 }
 
 export type RuntimeStore = RuntimeState & RuntimeActions
@@ -53,6 +60,48 @@ const createRuntimeStore: StateCreator<
   setFilePath: (path: string) => {
     set((state: Draft<RuntimeStore>) => {
       state.filePath = path
+    })
+  },
+  setUpdateState: (updates: Partial<UpdateState>) => {
+    set((state: Draft<RuntimeStore>) => {
+      Object.assign(state.update, updates)
+    })
+  },
+  setChecking: (checking: boolean) => {
+    set((state: Draft<RuntimeStore>) => {
+      state.update.checking = checking
+    })
+  },
+  setDownloading: (downloading: boolean) => {
+    set((state: Draft<RuntimeStore>) => {
+      state.update.downloading = downloading
+    })
+  },
+  setDownloaded: (downloaded: boolean) => {
+    set((state: Draft<RuntimeStore>) => {
+      state.update.downloaded = downloaded
+    })
+  },
+  setDownloadProgress: (progress: number) => {
+    set((state: Draft<RuntimeStore>) => {
+      state.update.downloadProgress = progress
+    })
+  },
+  setAvailable: (available: boolean) => {
+    set((state: Draft<RuntimeStore>) => {
+      state.update.available = available
+    })
+  },
+  clearUpdateState: () => {
+    set((state: Draft<RuntimeStore>) => {
+      state.update = {
+        info: null,
+        checking: false,
+        downloading: false,
+        downloaded: false,
+        downloadProgress: 0,
+        available: false
+      }
     })
   }
 })

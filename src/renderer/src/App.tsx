@@ -1,5 +1,6 @@
 import { loggerService } from '@logger'
 import { AntdProvider, ThemeProvider } from '@renderer/contexts'
+import { configSyncService } from '@renderer/services'
 import React, { useEffect, useState } from 'react'
 
 import { SearchOverlay } from './components/SearchOverlay'
@@ -28,8 +29,13 @@ function App(): React.JSX.Element {
         // - 加载用户设置
         // - 初始化数据库
         // - 检查更新等
+
+        // 同步配置从 main 进程到 renderer store
+        const configSyncPromise = configSyncService.syncAllConfigs()
+
         await Promise.all([
-          minDisplayTime
+          minDisplayTime,
+          configSyncPromise
           // 其他初始化任务...
         ])
 

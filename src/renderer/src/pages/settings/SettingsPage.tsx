@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import styled from 'styled-components'
 
+import AboutSettings from './AboutSettings'
 import { AppearanceSettings } from './AppearanceSettings'
 import GeneralSettings from './GeneralSettings'
 import PlaybackSettings from './PlaybackSettings'
@@ -63,7 +64,7 @@ export function SettingsPage(): React.JSX.Element {
             <Route path="general" element={<GeneralSettings />} />
             <Route path="shortcut" element={<ShortcutSettings />} />
             <Route path="playback" element={<PlaybackSettings />} />
-            <Route path="about" element={<div>关于页面</div>} />
+            <Route path="about" element={<AboutSettings />} />
           </Routes>
         </SettingContent>
       </ContentContainer>
