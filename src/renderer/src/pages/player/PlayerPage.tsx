@@ -1,5 +1,5 @@
 import { loggerService } from '@logger'
-import { Navbar, NavbarCenter, NavbarLeft, NavbarRight } from '@renderer/components/app/Navbar'
+import { Navbar, NavbarCenter, NavbarLeft } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
 import { VideoLibraryService } from '@renderer/services'
 import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
@@ -184,13 +184,13 @@ function PlayerPage() {
           <NavbarCenter>
             <NavTitle title={videoData.title}>{videoData.title}</NavTitle>
           </NavbarCenter>
-          <NavbarRight>
+          <PlayerNavbarRight>
             <Tooltip title={subtitlePanelVisible ? '隐藏字幕列表' : '显示字幕列表'}>
               <NavbarIcon onClick={toggleSubtitlePanel}>
                 {subtitlePanelVisible ? <ListX size={18} /> : <List size={18} />}
               </NavbarIcon>
             </Tooltip>
-          </NavbarRight>
+          </PlayerNavbarRight>
         </Navbar>
         <ContentContainer id="content-container">
           <ContentBody>
@@ -207,14 +207,15 @@ function PlayerPage() {
                   </LeftMain>
                 </Content>
                 <Sider
-                  width="25%"
+                  width={300}
                   collapsedWidth={0}
                   collapsed={!subtitlePanelVisible}
                   trigger={null}
                   collapsible={false}
                   style={{
                     background: 'transparent',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    flexShrink: 0
                   }}
                 >
                   <RightSidebar>
@@ -391,4 +392,13 @@ const RightSidebar = styled.aside`
 const BottomBar = styled.div`
   flex: 0 0 auto;
   padding: 0;
+`
+
+const PlayerNavbarRight = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  justify-content: flex-end;
+  min-width: auto;
+  flex-shrink: 0;
 `
