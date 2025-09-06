@@ -16,7 +16,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 
 import { NavbarIcon } from '.'
-import { ControllerPanel, SettingsPopover, SubtitleListPanel, VideoSurface } from './components'
+import {
+  ControllerPanel,
+  ProgressBar,
+  SettingsPopover,
+  SubtitleListPanel,
+  VideoSurface
+} from './components'
 import { PlayerPageProvider } from './state/player-page.provider'
 
 const logger = loggerService.withContext('PlayerPage')
@@ -205,6 +211,9 @@ function PlayerPage() {
                     <VideoStage>
                       <VideoSurface src={videoData.src} onError={handleVideoError} />
                     </VideoStage>
+                    <ProgressBarArea>
+                      <ProgressBar />
+                    </ProgressBarArea>
                     <BottomBar>
                       <ControllerPanel />
                     </BottomBar>
@@ -393,7 +402,12 @@ const RightSidebar = styled.aside`
   }
 `
 
+const ProgressBarArea = styled.div`
+  flex: 0 0 auto;
+  background: transparent;
+  position: relative;
+`
+
 const BottomBar = styled.div`
   flex: 0 0 auto;
-  padding: 0;
 `
