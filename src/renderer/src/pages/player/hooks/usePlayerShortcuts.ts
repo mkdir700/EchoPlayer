@@ -1,5 +1,6 @@
 import { loggerService } from '@logger'
 import { useShortcut } from '@renderer/infrastructure/hooks/useShortcust'
+import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { SubtitleDisplayMode } from '@types'
 
 import { usePlayerCommands } from './usePlayerCommands'
@@ -10,6 +11,7 @@ const logger = loggerService.withContext('TransportBar')
 export function usePlayerShortcuts() {
   const cmd = usePlayerCommands()
   const { setDisplayMode } = useSubtitleOverlay()
+  const { toggleSubtitlePanel } = usePlayerStore()
 
   useShortcut('play_pause', () => {
     cmd.playPause()
@@ -67,5 +69,11 @@ export function usePlayerShortcuts() {
   useShortcut('subtitle_mode_bilingual', () => {
     setDisplayMode(SubtitleDisplayMode.BILINGUAL)
     logger.info('字幕显示模式切换: 双语显示')
+  })
+
+  // 字幕面板切换
+  useShortcut('toggle_subtitle_panel', () => {
+    toggleSubtitlePanel()
+    logger.info('字幕面板切换')
   })
 }
