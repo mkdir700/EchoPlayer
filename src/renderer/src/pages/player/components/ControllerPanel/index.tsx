@@ -2,7 +2,6 @@ import React from 'react'
 import styled from 'styled-components'
 
 import { usePlayerShortcuts } from '../../hooks/usePlayerShortcuts'
-import ProgressSection from '../ProgressSection'
 import CaptionsButton from './controls/CaptionsButton'
 import FullscreenButton from './controls/FullscreenButton'
 import LoopControl from './controls/LoopControl'
@@ -18,9 +17,6 @@ function ControllerPanel() {
 
   return (
     <BarContainer aria-label="transport-bar">
-      {/* 进度条区域：独立组件隔离时间状态更新 */}
-      <ProgressSection />
-
       {/* 控制按钮区域：左/中/右 三段布局，复刻 v1 紧凑结构 */}
       <MainControls>
         <LeftControls>
@@ -55,7 +51,6 @@ const BarContainer = styled.div`
   min-height: fit-content;
   display: flex;
   flex-direction: column;
-  gap: 8px;
   padding: 8px 16px 16px;
   box-sizing: border-box;
   background: var(--color-group-background, var(--color-background-soft));
