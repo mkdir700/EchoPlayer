@@ -1,5 +1,3 @@
-import { pathToFileURL } from 'node:url'
-
 import { loggerService } from '@logger'
 import { Navbar, NavbarCenter, NavbarLeft, NavbarRight } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
@@ -22,6 +20,16 @@ import { ControllerPanel, SettingsPopover, SubtitleListPanel, VideoSurface } fro
 import { PlayerPageProvider } from './state/player-page.provider'
 
 const logger = loggerService.withContext('PlayerPage')
+
+// 浏览器兼容的文件路径转换函数
+function toFileUrl(filePath: string): string {
+  if (!filePath) return ''
+  if (filePath.startsWith('file://')) return filePath
+
+  // 处理Windows路径
+  const normalizedPath = filePath.replace(/\\/g, '/')
+  return `file://${normalizedPath.startsWith('/') ? '' : '/'}${normalizedPath}`
+}
 
 interface VideoData {
   id: number
@@ -70,9 +78,12 @@ function PlayerPage() {
 
   // 加载视频数据
   useEffect(() => {
+    let cancelled = false
     const loadData = async () => {
+      setLoading(true)
       if (!videoId) {
         setError('无效的视频 ID')
+        setVideoData(null)
         setLoading(false)
         return
       }
@@ -99,7 +110,7 @@ function PlayerPage() {
         logger.info(`从数据库加载视频文件:`, { file })
 
         // 将 path 转为 file:// URL (Windows-safe)
-        const fileUrl = pathToFileURL(file.path).href
+        const fileUrl = toFileUrl(file.path)
 
         // 构造页面所需的视频数据
         const vd = {
@@ -108,11 +119,13 @@ function PlayerPage() {
           src: fileUrl,
           duration: record.duration
         } as const
-        setVideoData(vd)
+        if (!cancelled) setVideoData(vd)
         // 同步到全局会话 store，供任意组件访问
-        usePlayerSessionStore.getState().setVideo(vd)
+        if (!cancelled) usePlayerSessionStore.getState().setVideo(vd)
         // 注入播放器设置
-        usePlayerStore.getState().loadSettings(playerSettings)
+        if (playerSettings) {
+          usePlayerStore.getState().loadSettings(playerSettings)
+        }
         // 监听设置和视频进度变化
         playerSettingsPersistenceService.attach(videoId)
         logger.info('已加载视频数据:', { vd, playerSettings })
@@ -120,12 +133,13 @@ function PlayerPage() {
         logger.error(`加载视频数据失败: ${err}`)
         setError(err instanceof Error ? err.message : '加载失败')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     loadData()
     return () => {
+      cancelled = true
       // 页面卸载时清理会话态
       usePlayerSessionStore.getState().clear()
       playerSettingsPersistenceService.detach()
