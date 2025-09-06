@@ -3,11 +3,14 @@
 import Sidebar from '@renderer/components/app/Sidebar'
 import { HomePage, PlayerPage, SettingsPage } from '@renderer/pages'
 import { FC, useMemo } from 'react'
-import { HashRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 
 import NavigationHandler from './infrastructure/handler/NavigationHandler'
 
-const Router: FC = () => {
+const AppContent: FC = () => {
+  const location = useLocation()
+  const isPlayerPage = location.pathname.startsWith('/player/')
+
   const routes = useMemo(() => {
     return (
       <Routes>
@@ -19,10 +22,18 @@ const Router: FC = () => {
   }, [])
 
   return (
-    <HashRouter>
-      <Sidebar />
+    <>
+      {!isPlayerPage && <Sidebar />}
       {routes}
       <NavigationHandler />
+    </>
+  )
+}
+
+const Router: FC = () => {
+  return (
+    <HashRouter>
+      <AppContent />
     </HashRouter>
   )
 }

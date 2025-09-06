@@ -364,7 +364,7 @@ const VideoStage = styled.div`
   width: 100%;
   flex: 1;
   min-height: 0;
-  border-radius: var(--panel-radius, 12px) 0 0 0;
+  border-radius: 0;
   background: #000;
   overflow: hidden;
 `
