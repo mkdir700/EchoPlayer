@@ -21,6 +21,16 @@ import { PlayerPageProvider } from './state/player-page.provider'
 
 const logger = loggerService.withContext('PlayerPage')
 
+// 浏览器兼容的文件路径转换函数
+function toFileUrl(filePath: string): string {
+  if (!filePath) return ''
+  if (filePath.startsWith('file://')) return filePath
+
+  // 处理Windows路径
+  const normalizedPath = filePath.replace(/\\/g, '/')
+  return `file://${normalizedPath.startsWith('/') ? '' : '/'}${normalizedPath}`
+}
+
 interface VideoData {
   id: number
   title: string
@@ -68,9 +78,12 @@ function PlayerPage() {
 
   // 加载视频数据
   useEffect(() => {
+    let cancelled = false
     const loadData = async () => {
-      if (!id) {
+      setLoading(true)
+      if (!videoId) {
         setError('无效的视频 ID')
+        setVideoData(null)
         setLoading(false)
         return
       }
@@ -78,10 +91,7 @@ function PlayerPage() {
       try {
         setError(null)
 
-        const videoId = parseInt(id, 10)
-        if (isNaN(videoId)) {
-          throw new Error('无效的视频 ID')
-        }
+        // 使用上面已计算的 videoId
 
         const videoLibService = new VideoLibraryService()
         const record = await videoLibService.getRecordById(videoId)
@@ -99,8 +109,8 @@ function PlayerPage() {
 
         logger.info(`从数据库加载视频文件:`, { file })
 
-        // 将 path 转为 file:// URL
-        const fileUrl = new URL(`file://${file.path}`).href
+        // 将 path 转为 file:// URL (Windows-safe)
+        const fileUrl = toFileUrl(file.path)
 
         // 构造页面所需的视频数据
         const vd = {
@@ -109,30 +119,32 @@ function PlayerPage() {
           src: fileUrl,
           duration: record.duration
         } as const
-        setVideoData(vd)
+        if (!cancelled) setVideoData(vd)
         // 同步到全局会话 store，供任意组件访问
-        usePlayerSessionStore.getState().setVideo(vd)
+        if (!cancelled) usePlayerSessionStore.getState().setVideo(vd)
         // 注入播放器设置
-        usePlayerStore.getState().loadSettings(playerSettings)
+        if (playerSettings) {
+          usePlayerStore.getState().loadSettings(playerSettings)
+        }
         // 监听设置和视频进度变化
         playerSettingsPersistenceService.attach(videoId)
         logger.info('已加载视频数据:', { vd, playerSettings })
-        setLoading(true)
       } catch (err) {
         logger.error(`加载视频数据失败: ${err}`)
         setError(err instanceof Error ? err.message : '加载失败')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     loadData()
     return () => {
+      cancelled = true
       // 页面卸载时清理会话态
       usePlayerSessionStore.getState().clear()
       playerSettingsPersistenceService.detach()
     }
-  }, [id])
+  }, [videoId])
 
   const handleVideoError = (errorMessage: string) => {
     setError(errorMessage)
@@ -159,7 +171,7 @@ function PlayerPage() {
     )
   }
 
-  if (!videoData || videoId === undefined) {
+  if (!videoData) {
     return (
       <Container>
         <ErrorContainer>
@@ -185,7 +197,13 @@ function PlayerPage() {
             <NavTitle title={videoData.title}>{videoData.title}</NavTitle>
           </NavbarCenter>
           <NavbarRight>
-            <Tooltip title={subtitlePanelVisible ? '隐藏字幕列表' : '显示字幕列表'}>
+            <Tooltip
+              title={
+                subtitlePanelVisible
+                  ? t('player.subtitles.hide', '隐藏字幕列表')
+                  : t('player.subtitles.show', '显示字幕列表')
+              }
+            >
               <NavbarIcon onClick={toggleSubtitlePanel}>
                 {subtitlePanelVisible ? (
                   <PanelRightClose size={18} />
@@ -364,7 +382,7 @@ const VideoStage = styled.div`
   width: 100%;
   flex: 1;
   min-height: 0;
-  border-radius: var(--panel-radius, 12px) 0 0 0;
+  border-radius: 0;
   background: #000;
   overflow: hidden;
 `
