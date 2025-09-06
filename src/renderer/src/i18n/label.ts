@@ -172,7 +172,8 @@ const shortcutKeyMap = {
   single_loop: 'settings.shortcuts.single_loop',
   replay_current_subtitle: 'settings.shortcuts.replay_current_subtitle',
   toggle_fullscreen: 'settings.shortcuts.toggle_fullscreen',
-  escape_fullscreen: 'settings.shortcuts.escape_fullscreen'
+  escape_fullscreen: 'settings.shortcuts.escape_fullscreen',
+  toggle_subtitle_panel: 'settings.shortcuts.toggle_subtitle_panel'
 } as const
 
 export const getShortcutLabel = (key: string): string => {

@@ -77,14 +77,13 @@ const NavbarCenterContainer = styled.div`
   color: var(--color-text-1);
 `
 
-const NavbarRightContainer = styled.div<{ $isFullscreen: boolean }>`
-  min-width: var(--topic-list-width);
+const NavbarRightContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 0 12px;
-  padding-right: ${({ $isFullscreen }) =>
-    $isFullscreen ? '12px' : isWin ? '140px' : isLinux ? '120px' : '12px'};
   justify-content: flex-end;
+  min-width: auto;
+  flex-shrink: 0;
 `
 
 const NavbarMainContainer = styled.div<{ $isFullscreen: boolean }>`

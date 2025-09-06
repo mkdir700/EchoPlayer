@@ -1,14 +1,16 @@
 import { loggerService } from '@logger'
-import { Navbar, NavbarCenter, NavbarLeft } from '@renderer/components/app/Navbar'
+import { Navbar, NavbarCenter, NavbarLeft, NavbarRight } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
 import { VideoLibraryService } from '@renderer/services'
 import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
 import { playerSettingsPersistenceService } from '@renderer/services/PlayerSettingsSaver'
 import { usePlayerStore } from '@renderer/state'
 import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
-import { Splitter, Tooltip } from 'antd'
-import { ArrowLeft } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Layout, Tooltip } from 'antd'
+
+const { Content, Sider } = Layout
+import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
@@ -56,8 +58,8 @@ function PlayerPage() {
     return isNaN(parsed) ? 0 : parsed
   }, [id])
 
-  const [splitterSizes, setSplitterSizes] = useState<[number, number]>([70, 30])
   const { t } = useTranslation()
+  const { subtitlePanelVisible, toggleSubtitlePanel } = usePlayerStore()
 
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -136,14 +138,6 @@ function PlayerPage() {
     setError(errorMessage)
   }
 
-  // 处理 Splitter 尺寸变化（仅在尺寸实际变化时更新，避免无效重复渲染）
-  const handleSplitterResize = useCallback((sizes: number[]) => {
-    if (sizes.length >= 2) {
-      const next: [number, number] = [sizes[0], sizes[1]]
-      setSplitterSizes((prev) => (prev[0] === next[0] && prev[1] === next[1] ? prev : next))
-    }
-  }, [])
-
   if (loading) {
     return (
       <Container>
@@ -190,16 +184,23 @@ function PlayerPage() {
           <NavbarCenter>
             <NavTitle title={videoData.title}>{videoData.title}</NavTitle>
           </NavbarCenter>
+          <NavbarRight>
+            <Tooltip title={subtitlePanelVisible ? '隐藏字幕列表' : '显示字幕列表'}>
+              <NavbarIcon onClick={toggleSubtitlePanel}>
+                {subtitlePanelVisible ? (
+                  <PanelRightClose size={18} />
+                ) : (
+                  <PanelRightOpen size={18} />
+                )}
+              </NavbarIcon>
+            </Tooltip>
+          </NavbarRight>
         </Navbar>
         <ContentContainer id="content-container">
           <ContentBody>
             <MainArea>
-              <Splitter
-                layout="horizontal"
-                onResize={handleSplitterResize}
-                style={{ height: '100%' }}
-              >
-                <Splitter.Panel defaultSize={`${splitterSizes[0]}%`} min="40%" max="80%">
+              <Layout style={{ height: '100%' }}>
+                <Content>
                   <LeftMain>
                     <VideoStage>
                       <VideoSurface src={videoData.src} onError={handleVideoError} />
@@ -208,13 +209,24 @@ function PlayerPage() {
                       <ControllerPanel />
                     </BottomBar>
                   </LeftMain>
-                </Splitter.Panel>
-                <Splitter.Panel defaultSize={`${splitterSizes[1]}%`} min="20%" max="60%">
+                </Content>
+                <Sider
+                  width="30%"
+                  collapsedWidth={0}
+                  collapsed={!subtitlePanelVisible}
+                  trigger={null}
+                  collapsible={false}
+                  style={{
+                    background: 'transparent',
+                    overflow: 'hidden',
+                    flexShrink: 0
+                  }}
+                >
                   <RightSidebar>
                     <SubtitleListPanel />
                   </RightSidebar>
-                </Splitter.Panel>
-              </Splitter>
+                </Sider>
+              </Layout>
             </MainArea>
           </ContentBody>
           <SettingsPopover />
@@ -310,10 +322,25 @@ const MainArea = styled.div`
   box-sizing: border-box;
   overflow: hidden;
 
-  /* Splitter 组件会处理布局 */
-  .ant-splitter {
-    width: 100%;
-    height: 100%;
+  /* Antd Layout 组件样式 */
+  .ant-layout {
+    background: transparent;
+  }
+
+  .ant-layout-content {
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .ant-layout-sider {
+    background: transparent !important;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .ant-layout-sider-collapsed {
+    min-width: 0 !important;
+    max-width: 0 !important;
+    width: 0 !important;
   }
 
   /* 小屏幕时的单列布局样式 */
