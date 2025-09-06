@@ -2,7 +2,45 @@
   "common": {
     "language": "language"
   },
+  "docs": {
+    "title": "Documentation"
+  },
   "settings": {
+    "about": {
+      "title": "About",
+      "description": "EchoPlayer is a video player designed for language learners",
+      "updateError": "Update check failed",
+      "updateAvailable": "Update {{version}} available",
+      "downloading": "Downloading...",
+      "checkUpdate": {
+        "available": "Install Update",
+        "label": "Check for Updates"
+      },
+      "releases": {
+        "title": "Release Notes",
+        "button": "View Releases"
+      },
+      "website": {
+        "title": "Official Website",
+        "button": "Visit Website"
+      },
+      "feedback": {
+        "title": "Bug Report",
+        "button": "Report Issue"
+      },
+      "license": {
+        "title": "License",
+        "button": "View License"
+      },
+      "contact": {
+        "title": "Contact Support",
+        "button": "Send Email"
+      },
+      "debug": {
+        "title": "Developer Tools",
+        "open": "Open DevTools"
+      }
+    },
     "appearance": {
       "title": "Appearance Settings"
     },
@@ -11,7 +49,20 @@
       "title": "Developer mode"
     },
     "general": {
-      "title": "General settings"
+      "title": "General settings",
+      "auto_check_update": {
+        "title": "Auto-check for updates"
+      },
+      "test_plan": {
+        "title": "Beta Testing Program",
+        "tooltip": "Join the beta testing program to receive early access to new features",
+        "version_channel_not_match": "Warning: Your current version channel doesn't match the selected test channel",
+        "version_options": "Beta Channel",
+        "alpha_version_tooltip": "Alpha - Unstable test version with frequent updates",
+        "alpha_version": "Alpha Version",
+        "beta_version_tooltip": "Beta - More stable test version, equivalent to RC",
+        "beta_version": "Beta Version"
+      }
     },
     "launch": {
       "onboot": "Auto-start on boot",

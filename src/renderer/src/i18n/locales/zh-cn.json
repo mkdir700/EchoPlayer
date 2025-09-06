@@ -26,6 +26,9 @@
       "enabled": "循环"
     }
   },
+  "docs": {
+    "title": "帮助文档"
+  },
   "home": {
     "add_video": "新增视频",
     "no_video": "空空如也",
@@ -40,7 +43,39 @@
   },
   "settings": {
     "about": {
-      "title": "关于"
+      "checkUpdate": {
+        "available": "安装更新",
+        "label": "检查更新"
+      },
+      "contact": {
+        "button": "发送邮件",
+        "title": "联系支持"
+      },
+      "debug": {
+        "open": "打开开发工具",
+        "title": "开发者工具"
+      },
+      "description": "EchoPlayer 是为语言学习者设计的视频播放器",
+      "downloading": "下载中...",
+      "feedback": {
+        "button": "报告问题",
+        "title": "问题反馈"
+      },
+      "license": {
+        "button": "查看许可证",
+        "title": "许可证"
+      },
+      "releases": {
+        "button": "查看发行说明",
+        "title": "发行说明"
+      },
+      "title": "关于我们",
+      "updateAvailable": "发现更新 {{version}}",
+      "updateError": "更新检查失败",
+      "website": {
+        "button": "访问网站",
+        "title": "官方网站"
+      }
     },
     "appearance": {
       "title": "外观设置"
@@ -50,6 +85,19 @@
       "title": "开发者模式"
     },
     "general": {
+      "auto_check_update": {
+        "title": "自动检查更新"
+      },
+      "test_plan": {
+        "alpha_version": "Alpha 版",
+        "alpha_version_tooltip": "Alpha 版 - 不稳定的测试版本，更新较快",
+        "beta_version": "Beta 版",
+        "beta_version_tooltip": "Beta 版 - 比 Alpha 更稳定的测试版本",
+        "title": "测试版程序",
+        "tooltip": "加入测试版程序以提前体验新功能",
+        "version_channel_not_match": "警告：您当前的版本通道与所选的测试通道不匹配",
+        "version_options": "测试版通道"
+      },
       "title": "通用设置"
     },
     "launch": {
@@ -97,6 +145,7 @@
       "play_pause": "播放/暂停",
       "press_shortcut": "按下快捷键",
       "previous_subtitle": "上一字幕",
+      "replay_current_subtitle": "重播当前字幕",
       "reset_defaults": "重置默认快捷键",
       "reset_defaults_confirm": "确定要重置所有快捷键吗？",
       "reset_to_default": "重置为默认",
@@ -109,7 +158,6 @@
       "show_app": "显示 / 隐藏应用",
       "show_settings": "打开设置",
       "single_loop": "循环播放",
-      "replay_current_subtitle": "重播当前字幕",
       "title": "快捷键",
       "toggle_fullscreen": "切换全屏",
       "toggle_new_context": "清除上下文",

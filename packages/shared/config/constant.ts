@@ -14,8 +14,8 @@ export enum FeedUrl {
 
 export enum UpgradeChannel {
   LATEST = 'latest', // 最新稳定版本
-  RC = 'rc', // 公测版本
-  BETA = 'beta' // 预览版本
+  ALPHA = 'alpha', // 内测版本
+  BETA = 'beta' // 公测版本
 }
 
 export const defaultTimeout = 10 * 1000 * 60

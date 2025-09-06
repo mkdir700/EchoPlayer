@@ -138,8 +138,8 @@ export default class AppUpdater {
     if (version.includes(`-${UpgradeChannel.BETA}.`)) {
       return UpgradeChannel.BETA
     }
-    if (version.includes(`-${UpgradeChannel.RC}.`)) {
-      return UpgradeChannel.RC
+    if (version.includes(`-${UpgradeChannel.ALPHA}.`)) {
+      return UpgradeChannel.ALPHA
     }
     return UpgradeChannel.LATEST
   }
@@ -149,7 +149,7 @@ export default class AppUpdater {
     const savedChannel = configManager.getTestChannel()
 
     if (currentChannel === UpgradeChannel.LATEST) {
-      return savedChannel || UpgradeChannel.RC
+      return savedChannel || UpgradeChannel.ALPHA
     }
 
     if (savedChannel === currentChannel) {
