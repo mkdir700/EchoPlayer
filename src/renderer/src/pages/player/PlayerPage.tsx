@@ -1,3 +1,5 @@
+import { pathToFileURL } from 'node:url'
+
 import { loggerService } from '@logger'
 import { Navbar, NavbarCenter, NavbarLeft, NavbarRight } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
@@ -69,7 +71,7 @@ function PlayerPage() {
   // 加载视频数据
   useEffect(() => {
     const loadData = async () => {
-      if (!id) {
+      if (!videoId) {
         setError('无效的视频 ID')
         setLoading(false)
         return
@@ -78,10 +80,7 @@ function PlayerPage() {
       try {
         setError(null)
 
-        const videoId = parseInt(id, 10)
-        if (isNaN(videoId)) {
-          throw new Error('无效的视频 ID')
-        }
+        // 使用上面已计算的 videoId
 
         const videoLibService = new VideoLibraryService()
         const record = await videoLibService.getRecordById(videoId)
@@ -99,8 +98,8 @@ function PlayerPage() {
 
         logger.info(`从数据库加载视频文件:`, { file })
 
-        // 将 path 转为 file:// URL
-        const fileUrl = new URL(`file://${file.path}`).href
+        // 将 path 转为 file:// URL (Windows-safe)
+        const fileUrl = pathToFileURL(file.path).href
 
         // 构造页面所需的视频数据
         const vd = {
@@ -117,7 +116,6 @@ function PlayerPage() {
         // 监听设置和视频进度变化
         playerSettingsPersistenceService.attach(videoId)
         logger.info('已加载视频数据:', { vd, playerSettings })
-        setLoading(true)
       } catch (err) {
         logger.error(`加载视频数据失败: ${err}`)
         setError(err instanceof Error ? err.message : '加载失败')
@@ -132,7 +130,7 @@ function PlayerPage() {
       usePlayerSessionStore.getState().clear()
       playerSettingsPersistenceService.detach()
     }
-  }, [id])
+  }, [videoId])
 
   const handleVideoError = (errorMessage: string) => {
     setError(errorMessage)
@@ -159,7 +157,7 @@ function PlayerPage() {
     )
   }
 
-  if (!videoData || videoId === undefined) {
+  if (!videoData) {
     return (
       <Container>
         <ErrorContainer>
@@ -185,7 +183,13 @@ function PlayerPage() {
             <NavTitle title={videoData.title}>{videoData.title}</NavTitle>
           </NavbarCenter>
           <NavbarRight>
-            <Tooltip title={subtitlePanelVisible ? '隐藏字幕列表' : '显示字幕列表'}>
+            <Tooltip
+              title={
+                subtitlePanelVisible
+                  ? t('player.subtitles.hide', '隐藏字幕列表')
+                  : t('player.subtitles.show', '显示字幕列表')
+              }
+            >
               <NavbarIcon onClick={toggleSubtitlePanel}>
                 {subtitlePanelVisible ? (
                   <PanelRightClose size={18} />

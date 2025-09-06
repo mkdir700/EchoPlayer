@@ -1,17 +1,15 @@
-import { isLinux, isMac, isWin } from '@renderer/infrastructure'
+import { isLinux, isMac, isWin, useIsPlayerPage } from '@renderer/infrastructure'
 import { useFullscreen } from '@renderer/infrastructure/hooks/useFullscreen'
 import useNavBackgroundColor from '@renderer/infrastructure/hooks/useNavBackgroundColor'
 import type { FC, PropsWithChildren } from 'react'
 import type { HTMLAttributes } from 'react'
-import { useLocation } from 'react-router-dom'
 import styled from 'styled-components'
 
 type Props = PropsWithChildren & HTMLAttributes<HTMLDivElement>
 
 export const Navbar: FC<Props> = ({ children, ...props }) => {
   const backgroundColor = useNavBackgroundColor()
-  const location = useLocation()
-  const isPlayerPage = location.pathname.startsWith('/player/')
+  const isPlayerPage = useIsPlayerPage()
 
   return (
     <NavbarContainer {...props} style={{ backgroundColor }} $isPlayerPage={isPlayerPage}>
@@ -21,8 +19,7 @@ export const Navbar: FC<Props> = ({ children, ...props }) => {
 }
 
 export const NavbarLeft: FC<Props> = ({ children, ...props }) => {
-  const location = useLocation()
-  const isPlayerPage = location.pathname.startsWith('/player/')
+  const isPlayerPage = useIsPlayerPage()
 
   return (
     <NavbarLeftContainer {...props} $isPlayerPage={isPlayerPage}>
