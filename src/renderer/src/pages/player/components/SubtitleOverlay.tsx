@@ -25,20 +25,11 @@ const logger = loggerService.withContext('SubtitleOverlay')
 export interface SubtitleOverlayProps {
   /** 容器元素引用（用于计算边界） */
   containerRef?: React.RefObject<HTMLElement | null>
-  /** 自定义类名 */
-  className?: string
-  /** 自定义样式 */
-  style?: React.CSSProperties
-  /** 开发调试模式 */
-  debug?: boolean
 }
 
 // === 组件实现 ===
 export const SubtitleOverlay = memo(function SubtitleOverlay({
-  containerRef,
-  className,
-  style,
-  debug = false
+  containerRef
 }: SubtitleOverlayProps) {
   // === 状态集成（重构版） ===
   const integration = useSubtitleOverlay()
@@ -328,6 +319,12 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     [setSelectedText]
   )
 
+  // === 单词点击处理 ===
+  const handleWordClick = useCallback((word: string, token: any) => {
+    logger.debug('字幕单词被点击', { word, tokenIndex: token.index })
+    // TODO: 实现单词点击的 popup 功能
+  }, [])
+
   // === 条件渲染：配置未加载或隐藏模式不显示 ===
   const shouldRender = useMemo(
     () => displayMode !== SubtitleDisplayMode.NONE && integration.shouldShow,
@@ -358,8 +355,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       $isHovered={isHovered}
       $backgroundType={backgroundStyle.type}
       $opacity={backgroundStyle.opacity}
-      className={className}
-      style={style}
       onMouseDown={handleMouseDown}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -374,6 +369,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           originalText={integration.currentSubtitle?.originalText || ''}
           translatedText={integration.currentSubtitle?.translatedText}
           onTextSelection={handleTextSelection}
+          onWordClick={handleWordClick}
         />
       </ContentContainer>
 
@@ -382,13 +378,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         onMouseDown={handleResizeMouseDown}
         data-testid="subtitle-resize-handle"
       />
-
-      {debug && (
-        <DebugInfo>
-          {displayMode} | {position.x.toFixed(1)}%, {position.y.toFixed(1)}% |{' '}
-          {size.width.toFixed(1)}% × {size.height.toFixed(1)}%
-        </DebugInfo>
-      )}
     </OverlayContainer>
   )
 })
@@ -525,17 +514,4 @@ const ResizeHandle = styled.div<{ $visible: boolean }>`
     transform: scale(1.2);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
   }
-`
-
-const DebugInfo = styled.div`
-  position: absolute;
-  top: -24px;
-  left: 0;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(0, 0, 0, 0.8);
-  padding: 2px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
 `

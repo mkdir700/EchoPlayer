@@ -10,8 +10,10 @@
  */
 
 import { loggerService } from '@logger'
+import { isClickableToken, tokenizeText, type WordToken } from '@renderer/utils/textTokenizer'
 import { SubtitleDisplayMode } from '@types'
-import React, { memo, useCallback, useRef } from 'react'
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
 const logger = loggerService.withContext('SubtitleContent')
@@ -26,11 +28,324 @@ export interface SubtitleContentProps {
   translatedText?: string
   /** 选中文本变化回调 */
   onTextSelection?: (selectedText: string) => void
+  /** 单词点击回调 */
+  onWordClick?: (word: string, token: WordToken) => void
   /** 自定义类名 */
   className?: string
   /** 自定义样式 */
   style?: React.CSSProperties
 }
+
+// === 组件实现 ===
+export const SubtitleContent = memo(function SubtitleContent({
+  displayMode,
+  originalText,
+  translatedText,
+  onTextSelection,
+  onWordClick,
+  className,
+  style
+}: SubtitleContentProps) {
+  const { t } = useTranslation()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // 划词选择状态
+  const [selectionState, setSelectionState] = useState<{
+    isSelecting: boolean
+    startIndex: number | null
+    endIndex: number | null
+    hoveredIndex: number | null
+  }>({
+    isSelecting: false,
+    startIndex: null,
+    endIndex: null,
+    hoveredIndex: null
+  })
+
+  // === 分词处理 ===
+  const originalTokens = useMemo(() => tokenizeText(originalText), [originalText])
+  // 译文不进行分词处理，保持整句显示
+
+  // === 单词点击处理 ===
+  const handleWordClick = useCallback(
+    (token: WordToken, event: React.MouseEvent) => {
+      // 阻止事件冒泡到全局点击处理
+      event.stopPropagation()
+
+      if (isClickableToken(token) && onWordClick) {
+        onWordClick(token.text, token)
+        logger.debug('单词被点击', { word: token.text, index: token.index })
+      }
+
+      // 点击单词时清除之前的选中状态
+      if (selectionState.startIndex !== null || selectionState.endIndex !== null) {
+        setSelectionState((prev) => ({
+          ...prev,
+          startIndex: null,
+          endIndex: null,
+          hoveredIndex: token.index
+        }))
+      }
+    },
+    [onWordClick, selectionState.startIndex, selectionState.endIndex]
+  )
+
+  // === 划词选中处理 ===
+  const handleWordMouseDown = useCallback((token: WordToken, event: React.MouseEvent) => {
+    if (!isClickableToken(token)) return
+
+    // 阻止事件冒泡到 SubtitleOverlay 的拖动处理
+    event.stopPropagation()
+
+    setSelectionState({
+      isSelecting: true,
+      startIndex: token.index,
+      endIndex: token.index,
+      hoveredIndex: token.index
+    })
+  }, [])
+
+  const handleWordMouseEnter = useCallback((token: WordToken) => {
+    if (!isClickableToken(token)) return
+
+    setSelectionState((prev) => ({
+      ...prev,
+      hoveredIndex: token.index,
+      ...(prev.isSelecting && { endIndex: token.index })
+    }))
+  }, [])
+
+  const handleWordMouseLeave = useCallback(() => {
+    // 鼠标移出时清除悬停状态（但不影响选中状态）
+    setSelectionState((prev) => ({
+      ...prev,
+      hoveredIndex: prev.isSelecting ? prev.hoveredIndex : null
+    }))
+  }, [])
+
+  const handleWordMouseUp = useCallback(
+    (token: WordToken) => {
+      if (!isClickableToken(token) || !selectionState.isSelecting) return
+
+      const { startIndex, endIndex } = selectionState
+      if (startIndex !== null && endIndex !== null) {
+        const minIndex = Math.min(startIndex, endIndex)
+        const maxIndex = Math.max(startIndex, endIndex)
+
+        // 获取当前显示模式对应的 tokens
+        const isShowingTranslatedOnly =
+          displayMode === SubtitleDisplayMode.TRANSLATED && translatedText?.trim()
+
+        // 如果显示的是纯译文（整句），则不进行划词选择处理
+        if (!isShowingTranslatedOnly) {
+          const currentTokens = originalTokens
+          const selectedTokens = currentTokens.slice(minIndex, maxIndex + 1)
+          const selectedText = selectedTokens.map((t) => t.text).join('')
+
+          if (selectedText.trim() && onTextSelection) {
+            onTextSelection(selectedText)
+            logger.debug('划词选中文本', {
+              selectedText: selectedText.substring(0, 50) + (selectedText.length > 50 ? '...' : ''),
+              length: selectedText.length,
+              tokenCount: selectedTokens.length
+            })
+          }
+        }
+      }
+
+      // 保持选中状态，只停止拖拽行为
+      setSelectionState((prev) => ({
+        ...prev,
+        isSelecting: false,
+        hoveredIndex: null
+      }))
+    },
+    [selectionState, displayMode, originalTokens, translatedText, onTextSelection]
+  )
+
+  // === 全局鼠标事件处理 ===
+  const handleGlobalMouseUp = useCallback(() => {
+    if (selectionState.isSelecting) {
+      setSelectionState((prev) => ({ ...prev, isSelecting: false }))
+    }
+  }, [selectionState.isSelecting])
+
+  // 全局点击清除选中状态
+  const handleGlobalClick = useCallback((event: MouseEvent) => {
+    const target = event.target as HTMLElement
+    // 如果点击的不是字幕内容区域，清除选中状态
+    if (!containerRef.current?.contains(target)) {
+      setSelectionState((prev) => ({
+        ...prev,
+        startIndex: null,
+        endIndex: null,
+        hoveredIndex: null
+      }))
+    }
+  }, [])
+
+  // 字幕切换时重置悬停状态
+  React.useEffect(() => {
+    setSelectionState({
+      isSelecting: false,
+      startIndex: null,
+      endIndex: null,
+      hoveredIndex: null
+    })
+  }, [originalText, translatedText, displayMode])
+
+  // 绑定全局鼠标事件
+  React.useEffect(() => {
+    if (selectionState.isSelecting) {
+      document.addEventListener('mouseup', handleGlobalMouseUp)
+      return () => document.removeEventListener('mouseup', handleGlobalMouseUp)
+    }
+    return undefined
+  }, [selectionState.isSelecting, handleGlobalMouseUp])
+
+  // 绑定全局点击事件清除选中状态
+  React.useEffect(() => {
+    // 只有当有选中状态时才绑定
+    if (selectionState.startIndex !== null && selectionState.endIndex !== null) {
+      document.addEventListener('click', handleGlobalClick)
+      return () => document.removeEventListener('click', handleGlobalClick)
+    }
+    return undefined
+  }, [selectionState.startIndex, selectionState.endIndex, handleGlobalClick])
+
+  // === 键盘复制支持 ===
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+      const selection = window.getSelection()
+      const selectedText = selection?.toString()
+
+      if (selectedText) {
+        // 复制到剪贴板
+        navigator.clipboard
+          .writeText(selectedText)
+          .then(() => {
+            logger.info('字幕文本已复制到剪贴板', { length: selectedText.length })
+          })
+          .catch((error) => {
+            logger.error('复制到剪贴板失败', { error })
+          })
+      }
+    }
+  }, [])
+
+  // === 渲染分词文本 ===
+  const renderTokenizedText = useCallback(
+    (tokens: WordToken[]) => {
+      return (
+        <TokenizedTextContainer>
+          {tokens.map((token) => {
+            const isClickable = isClickableToken(token)
+            const isSelected =
+              selectionState.startIndex !== null &&
+              selectionState.endIndex !== null &&
+              token.index >= Math.min(selectionState.startIndex, selectionState.endIndex) &&
+              token.index <= Math.max(selectionState.startIndex, selectionState.endIndex)
+            const isHovered = selectionState.hoveredIndex === token.index
+
+            return (
+              <WordToken
+                key={`${token.index}-${token.start}`}
+                $isClickable={isClickable}
+                $isSelected={isSelected}
+                $isHovered={isHovered && !selectionState.isSelecting}
+                data-clickable={isClickable}
+                onClick={(e) => handleWordClick(token, e)}
+                onMouseDown={(e) => handleWordMouseDown(token, e)}
+                onMouseEnter={() => handleWordMouseEnter(token)}
+                onMouseLeave={handleWordMouseLeave}
+                onMouseUp={() => handleWordMouseUp(token)}
+              >
+                {token.text}
+              </WordToken>
+            )
+          })}
+        </TokenizedTextContainer>
+      )
+    },
+    [
+      selectionState,
+      handleWordClick,
+      handleWordMouseDown,
+      handleWordMouseEnter,
+      handleWordMouseLeave,
+      handleWordMouseUp
+    ]
+  )
+
+  // === 渲染内容 ===
+  const renderContent = () => {
+    switch (displayMode) {
+      case SubtitleDisplayMode.NONE:
+        return null
+
+      case SubtitleDisplayMode.ORIGINAL:
+        if (!originalText.trim()) {
+          return <EmptyState>{t('subtitle-overlay.no-original')}</EmptyState>
+        }
+        return <OriginalTextLine>{renderTokenizedText(originalTokens)}</OriginalTextLine>
+
+      case SubtitleDisplayMode.TRANSLATED: {
+        const textToShow = translatedText?.trim() || originalText.trim()
+        if (!textToShow) {
+          return <EmptyState>{t('subtitle-overlay.no-translated')}</EmptyState>
+        }
+        // 译文显示整句，原文显示分词
+        return (
+          <TranslatedTextLine>
+            {translatedText?.trim() ? textToShow : renderTokenizedText(originalTokens)}
+          </TranslatedTextLine>
+        )
+      }
+
+      case SubtitleDisplayMode.BILINGUAL:
+        if (!originalText.trim()) {
+          return <EmptyState>{t('subtitle-overlay.no-original')}</EmptyState>
+        }
+        return (
+          <>
+            <OriginalTextLine className="bilingual">
+              {renderTokenizedText(originalTokens)}
+            </OriginalTextLine>
+            {translatedText?.trim() && <TranslatedTextLine>{translatedText}</TranslatedTextLine>}
+          </>
+        )
+
+      default:
+        logger.warn('未知的字幕显示模式', { displayMode })
+        return <EmptyState>{t('subtitle-overlay.unknown')}</EmptyState>
+    }
+  }
+
+  const content = renderContent()
+
+  // 如果没有内容要显示，返回 null
+  if (!content) {
+    return null
+  }
+
+  return (
+    <ContentContainer
+      ref={containerRef}
+      className={className}
+      style={style}
+      onKeyDown={handleKeyDown}
+      tabIndex={0} // 使元素可聚焦，支持键盘操作
+      role="region"
+      aria-label="字幕内容"
+      aria-live="polite" // 屏幕阅读器支持
+      data-testid="subtitle-content"
+    >
+      {content}
+    </ContentContainer>
+  )
+})
+
+export default SubtitleContent
 
 // === 样式组件 ===
 const ContentContainer = styled.div`
@@ -39,6 +354,7 @@ const ContentContainer = styled.div`
   user-select: text;
   -webkit-user-select: text;
   color: var(--subtitle-text-color, #ffffff);
+  text-align: center;
 
   /* 文本选中样式 */
   ::selection {
@@ -96,111 +412,67 @@ const EmptyState = styled.div`
   backdrop-filter: blur(4px);
 `
 
-// === 组件实现 ===
-export const SubtitleContent = memo(function SubtitleContent({
-  displayMode,
-  originalText,
-  translatedText,
-  onTextSelection,
-  className,
-  style
-}: SubtitleContentProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+const WordToken = styled.span<{
+  $isClickable: boolean
+  $isSelected: boolean
+  $isHovered: boolean
+}>`
+  cursor: ${(props) => (props.$isClickable ? 'pointer' : 'inherit')};
+  user-select: none;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: inline-block;
+  padding: 1px 2px;
+  margin: 0 1px;
+  border-radius: 3px;
 
-  // === 文本选中处理 ===
-  const handleMouseUp = useCallback(() => {
-    const selection = window.getSelection()
-    const selectedText = selection?.toString() || ''
-
-    if (selectedText && onTextSelection) {
-      onTextSelection(selectedText)
-      logger.debug('字幕文本被选中', {
-        selectedText: selectedText.substring(0, 50) + (selectedText.length > 50 ? '...' : ''),
-        length: selectedText.length
-      })
+  /* 可点击单词的基础样式 */
+  ${(props) =>
+    props.$isClickable &&
+    `
+    &:hover {
+      background: rgba(102, 126, 234, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-  }, [onTextSelection])
 
-  // === 键盘复制支持 ===
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-      const selection = window.getSelection()
-      const selectedText = selection?.toString()
-
-      if (selectedText) {
-        // 复制到剪贴板
-        navigator.clipboard
-          .writeText(selectedText)
-          .then(() => {
-            logger.info('字幕文本已复制到剪贴板', { length: selectedText.length })
-          })
-          .catch((error) => {
-            logger.error('复制到剪贴板失败', { error })
-          })
-      }
+    &:active {
+      transform: translateY(0);
+      background: rgba(102, 126, 234, 0.35);
     }
-  }, [])
+  `}
 
-  // === 渲染内容 ===
-  const renderContent = () => {
-    switch (displayMode) {
-      case SubtitleDisplayMode.NONE:
-        return null
+  /* 选中状态样式 */
+  ${(props) =>
+    props.$isSelected &&
+    `
+    background: rgba(102, 126, 234, 0.45) !important;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transform: none !important;
+    box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.6);
+  `}
 
-      case SubtitleDisplayMode.ORIGINAL:
-        if (!originalText.trim()) {
-          return <EmptyState>没有原文内容</EmptyState>
-        }
-        return <OriginalTextLine>{originalText}</OriginalTextLine>
+  /* 悬停状态样式（非选择模式） */
+  ${(props) =>
+    props.$isHovered &&
+    !props.$isSelected &&
+    `
+    background: rgba(102, 126, 234, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  `}
 
-      case SubtitleDisplayMode.TRANSLATED: {
-        const textToShow = translatedText?.trim() || originalText.trim()
-        if (!textToShow) {
-          return <EmptyState>没有译文内容</EmptyState>
-        }
-        return <TranslatedTextLine>{textToShow}</TranslatedTextLine>
-      }
-
-      case SubtitleDisplayMode.BILINGUAL:
-        if (!originalText.trim()) {
-          return <EmptyState>没有字幕内容</EmptyState>
-        }
-        return (
-          <>
-            <OriginalTextLine className="bilingual">{originalText}</OriginalTextLine>
-            {translatedText?.trim() && <TranslatedTextLine>{translatedText}</TranslatedTextLine>}
-          </>
-        )
-
-      default:
-        logger.warn('未知的字幕显示模式', { displayMode })
-        return <EmptyState>未知显示模式</EmptyState>
-    }
+  /* 标点符号和空格的特殊处理 */
+  &:not([data-clickable="true"]) {
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
   }
+`
 
-  const content = renderContent()
-
-  // 如果没有内容要显示，返回 null
-  if (!content) {
-    return null
-  }
-
-  return (
-    <ContentContainer
-      ref={containerRef}
-      className={className}
-      style={style}
-      onMouseUp={handleMouseUp}
-      onKeyDown={handleKeyDown}
-      tabIndex={0} // 使元素可聚焦，支持键盘操作
-      role="region"
-      aria-label="字幕内容"
-      aria-live="polite" // 屏幕阅读器支持
-      data-testid="subtitle-content"
-    >
-      {content}
-    </ContentContainer>
-  )
-})
-
-export default SubtitleContent
+const TokenizedTextContainer = styled.div`
+  display: inline;
+  user-select: text;
+  -webkit-user-select: text;
+`
