@@ -9,7 +9,7 @@ import { usePlayerSessionStore } from '@renderer/state/stores/player-session.sto
 import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
-import { ArrowLeft, List, ListX } from 'lucide-react'
+import { ArrowLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -187,7 +187,7 @@ function PlayerPage() {
           <PlayerNavbarRight>
             <Tooltip title={subtitlePanelVisible ? '隐藏字幕列表' : '显示字幕列表'}>
               <NavbarIcon onClick={toggleSubtitlePanel}>
-                {subtitlePanelVisible ? <ListX size={18} /> : <List size={18} />}
+                {subtitlePanelVisible ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
               </NavbarIcon>
             </Tooltip>
           </PlayerNavbarRight>
