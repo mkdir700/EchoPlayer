@@ -207,7 +207,7 @@ function PlayerPage() {
                   </LeftMain>
                 </Content>
                 <Sider
-                  width="20%"
+                  width="30%"
                   collapsedWidth={0}
                   collapsed={!subtitlePanelVisible}
                   trigger={null}
