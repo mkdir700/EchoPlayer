@@ -1,5 +1,5 @@
 import { loggerService } from '@logger'
-import { Navbar, NavbarCenter, NavbarLeft } from '@renderer/components/app/Navbar'
+import { Navbar, NavbarCenter, NavbarLeft, NavbarRight } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
 import { VideoLibraryService } from '@renderer/services'
 import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
@@ -184,7 +184,7 @@ function PlayerPage() {
           <NavbarCenter>
             <NavTitle title={videoData.title}>{videoData.title}</NavTitle>
           </NavbarCenter>
-          <PlayerNavbarRight>
+          <NavbarRight>
             <Tooltip title={subtitlePanelVisible ? '隐藏字幕列表' : '显示字幕列表'}>
               <NavbarIcon onClick={toggleSubtitlePanel}>
                 {subtitlePanelVisible ? (
@@ -194,7 +194,7 @@ function PlayerPage() {
                 )}
               </NavbarIcon>
             </Tooltip>
-          </PlayerNavbarRight>
+          </NavbarRight>
         </Navbar>
         <ContentContainer id="content-container">
           <ContentBody>
@@ -396,13 +396,4 @@ const RightSidebar = styled.aside`
 const BottomBar = styled.div`
   flex: 0 0 auto;
   padding: 0;
-`
-
-const PlayerNavbarRight = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  justify-content: flex-end;
-  min-width: auto;
-  flex-shrink: 0;
 `
