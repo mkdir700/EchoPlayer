@@ -77,6 +77,8 @@ export interface PlayerState {
   wasPlayingBeforeOpen?: boolean
   /** 自动恢复倒计时 */
   isAutoResumeCountdownOpen?: boolean
+  /** 字幕面板显示状态 */
+  subtitlePanelVisible?: boolean
 }
 
 export interface PlayerActions {
@@ -118,6 +120,10 @@ export interface PlayerActions {
   openAutoResumeCountdown: () => void
   closeAutoResumeCountdown: () => void
   setFullscreen: (f: boolean) => void // 可以由组件调用（全屏与浏览器 API 相关）
+
+  // 字幕面板控制
+  toggleSubtitlePanel: () => void
+  setSubtitlePanelVisible: (visible: boolean) => void
 }
 
 export type PlayerStore = PlayerState & PlayerActions
@@ -157,7 +163,8 @@ const initialState: PlayerState = {
 
   isSettingsOpen: false,
   wasPlayingBeforeOpen: false,
-  isAutoResumeCountdownOpen: false
+  isAutoResumeCountdownOpen: false,
+  subtitlePanelVisible: true
 }
 
 // 仅包含需要持久化到数据库的设置切片类型
@@ -336,6 +343,16 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
   closeAutoResumeCountdown: () =>
     set((s: Draft<PlayerStore>) => {
       s.isAutoResumeCountdownOpen = false
+    }),
+
+  // 字幕面板控制
+  toggleSubtitlePanel: () =>
+    set((s: Draft<PlayerStore>) => {
+      s.subtitlePanelVisible = !s.subtitlePanelVisible
+    }),
+  setSubtitlePanelVisible: (visible: boolean) =>
+    set((s: Draft<PlayerStore>) => {
+      s.subtitlePanelVisible = !!visible
     })
 })
 
