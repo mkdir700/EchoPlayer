@@ -1,5 +1,5 @@
 import { loggerService } from '@logger'
-import { useShortcut } from '@renderer/infrastructure/hooks/useShortcust'
+import { useShortcut } from '@renderer/infrastructure/hooks/useShortcut'
 import { SubtitleDisplayMode } from '@types'
 
 import { usePlayerCommands } from './usePlayerCommands'

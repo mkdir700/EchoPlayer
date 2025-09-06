@@ -1,1 +1,7 @@
 export * from './performance'
+export * from './useAppInit'
+export * from './useFullscreen'
+export * from './useNavBackgroundColor'
+export * from './useSettings'
+export * from './useShortcut'
+export * from './useUserTheme'
