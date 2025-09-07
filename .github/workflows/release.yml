@@ -154,6 +154,7 @@ jobs:
         run: pnpm install
 
       - name: Build for ${{ matrix.platform }}
+        shell: bash
         run: |
           echo "🏗️ Building for ${{ matrix.platform }}"
           echo "构建平台: ${{ matrix.platform }}"
