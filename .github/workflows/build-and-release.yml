@@ -157,6 +157,8 @@ jobs:
         run: |
           echo "🏗️ Building for ${{ matrix.platform }}"
           echo "构建平台: ${{ matrix.platform }}"
+          echo "📦 版本类型: ${{ needs.detect-version.outputs.version_type }}"
+          echo "🔄 更新渠道: ${{ needs.detect-version.outputs.version_type == 'stable' && 'latest' || needs.detect-version.outputs.version_type }}"
           pnpm build
           pnpm exec electron-builder ${{ matrix.target }} --publish never
         env:
@@ -166,6 +168,8 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # 根据版本类型设置更新渠道，stable 版本使用 latest，其他版本使用对应类型名称
+          ELECTRON_BUILDER_CHANNEL: ${{ needs.detect-version.outputs.version_type == 'stable' && 'latest' || needs.detect-version.outputs.version_type }}
 
       - name: List build artifacts
         shell: bash
@@ -199,8 +203,8 @@ jobs:
             dist/*.zip
             dist/*.AppImage
             dist/*.deb
-            dist/latest*.yml
-            dist/latest*.yaml
+            dist/*.yml
+            dist/*.yaml
             dist/*.blockmap
           retention-days: 30
           if-no-files-found: warn
@@ -219,8 +223,8 @@ jobs:
             dist/*.zip
             dist/*.AppImage
             dist/*.deb
-            dist/latest*.yml
-            dist/latest*.yaml
+            dist/*.yml
+            dist/*.yaml
             dist/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
