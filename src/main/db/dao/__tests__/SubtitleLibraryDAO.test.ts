@@ -12,12 +12,31 @@ describe('SubtitleLibraryDAO', () => {
   let dao: SubtitleLibraryDAO
   let mockKysely: any
 
-  const mockSubtitleRecord: Omit<SubtitleLibraryTable, 'id' | 'created_at'> & {
-    created_at?: string
+  // Mock data for database insertion (uses number timestamp)
+  const mockSubtitleRecordFromDB: Omit<SubtitleLibraryTable, 'id' | 'created_at'> & {
+    created_at: number
   } = {
     videoId: 1,
     filePath: '/path/to/subtitle.srt',
-    created_at: '2024-01-01T12:00:00.000Z'
+    created_at: 1704110400000 // Fixed timestamp: 2024-01-01T12:00:00.000Z
+  }
+
+  // Mock data for insertion (will be converted to number by schema)
+  const mockSubtitleRecordForInsert: Omit<SubtitleLibraryTable, 'id' | 'created_at'> & {
+    created_at: number
+  } = {
+    videoId: 1,
+    filePath: '/path/to/subtitle.srt',
+    created_at: 1704110400000 // Number timestamp for insertion
+  }
+
+  // Expected data after schema transformation (number converted to Date)
+  const mockSubtitleRecordExpected: Omit<SubtitleLibraryTable, 'id' | 'created_at'> & {
+    created_at: Date
+  } = {
+    videoId: 1,
+    filePath: '/path/to/subtitle.srt',
+    created_at: new Date('2024-01-01T12:00:00.000Z')
   }
 
   beforeEach(() => {
@@ -62,10 +81,10 @@ describe('SubtitleLibraryDAO', () => {
       const mockResult = { id: 1 }
       mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
 
-      const result = await dao.addSubtitle(mockSubtitleRecord as any)
+      const result = await dao.addSubtitle(mockSubtitleRecordForInsert as any)
 
       expect(mockKysely.insertInto).toHaveBeenCalledWith('subtitleLibrary')
-      expect(mockKysely.values).toHaveBeenCalledWith(mockSubtitleRecord)
+      expect(mockKysely.values).toHaveBeenCalledWith(mockSubtitleRecordForInsert)
       expect(mockKysely.returning).toHaveBeenCalledWith('id')
       expect(mockKysely.executeTakeFirstOrThrow).toHaveBeenCalledTimes(1)
       expect(result).toEqual(mockResult)
@@ -75,7 +94,9 @@ describe('SubtitleLibraryDAO', () => {
       const error = new Error('Insert failed')
       mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
 
-      await expect(dao.addSubtitle(mockSubtitleRecord as any)).rejects.toThrow('Insert failed')
+      await expect(dao.addSubtitle(mockSubtitleRecordForInsert as any)).rejects.toThrow(
+        'Insert failed'
+      )
     })
 
     it('应该验证链式调用顺序', async () => {
@@ -97,7 +118,7 @@ describe('SubtitleLibraryDAO', () => {
         return Promise.resolve({ id: 1 })
       })
 
-      await dao.addSubtitle(mockSubtitleRecord as any)
+      await dao.addSubtitle(mockSubtitleRecordForInsert as any)
 
       expect(calls).toEqual(['insertInto', 'values', 'returning', 'executeTakeFirstOrThrow'])
     })
@@ -105,11 +126,18 @@ describe('SubtitleLibraryDAO', () => {
 
   describe('findByVideoId', () => {
     it('应该根据视频ID查找字幕列表', async () => {
-      const mockResults = [
-        { id: 1, ...mockSubtitleRecord },
-        { id: 2, ...mockSubtitleRecord, filePath: '/path/to/subtitle2.srt' }
+      // Mock database returns number format
+      const mockDBResults = [
+        { id: 1, ...mockSubtitleRecordFromDB },
+        { id: 2, ...mockSubtitleRecordFromDB, filePath: '/path/to/subtitle2.srt' }
       ]
-      mockKysely.execute.mockResolvedValue(mockResults)
+      mockKysely.execute.mockResolvedValue(mockDBResults)
+
+      // Expected results after schema transformation
+      const expectedResults = [
+        { id: 1, ...mockSubtitleRecordExpected },
+        { id: 2, ...mockSubtitleRecordExpected, filePath: '/path/to/subtitle2.srt' }
+      ]
 
       const result = await dao.findByVideoId(1)
 
@@ -118,7 +146,7 @@ describe('SubtitleLibraryDAO', () => {
       expect(mockKysely.where).toHaveBeenCalledWith('videoId', '=', 1)
       expect(mockKysely.orderBy).toHaveBeenCalledWith('created_at', 'desc')
       expect(mockKysely.execute).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual(expectedResults)
     })
 
     it('应该返回空数组如果没有字幕', async () => {
@@ -157,8 +185,12 @@ describe('SubtitleLibraryDAO', () => {
 
   describe('findByVideoIdAndPath', () => {
     it('应该根据视频ID和文件路径查找字幕', async () => {
-      const mockResult = { id: 1, ...mockSubtitleRecord }
-      mockKysely.executeTakeFirst.mockResolvedValue(mockResult)
+      // Mock database returns number format
+      const mockDBResult = { id: 1, ...mockSubtitleRecordFromDB }
+      mockKysely.executeTakeFirst.mockResolvedValue(mockDBResult)
+
+      // Expected result after schema transformation
+      const expectedResult = { id: 1, ...mockSubtitleRecordExpected }
 
       const result = await dao.findByVideoIdAndPath(1, '/path/to/subtitle.srt')
 
@@ -167,7 +199,7 @@ describe('SubtitleLibraryDAO', () => {
       expect(mockKysely.where).toHaveBeenCalledWith('videoId', '=', 1)
       expect(mockKysely.where).toHaveBeenCalledWith('filePath', '=', '/path/to/subtitle.srt')
       expect(mockKysely.executeTakeFirst).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResult)
+      expect(result).toEqual(expectedResult)
     })
 
     it('应该返回undefined如果字幕不存在', async () => {
@@ -329,7 +361,8 @@ describe('SubtitleLibraryDAO', () => {
     it('应该正确处理字幕记录的所有字段', async () => {
       const completeRecord = {
         videoId: 42,
-        filePath: '/complete/path/to/subtitle.srt'
+        filePath: '/complete/path/to/subtitle.srt',
+        created_at: 1704110400000 // Number timestamp
       }
       const mockResult = { id: 1 }
       mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
@@ -343,7 +376,8 @@ describe('SubtitleLibraryDAO', () => {
     it('应该处理包含特殊字符的字幕记录', async () => {
       const recordWithSpecialChars = {
         videoId: 1,
-        filePath: '/path/with/特殊字符/and spaces/subtitle.srt'
+        filePath: '/path/with/特殊字符/and spaces/subtitle.srt',
+        created_at: 1704110400000 // Number timestamp
       }
       const mockResult = { id: 1 }
       mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
@@ -355,25 +389,42 @@ describe('SubtitleLibraryDAO', () => {
     })
 
     it('应该验证查询结果的数据结构', async () => {
-      const mockResults = [
+      // Mock database returns number format
+      const mockDBResults = [
         {
           id: 1,
           videoId: 1,
           filePath: '/path/to/subtitle1.srt',
-          created_at: '2024-01-01T12:00:00.000Z'
+          created_at: 1704110400000 // Number timestamp
         },
         {
           id: 2,
           videoId: 1,
           filePath: '/path/to/subtitle2.srt',
-          created_at: '2024-01-01T13:00:00.000Z'
+          created_at: 1704114000000 // Number timestamp: 2024-01-01T13:00:00.000Z
         }
       ]
-      mockKysely.execute.mockResolvedValue(mockResults)
+      mockKysely.execute.mockResolvedValue(mockDBResults)
+
+      // Expected results after schema transformation
+      const expectedResults = [
+        {
+          id: 1,
+          videoId: 1,
+          filePath: '/path/to/subtitle1.srt',
+          created_at: new Date('2024-01-01T12:00:00.000Z')
+        },
+        {
+          id: 2,
+          videoId: 1,
+          filePath: '/path/to/subtitle2.srt',
+          created_at: new Date('2024-01-01T13:00:00.000Z')
+        }
+      ]
 
       const result = await dao.findByVideoId(1)
 
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual(expectedResults)
       expect(result[0]).toHaveProperty('id')
       expect(result[0]).toHaveProperty('videoId')
       expect(result[0]).toHaveProperty('filePath')

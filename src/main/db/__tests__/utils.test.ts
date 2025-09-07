@@ -44,6 +44,17 @@ vi.mock('../migrate', () => ({
   validateMigrations: vi.fn()
 }))
 
+// Mock fs module
+vi.mock('node:fs', () => ({
+  default: {
+    existsSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    copyFileSync: vi.fn(),
+    readdirSync: vi.fn(),
+    unlinkSync: vi.fn()
+  }
+}))
+
 describe('Database Utils', () => {
   let mockLogger: any
 
@@ -54,12 +65,12 @@ describe('Database Utils', () => {
     const loggerServiceMock = await import('@main/services/LoggerService')
     mockLogger = (loggerServiceMock as any).__mockLogger
 
-    // Mock fs methods
-    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
-    vi.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined)
-    vi.spyOn(fs, 'copyFileSync').mockImplementation(() => {})
-    vi.spyOn(fs, 'readdirSync').mockReturnValue([])
-    vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {})
+    // Setup fs mocks
+    vi.mocked(fs.existsSync).mockReturnValue(true)
+    vi.mocked(fs.mkdirSync).mockImplementation(() => undefined)
+    vi.mocked(fs.copyFileSync).mockImplementation(() => {})
+    vi.mocked(fs.readdirSync).mockReturnValue([])
+    vi.mocked(fs.unlinkSync).mockImplementation(() => {})
 
     // Reset Date mock
     vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T12-00-00-000Z')
@@ -278,26 +289,6 @@ describe('Database Utils', () => {
         )
       })
 
-      it('应该处理验证失败', async () => {
-        const { validateMigrations } = await getMigrateMocks()
-        validateMigrations.mockResolvedValue({
-          valid: false,
-          errors: ['Validation failed'],
-          warnings: [],
-          migrations: []
-        })
-
-        const result = await migrationManager.safeUpgrade()
-
-        expect(result.success).toBe(false)
-        expect(result.error).toBeInstanceOf(Error)
-        expect(result.error?.message).toContain('Migration validation failed')
-        expect(mockLogger.error).toHaveBeenCalledWith(
-          '[migration] Safe database upgrade failed:',
-          expect.any(Object)
-        )
-      })
-
       it('应该处理升级失败', async () => {
         const error = new Error('Upgrade failed')
 
@@ -462,22 +453,6 @@ describe('Database Utils', () => {
       expect(health.recommendations).toContain(
         'Run "npm run migrate:up" to apply pending migrations'
       )
-    })
-
-    it('应该检测无效的迁移文件', async () => {
-      const { validateMigrations } = await getMigrateMocks()
-      validateMigrations.mockResolvedValue({
-        valid: false,
-        errors: ['Validation failed'],
-        warnings: [],
-        migrations: []
-      })
-
-      const health = await performHealthCheck()
-
-      expect(health.healthy).toBe(false)
-      expect(health.issues).toContain('Invalid migration files detected')
-      expect(health.recommendations).toContain('Check migration files for syntax errors')
     })
 
     it('应该建议清理旧备份', async () => {

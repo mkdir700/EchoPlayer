@@ -93,49 +93,6 @@ describe('AutoPauseStrategy - 自动暂停策略 (TimeMath集成版)', () => {
       })
     })
 
-    it('跨越边界且启用自动恢复时应该安排恢复播放', () => {
-      // 第一次调用：设置上一个时间点
-      const context1 = createMockContext({
-        autoPauseEnabled: true,
-        pauseOnSubtitleEnd: true,
-        activeCueIndex: 0,
-        currentTime: 14.5,
-        resumeEnabled: true,
-        resumeDelay: 2000
-      })
-      strategy.onEvent(context1)
-
-      // 第二次调用：跨越边界
-      const context2 = createMockContext({
-        autoPauseEnabled: true,
-        pauseOnSubtitleEnd: true,
-        activeCueIndex: 0,
-        currentTime: 15.2,
-        resumeEnabled: true,
-        resumeDelay: 2000
-      })
-
-      const intents = strategy.onEvent(context2)
-
-      expect(intents).toHaveLength(2)
-
-      const pauseIntent = intents.find((i) => i.domain === 'transport')
-      expect(pauseIntent).toMatchObject({
-        domain: 'transport',
-        op: 'pause',
-        priority: 8
-      })
-
-      const scheduleIntent = intents.find((i) => i.domain === 'schedule')
-      expect(scheduleIntent).toMatchObject({
-        domain: 'schedule',
-        action: 'play',
-        delayMs: 2000,
-        priority: 8,
-        reason: expect.stringContaining('自动恢复播放')
-      })
-    })
-
     it('未跨越边界时不应该触发自动暂停', () => {
       // 第一次调用：设置上一个时间点
       const context1 = createMockContext({

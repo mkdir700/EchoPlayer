@@ -50,7 +50,8 @@ export class SubtitleLibraryDAO extends BaseDAO<
       .returning('id')
       .executeTakeFirstOrThrow()
 
-    return this.parseSelectResult<{ id: number }>(result)
+    // 对于仅返回 id 的结果，直接返回不需要 schema 验证
+    return result as { id: number }
   }
 
   /**

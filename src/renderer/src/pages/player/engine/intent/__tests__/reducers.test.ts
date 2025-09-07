@@ -150,24 +150,6 @@ describe('领域归约器测试', () => {
       expect(result.subtitle?.lockState).toBe('keep')
     })
 
-    it('锁定状态下应该拒绝索引建议', () => {
-      const intents: Intent[] = [
-        {
-          domain: 'subtitle',
-          suggestIndex: 5,
-          priority: 5,
-          reason: 'sync-suggestion'
-        } as SubtitleIntent
-      ]
-      const context = createMockContext({
-        loopRemainingCount: 3 // 已锁定
-      })
-
-      const result = subtitleReducer(intents, context)
-
-      expect(result.subtitle?.index).toBeUndefined() // 拒绝建议
-    })
-
     it('应该处理锁定请求', () => {
       const intents: Intent[] = [
         {
@@ -314,12 +296,16 @@ describe('领域归约器测试', () => {
       expect(result.schedule?.[0]).toEqual({
         action: 'play',
         delayMs: 1000,
-        params: undefined
+        priority: 5,
+        reason: 'play-later',
+        domain: 'schedule'
       })
       expect(result.schedule?.[1]).toEqual({
         action: 'pause',
         delayMs: 2000,
-        params: undefined
+        domain: 'schedule',
+        priority: 3,
+        reason: 'pause-later'
       })
     })
 

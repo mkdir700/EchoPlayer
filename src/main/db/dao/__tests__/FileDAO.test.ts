@@ -12,14 +12,26 @@ describe('FileDAO', () => {
   let dao: FileDAO
   let mockKysely: any
 
-  const mockFile: Omit<FileMetadataTable, 'id' | 'created_at'> & { created_at?: string } = {
+  // Mock数据（数字时间戳，模拟数据库返回）
+  const mockFileFromDB: Omit<FileMetadataTable, 'id' | 'created_at'> & { created_at: number } = {
     name: 'test.mp4',
     origin_name: 'Original Test Video.mp4',
     path: '/path/to/test.mp4',
     size: 1024000,
     ext: '.mp4',
     type: 'video' as FileTypes,
-    created_at: '2024-01-01T12:00:00.000Z'
+    created_at: 1704110400000 // Fixed timestamp: 2024-01-01T12:00:00.000Z
+  }
+
+  // 期望的输出数据（Date对象，经过schema转换后）
+  const mockFileExpected: Omit<FileMetadataTable, 'id' | 'created_at'> & { created_at: Date } = {
+    name: 'test.mp4',
+    origin_name: 'Original Test Video.mp4',
+    path: '/path/to/test.mp4',
+    size: 1024000,
+    ext: '.mp4',
+    type: 'video' as FileTypes,
+    created_at: new Date('2024-01-01T12:00:00.000Z')
   }
 
   beforeEach(() => {
@@ -140,7 +152,7 @@ describe('FileDAO', () => {
 
   describe('findByPath', () => {
     it('应该根据路径查找文件', async () => {
-      const mockResult = { id: 'test-file-1', ...mockFile }
+      const mockResult = { id: 'test-file-1', ...mockFileFromDB }
       mockKysely.executeTakeFirst.mockResolvedValue(mockResult)
 
       const result = await dao.findByPath('/path/to/test.mp4')
@@ -149,7 +161,7 @@ describe('FileDAO', () => {
       expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
       expect(mockKysely.where).toHaveBeenCalledWith('path', '=', '/path/to/test.mp4')
       expect(mockKysely.executeTakeFirst).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResult)
+      expect(result).toEqual({ id: 'test-file-1', ...mockFileExpected })
     })
 
     it('应该返回undefined如果文件不存在', async () => {
@@ -171,8 +183,8 @@ describe('FileDAO', () => {
   describe('findByType', () => {
     it('应该根据类型查找文件列表', async () => {
       const mockResults = [
-        { id: 'file-1', ...mockFile },
-        { id: 'file-2', ...mockFile, name: 'test2.mp4' }
+        { id: 'file-1', ...mockFileFromDB },
+        { id: 'file-2', ...mockFileFromDB, name: 'test2.mp4' }
       ]
       mockKysely.execute.mockResolvedValue(mockResults)
 
@@ -183,7 +195,10 @@ describe('FileDAO', () => {
       expect(mockKysely.where).toHaveBeenCalledWith('type', '=', 'video')
       expect(mockKysely.orderBy).toHaveBeenCalledWith('created_at', 'desc')
       expect(mockKysely.execute).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual([
+        { id: 'file-1', ...mockFileExpected },
+        { id: 'file-2', ...mockFileExpected, name: 'test2.mp4' }
+      ])
     })
 
     it('应该处理不同文件类型', async () => {
@@ -218,7 +233,7 @@ describe('FileDAO', () => {
 
   describe('findById', () => {
     it('应该根据ID查找文件', async () => {
-      const mockResult = { id: 'test-file-1', ...mockFile }
+      const mockResult = { id: 'test-file-1', ...mockFileFromDB }
       mockKysely.executeTakeFirst.mockResolvedValue(mockResult)
 
       const result = await dao.findById('test-file-1')
@@ -227,7 +242,7 @@ describe('FileDAO', () => {
       expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
       expect(mockKysely.where).toHaveBeenCalledWith('id', '=', 'test-file-1')
       expect(mockKysely.executeTakeFirst).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResult)
+      expect(result).toEqual({ id: 'test-file-1', ...mockFileExpected })
     })
 
     it('应该返回undefined如果文件不存在', async () => {
@@ -241,8 +256,17 @@ describe('FileDAO', () => {
 
   describe('updateFile', () => {
     it('应该成功更新文件', async () => {
-      const mockResult = { numUpdatedRows: 1 }
-      mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
+      // Mock update operation
+      mockKysely.executeTakeFirstOrThrow.mockResolvedValueOnce({ numUpdatedRows: 1 })
+
+      // Mock findById call for updated record
+      const updatedRecord = {
+        id: 'test-file-1',
+        ...mockFileFromDB,
+        name: 'updated_test.mp4',
+        size: 2048
+      }
+      mockKysely.executeTakeFirst.mockResolvedValueOnce(updatedRecord)
 
       const result = await dao.updateFile('test-file-1', {
         name: 'updated_test.mp4',
@@ -252,7 +276,12 @@ describe('FileDAO', () => {
       expect(mockKysely.updateTable).toHaveBeenCalledWith('files')
       expect(mockKysely.where).toHaveBeenCalledWith('id', '=', 'test-file-1')
       expect(mockKysely.executeTakeFirstOrThrow).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResult)
+      expect(result).toEqual({
+        id: 'test-file-1',
+        ...mockFileExpected,
+        name: 'updated_test.mp4',
+        size: 2048
+      })
     })
 
     it('应该处理更新失败', async () => {
@@ -307,8 +336,8 @@ describe('FileDAO', () => {
   describe('getFiles', () => {
     it('应该获取文件列表', async () => {
       const mockResults = [
-        { id: 'file-1', ...mockFile },
-        { id: 'file-2', ...mockFile, name: 'test2.mp4' }
+        { id: 'file-1', ...mockFileFromDB },
+        { id: 'file-2', ...mockFileFromDB, name: 'test2.mp4' }
       ]
       mockKysely.execute.mockResolvedValue(mockResults)
 
@@ -316,7 +345,10 @@ describe('FileDAO', () => {
 
       expect(mockKysely.selectFrom).toHaveBeenCalledWith('files')
       expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual([
+        { id: 'file-1', ...mockFileExpected },
+        { id: 'file-2', ...mockFileExpected, name: 'test2.mp4' }
+      ])
     })
 
     it('应该支持查询参数过滤', async () => {
@@ -345,7 +377,8 @@ describe('FileDAO', () => {
 
   describe('utility methods', () => {
     it('应该检查文件是否存在', async () => {
-      mockKysely.executeTakeFirst.mockResolvedValue({ exists: 1 })
+      // Spy on the recordExists method
+      vi.spyOn(dao as any, 'recordExists').mockResolvedValue(true)
 
       const result = await dao.fileExists('/path/to/test.mp4')
 
@@ -353,7 +386,8 @@ describe('FileDAO', () => {
     })
 
     it('应该获取文件总数', async () => {
-      mockKysely.executeTakeFirst.mockResolvedValue({ count: '5' })
+      // Spy on the getRecordCount method
+      vi.spyOn(dao as any, 'getRecordCount').mockResolvedValue(5)
 
       const result = await dao.getTotalCount()
 
@@ -361,7 +395,8 @@ describe('FileDAO', () => {
     })
 
     it('应该获取指定类型文件数量', async () => {
-      mockKysely.executeTakeFirst.mockResolvedValue({ count: '3' })
+      // Spy on the getRecordCount method
+      vi.spyOn(dao as any, 'getRecordCount').mockResolvedValue(3)
 
       const result = await dao.getTotalCount('video')
 
@@ -372,8 +407,8 @@ describe('FileDAO', () => {
   describe('additional methods', () => {
     it('应该查找所有文件', async () => {
       const mockResults = [
-        { id: 'file-1', ...mockFile },
-        { id: 'file-2', ...mockFile, name: 'test2.mp4' }
+        { id: 'file-1', ...mockFileFromDB },
+        { id: 'file-2', ...mockFileFromDB, name: 'test2.mp4' }
       ]
       mockKysely.execute.mockResolvedValue(mockResults)
 
@@ -381,7 +416,10 @@ describe('FileDAO', () => {
 
       expect(mockKysely.selectFrom).toHaveBeenCalledWith('files')
       expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual([
+        { id: 'file-1', ...mockFileExpected },
+        { id: 'file-2', ...mockFileExpected, name: 'test2.mp4' }
+      ])
     })
 
     it('应该清空所有文件', async () => {
@@ -395,7 +433,7 @@ describe('FileDAO', () => {
     })
 
     it('应该按创建时间排序查找文件', async () => {
-      const mockResults = [{ id: 'file-1', ...mockFile }]
+      const mockResults = [{ id: 'file-1', ...mockFileFromDB }]
       mockKysely.execute.mockResolvedValue(mockResults)
       mockKysely.orderBy.mockImplementation(() => mockKysely)
       mockKysely.limit.mockImplementation(() => mockKysely)
@@ -404,7 +442,7 @@ describe('FileDAO', () => {
 
       expect(mockKysely.orderBy).toHaveBeenCalledWith('created_at', 'asc')
       expect(mockKysely.limit).toHaveBeenCalledWith(1)
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual([{ id: 'file-1', ...mockFileExpected }])
     })
   })
 })

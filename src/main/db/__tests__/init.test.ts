@@ -50,14 +50,12 @@ describe('Database Init', () => {
 
       await initDatabase()
 
-      expect(mockLogger.info).toHaveBeenCalledWith('[Database] Initializing database...')
+      expect(mockLogger.info).toHaveBeenCalledWith('Initializing database...')
       expect(mockOpenDatabase).toHaveBeenCalledTimes(1)
-      expect(mockLogger.info).toHaveBeenCalledWith('[Database] Database connection established')
+      expect(mockLogger.info).toHaveBeenCalledWith('Database connection established')
       expect(mockRunMigrations).toHaveBeenCalledTimes(1)
-      expect(mockLogger.info).toHaveBeenCalledWith('[Database] Migrations completed')
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        '[Database] Database initialization completed successfully'
-      )
+      expect(mockLogger.info).toHaveBeenCalledWith('Migrations completed')
+      expect(mockLogger.info).toHaveBeenCalledWith('Database initialization completed successfully')
     })
 
     it('应该处理数据库打开失败', async () => {
@@ -68,7 +66,7 @@ describe('Database Init', () => {
 
       await expect(initDatabase()).rejects.toThrow('Database open failed')
 
-      expect(mockLogger.error).toHaveBeenCalledWith('[Database] Failed to initialize database:', {
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to initialize database:', {
         error
       })
       expect(mockRunMigrations).not.toHaveBeenCalled()
@@ -81,7 +79,7 @@ describe('Database Init', () => {
       await expect(initDatabase()).rejects.toThrow('Migration failed')
 
       expect(mockOpenDatabase).toHaveBeenCalledTimes(1)
-      expect(mockLogger.error).toHaveBeenCalledWith('[Database] Failed to initialize database:', {
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to initialize database:', {
         error
       })
     })
