@@ -2,6 +2,7 @@ import { loggerService } from '@logger'
 import HomePageVideoService, { type HomePageVideoItem } from '@renderer/services/HomePageVideos'
 import { VideoLibraryService } from '@renderer/services/VideoLibrary'
 import { useSettingsStore } from '@renderer/state/stores/settings.store'
+import { useVideoListStore } from '@renderer/state/stores/video-list.store'
 import { message, Modal, Tooltip } from 'antd'
 import { AnimatePresence, motion } from 'framer-motion'
 import React from 'react'
@@ -68,19 +69,28 @@ const gridVariants = {
 
 export function HomePage(): React.JSX.Element {
   const { videoListViewMode, setVideoListViewMode } = useSettingsStore()
+  const { refreshTrigger, setLoading } = useVideoListStore()
 
   const [videos, setVideos] = React.useState<HomePageVideoItem[]>([])
   const navigate = useNavigate()
 
   const loadVideos = React.useCallback(async () => {
-    const svc = new HomePageVideoService()
-    const items = await svc.getHomePageVideos(50)
-    setVideos(items)
-  }, [])
+    try {
+      setLoading(true)
+      const svc = new HomePageVideoService()
+      const items = await svc.getHomePageVideos(50)
+      setVideos(items)
+    } catch (error) {
+      logger.error('加载视频列表失败', { error })
+    } finally {
+      setLoading(false)
+    }
+  }, [setLoading])
 
+  // 监听刷新触发器变化
   React.useEffect(() => {
     loadVideos()
-  }, [loadVideos])
+  }, [loadVideos, refreshTrigger])
 
   const handleVideoAdded = React.useCallback(() => {
     loadVideos()
