@@ -168,7 +168,10 @@ jobs:
             pnpm exec electron-builder ${{ matrix.target }} --publish never
           else
             echo "🚀 Publishing version to GitHub"
-            pnpm exec electron-builder ${{ matrix.target }} --publish onTag
+            # 使用 always 策略，无论是否有标签都会发布
+            # electron-builder 会根据版本号自动判断是否为 prerelease
+            echo "📦 Publishing with always strategy (supports both release and prerelease)"
+            pnpm exec electron-builder ${{ matrix.target }} --publish always
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -230,12 +233,25 @@ jobs:
           echo "Version: ${{ needs.detect-version.outputs.version }}"
           echo "Type: ${{ needs.detect-version.outputs.version_type }}"
           echo "Prerelease: ${{ needs.detect-version.outputs.is_prerelease }}"
-          echo "Status: ${{ job.status }}"
+          echo "Status: ${{ needs.release.result }}"
+          echo "Trigger: ${{ github.event_name }}"
+          echo ""
 
-          if [ "${{ needs.detect-version.outputs.version_type }}" == "beta" ]; then
-            echo ""
-            echo "🧪 Beta Release Notes:"
-            echo "- This is a beta version, please test thoroughly"
-            echo "- Report any issues on GitHub"
-            echo "- Auto-update is enabled for beta users"
+          if [ "${{ needs.release.result }}" == "success" ]; then
+            if [ "${{ needs.detect-version.outputs.version_type }}" != "dev" ] && [ "${{ needs.detect-version.outputs.version_type }}" != "test" ]; then
+              echo "🎉 GitHub Release created successfully!"
+              echo "📍 Check: https://github.com/${{ github.repository }}/releases"
+              echo ""
+              if [ "${{ needs.detect-version.outputs.is_prerelease }}" == "true" ]; then
+                echo "🧪 This is a prerelease version:"
+                echo "- Alpha/Beta versions are marked as prerelease"
+                echo "- Auto-update is enabled for prerelease users"
+              else
+                echo "🚀 This is a stable release"
+              fi
+            else
+              echo "📦 Build completed but not published (dev/test version)"
+            fi
+          else
+            echo "❌ Build failed - check logs for details"
           fi

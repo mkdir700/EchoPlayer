@@ -124,6 +124,9 @@ publish:
   vPrefixedTagName: true
   releaseType: draft
   publishAutoUpdate: true
+  # 自动检测是否为预发布版本
+  # alpha, beta 版本将被标记为 prerelease
+  # stable 版本将被标记为正式发布
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
 releaseInfo:
