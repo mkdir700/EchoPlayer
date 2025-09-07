@@ -255,6 +255,64 @@ export const COMPONENT_TOKENS = {
     // 动画
     TRANSITION_DURATION: ANIMATION_DURATION.MEDIUM,
     FADE_IN_DURATION: ANIMATION_DURATION.SLOW
+  },
+
+  // 进度条组件
+  PROGRESS_BAR: {
+    // 尺寸系统
+    TRACK_HEIGHT_BASE: 4, // 基础轨道高度
+    TRACK_HEIGHT_HOVER: 6, // 悬停轨道高度
+    TRACK_HEIGHT_DRAG: 6, // 拖动轨道高度
+
+    HANDLE_SIZE_BASE: 8, // 基础手柄尺寸
+    HANDLE_SIZE_HOVER: 12, // 悬停手柄尺寸
+    HANDLE_SIZE_DRAG: 14, // 拖动手柄尺寸
+
+    // 边框系统
+    HANDLE_BORDER_BASE: 1, // 基础边框宽度
+    HANDLE_BORDER_HOVER: 1.5, // 悬停边框宽度
+    HANDLE_BORDER_DRAG: 2, // 拖动边框宽度
+
+    // 圆角系统
+    TRACK_BORDER_RADIUS: BORDER_RADIUS.SM / 2, // 3px
+
+    // 透明度系统
+    HANDLE_GRADIENT_INNER: 0.9, // 内圈渐变透明度
+    HANDLE_GRADIENT_OUTER: 0.7, // 外圈渐变透明度
+    HANDLE_BORDER_ALPHA: 0.6, // 边框透明度
+    HANDLE_BORDER_ALPHA_HOVER: 0.8, // 悬停边框透明度
+
+    RAIL_OPACITY_BASE: 0.15, // 基础轨道透明度
+    RAIL_OPACITY_HOVER: 0.3, // 悬停轨道透明度
+    RAIL_OPACITY_DRAG: 0.4, // 拖动轨道透明度
+
+    // 阴影系统
+    HANDLE_SHADOW_BLUR_BASE: 4, // 基础光晕模糊半径
+    HANDLE_SHADOW_BLUR_HOVER: 8, // 悬停光晕模糊半径
+    HANDLE_SHADOW_BLUR_DRAG_1: 12, // 拖动光晕模糊半径1
+    HANDLE_SHADOW_BLUR_DRAG_2: 24, // 拖动光晕模糊半径2
+
+    HANDLE_SHADOW_OFFSET: 2, // 阴影偏移
+    HANDLE_SHADOW_ALPHA_BASE: 0.4, // 基础阴影透明度
+    HANDLE_SHADOW_ALPHA_HOVER: 0.6, // 悬停阴影透明度
+    HANDLE_SHADOW_ALPHA_DRAG: 0.8, // 拖动阴影透明度
+
+    TRACK_SHADOW_BLUR_HOVER: 8, // 轨道悬停光晕
+    TRACK_SHADOW_BLUR_DRAG: 16, // 轨道拖动光晕
+
+    // 动画系统
+    TRANSITION_DURATION_BASE: ANIMATION_DURATION.MEDIUM, // 0.2s
+    TRANSITION_DURATION_SLOW: '0.25s', // 慢速动画
+    TRANSITION_EASING: EASING.STANDARD, // cubic-bezier(0.4, 0, 0.2, 1)
+
+    // 缩放系统
+    HANDLE_SCALE_HIDDEN: 0, // 隐藏时缩放
+    HANDLE_SCALE_BASE: 0.8, // 基础缩放
+    HANDLE_SCALE_HOVER: 1, // 悬停缩放
+    HANDLE_SCALE_DRAG: 1.1, // 拖动缩放
+
+    // 计算工具函数
+    calculateHandleOffset: (handleSize: number, trackSize: number) => -(handleSize - trackSize) / 2
   }
 } as const
 
