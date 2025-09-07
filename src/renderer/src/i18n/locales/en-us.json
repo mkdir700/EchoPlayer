@@ -127,6 +127,32 @@
       "onclose": "Minimize to tray when closed",
       "show": "Show tray icon",
       "title": "tray"
+    },
+    "playback": {
+      "defaultPlaybackSpeed": "Playback Speed",
+      "defaultVolume": "Default Volume",
+      "subtitle": {
+        "backgroundType": {
+          "blur": "Blur",
+          "solid": "Solid",
+          "transparent": "Transparent"
+        },
+        "defaultBackgroundType": "Default Background",
+        "defaultDisplayMode": "Default Display Mode",
+        "displayMode": {
+          "bilingual": "Bilingual",
+          "none": "Hidden",
+          "original": "Original",
+          "translation": "Translation"
+        },
+        "overlay": {
+          "resizeHandle": {
+            "tooltip": "Drag to resize, double-click to expand horizontally"
+          }
+        },
+        "title": "Subtitle Settings"
+      },
+      "title": "Playback Settings"
     }
   },
   "title": "Settings",

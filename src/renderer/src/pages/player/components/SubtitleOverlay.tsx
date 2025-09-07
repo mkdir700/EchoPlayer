@@ -13,7 +13,9 @@
 import { loggerService } from '@logger'
 import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
+import { Tooltip } from 'antd'
 import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
 
 import { useSubtitleOverlay, useSubtitleOverlayUI } from '../hooks'
@@ -31,6 +33,9 @@ export interface SubtitleOverlayProps {
 export const SubtitleOverlay = memo(function SubtitleOverlay({
   containerRef
 }: SubtitleOverlayProps) {
+  // === i18n 翻译 ===
+  const { t } = useTranslation()
+
   // === 状态集成（重构版） ===
   const integration = useSubtitleOverlay()
 
@@ -49,8 +54,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     setSelectedText,
     updateContainerBounds,
     adaptToContainerResize,
-    avoidCollision,
-    calculateOptimalPosition
+    avoidCollision
   } = useSubtitleOverlayUI()
 
   // === 配置数据（来自当前视频项目） ===
@@ -81,7 +85,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         if (isInitial || !currentConfig?.isInitialized) {
           // 初始化时使用 updateContainerBounds
           updateContainerBounds(newBounds)
-          calculateOptimalPosition(newBounds)
+          // calculateOptimalPosition(newBounds)
         } else {
           // 容器尺寸变化时使用智能适应
           adaptToContainerResize(newBounds)
@@ -124,13 +128,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       window.removeEventListener('resize', handleResize)
       observer.disconnect()
     }
-  }, [
-    containerRef,
-    updateContainerBounds,
-    adaptToContainerResize,
-    calculateOptimalPosition,
-    currentConfig?.isInitialized
-  ])
+  }, [containerRef, updateContainerBounds, adaptToContainerResize, currentConfig?.isInitialized])
 
   // === 智能冲突检测 ===
   useEffect(() => {
@@ -272,7 +270,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           const newSize = {
             width: Math.max(
               20,
-              Math.min(80, startSize.width + (deltaX / containerBounds.width) * 100)
+              Math.min(95, startSize.width + (deltaX / containerBounds.width) * 100)
             ),
             height: Math.max(
               10,
@@ -325,6 +323,50 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     // TODO: 实现单词点击的 popup 功能
   }, [])
 
+  // === ResizeHandle 双击扩展处理 ===
+  const handleResizeDoubleClick = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      // 计算当前字幕框的中心点
+      const currentCenterX = position.x + size.width / 2
+
+      const maxWidth = 95 // 最大宽度95%
+
+      // 计算新的位置，让字幕框向两边扩展
+      const newX = Math.max(
+        0, // 不能超出左边界
+        Math.min(
+          100 - maxWidth, // 不能超出右边界
+          currentCenterX - maxWidth / 2 // 以中心点为基准向两边扩展
+        )
+      )
+
+      const newSize = {
+        ...size,
+        width: maxWidth
+      }
+
+      const newPosition = {
+        ...position,
+        x: newX
+      }
+
+      // 同时更新尺寸和位置
+      setSize(newSize)
+      setPosition(newPosition)
+
+      logger.info('字幕覆盖层双击扩展', {
+        newSize,
+        newPosition,
+        currentCenterX,
+        expandedFromCenter: true
+      })
+    },
+    [size, position, setSize, setPosition]
+  )
+
   // === 条件渲染：配置未加载或隐藏模式不显示 ===
   const shouldRender = useMemo(
     () => displayMode !== SubtitleDisplayMode.NONE && integration.shouldShow,
@@ -373,11 +415,19 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         />
       </ContentContainer>
 
-      <ResizeHandle
-        $visible={isHovered || isDragging || isResizing}
-        onMouseDown={handleResizeMouseDown}
-        data-testid="subtitle-resize-handle"
-      />
+      <Tooltip
+        title={t('settings.playback.subtitle.overlay.resizeHandle.tooltip')}
+        placement="top"
+        mouseEnterDelay={0.5}
+        mouseLeaveDelay={0}
+      >
+        <ResizeHandle
+          $visible={isHovered || isDragging || isResizing}
+          onMouseDown={handleResizeMouseDown}
+          onDoubleClick={handleResizeDoubleClick}
+          data-testid="subtitle-resize-handle"
+        />
+      </Tooltip>
     </OverlayContainer>
   )
 })

@@ -90,9 +90,6 @@ export interface SubtitleOverlayUIActions {
   /** 更新容器边界 */
   updateContainerBounds: (bounds: { width: number; height: number }) => void
 
-  /** 计算最佳位置 */
-  calculateOptimalPosition: (videoDimensions: { width: number; height: number }) => void
-
   /** 适应容器尺寸变化 */
   adaptToContainerResize: (newBounds: { width: number; height: number }) => void
 
@@ -182,60 +179,6 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
     setContainerBounds(bounds)
     logger.debug('更新容器边界', { bounds })
   }, [])
-
-  const calculateOptimalPosition = useCallback(
-    (videoDimensions: { width: number; height: number }) => {
-      const { width, height } = videoDimensions
-      const aspectRatio = width / height
-
-      // 定义多种定位策略
-      const positioningStrategies = [
-        {
-          name: 'bottom-center',
-          condition: () => aspectRatio > 1.3,
-          position: { x: 10, y: 75 },
-          size: { width: 80, height: 20 }
-        },
-        {
-          name: 'bottom-wide',
-          condition: () => aspectRatio > 2.0,
-          position: { x: 15, y: 78 },
-          size: { width: 70, height: 18 }
-        },
-        {
-          name: 'middle-bottom',
-          condition: () => aspectRatio <= 1.3 && aspectRatio > 0.8,
-          position: { x: 5, y: 70 },
-          size: { width: 90, height: 22 }
-        },
-        {
-          name: 'vertical-bottom',
-          condition: () => aspectRatio <= 0.8,
-          position: { x: 3, y: 65 },
-          size: { width: 94, height: 25 }
-        }
-      ]
-
-      const strategy = positioningStrategies.find((s) => s.condition()) || positioningStrategies[0]
-
-      // 使用 PlayerStore 的配置更新方法
-      setSubtitleOverlay({
-        position: strategy.position,
-        size: strategy.size,
-        isInitialized: true
-      })
-
-      logger.info('计算最佳字幕位置', {
-        videoDimensions,
-        aspectRatio,
-        strategy: strategy.name,
-        position: strategy.position,
-        size: strategy.size
-      })
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // 移除 setSubtitleOverlay 依赖，因为它应该是稳定的
-  )
 
   const adaptToContainerResize = useCallback(
     (newBounds: { width: number; height: number }) => {
@@ -364,7 +307,6 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
     setHovered,
     setSelectedText: setSelectedTextHandler,
     updateContainerBounds,
-    calculateOptimalPosition,
     adaptToContainerResize,
     avoidCollision
   }
