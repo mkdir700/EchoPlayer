@@ -233,6 +233,7 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
         size: strategy.size
       })
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [] // 移除 setSubtitleOverlay 依赖，因为它应该是稳定的
   )
 
@@ -279,6 +280,7 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
         })
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [] // 移除依赖，使用闭包获取最新值
   )
 
@@ -340,6 +342,7 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [] // 移除依赖，使用闭包获取最新值
   )
 
