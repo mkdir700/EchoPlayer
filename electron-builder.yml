@@ -126,3 +126,6 @@ publish:
   publishAutoUpdate: true
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
+releaseInfo:
+  releaseName: 'EchoPlayer ${version}'
+  releaseNotesFile: 'build/release-notes.md'
