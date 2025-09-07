@@ -1,5 +1,8 @@
 {
   "common": {
+    "favorites": "Favorites",
+    "favorites_developing": "This feature is under development",
+    "home": "Home",
     "language": "language"
   },
   "docs": {
