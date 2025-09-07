@@ -5,6 +5,7 @@
   "common": {
     "cancel": "取消",
     "favorites": "收藏",
+    "favorites_developing": "该功能正在开发中",
     "grid_view": "矩阵视图",
     "home": "主页",
     "language": "语言",

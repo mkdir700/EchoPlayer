@@ -99,7 +99,11 @@ const MainMenus: FC = () => {
     <>
       {Object.entries(menuItems).map(([key, item]) => {
         const isActive = isRoute(item.path) === 'active'
-        const tooltipTitle = item.disabled ? '' : item.label
+        const tooltipTitle = item.disabled
+          ? key === 'favorites'
+            ? t('common.favorites_developing')
+            : item.label
+          : item.label
 
         return (
           <Tooltip key={key} title={tooltipTitle} placement="right" mouseEnterDelay={0.8}>
@@ -107,7 +111,10 @@ const MainMenus: FC = () => {
               onClick={item.disabled ? undefined : () => navigate(item.path)}
               className={isActive ? 'active' : ''}
             >
-              <Icon theme={theme} className={isActive ? 'active' : ''}>
+              <Icon
+                theme={theme}
+                className={`${isActive ? 'active' : ''} ${item.disabled ? 'disabled' : ''}`}
+              >
                 {item.icon}
               </Icon>
             </StyledLink>
@@ -170,6 +177,21 @@ const Icon = styled.div<{ theme: string }>`
     cursor: pointer;
     .icon {
       color: var(--color-icon-white);
+    }
+  }
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    .icon {
+      color: var(--color-text-secondary);
+    }
+  }
+  &.disabled:hover {
+    background-color: transparent;
+    opacity: 0.4;
+    cursor: not-allowed;
+    .icon {
+      color: var(--color-text-secondary);
     }
   }
   &.active {
