@@ -8,6 +8,9 @@
 [![Electron](https://img.shields.io/badge/Electron-35+-blue?style=flat-square)](https://electronjs.org)
 [![React](https://img.shields.io/badge/React-19+-cyan?style=flat-square)](https://reactjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-purple?style=flat-square)](https://typescriptlang.org)
+<br/>
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/mkdir700/EchoPlayer?utm_source=oss&utm_medium=github&utm_campaign=mkdir700%2FEchoPlayer&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
+[![GitHub all releases](https://img.shields.io/github/downloads/mkdir700/EchoPlayer/total?style=flat-square)](https://github.com/mkdir700/EchoPlayer/releases)
 
 [安装](#-安装) • [使用指南](#-使用指南) • [功能特性](#-功能特性) • [开发](#-开发)
 
