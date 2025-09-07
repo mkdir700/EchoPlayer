@@ -18,6 +18,8 @@ describe('SubtitleLibraryDAO', () => {
   } = {
     videoId: 1,
     filePath: '/path/to/subtitle.srt',
+    subtitles: null,
+    parsed_at: null,
     created_at: 1704110400000 // Fixed timestamp: 2024-01-01T12:00:00.000Z
   }
 
@@ -27,6 +29,8 @@ describe('SubtitleLibraryDAO', () => {
   } = {
     videoId: 1,
     filePath: '/path/to/subtitle.srt',
+    subtitles: null,
+    parsed_at: null,
     created_at: 1704110400000 // Number timestamp for insertion
   }
 
@@ -36,6 +40,8 @@ describe('SubtitleLibraryDAO', () => {
   } = {
     videoId: 1,
     filePath: '/path/to/subtitle.srt',
+    subtitles: null,
+    parsed_at: null,
     created_at: new Date('2024-01-01T12:00:00.000Z')
   }
 
@@ -362,6 +368,8 @@ describe('SubtitleLibraryDAO', () => {
       const completeRecord = {
         videoId: 42,
         filePath: '/complete/path/to/subtitle.srt',
+        subtitles: null,
+        parsed_at: null,
         created_at: 1704110400000 // Number timestamp
       }
       const mockResult = { id: 1 }
@@ -377,6 +385,8 @@ describe('SubtitleLibraryDAO', () => {
       const recordWithSpecialChars = {
         videoId: 1,
         filePath: '/path/with/特殊字符/and spaces/subtitle.srt',
+        subtitles: null,
+        parsed_at: null,
         created_at: 1704110400000 // Number timestamp
       }
       const mockResult = { id: 1 }
@@ -395,12 +405,16 @@ describe('SubtitleLibraryDAO', () => {
           id: 1,
           videoId: 1,
           filePath: '/path/to/subtitle1.srt',
+          subtitles: null,
+          parsed_at: null,
           created_at: 1704110400000 // Number timestamp
         },
         {
           id: 2,
           videoId: 1,
           filePath: '/path/to/subtitle2.srt',
+          subtitles: null,
+          parsed_at: null,
           created_at: 1704114000000 // Number timestamp: 2024-01-01T13:00:00.000Z
         }
       ]
@@ -412,12 +426,16 @@ describe('SubtitleLibraryDAO', () => {
           id: 1,
           videoId: 1,
           filePath: '/path/to/subtitle1.srt',
+          subtitles: null,
+          parsed_at: null,
           created_at: new Date('2024-01-01T12:00:00.000Z')
         },
         {
           id: 2,
           videoId: 1,
           filePath: '/path/to/subtitle2.srt',
+          subtitles: null,
+          parsed_at: null,
           created_at: new Date('2024-01-01T13:00:00.000Z')
         }
       ]
@@ -429,6 +447,8 @@ describe('SubtitleLibraryDAO', () => {
       expect(result[0]).toHaveProperty('videoId')
       expect(result[0]).toHaveProperty('filePath')
       expect(result[0]).toHaveProperty('created_at')
+      expect(result[0]).toHaveProperty('subtitles')
+      expect(result[0]).toHaveProperty('parsed_at')
     })
   })
 })
