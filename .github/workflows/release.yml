@@ -1,4 +1,4 @@
-name: Build and Release
+name: Release
 
 on:
   push:
@@ -130,7 +130,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -160,7 +160,15 @@ jobs:
           echo "📦 版本类型: ${{ needs.detect-version.outputs.version_type }}"
           echo "🔄 更新渠道: ${{ needs.detect-version.outputs.version_type == 'stable' && 'latest' || needs.detect-version.outputs.version_type }}"
           pnpm build
-          pnpm exec electron-builder ${{ matrix.target }} --publish never
+
+          # 根据版本类型决定发布策略
+          if [[ "${{ needs.detect-version.outputs.version_type }}" == "dev" || "${{ needs.detect-version.outputs.version_type }}" == "test" ]]; then
+            echo "🚫 Dev/Test version - building without publishing"
+            pnpm exec electron-builder ${{ matrix.target }} --publish never
+          else
+            echo "🚀 Publishing version to GitHub"
+            pnpm exec electron-builder ${{ matrix.target }} --publish onTag
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -208,26 +216,6 @@ jobs:
             dist/*.blockmap
           retention-days: 30
           if-no-files-found: warn
-
-      - name: Create Release and Upload Assets
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.detect-version.outputs.version }}
-          name: ${{ needs.detect-version.outputs.version }}
-          draft: true
-          prerelease: ${{ needs.detect-version.outputs.is_prerelease }}
-          files: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.zip
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.yml
-            dist/*.yaml
-            dist/*.blockmap
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     needs: [detect-version, release]
