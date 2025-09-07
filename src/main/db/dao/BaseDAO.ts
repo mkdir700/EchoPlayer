@@ -130,12 +130,21 @@ export abstract class BaseDAO<
   /**
    * 获取记录总数
    */
-  protected async getRecordCount(): Promise<number> {
+  protected async getRecordCount(whereCondition?: { field: string; value: any }): Promise<number> {
     try {
-      // 使用sql模板构建查询
-      const result = await sql`SELECT COUNT(*) as count FROM ${sql.table(this.tableName)}`.execute(
-        this.db
-      )
+      let result: any
+      if (whereCondition) {
+        // 使用sql模板构建带条件的查询
+        result =
+          await sql`SELECT COUNT(*) as count FROM ${sql.table(this.tableName)} WHERE ${sql.id(whereCondition.field)} = ${whereCondition.value}`.execute(
+            this.db
+          )
+      } else {
+        // 使用sql模板构建查询
+        result = await sql`SELECT COUNT(*) as count FROM ${sql.table(this.tableName)}`.execute(
+          this.db
+        )
+      }
       return Number((result.rows[0] as any)?.count || 0)
     } catch (error) {
       logger.error(`Failed to get record count for table ${String(this.tableName)}:`, { error })

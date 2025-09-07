@@ -195,7 +195,7 @@ export class SubtitleLibraryDAO extends BaseDAO<
    * 获取字幕总数
    */
   async getTotalCount(videoId?: number): Promise<number> {
-    const whereConditions = videoId ? [{ field: 'videoId', op: '=', value: videoId }] : undefined
-    return await this.getRecordCount(whereConditions)
+    const whereCondition = videoId ? { field: 'videoId', value: videoId } : undefined
+    return await this.getRecordCount(whereCondition)
   }
 }
