@@ -1,3 +1,5 @@
+import { useTheme } from '@renderer/contexts/theme.context'
+import { COMPONENT_TOKENS } from '@renderer/infrastructure/styles/theme'
 import { formatTime } from '@renderer/state/infrastructure/utils'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { PerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
@@ -15,6 +17,7 @@ function ProgressBar() {
   const currentTime = usePlayerStore((s) => s.currentTime)
   const duration = usePlayerStore((s) => s.duration)
   const { seekToUser } = usePlayerCommands()
+  const { token } = useTheme()
 
   // 使用 ref 来跟踪是否是第一次 onChange（开始拖拽）
   const isFirstChange = useRef(true)
@@ -111,6 +114,7 @@ function ProgressBar() {
         aria-label="Progress"
         $isHovering={isHovering}
         $isDragging={isDragging}
+        $token={token}
       />
     </SliderWrapper>
   )
@@ -128,6 +132,7 @@ const SliderWrapper = styled.div`
 const StyledSlider = styled(Slider)<{
   $isHovering: boolean
   $isDragging: boolean
+  $token: any
 }>`
   /* 增加选择器特异性来覆盖 Ant Design 的默认变量 */
   &.ant-slider {
@@ -143,45 +148,59 @@ const StyledSlider = styled(Slider)<{
     height: 0px; /* 移除默认高度 */
   }
 
-  /* 轨道样式 - 默认状态 */
+  /* 轨道样式 - 默认状态 - 使用主题令牌 */
   .ant-slider-rail {
     background: var(--color-border);
-    opacity: 0.15;
-    height: 4px; /* 增加厚度，提高可见性 */
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_BASE};
+    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_BASE}px;
+    transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_DURATION_BASE}
+      ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_EASING};
   }
 
-  /* 进度轨道样式 - 已播放部分 */
+  /* 进度轨道样式 - 已播放部分 - 使用主题令牌 */
   .ant-slider-track {
     background: var(--color-primary);
-    height: 4px; /* 增加厚度，提高可见性 */
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 4px var(--color-primary);
+    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_BASE}px;
+    transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_DURATION_BASE}
+      ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_EASING};
+    box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_BASE}px var(--color-primary);
     filter: opacity(0.9);
   }
 
-  /* 手柄样式 - 沉浸式设计，与进度条统一 - 默认隐藏 */
+  /* 手柄样式 - 沉浸式设计，与进度条统一 - 默认隐藏 - 使用主题令牌 */
   .ant-slider-handle {
-    width: 8px;
-    height: 8px;
-    /* 使用渐变色，从主色到半透明白色 */
+    width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_BASE}px;
+    height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_BASE}px;
+    /* 使用渐变色，从主色到半透明白色 - 透明度来自主题令牌 */
     background: radial-gradient(
       circle,
       var(--color-primary) 0%,
-      rgba(255, 255, 255, 0.9) 70%,
-      rgba(255, 255, 255, 0.7) 100%
+      rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_INNER}) 70%,
+      rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_OUTER}) 100%
     );
-    /* 边框使用主色调的半透明版本 */
-    border: 1px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.6);
-    margin-top: -2px; /* 精确居中对齐：(8px handler - 4px track) / 2 = -2px */
-    /* 使用主色调的光晕阴影，与进度条呼应 */
+    /* 边框使用主题令牌透明度 */
+    border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_BASE}px solid
+      rgba(
+        var(--color-primary-rgb, 59, 130, 246),
+        ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_ALPHA}
+      );
+    margin-top: ${COMPONENT_TOKENS.PROGRESS_BAR.calculateHandleOffset(
+      COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_BASE,
+      COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_BASE
+    )}px;
+    /* 使用主题令牌的光晕阴影 */
     box-shadow:
-      0 0 4px rgba(var(--color-primary-rgb, 59, 130, 246), 0.4),
-      0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    /* 默认完全隐藏 - 透明度和缩放都为0 */
+      0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_BASE}px
+        rgba(
+          var(--color-primary-rgb, 59, 130, 246),
+          ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_ALPHA_BASE}
+        ),
+      0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_OFFSET}px 8px rgba(0, 0, 0, 0.1);
+    transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_DURATION_SLOW}
+      ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_EASING};
+    /* 默认完全隐藏 - 使用主题令牌缩放 */
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_HIDDEN});
     cursor: pointer;
 
     /* 移除默认的伪元素 */
@@ -194,32 +213,33 @@ const StyledSlider = styled(Slider)<{
       display: none !important;
     }
 
-    /* 手柄激活状态 - 使用统一的主色调设计 */
+    /* 手柄激活状态 - 使用主题令牌 */
     &:focus {
       border-color: var(--color-primary);
       background: radial-gradient(
         circle,
         var(--color-primary) 0%,
-        rgba(255, 255, 255, 0.9) 70%,
-        rgba(255, 255, 255, 0.7) 100%
+        rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_INNER}) 70%,
+        rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_OUTER}) 100%
       );
       box-shadow:
-        0 0 6px rgba(var(--color-primary-rgb, 59, 130, 246), 0.5),
+        0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_BASE + 2}px
+          rgba(var(--color-primary-rgb, 59, 130, 246), 0.5),
         0 3px 8px rgba(0, 0, 0, 0.15);
     }
   }
 
-  /* 基于props的条件样式 - 悬停时显示handler */
+  /* 基于props的条件样式 - 悬停时显示handler - 使用主题令牌 */
   ${(props) =>
-    (props.$isHovering || props.$isDragging) &&
+    props.$isHovering &&
+    !props.$isDragging &&
     `
     .ant-slider-handle {
       opacity: 1 !important;
-      transform: scale(1) !important;
-      width: 12px !important;
-      height: 12px !important;
-      margin-top: 1px !important;
-      margin-left: -4px !important;
+      transform: scale(${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_HOVER}) !important;
+      width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px !important;
+      height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px !important;
+      margin-top: ${COMPONENT_TOKENS.PROGRESS_BAR.calculateHandleOffset(COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER, COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER)}px !important;
       /* 悬停时增强渐变效果 */
       background: radial-gradient(
         circle,
@@ -227,38 +247,76 @@ const StyledSlider = styled(Slider)<{
         rgba(255, 255, 255, 0.95) 60%,
         rgba(255, 255, 255, 0.8) 100%
       ) !important;
-      border: 1.5px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.8) !important;
+      border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_HOVER}px solid rgba(var(--color-primary-rgb, 59, 130, 246), ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_ALPHA_HOVER}) !important;
       /* 增强光晕效果与进度条呼应 */
       box-shadow:
-        0 0 8px rgba(var(--color-primary-rgb, 59, 130, 246), 0.6),
+        0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_HOVER}px rgba(var(--color-primary-rgb, 59, 130, 246), ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_ALPHA_HOVER}),
         0 3px 12px rgba(0, 0, 0, 0.15) !important;
     }
     .ant-slider-rail {
-      height: 6px !important;
-      border-radius: 3px !important;
-      opacity: 0.3 !important;
+      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px !important;
+      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
+      opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_HOVER} !important;
     }
     .ant-slider-track {
-      height: 6px !important;
-      border-radius: 3px !important;
-      box-shadow: 0 0 8px var(--color-primary) !important;
+      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px !important;
+      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
+      box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_SHADOW_BLUR_HOVER}px var(--color-primary) !important;
       filter: opacity(1) !important;
     }
   `}
 
-  /* 悬停整个进度条时的效果 - 仅轨道变化，handler通过props控制 */
+  /* 拖动时的特殊样式 - 最强视觉反馈 - 使用主题令牌 */
+  ${(props) =>
+    props.$isDragging &&
+    `
+    .ant-slider-handle {
+      opacity: 1 !important;
+      transform: scale(${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_DRAG}) !important;
+      width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_DRAG}px !important;
+      height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_DRAG}px !important;
+      margin-top: ${COMPONENT_TOKENS.PROGRESS_BAR.calculateHandleOffset(COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_DRAG, COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_DRAG)}px !important;
+      /* 拖动时最强烈的渐变效果 */
+      background: radial-gradient(
+        circle,
+        var(--color-primary) 0%,
+        var(--color-primary) 30%,
+        rgba(255, 255, 255, 1) 70%,
+        rgba(255, 255, 255, 0.9) 100%
+      ) !important;
+      border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_DRAG}px solid var(--color-primary) !important;
+      /* 最强烈的光晕效果 */
+      box-shadow:
+        0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_DRAG_1}px rgba(var(--color-primary-rgb, 59, 130, 246), ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_ALPHA_DRAG}),
+        0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_DRAG_2}px rgba(var(--color-primary-rgb, 59, 130, 246), 0.4),
+        0 4px 16px rgba(0, 0, 0, 0.2) !important;
+    }
+    .ant-slider-rail {
+      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_DRAG}px !important;
+      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
+      opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_DRAG} !important;
+    }
+    .ant-slider-track {
+      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_DRAG}px !important;
+      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
+      box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_SHADOW_BLUR_DRAG}px var(--color-primary) !important;
+    }
+  `}
+
+  /* 悬停整个进度条时的效果 - 仅轨道变化，handler通过props控制 - 使用主题令牌 */
   &:hover {
     .ant-slider-rail {
       background: var(--color-border);
-      opacity: 0.3;
-      height: 6px; /* 悬停时增加厚度 */
-      border-radius: 3px;
+      opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_HOVER};
+      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
+      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
     }
 
     .ant-slider-track {
-      height: 6px; /* 悬停时增加厚度 */
-      border-radius: 3px;
-      box-shadow: 0 0 8px var(--color-primary);
+      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
+      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
+      box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_SHADOW_BLUR_HOVER}px
+        var(--color-primary);
       filter: opacity(1);
     }
   }
@@ -307,7 +365,7 @@ const StyledSlider = styled(Slider)<{
     }
   }
 
-  /* 主题适配 - 确保沉浸式设计在所有主题下都和谐 */
+  /* 主题适配 - 确保沉浸式设计在所有主题下都和谐 - 使用主题令牌 */
   [theme-mode='dark'] & {
     .ant-slider-handle {
       /* 暗色主题下的渐变调整 */
@@ -317,7 +375,8 @@ const StyledSlider = styled(Slider)<{
         rgba(255, 255, 255, 0.95) 70%,
         rgba(255, 255, 255, 0.8) 100%
       ) !important;
-      border: 1px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.7) !important;
+      border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_BASE}px solid
+        rgba(var(--color-primary-rgb, 59, 130, 246), 0.7) !important;
       border-radius: 50% !important;
     }
   }
@@ -328,10 +387,14 @@ const StyledSlider = styled(Slider)<{
       background: radial-gradient(
         circle,
         var(--color-primary) 0%,
-        rgba(255, 255, 255, 0.9) 70%,
-        rgba(255, 255, 255, 0.7) 100%
+        rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_INNER}) 70%,
+        rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_OUTER}) 100%
       ) !important;
-      border: 1px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.6) !important;
+      border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_BASE}px solid
+        rgba(
+          var(--color-primary-rgb, 59, 130, 246),
+          ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_ALPHA}
+        ) !important;
       border-radius: 50% !important;
     }
 
