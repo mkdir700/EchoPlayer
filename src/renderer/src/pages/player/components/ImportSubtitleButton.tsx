@@ -90,10 +90,15 @@ const ImportSubtitleButton: FC<ImportSubtitleButtonProps> = ({
       setSubtitles(items)
       setSource({ type: 'file', name: file.origin_name || file.name })
 
-      // 写入字幕库记录，便于下次进入自动加载
+      // 写入字幕库记录，包含解析后的字幕数据
       try {
         const svc = new SubtitleLibraryService()
-        await svc.addOrUpdateRecord({ videoId: currentVideoId, filePath: file.path })
+        await svc.addRecordWithSubtitles({
+          videoId: currentVideoId,
+          filePath: file.path,
+          subtitles: items
+        })
+        logger.info('字幕数据已缓存到数据库', { count: items.length })
       } catch (e) {
         logger.warn('写入字幕库记录失败（不影响本次使用）', { error: e })
       }

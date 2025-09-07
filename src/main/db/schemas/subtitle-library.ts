@@ -12,7 +12,9 @@ import { FilePathSchema, PositiveIntegerSchema, SqlTimestampSchema } from './tra
 export const SubtitleLibraryInsertSchema = z.object({
   videoId: PositiveIntegerSchema,
   filePath: FilePathSchema,
-  created_at: SqlTimestampSchema.optional()
+  created_at: SqlTimestampSchema.optional(),
+  subtitles: z.string().optional(), // 可选字段，存储解析后的字幕数据
+  parsed_at: SqlTimestampSchema.nullable().optional()
 })
 
 /**
@@ -27,7 +29,9 @@ export const SubtitleLibrarySelectSchema = z.object({
   id: PositiveIntegerSchema,
   videoId: PositiveIntegerSchema,
   filePath: z.string(),
-  created_at: z.coerce.date()
+  created_at: z.coerce.date(),
+  subtitles: z.string().optional(), // 可选字段，存储解析后的字幕数据
+  parsed_at: SqlTimestampSchema.nullable().optional()
 })
 
 /**
