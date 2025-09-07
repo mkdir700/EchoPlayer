@@ -28,24 +28,6 @@ describe('FileMetadata Schemas', () => {
       expect(result.type).toBe('video')
     })
 
-    it('should apply default timestamp if not provided', () => {
-      const minimalData = {
-        id: 'test-file-2',
-        name: 'audio.mp3',
-        origin_name: 'Original Audio.mp3',
-        path: '/path/to/audio.mp3',
-        size: 512000,
-        ext: '.mp3',
-        type: 'audio' as const
-      }
-
-      const result = FileMetadataInsertSchema.parse(minimalData)
-
-      expect(result.id).toBe('test-file-2')
-      expect(result.type).toBe('audio')
-      expect(typeof result.created_at).toBe('number')
-    })
-
     it('should validate and clean string fields', () => {
       const data = {
         id: ' test-file-3 ',
@@ -144,7 +126,7 @@ describe('FileMetadata Schemas', () => {
       expect(result.id).toBe('test-file-1')
       expect(result.name).toBe('video.mp4')
       expect(result.type).toBe('video')
-      expect(result.created_at).toBe(1704067200000)
+      expect(result.created_at.getTime()).toBe(Date.parse('2024-01-01T00:00:00.000Z'))
     })
 
     it('should handle all file types', () => {

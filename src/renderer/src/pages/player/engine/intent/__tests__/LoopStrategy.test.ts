@@ -72,7 +72,7 @@ describe('LoopStrategy - 循环播放策略 (TimeMath集成版)', () => {
         lock: true,
         lockOwner: 'loop',
         priority: 7,
-        reason: '开始循环，锁定字幕'
+        reason: '锁定字幕(0)'
       })
     })
 

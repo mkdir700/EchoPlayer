@@ -1,0 +1,24 @@
+# 确保所有文本文件在 Git 中使用 LF 换行符
+* text=auto eol=lf
+
+# 特定文件类型的换行符处理
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# 二进制文件不处理换行符
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

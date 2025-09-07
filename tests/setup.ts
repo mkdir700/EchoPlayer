@@ -1,5 +1,76 @@
 import { afterEach, beforeEach, vi } from 'vitest'
 
+// Mock Electron app module
+vi.mock('electron', () => ({
+  app: {
+    getPath: vi.fn((name: string) => {
+      const mockPaths = {
+        userData: '/tmp/test-userData',
+        appData: '/tmp/test-appData',
+        documents: '/tmp/test-documents',
+        downloads: '/tmp/test-downloads',
+        desktop: '/tmp/test-desktop',
+        home: '/tmp/test-home'
+      }
+      return mockPaths[name] || '/tmp/test-default'
+    }),
+    getAppPath: vi.fn(() => '/tmp/test-app'),
+    setPath: vi.fn(),
+    quit: vi.fn(),
+    exit: vi.fn(),
+    on: vi.fn(),
+    once: vi.fn(),
+    emit: vi.fn()
+  },
+  BrowserWindow: vi.fn(),
+  ipcMain: {
+    on: vi.fn(),
+    once: vi.fn(),
+    handle: vi.fn(),
+    emit: vi.fn()
+  },
+  dialog: {
+    showOpenDialog: vi.fn(),
+    showSaveDialog: vi.fn(),
+    showMessageBox: vi.fn()
+  }
+}))
+
+// Mock Node.js fs module for directory operations
+vi.mock('node:fs', () => ({
+  default: {
+    existsSync: vi.fn(() => true), // Always return true to avoid directory creation in tests
+    mkdirSync: vi.fn(),
+    readFileSync: vi.fn(),
+    writeFileSync: vi.fn(),
+    statSync: vi.fn(),
+    readdirSync: vi.fn(() => [])
+  },
+  existsSync: vi.fn(() => true),
+  mkdirSync: vi.fn(),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  statSync: vi.fn(),
+  readdirSync: vi.fn(() => [])
+}))
+
+vi.mock('node:fs/promises', () => ({
+  default: {
+    readdir: vi.fn(() => Promise.resolve([])),
+    stat: vi.fn(() => Promise.resolve({ isFile: () => true, isDirectory: () => false, size: 0 })),
+    readFile: vi.fn(() => Promise.resolve('')),
+    writeFile: vi.fn(() => Promise.resolve()),
+    mkdir: vi.fn(() => Promise.resolve()),
+    unlink: vi.fn(() => Promise.resolve())
+  },
+  readdir: vi.fn(() => Promise.resolve([])),
+  stat: vi.fn(() => Promise.resolve({ isFile: () => true, isDirectory: () => false, size: 0 })),
+  readFile: vi.fn(() => Promise.resolve('')),
+  writeFile: vi.fn(() => Promise.resolve()),
+  mkdir: vi.fn(() => Promise.resolve()),
+  unlink: vi.fn(() => Promise.resolve())
+}))
+
 // Mock Electron APIs
 global.window = Object.assign(global.window, {
   api: {

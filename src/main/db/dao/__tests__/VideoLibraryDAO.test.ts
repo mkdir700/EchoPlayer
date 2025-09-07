@@ -12,15 +12,42 @@ describe('VideoLibraryDAO', () => {
   let dao: VideoLibraryDAO
   let mockKysely: any
 
-  const mockVideoRecord = {
+  // Mock data for insertion (uses boolean, will be converted to number by schema)
+  const mockVideoRecordFromDBForInsert = {
     fileId: 'test-file-id-1',
     currentTime: 120.5,
     duration: 3600,
     playedAt: Date.now(),
     firstPlayedAt: Date.now() - 86400000, // 1 day ago
     playCount: 3,
-    isFinished: 0, // SqlBool (0 for false)
-    isFavorite: 1, // SqlBool (1 for true)
+    isFinished: false, // Boolean for insert
+    isFavorite: true, // Boolean for insert
+    thumbnailPath: '/path/to/thumbnail.jpg'
+  }
+
+  // Mock data for query results (uses number, will be converted to boolean by schema)
+  const mockVideoRecordFromDBFromDB = {
+    fileId: 'test-file-id-1',
+    currentTime: 120.5,
+    duration: 3600,
+    playedAt: Date.now(),
+    firstPlayedAt: Date.now() - 86400000, // 1 day ago
+    playCount: 3,
+    isFinished: 0, // Number from DB (0 for false)
+    isFavorite: 1, // Number from DB (1 for true)
+    thumbnailPath: '/path/to/thumbnail.jpg'
+  }
+
+  // Expected data after schema transformation (numbers converted to booleans)
+  const mockVideoRecordExpected = {
+    fileId: 'test-file-id-1',
+    currentTime: 120.5,
+    duration: 3600,
+    playedAt: Date.now(),
+    firstPlayedAt: Date.now() - 86400000, // 1 day ago
+    playCount: 3,
+    isFinished: false, // Converted to boolean
+    isFavorite: true, // Converted to boolean
     thumbnailPath: '/path/to/thumbnail.jpg'
   }
 
@@ -75,13 +102,15 @@ describe('VideoLibraryDAO', () => {
       mockKysely.executeTakeFirst.mockResolvedValue(undefined)
       mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
 
-      await expect(dao.addVideoRecord(mockVideoRecord as any)).rejects.toThrow('Insert failed')
+      await expect(dao.addVideoRecord(mockVideoRecordFromDBForInsert as any)).rejects.toThrow(
+        'Insert failed'
+      )
     })
   })
 
   describe('updateRecord', () => {
     it('应该处理更新失败', async () => {
-      const existingRecord = { id: 1, ...mockVideoRecord }
+      const existingRecord = { id: 1, ...mockVideoRecordFromDBFromDB }
       const error = new Error('Update failed')
       mockKysely.executeTakeFirst.mockResolvedValue(existingRecord)
       mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
@@ -92,8 +121,12 @@ describe('VideoLibraryDAO', () => {
 
   describe('findByFileId', () => {
     it('应该根据文件ID查找视频记录', async () => {
-      const mockResult = { id: 1, ...mockVideoRecord }
-      mockKysely.executeTakeFirst.mockResolvedValue(mockResult)
+      // Mock database returns number format
+      const mockDBResult = { id: 1, ...mockVideoRecordFromDBFromDB }
+      mockKysely.executeTakeFirst.mockResolvedValue(mockDBResult)
+
+      // Expected result after schema transformation
+      const expectedResult = { id: 1, ...mockVideoRecordExpected }
 
       const result = await dao.findByFileId('test-file-id-1')
 
@@ -101,7 +134,7 @@ describe('VideoLibraryDAO', () => {
       expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
       expect(mockKysely.where).toHaveBeenCalledWith('fileId', '=', 'test-file-id-1')
       expect(mockKysely.executeTakeFirst).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(mockResult)
+      expect(result).toEqual(expectedResult)
     })
 
     it('应该返回undefined如果记录不存在', async () => {
@@ -122,11 +155,29 @@ describe('VideoLibraryDAO', () => {
 
   describe('getRecentlyPlayed', () => {
     it('应该获取最近播放的视频（默认限制）', async () => {
-      const mockResults = [
-        { id: 1, ...mockVideoRecord, playedAt: Date.now() },
-        { id: 2, ...mockVideoRecord, fileId: 'test-file-id-2', playedAt: Date.now() - 3600000 }
+      const now = Date.now()
+      // Mock database returns number format
+      const mockDBResults = [
+        { id: 1, ...mockVideoRecordFromDBFromDB, playedAt: now },
+        {
+          id: 2,
+          ...mockVideoRecordFromDBFromDB,
+          fileId: 'test-file-id-2',
+          playedAt: now - 3600000
+        }
       ]
-      mockKysely.execute.mockResolvedValue(mockResults)
+      mockKysely.execute.mockResolvedValue(mockDBResults)
+
+      // Expected results after schema transformation
+      const expectedResults = [
+        { id: 1, ...mockVideoRecordExpected, playedAt: now },
+        {
+          id: 2,
+          ...mockVideoRecordExpected,
+          fileId: 'test-file-id-2',
+          playedAt: now - 3600000
+        }
+      ]
 
       const result = await dao.getRecentlyPlayed()
 
@@ -134,17 +185,21 @@ describe('VideoLibraryDAO', () => {
       expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
       expect(mockKysely.orderBy).toHaveBeenCalledWith('playedAt', 'desc')
       expect(mockKysely.limit).toHaveBeenCalledWith(10)
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual(expectedResults)
     })
 
     it('应该使用自定义限制', async () => {
-      const mockResults = [{ id: 1, ...mockVideoRecord }]
-      mockKysely.execute.mockResolvedValue(mockResults)
+      // Mock database returns number format
+      const mockDBResults = [{ id: 1, ...mockVideoRecordFromDBFromDB }]
+      mockKysely.execute.mockResolvedValue(mockDBResults)
+
+      // Expected results after schema transformation
+      const expectedResults = [{ id: 1, ...mockVideoRecordExpected }]
 
       const result = await dao.getRecentlyPlayed(5)
 
       expect(mockKysely.limit).toHaveBeenCalledWith(5)
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual(expectedResults)
     })
 
     it('应该返回空数组如果没有记录', async () => {
@@ -165,19 +220,26 @@ describe('VideoLibraryDAO', () => {
 
   describe('getFavorites', () => {
     it('应该获取收藏的视频', async () => {
-      const mockResults = [
-        { id: 1, ...mockVideoRecord, isFavorite: true },
-        { id: 2, ...mockVideoRecord, fileId: 'test-file-id-2', isFavorite: true }
+      // Mock database returns number format
+      const mockDBResults = [
+        { id: 1, ...mockVideoRecordFromDBFromDB },
+        { id: 2, ...mockVideoRecordFromDBFromDB, fileId: 'test-file-id-2' }
       ]
-      mockKysely.execute.mockResolvedValue(mockResults)
+      mockKysely.execute.mockResolvedValue(mockDBResults)
+
+      // Expected results after schema transformation
+      const expectedResults = [
+        { id: 1, ...mockVideoRecordExpected },
+        { id: 2, ...mockVideoRecordExpected, fileId: 'test-file-id-2' }
+      ]
 
       const result = await dao.getFavorites()
 
       expect(mockKysely.selectFrom).toHaveBeenCalledWith('videoLibrary')
       expect(mockKysely.selectAll).toHaveBeenCalledTimes(1)
-      expect(mockKysely.where).toHaveBeenCalledWith('isFavorite', '=', true)
+      expect(mockKysely.where).toHaveBeenCalledWith('isFavorite', '=', 1)
       expect(mockKysely.orderBy).toHaveBeenCalledWith('playedAt', 'desc')
-      expect(result).toEqual(mockResults)
+      expect(result).toEqual(expectedResults)
     })
 
     it('应该返回空数组如果没有收藏', async () => {
@@ -197,18 +259,6 @@ describe('VideoLibraryDAO', () => {
   })
 
   describe('updatePlayProgress', () => {
-    beforeEach(() => {
-      // Mock the complex select expression for playCount increment
-      const mockSelectExpression = 'mock-select-expression'
-      mockKysely.selectFrom.mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockReturnValue(mockSelectExpression)
-          })
-        })
-      })
-    })
-
     it('应该更新播放进度', async () => {
       const mockResult = { numUpdatedRows: 1 }
       mockKysely.execute.mockResolvedValue(mockResult)
@@ -220,10 +270,9 @@ describe('VideoLibraryDAO', () => {
       expect(mockKysely.updateTable).toHaveBeenCalledWith('videoLibrary')
       expect(mockKysely.set).toHaveBeenCalledWith({
         currentTime: 150.5,
-        playedAt: now,
-        playCount: expect.any(String) // The complex select expression
+        playedAt: now
       })
-      expect(mockKysely.where).toHaveBeenCalledWith('fileId', '=', 'test-file-id-1')
+      expect(mockKysely.where).toHaveBeenCalledWith('id', '=', 1)
       expect(result).toEqual(mockResult)
     })
 
@@ -238,8 +287,7 @@ describe('VideoLibraryDAO', () => {
       expect(mockKysely.set).toHaveBeenCalledWith({
         currentTime: 3600,
         playedAt: now,
-        isFinished: true,
-        playCount: expect.any(String)
+        isFinished: 1 // Boolean true converted to number by DataTransforms
       })
       expect(result).toEqual(mockResult)
     })
@@ -254,8 +302,7 @@ describe('VideoLibraryDAO', () => {
 
       expect(mockKysely.set).toHaveBeenCalledWith({
         currentTime: 150.5,
-        playedAt: now,
-        playCount: expect.any(String)
+        playedAt: now
       })
       expect(result).toEqual(mockResult)
     })
@@ -290,7 +337,7 @@ describe('VideoLibraryDAO', () => {
 
       expect(mockKysely.updateTable).toHaveBeenCalledWith('videoLibrary')
       expect(mockKysely.set).toHaveBeenCalledWith(expect.any(Function))
-      expect(mockKysely.where).toHaveBeenCalledWith('fileId', '=', 'test-file-id-1')
+      expect(mockKysely.where).toHaveBeenCalledWith('id', '=', 1)
       expect(result).toEqual(mockResult)
     })
 
@@ -365,16 +412,24 @@ describe('VideoLibraryDAO', () => {
 
     it('应该处理大数值的播放次数', async () => {
       const recordWithLargeCount = {
-        ...mockVideoRecord,
+        ...mockVideoRecordFromDBForInsert,
         playCount: Number.MAX_SAFE_INTEGER
       }
+
+      // Expected data after schema transformation (boolean -> number)
+      const expectedInsertData = {
+        ...recordWithLargeCount,
+        isFinished: 0, // false -> 0
+        isFavorite: 1 // true -> 1
+      }
+
       const mockResult = { id: 1 }
       mockKysely.executeTakeFirst.mockResolvedValue(undefined)
       mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
 
       const result = await dao.addVideoRecord(recordWithLargeCount as any)
 
-      expect(mockKysely.values).toHaveBeenCalledWith(recordWithLargeCount)
+      expect(mockKysely.values).toHaveBeenCalledWith(expectedInsertData)
       expect(result).toEqual(mockResult)
     })
   })

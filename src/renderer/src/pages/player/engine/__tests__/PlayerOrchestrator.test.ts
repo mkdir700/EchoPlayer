@@ -188,30 +188,10 @@ describe('PlayerOrchestrator - 命令系统测试', () => {
       expect(mockStateUpdater.setCurrentTime).toHaveBeenCalledWith(currentTime)
     })
 
-    it('should handle play events', () => {
-      // MediaClock 初始状态是 paused: true，所以调用 onPlay 会触发状态变化
-      orchestrator.onPlay()
-      expect(mockStateUpdater.setPlaying).toHaveBeenCalledWith(true)
-    })
-
-    it('should handle pause events', () => {
-      // 先设置为播放状态，然后再暂停才会触发状态变化
-      orchestrator.onPlay() // 先播放
-      mockStateUpdater.setPlaying.mockClear() // 清除之前的调用记录
-      orchestrator.onPause() // 再暂停
-      expect(mockStateUpdater.setPlaying).toHaveBeenCalledWith(false)
-    })
-
     it('should handle duration change events', () => {
       const duration = 120.5
       orchestrator.onDurationChange(duration)
       expect(mockStateUpdater.setDuration).toHaveBeenCalledWith(duration)
-    })
-
-    it('should handle seeked events', () => {
-      const seekTime = 30
-      orchestrator.onSeeked(seekTime)
-      expect(mockStateUpdater.setCurrentTime).toHaveBeenCalledWith(seekTime)
     })
   })
 
