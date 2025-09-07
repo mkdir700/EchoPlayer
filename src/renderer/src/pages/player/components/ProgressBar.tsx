@@ -2,7 +2,7 @@ import { formatTime } from '@renderer/state/infrastructure/utils'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { PerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
 import { Slider } from 'antd'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
 
 import { usePlayerCommands } from '../hooks/usePlayerCommands'
@@ -23,6 +23,15 @@ function ProgressBar() {
   // 跟踪悬停和拖动状态
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+
+  // 清理定时器（组件卸载）
+  useEffect(() => {
+    return () => {
+      if (dragTimeoutRef.current) {
+        clearTimeout(dragTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleProgressChange = useCallback(
     (value: number) => {
@@ -75,18 +84,31 @@ function ProgressBar() {
     setIsHovering(false)
   }, [])
 
+  // Memoize tooltip配置避免每次渲染重建
+  const tooltipConfig = useMemo(
+    () => ({
+      formatter: (value?: number) => formatProgress(value ?? 0, duration ?? 0)
+    }),
+    [duration]
+  )
+
+  // 约束value值在有效范围内
+  const clampedValue = useMemo(
+    () => Math.min(Math.max(0, currentTime ?? 0), duration ?? 0),
+    [currentTime, duration]
+  )
+
   return (
     <SliderWrapper onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <StyledSlider
         min={0}
         max={duration || 100}
-        value={currentTime}
+        value={clampedValue}
         onChange={handleProgressChange}
         onChangeComplete={handleDragEnd}
-        tooltip={{
-          formatter: (value) => formatProgress(value || 0, duration || 0)
-        }}
+        tooltip={tooltipConfig}
         disabled={!duration}
+        aria-label="Progress"
         $isHovering={isHovering}
         $isDragging={isDragging}
       />
@@ -275,22 +297,6 @@ const StyledSlider = styled(Slider)<{
       border-radius: 3px;
       box-shadow: 0 0 8px var(--color-primary);
       filter: opacity(1);
-    }
-  }
-
-  /* 激活状态进一步增强 - 移除handler样式，由props控制 */
-  &:active,
-  &.ant-slider-drag {
-    .ant-slider-rail {
-      height: 8px;
-      border-radius: 4px;
-      opacity: 0.4;
-    }
-
-    .ant-slider-track {
-      height: 8px;
-      border-radius: 4px;
-      box-shadow: 0 0 12px var(--color-primary);
     }
   }
 
