@@ -310,6 +310,11 @@ class LoggerService {
       return
     }
 
+    // 防御性检查：确保window.api可用
+    if (!IS_WORKER && (!window.api || typeof window.api.logToMain !== 'function')) {
+      console.warn('[LoggerService] window.api.logToMain 不可用，将只输出到控制台')
+    }
+
     const currentLevel = LEVEL_MAP[level]
 
     // --- Dev 环境下按 env 变量进行过滤 ---
@@ -410,7 +415,16 @@ class LoggerService {
       if (caller) (source as any).caller = caller
 
       if (!IS_WORKER) {
-        window.api.logToMain(source, level, message, payload)
+        // 防御性检查：确保logToMain API可用
+        if (window.api && typeof window.api.logToMain === 'function') {
+          try {
+            window.api.logToMain(source, level, message, payload)
+          } catch (error) {
+            console.error('[LoggerService] logToMain 调用失败:', error)
+          }
+        } else {
+          console.warn('[LoggerService] logToMain API 不可用，跳过主进程日志发送')
+        }
       } else {
         // TODO: worker 场景转发
       }
