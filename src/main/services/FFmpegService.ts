@@ -37,7 +37,9 @@ class FFmpegService {
   }
 
   // 生成输出文件路径
-  private generateOutputPath(inputPath: string, outputFormat: string = 'mp4'): string {
+
+  // 备用方法，暂时未使用
+  /* private generateOutputPath(inputPath: string, outputFormat: string = 'mp4'): string {
     // 转换file://URL为本地路径
     const localInputPath = this.convertFileUrlToLocalPath(inputPath)
 
@@ -68,7 +70,7 @@ class FFmpegService {
     })
 
     return outputPath
-  }
+  } */
 
   // 将file://URL转换为本地文件路径
   private convertFileUrlToLocalPath(inputPath: string): string {

@@ -35,7 +35,7 @@ export function createStorageConfig<T extends Serializable>(
   }
 
   // 为每个 store 创建命名空间独立的存储引擎实例
-  const storeEngine = createStorageEngine<T>(name)
+  const storeEngine = createStorageEngine<T>()
 
   return {
     name,
@@ -45,7 +45,7 @@ export function createStorageConfig<T extends Serializable>(
     migrate,
     skipHydration: false,
     merge: (persistedState: unknown, currentState: T): T => ({
-      ...currentState,
+      ...(currentState as any),
       ...(persistedState as Partial<T>)
     })
   }

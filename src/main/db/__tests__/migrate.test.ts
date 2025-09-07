@@ -72,7 +72,7 @@ describe('Database Migrate', () => {
 
     // Mock fs
     vi.spyOn(fs, 'existsSync').mockReturnValue(true)
-    vi.spyOn(fs, 'mkdirSync').mockImplementation(() => {})
+    vi.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined)
     vi.spyOn(fs, 'writeFileSync').mockImplementation(() => {})
   })
 
@@ -120,8 +120,8 @@ describe('Database Migrate', () => {
           {
             status: 'Error',
             migrationName: '20240101_init',
-            direction: 'Up',
-            error: new Error('SQL Error')
+            direction: 'Up'
+            // error: new Error('SQL Error') // error 不是 MigrationResult 的有效属性
           }
         ]
       }
@@ -153,8 +153,8 @@ describe('Database Migrate', () => {
 
     it('应该回退一个版本', async () => {
       const mockMigrations: MigrationInfo[] = [
-        { name: '20240101_init', executedAt: new Date('2024-01-01') },
-        { name: '20240102_update', executedAt: new Date('2024-01-02') }
+        { name: '20240101_init', executedAt: new Date('2024-01-01'), migration: {} as any },
+        { name: '20240102_update', executedAt: new Date('2024-01-02'), migration: {} as any }
       ]
       const mockResult: MigrationResultSet = {
         error: undefined,
@@ -189,7 +189,7 @@ describe('Database Migrate', () => {
 
     it('应该回退到NO_MIGRATIONS如果只有一个迁移', async () => {
       const mockMigrations: MigrationInfo[] = [
-        { name: '20240101_init', executedAt: new Date('2024-01-01') }
+        { name: '20240101_init', executedAt: new Date('2024-01-01'), migration: {} as any }
       ]
       const mockResult: MigrationResultSet = {
         error: undefined,
@@ -209,8 +209,8 @@ describe('Database Migrate', () => {
   describe('getMigrationStatus', () => {
     it('应该返回迁移状态', async () => {
       const mockMigrations: MigrationInfo[] = [
-        { name: '20240101_init', executedAt: new Date('2024-01-01') },
-        { name: '20240102_update', executedAt: null }
+        { name: '20240101_init', executedAt: new Date('2024-01-01'), migration: {} as any },
+        { name: '20240102_update', executedAt: undefined, migration: {} as any }
       ]
       mockMigrator.getMigrations.mockResolvedValue(mockMigrations)
 
@@ -237,8 +237,8 @@ describe('Database Migrate', () => {
   describe('validateMigrations', () => {
     it('应该验证所有迁移有效', async () => {
       const mockMigrations: MigrationInfo[] = [
-        { name: '20240101_init', executedAt: new Date('2024-01-01') },
-        { name: '20240102_update', executedAt: null }
+        { name: '20240101_init', executedAt: new Date('2024-01-01'), migration: {} as any },
+        { name: '20240102_update', executedAt: undefined, migration: {} as any }
       ]
       mockMigrator.getMigrations.mockResolvedValue(mockMigrations)
 
@@ -250,8 +250,8 @@ describe('Database Migrate', () => {
 
     it('应该检测无效的迁移名称', async () => {
       const mockMigrations: MigrationInfo[] = [
-        { name: '', executedAt: null },
-        { name: '20240102_update', executedAt: null }
+        { name: '', executedAt: undefined, migration: {} as any },
+        { name: '20240102_update', executedAt: undefined, migration: {} as any }
       ]
       mockMigrator.getMigrations.mockResolvedValue(mockMigrations)
 

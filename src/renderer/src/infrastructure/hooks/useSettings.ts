@@ -38,6 +38,14 @@ export function useSettings() {
   const setLaunchToTray = useSettingsStore((state) => state.setLaunchToTray)
   const setShowTray = useSettingsStore((state) => state.setShowTray)
   const setTrayOnClose = useSettingsStore((state) => state.setTrayOnClose)
+  const setDefaultVolume = useSettingsStore((state) => state.setDefaultVolume)
+  const setDefaultPlaybackSpeed = useSettingsStore((state) => state.setDefaultPlaybackSpeed)
+  const setDefaultSubtitleBackgroundType = useSettingsStore(
+    (state) => state.setDefaultSubtitleBackgroundType
+  )
+  const setDefaultSubtitleDisplayMode = useSettingsStore(
+    (state) => state.setDefaultSubtitleDisplayMode
+  )
 
   // ✅ 复合操作使用 useCallback 稳定引用
   const setLaunch = useCallback(
@@ -137,7 +145,13 @@ export function useSettings() {
     setTestChannel: setTestChannelWithApi,
     setTheme: setThemeWithApi,
     setCompactMode,
-    setWindowStyle
+    setWindowStyle,
+
+    // Playback settings
+    setDefaultVolume,
+    setDefaultPlaybackSpeed,
+    setDefaultSubtitleBackgroundType,
+    setDefaultSubtitleDisplayMode
   }
 }
 

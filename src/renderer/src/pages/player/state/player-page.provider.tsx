@@ -3,7 +3,7 @@ import { SubtitleLibraryService } from '@renderer/services/SubtitleLibrary'
 import { SubtitleReader } from '@renderer/services/subtitles/SubtitleReader'
 import { usePlayerSubtitlesStore } from '@renderer/state/stores/player-subtitles.store'
 import { usePlayerUIStore } from '@renderer/state/stores/player-ui.store'
-import React, { PropsWithChildren, useEffect, useRef } from 'react'
+import { PropsWithChildren, useEffect, useRef } from 'react'
 
 const logger = loggerService.withContext('PlayerPageProvider')
 

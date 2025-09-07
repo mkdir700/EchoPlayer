@@ -22,7 +22,9 @@ export class StorageEngine<T extends Serializable = Serializable> implements Per
    * 构造函数 / Constructor
    * @param storageName 存储命名空间 / Storage namespace
    */
-  constructor(private readonly storageName: string) {}
+  constructor() {
+    // No configuration needed for localStorage implementation
+  }
 
   /**
    * 获取存储项 / Get storage item
@@ -94,12 +96,9 @@ export class StorageEngine<T extends Serializable = Serializable> implements Per
 }
 
 /**
- * 创建指定命名空间的存储引擎实例 / Create storage engine instance with specified namespace
- * @param storageName 存储命名空间 / Storage namespace
+ * 创建存储引擎实例 / Create storage engine instance
  * @returns 存储引擎实例 / Storage engine instance
  */
-export function createStorageEngine<T extends Serializable>(
-  storageName: string
-): PersistStorage<T> {
-  return new StorageEngine<T>(storageName)
+export function createStorageEngine<T extends Serializable>(): PersistStorage<T> {
+  return new StorageEngine<T>()
 }

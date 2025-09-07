@@ -84,7 +84,7 @@ describe('Database Index', () => {
     let existsSyncSpy: any
 
     beforeEach(() => {
-      mkdirSyncSpy = vi.spyOn(fs, 'mkdirSync').mockImplementation(() => {})
+      mkdirSyncSpy = vi.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined)
       existsSyncSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(false)
 
       // 确保 Database constructor 返回正确的 mock

@@ -51,7 +51,7 @@ vi.mock('../db/dao', () => ({
       deleteFile: vi.fn()
     },
     videoLibrary: {
-      upsertVideoRecord: vi.fn(),
+      addVideoRecord: vi.fn(),
       findByFileId: vi.fn(),
       getRecentlyPlayed: vi.fn(),
       getFavorites: vi.fn(),
@@ -434,12 +434,12 @@ describe('IPC Database Handlers', () => {
         const mockResult = { id: 1 }
 
         const { db } = await import('../db/dao')
-        vi.mocked(db.videoLibrary.upsertVideoRecord).mockResolvedValue(mockResult as any)
+        vi.mocked(db.videoLibrary.addVideoRecord).mockResolvedValue(mockResult as any)
 
         const handler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Add)!
         const result = await handler({}, mockRecord)
 
-        expect(db.videoLibrary.upsertVideoRecord).toHaveBeenCalledWith(mockRecord)
+        expect(db.videoLibrary.addVideoRecord).toHaveBeenCalledWith(mockRecord)
         expect(result).toEqual(mockResult)
       })
 
@@ -457,7 +457,7 @@ describe('IPC Database Handlers', () => {
         const mockError = new Error('Upsert failed')
 
         const { db } = await import('../db/dao')
-        vi.mocked(db.videoLibrary.upsertVideoRecord).mockRejectedValue(mockError)
+        vi.mocked(db.videoLibrary.addVideoRecord).mockRejectedValue(mockError)
 
         const handler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Add)!
 
@@ -980,7 +980,7 @@ describe('IPC Database Handlers', () => {
         vi.mocked(db.files.addFile).mockResolvedValue({ id: 1, ...mockFile } as any)
 
         // 模拟成功的视频记录创建
-        vi.mocked(db.videoLibrary.upsertVideoRecord).mockResolvedValue({ id: 1 } as any)
+        vi.mocked(db.videoLibrary.addVideoRecord).mockResolvedValue({ id: 1 } as any)
 
         // 模拟成功的字幕添加
         vi.mocked(db.subtitleLibrary.addSubtitle).mockResolvedValue({
@@ -1004,7 +1004,7 @@ describe('IPC Database Handlers', () => {
 
         // 验证所有DAO方法都被调用
         expect(db.files.addFile).toHaveBeenCalledWith(mockFile)
-        expect(db.videoLibrary.upsertVideoRecord).toHaveBeenCalledWith(mockVideoRecord)
+        expect(db.videoLibrary.addVideoRecord).toHaveBeenCalledWith(mockVideoRecord)
         expect(db.subtitleLibrary.addSubtitle).toHaveBeenCalledWith(mockSubtitle)
       })
 
@@ -1026,7 +1026,7 @@ describe('IPC Database Handlers', () => {
 
         // 模拟第二个操作失败
         const mockError = new Error('Video record creation failed')
-        vi.mocked(db.videoLibrary.upsertVideoRecord).mockRejectedValue(mockError)
+        vi.mocked(db.videoLibrary.addVideoRecord).mockRejectedValue(mockError)
 
         const fileHandler = ipcHandlers.get(IpcChannel.DB_Files_Add)!
         const videoHandler = ipcHandlers.get(IpcChannel.DB_VideoLibrary_Add)!

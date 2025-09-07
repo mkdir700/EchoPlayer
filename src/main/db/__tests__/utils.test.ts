@@ -56,7 +56,7 @@ describe('Database Utils', () => {
 
     // Mock fs methods
     vi.spyOn(fs, 'existsSync').mockReturnValue(true)
-    vi.spyOn(fs, 'mkdirSync').mockImplementation(() => {})
+    vi.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined)
     vi.spyOn(fs, 'copyFileSync').mockImplementation(() => {})
     vi.spyOn(fs, 'readdirSync').mockReturnValue([])
     vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {})
@@ -256,7 +256,12 @@ describe('Database Utils', () => {
         }
 
         const { validateMigrations, upgradeDatabase } = await getMigrateMocks()
-        validateMigrations.mockResolvedValue(true)
+        validateMigrations.mockResolvedValue({
+          valid: true,
+          errors: [],
+          warnings: [],
+          migrations: []
+        })
         vi.spyOn(migrationManager['backup'], 'createBackup').mockResolvedValue('backup-path')
         upgradeDatabase.mockResolvedValue(mockResult)
 
@@ -275,7 +280,12 @@ describe('Database Utils', () => {
 
       it('应该处理验证失败', async () => {
         const { validateMigrations } = await getMigrateMocks()
-        validateMigrations.mockResolvedValue(false)
+        validateMigrations.mockResolvedValue({
+          valid: false,
+          errors: ['Validation failed'],
+          warnings: [],
+          migrations: []
+        })
 
         const result = await migrationManager.safeUpgrade()
 
@@ -292,7 +302,12 @@ describe('Database Utils', () => {
         const error = new Error('Upgrade failed')
 
         const { validateMigrations } = await getMigrateMocks()
-        validateMigrations.mockResolvedValue(true)
+        validateMigrations.mockResolvedValue({
+          valid: true,
+          errors: [],
+          warnings: [],
+          migrations: []
+        })
         vi.spyOn(migrationManager['backup'], 'createBackup').mockResolvedValue('backup-path')
         const { upgradeDatabase } = await getMigrateMocks()
         upgradeDatabase.mockRejectedValue(error)
@@ -343,8 +358,8 @@ describe('Database Utils', () => {
     describe('getDetailedStatus', () => {
       it('应该返回详细状态信息', async () => {
         const mockMigrations: MigrationInfo[] = [
-          { name: '20240101_init', executedAt: new Date('2024-01-01') },
-          { name: '20240102_update', executedAt: null }
+          { name: '20240101_init', executedAt: new Date('2024-01-01'), migration: {} as any },
+          { name: '20240102_update', executedAt: undefined, migration: {} as any }
         ]
         const mockStatus = {
           executed: [mockMigrations[0]],
@@ -401,7 +416,12 @@ describe('Database Utils', () => {
         pending: [],
         all: []
       })
-      validateMigrations.mockResolvedValue(true)
+      validateMigrations.mockResolvedValue({
+        valid: true,
+        errors: [],
+        warnings: [],
+        migrations: []
+      })
       vi.spyOn(dbBackup, 'listBackups').mockReturnValue([])
     })
 
@@ -425,8 +445,8 @@ describe('Database Utils', () => {
 
     it('应该检测待执行的迁移', async () => {
       const mockMigrations: MigrationInfo[] = [
-        { name: '20240101_init', executedAt: null },
-        { name: '20240102_update', executedAt: null }
+        { name: '20240101_init', executedAt: undefined, migration: {} as any },
+        { name: '20240102_update', executedAt: undefined, migration: {} as any }
       ]
       const { getMigrationStatus } = await getMigrateMocks()
       getMigrationStatus.mockResolvedValue({
@@ -446,7 +466,12 @@ describe('Database Utils', () => {
 
     it('应该检测无效的迁移文件', async () => {
       const { validateMigrations } = await getMigrateMocks()
-      validateMigrations.mockResolvedValue(false)
+      validateMigrations.mockResolvedValue({
+        valid: false,
+        errors: ['Validation failed'],
+        warnings: [],
+        migrations: []
+      })
 
       const health = await performHealthCheck()
 

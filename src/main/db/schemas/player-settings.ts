@@ -49,7 +49,7 @@ export const PlayerSettingsInsertSchema = z.object({
   videoId: PositiveIntegerSchema,
   playbackRate: PlaybackRateSchema.default(1.0),
   volume: VolumeSchema.default(1.0),
-  muted: BooleanToSqlSchema.default(0),
+  muted: BooleanToSqlSchema.default(false),
   loopSettings: JsonStringSchema.optional(),
   autoPauseSettings: JsonStringSchema.optional(),
   subtitleOverlaySettings: JsonStringSchema.optional()

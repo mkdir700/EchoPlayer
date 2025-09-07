@@ -1,6 +1,5 @@
 import { usePlayerUIStore } from '@renderer/state/stores/player-ui.store'
 import { Settings } from 'lucide-react'
-import React from 'react'
 import styled from 'styled-components'
 
 import { ControlIconButton } from '../styles/controls'
