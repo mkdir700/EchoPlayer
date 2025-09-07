@@ -58,8 +58,8 @@ describe('Database Index', () => {
       const paths = getDbPaths()
 
       expect(paths.dbFile).toContain('app-dev.sqlite3')
-      expect(paths.dbDir).toContain('test-echoplayer/data')
-      expect(paths.backupDir).toContain('test-echoplayer/data/backup')
+      expect(paths.dbDir).toContain(path.join('test-echoplayer', 'data'))
+      expect(paths.backupDir).toContain(path.join('test-echoplayer', 'data', 'backup'))
     })
 
     it('应该返回生产环境的数据库路径', () => {
@@ -68,8 +68,8 @@ describe('Database Index', () => {
       const paths = getDbPaths()
 
       expect(paths.dbFile).toContain('app.sqlite3')
-      expect(paths.dbDir).toContain('test-echoplayer/data')
-      expect(paths.backupDir).toContain('test-echoplayer/data/backup')
+      expect(paths.dbDir).toContain(path.join('test-echoplayer', 'data'))
+      expect(paths.backupDir).toContain(path.join('test-echoplayer', 'data', 'backup'))
     })
 
     it('应该在未设置NODE_ENV时使用生产环境路径', () => {

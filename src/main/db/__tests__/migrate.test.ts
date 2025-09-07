@@ -279,8 +279,8 @@ describe('Database Migrate', () => {
 
   describe('validateMigrations', () => {
     it('应该验证所有迁移有效', async () => {
-      // Mock一个存在的迁移目录
-      const migrationsDir = '/tmp/test-userData/db/migrations'
+      // Mock一个存在的迁移目录 - 使用与 mock getPath 返回值匹配的路径
+      const migrationsDir = path.join('/tmp/test-userData', 'db', 'migrations')
       vi.mocked(fs.existsSync).mockImplementation((pathStr) => {
         return pathStr === migrationsDir
       })
@@ -301,8 +301,8 @@ describe('Database Migrate', () => {
     })
 
     it('应该检测无效的迁移名称', async () => {
-      // Mock一个存在的迁移目录但包含无效文件
-      const migrationsDir = '/tmp/test-userData/db/migrations'
+      // Mock一个存在的迁移目录但包含无效文件 - 使用与 mock getPath 返回值匹配的路径
+      const migrationsDir = path.join('/tmp/test-userData', 'db', 'migrations')
       vi.mocked(fs.existsSync).mockImplementation((pathStr) => {
         return pathStr === migrationsDir
       })
@@ -339,8 +339,8 @@ describe('Database Migrate', () => {
     })
 
     it('应该创建新的迁移文件', async () => {
-      // 使用fallback路径
-      const migrationsDir = '/tmp/test-userData/db/migrations'
+      // 使用fallback路径 - 使用与 mock getPath 返回值匹配的路径
+      const migrationsDir = path.join('/tmp/test-userData', 'db', 'migrations')
       const expectedFilename = '20240101120000_test_migration.js'
       const expectedPath = path.join(migrationsDir, expectedFilename)
 
@@ -359,8 +359,8 @@ describe('Database Migrate', () => {
     })
 
     it('应该处理名称中的空格', async () => {
-      // 使用fallback路径
-      const migrationsDir = '/tmp/test-userData/db/migrations'
+      // 使用fallback路径 - 使用与 mock getPath 返回值匹配的路径
+      const migrationsDir = path.join('/tmp/test-userData', 'db', 'migrations')
       const expectedFilename = '20240101120000_multiple_words_migration.js'
       const expectedPath = path.join(migrationsDir, expectedFilename)
 
