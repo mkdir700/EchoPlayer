@@ -2,7 +2,7 @@ import { formatTime } from '@renderer/state/infrastructure/utils'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { PerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
 import { Slider } from 'antd'
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import styled from 'styled-components'
 
 import { usePlayerCommands } from '../hooks/usePlayerCommands'
@@ -20,13 +20,18 @@ function ProgressBar() {
   const isFirstChange = useRef(true)
   const dragTimeoutRef = useRef<number | null>(null)
 
+  // 跟踪悬停和拖动状态
+  const [isHovering, setIsHovering] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+
   const handleProgressChange = useCallback(
     (value: number) => {
       const m = new PerformanceMonitor('handleProgressChange')
 
-      // 第一次改变时重置循环状态
+      // 第一次改变时重置循环状态并设置拖动状态
       if (isFirstChange.current) {
         isFirstChange.current = false
+        setIsDragging(true)
       }
 
       // 清理之前的定时器
@@ -51,6 +56,7 @@ function ProgressBar() {
   const handleDragEnd = useCallback(() => {
     // 重置拖拽状态
     isFirstChange.current = true
+    setIsDragging(false)
 
     // 清理定时器
     if (dragTimeoutRef.current) {
@@ -59,25 +65,48 @@ function ProgressBar() {
     }
   }, [])
 
+  // 处理鼠标进入
+  const handleMouseEnter = useCallback(() => {
+    setIsHovering(true)
+  }, [])
+
+  // 处理鼠标离开
+  const handleMouseLeave = useCallback(() => {
+    setIsHovering(false)
+  }, [])
+
   return (
-    <StyledSlider
-      min={0}
-      max={duration || 100}
-      value={currentTime}
-      onChange={handleProgressChange}
-      onChangeComplete={handleDragEnd}
-      tooltip={{
-        formatter: (value) => formatProgress(value || 0, duration || 0)
-      }}
-      disabled={!duration}
-    />
+    <SliderWrapper onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <StyledSlider
+        min={0}
+        max={duration || 100}
+        value={currentTime}
+        onChange={handleProgressChange}
+        onChangeComplete={handleDragEnd}
+        tooltip={{
+          formatter: (value) => formatProgress(value || 0, duration || 0)
+        }}
+        disabled={!duration}
+        $isHovering={isHovering}
+        $isDragging={isDragging}
+      />
+    </SliderWrapper>
   )
 }
 
 export default ProgressBar
 
+// 包装容器处理鼠标事件
+const SliderWrapper = styled.div`
+  width: 100%;
+  cursor: pointer;
+`
+
 // 直接样式化 Slider 组件，无容器包装
-const StyledSlider = styled(Slider)`
+const StyledSlider = styled(Slider)<{
+  $isHovering: boolean
+  $isDragging: boolean
+}>`
   /* 增加选择器特异性来覆盖 Ant Design 的默认变量 */
   &.ant-slider {
     --ant-slider-rail-size: 1px !important; /* 轨道基础尺寸 */
@@ -109,15 +138,27 @@ const StyledSlider = styled(Slider)`
     filter: opacity(0.9);
   }
 
-  /* 手柄样式 - 椭圆形白色手柄 */
+  /* 手柄样式 - 沉浸式设计，与进度条统一 - 默认隐藏 */
   .ant-slider-handle {
     width: 8px;
     height: 8px;
-    border: 2px solid #ffffff; /* 使用纯白色边框 */
-    background: #ffffff; /* 使用纯白色背景 */
-    margin-top: 1px; /* 精确居中对齐 4px 高度的轨道 */
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); /* 使用黑色阴影而非主色 */
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 使用渐变色，从主色到半透明白色 */
+    background: radial-gradient(
+      circle,
+      var(--color-primary) 0%,
+      rgba(255, 255, 255, 0.9) 70%,
+      rgba(255, 255, 255, 0.7) 100%
+    );
+    /* 边框使用主色调的半透明版本 */
+    border: 1px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.6);
+    margin-top: -2px; /* 精确居中对齐：(8px handler - 4px track) / 2 = -2px */
+    /* 使用主色调的光晕阴影，与进度条呼应 */
+    box-shadow:
+      0 0 4px rgba(var(--color-primary-rgb, 59, 130, 246), 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 默认完全隐藏 - 透明度和缩放都为0 */
+    opacity: 0;
     transform: scale(0.8);
     cursor: pointer;
 
@@ -131,19 +172,96 @@ const StyledSlider = styled(Slider)`
       display: none !important;
     }
 
-    /* 手柄激活状态 */
-    &:hover,
-    &:focus,
-    &:active {
-      border-color: #ffffff;
-      background: #ffffff;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-      opacity: 1;
-      transform: scale(1);
+    /* 手柄激活状态 - 使用统一的主色调设计 */
+    &:focus {
+      border-color: var(--color-primary);
+      background: radial-gradient(
+        circle,
+        var(--color-primary) 0%,
+        rgba(255, 255, 255, 0.9) 70%,
+        rgba(255, 255, 255, 0.7) 100%
+      );
+      box-shadow:
+        0 0 6px rgba(var(--color-primary-rgb, 59, 130, 246), 0.5),
+        0 3px 8px rgba(0, 0, 0, 0.15);
     }
   }
 
-  /* 悬停整个进度条时的效果 */
+  /* 基于props的条件样式 - 悬停时显示handler */
+  ${(props) =>
+    props.$isHovering &&
+    !props.$isDragging &&
+    `
+    .ant-slider-handle {
+      opacity: 1 !important;
+      transform: scale(1) !important;
+      width: 12px !important;
+      height: 12px !important;
+      margin-top: -3px !important; /* 居中对齐：(12px handler - 6px track) / 2 = -3px */
+      /* 悬停时增强渐变效果 */
+      background: radial-gradient(
+        circle,
+        var(--color-primary) 0%,
+        rgba(255, 255, 255, 0.95) 60%,
+        rgba(255, 255, 255, 0.8) 100%
+      ) !important;
+      border: 1.5px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.8) !important;
+      /* 增强光晕效果与进度条呼应 */
+      box-shadow:
+        0 0 8px rgba(var(--color-primary-rgb, 59, 130, 246), 0.6),
+        0 3px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+    .ant-slider-rail {
+      height: 6px !important;
+      border-radius: 3px !important;
+      opacity: 0.3 !important;
+    }
+    .ant-slider-track {
+      height: 6px !important;
+      border-radius: 3px !important;
+      box-shadow: 0 0 8px var(--color-primary) !important;
+      filter: opacity(1) !important;
+    }
+  `}
+
+  /* 拖动时的特殊样式 - 最强视觉反馈 */
+  ${(props) =>
+    props.$isDragging &&
+    `
+    .ant-slider-handle {
+      opacity: 1 !important;
+      transform: scale(1.1) !important;
+      width: 14px !important;
+      height: 14px !important;
+      margin-top: -3px !important; /* 居中对齐：(12px handler - 6px track) / 2 = -3px */
+      /* 拖动时最强烈的渐变效果 */
+      background: radial-gradient(
+        circle,
+        var(--color-primary) 0%,
+        var(--color-primary) 30%,
+        rgba(255, 255, 255, 1) 70%,
+        rgba(255, 255, 255, 0.9) 100%
+      ) !important;
+      border: 2px solid var(--color-primary) !important;
+      /* 最强烈的光晕效果 */
+      box-shadow:
+        0 0 12px rgba(var(--color-primary-rgb, 59, 130, 246), 0.8),
+        0 0 24px rgba(var(--color-primary-rgb, 59, 130, 246), 0.4),
+        0 4px 16px rgba(0, 0, 0, 0.2) !important;
+    }
+    .ant-slider-rail {
+      height: 6px !important;
+      border-radius: 3px !important;
+      opacity: 0.4 !important;
+    }
+    .ant-slider-track {
+      height: 6px !important;
+      border-radius: 3px !important;
+      box-shadow: 0 0 16px var(--color-primary) !important;
+    }
+  `}
+
+  /* 悬停整个进度条时的效果 - 仅轨道变化，handler通过props控制 */
   &:hover {
     .ant-slider-rail {
       background: var(--color-border);
@@ -158,20 +276,9 @@ const StyledSlider = styled(Slider)`
       box-shadow: 0 0 8px var(--color-primary);
       filter: opacity(1);
     }
-
-    .ant-slider-handle {
-      opacity: 1; /* 悬停时显示手柄 */
-      transform: scale(1);
-      width: 14px;
-      height: 14px;
-      margin-top: -1px;
-      border: 2px solid #ffffff;
-      background: #ffffff;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-    }
   }
 
-  /* 激活状态进一步增强 */
+  /* 激活状态进一步增强 - 移除handler样式，由props控制 */
   &:active,
   &.ant-slider-drag {
     .ant-slider-rail {
@@ -184,16 +291,6 @@ const StyledSlider = styled(Slider)`
       height: 8px;
       border-radius: 4px;
       box-shadow: 0 0 12px var(--color-primary);
-    }
-
-    .ant-slider-handle {
-      width: 14px;
-      height: 14px;
-      margin-top: -1px;
-      transform: scale(1.1);
-      border: 2px solid #ffffff;
-      background: #ffffff;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
   }
 
@@ -241,19 +338,31 @@ const StyledSlider = styled(Slider)`
     }
   }
 
-  /* 主题适配 - 确保 handle 在所有主题下都是白色 */
+  /* 主题适配 - 确保沉浸式设计在所有主题下都和谐 */
   [theme-mode='dark'] & {
     .ant-slider-handle {
-      border: 2px solid #ffffff !important;
-      background: #ffffff !important;
+      /* 暗色主题下的渐变调整 */
+      background: radial-gradient(
+        circle,
+        var(--color-primary) 0%,
+        rgba(255, 255, 255, 0.95) 70%,
+        rgba(255, 255, 255, 0.8) 100%
+      ) !important;
+      border: 1px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.7) !important;
       border-radius: 50% !important;
     }
   }
 
   [theme-mode='light'] & {
     .ant-slider-handle {
-      border: 2px solid #ffffff !important;
-      background: #ffffff !important;
+      /* 亮色主题下的渐变调整 */
+      background: radial-gradient(
+        circle,
+        var(--color-primary) 0%,
+        rgba(255, 255, 255, 0.9) 70%,
+        rgba(255, 255, 255, 0.7) 100%
+      ) !important;
+      border: 1px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.6) !important;
       border-radius: 50% !important;
     }
 
