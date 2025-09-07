@@ -14,7 +14,7 @@ import {
 } from '../migrate'
 
 // Mock dependencies
-vi.mock('@main/services/LoggerService', () => {
+vi.mock('@logger', () => {
   const mockLogger = {
     info: vi.fn(),
     error: vi.fn(),
@@ -96,7 +96,7 @@ describe('Database Migrate', () => {
     mockMigrator = (kyselyMock as any).__mockMigrator
 
     // 获取 mock logger 实例
-    const loggerServiceMock = await import('@main/services/LoggerService')
+    const loggerServiceMock = await import('@logger')
     mockLogger = (loggerServiceMock as any).__mockLogger
 
     const indexModule = await import('../index')
