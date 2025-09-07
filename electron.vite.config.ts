@@ -1,3 +1,6 @@
+import fs from 'node:fs'
+import path from 'node:path'
+
 import react from '@vitejs/plugin-react-swc'
 import { CodeInspectorPlugin } from 'code-inspector-plugin'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
@@ -8,7 +11,49 @@ const isProd = process.env.NODE_ENV === 'production'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [
+      externalizeDepsPlugin(),
+      // 复制迁移文件到构建目录
+      {
+        name: 'copy-migrations',
+        generateBundle() {
+          // 优先使用新的 db/migrations 路径
+          const newMigrationsDir = path.resolve('db/migrations')
+          const oldMigrationsDir = path.resolve('src/main/db/migrations')
+
+          // 确定源迁移目录
+          let srcMigrationsDir = ''
+          if (fs.existsSync(newMigrationsDir)) {
+            srcMigrationsDir = newMigrationsDir
+          } else if (fs.existsSync(oldMigrationsDir)) {
+            srcMigrationsDir = oldMigrationsDir
+          }
+
+          if (srcMigrationsDir) {
+            // 复制到两个目标位置以确保兼容性
+            const destDirs = [
+              path.resolve('out/main/db/migrations'), // 旧位置
+              path.resolve('out/db/migrations') // 新位置
+            ]
+
+            for (const destMigrationsDir of destDirs) {
+              // 确保目标目录存在
+              fs.mkdirSync(destMigrationsDir, { recursive: true })
+
+              // 复制所有 .js 文件
+              const files = fs.readdirSync(srcMigrationsDir)
+              for (const file of files) {
+                if (file.endsWith('.js')) {
+                  const srcFile = path.join(srcMigrationsDir, file)
+                  const destFile = path.join(destMigrationsDir, file)
+                  fs.copyFileSync(srcFile, destFile)
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
     resolve: {
       alias: {
         '@main': resolve('src/main'),
@@ -82,20 +127,18 @@ export default defineConfig({
         localsConvention: 'camelCase',
         generateScopedName: '[name]__[local]___[hash:base64:5]'
       }
+    },
+    build: {
+      rollupOptions: {
+        external: ['electron', 'path'],
+        input: {
+          index: resolve(__dirname, 'src/renderer/index.html')
+        },
+        output: {
+          manualChunks: undefined,
+          inlineDynamicImports: true
+        }
+      }
     }
-    // build: {
-    //   target: 'esnext', // for build
-    //   rollupOptions: {
-    //     input: {
-    //       index: resolve(__dirname, 'src/renderer/index.html')
-    //       // miniWindow: resolve(__dirname, 'src/renderer/miniWindow.html'),
-    //       // selectionToolbar: resolve(__dirname, 'src/renderer/selectionToolbar.html'),
-    //       // selectionAction: resolve(__dirname, 'src/renderer/selectionAction.html'),
-    //       // traceWindow: resolve(__dirname, 'src/renderer/traceWindow.html')
-    //     },
-    //     external: ['electron', 'path'] // 明确外部化 electron 和 path 模块
-    //   }
-    // },
-    // esbuild: isProd ? { legalComments: 'none' } : {}
   }
 })

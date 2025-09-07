@@ -30,6 +30,12 @@ export class ConfigSyncService {
     logger.info('🔄 开始同步配置从 main 进程到 renderer store')
 
     try {
+      // 检查API是否可用
+      if (!window.api || !window.api.config || typeof window.api.config.get !== 'function') {
+        logger.warn('⚠️ window.api.config.get 不可用，跳过配置同步')
+        return
+      }
+
       // 批量获取所有需要同步的配置项
       const configs = await this.getAllConfigsFromMain()
 
@@ -59,6 +65,12 @@ export class ConfigSyncService {
     ]
 
     const configs: Record<string, any> = {}
+
+    // 确保API可用
+    if (!window.api || !window.api.config || typeof window.api.config.get !== 'function') {
+      logger.warn('window.api.config.get 不可用，返回空配置')
+      return configs
+    }
 
     // 并发获取所有配置项
     await Promise.all(
@@ -140,6 +152,12 @@ export class ConfigSyncService {
    */
   async syncSingleConfig<T>(key: string, setter: (value: T) => void): Promise<void> {
     try {
+      // 检查API可用性
+      if (!window.api || !window.api.config || typeof window.api.config.get !== 'function') {
+        logger.warn(`window.api.config.get 不可用，跳过配置 ${key} 同步`)
+        return
+      }
+
       const value = await window.api.config.get(key)
       if (value !== undefined) {
         setter(value)

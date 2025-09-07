@@ -1,7 +1,10 @@
 import { ipcMain } from 'electron'
 import { EventEmitter } from 'events'
 
+import { loggerService } from './LoggerService'
 import { WindowService } from './WindowService'
+
+const logger = loggerService.withContext('ZustandStateSyncService')
 
 type StoreValue = unknown
 type Unsubscribe = () => void
@@ -33,7 +36,7 @@ class ZustandStateSyncService extends EventEmitter {
     ipcMain.on('zustand:store-ready', () => {
       this.isReady = true
       this.emit('ready')
-      console.log('Zustand store is ready.')
+      logger.info('Zustand store is ready.')
     })
 
     // 监听 store 状态变化
@@ -83,7 +86,7 @@ class ZustandStateSyncService extends EventEmitter {
           : selector
       return selectorFn(this.stateCache)
     } catch (error) {
-      console.error('Failed to select from cache:', error)
+      logger.error('Failed to select from cache:', { error })
       return undefined
     }
   }
@@ -126,7 +129,7 @@ class ZustandStateSyncService extends EventEmitter {
 
       return result as T
     } catch (error) {
-      console.error('Failed to select store value:', error)
+      logger.error('Failed to select store value:', { error })
       throw error
     }
   }
@@ -190,7 +193,7 @@ class ZustandStateSyncService extends EventEmitter {
           callback(newValue)
         }
       } catch (error) {
-        console.error('Error in subscription handler:', error)
+        logger.error('Error in subscription handler:', { error })
       }
     }
 

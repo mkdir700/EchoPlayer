@@ -47,7 +47,6 @@ const SearchOverlay: FC = () => {
     event.preventDefault()
     if (searchQuery.trim()) {
       // TODO: 实现实际的搜索逻辑
-      console.log('搜索:', searchQuery)
     }
   }
 

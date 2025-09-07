@@ -3,6 +3,7 @@ import { promises as fsPromises } from 'node:fs'
 import path from 'node:path'
 
 import { loggerService } from '@main/services/LoggerService'
+import { app } from 'electron'
 import {
   FileMigrationProvider,
   type MigrationInfo,
@@ -52,33 +53,53 @@ class DatabaseMigrator {
    * 根据环境和文件存在情况确定正确的迁移文件路径
    */
   private getMigrationsDirectory(): string {
+    // 检查是否为开发环境
+    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+
     // 尝试多个可能的路径
-    const possiblePaths = [
-      // 1. 源码目录（开发环境）
-      path.join(process.cwd(), 'src', 'main', 'db', 'migrations'),
-      // 2. 相对于项目根目录的源码路径
-      path.resolve(__dirname, '..', '..', '..', 'src', 'main', 'db', 'migrations'),
-      // 3. 编译后的目录（生产环境）
-      path.join(__dirname, 'migrations')
-    ]
+    const possiblePaths = isDev
+      ? [
+          // 开发环境路径 - 优先使用项目根目录的 db/migrations
+          path.join(process.cwd(), 'db', 'migrations'),
+          // 兼容旧路径
+          path.join(process.cwd(), 'src', 'main', 'db', 'migrations'),
+          path.resolve(__dirname, '..', '..', '..', 'db', 'migrations'),
+          path.resolve(__dirname, '..', '..', '..', 'src', 'main', 'db', 'migrations')
+        ]
+      : [
+          // 生产环境路径 - 优先使用应用根目录的 db/migrations
+          path.join(app.getAppPath(), 'db', 'migrations'),
+          // 兼容旧路径
+          path.join(app.getAppPath(), 'src', 'main', 'db', 'migrations'),
+          path.join(app.getAppPath(), 'out', 'main', 'db', 'migrations'),
+          path.join(__dirname, 'migrations'),
+          // 备用路径 - 相对于 __dirname
+          path.resolve(__dirname, 'migrations')
+        ]
 
     for (const migrationPath of possiblePaths) {
       if (fs.existsSync(migrationPath)) {
         // 检查目录中是否有迁移文件
-        const files = fs.readdirSync(migrationPath)
-        const migrationFiles = files.filter((file) => file.endsWith('.ts') || file.endsWith('.js'))
+        try {
+          const files = fs.readdirSync(migrationPath)
+          const migrationFiles = files.filter(
+            (file) => file.endsWith('.ts') || file.endsWith('.js')
+          )
 
-        if (migrationFiles.length > 0) {
-          logger.info(`Using migrations directory: ${migrationPath}`)
-          return migrationPath
+          if (migrationFiles.length > 0) {
+            logger.info(`Using migrations directory: ${migrationPath}`)
+            return migrationPath
+          }
+        } catch (error) {
+          logger.warn(`Cannot read directory ${migrationPath}:`, { error })
         }
       }
     }
 
-    // 如果都没找到，使用默认路径（源码目录）
-    const defaultPath = path.join(process.cwd(), 'src', 'main', 'db', 'migrations')
-    logger.warn(`No migrations found, using default path: ${defaultPath}`)
-    return defaultPath
+    // 如果都没找到，创建用户数据目录中的迁移文件夹
+    const fallbackPath = path.join(app.getPath('userData'), 'db', 'migrations')
+    logger.warn(`No existing migrations found, using fallback path: ${fallbackPath}`)
+    return fallbackPath
   }
 
   /**

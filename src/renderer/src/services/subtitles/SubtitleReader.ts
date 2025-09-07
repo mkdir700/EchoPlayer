@@ -1,7 +1,7 @@
 import { loggerService } from '@logger'
 import type { SubtitleItem } from '@types'
 import { SubtitleFormat } from '@types'
-import subsrt from 'subsrt'
+import subsrt from 'subsrt-ts'
 
 // 字符脚本类型（顶层声明，便于类内复用与扩展）
 type Script =

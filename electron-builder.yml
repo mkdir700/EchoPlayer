@@ -31,9 +31,6 @@ files:
   - '!*.log'
   - '!*.md'
   - '!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}'
-  - '!**/*.{map,ts,tsx,jsx,less,scss,sass,css.d.ts,d.cts,d.mts,md,markdown,yaml,yml}'
-  - '!**/{test,tests,__tests__,powered-test,coverage}/**'
-  - '!**/{example,examples}/**'
   - '!**/*.{spec,test}.{js,jsx,ts,tsx}'
   - '!**/*.min.*.map'
   - '!**/*.d.ts'
@@ -41,6 +38,11 @@ files:
   - '!**/dist/demo/**'
   - '!**/*.{h,iobj,ipdb,tlog,recipe,vcxproj,vcxproj.filters,Makefile,*.Makefile}' # filter .node build files
   - '!**/{.DS_Store,Thumbs.db,thumbs.db,__pycache__}'
+  # 修复包含规则 - 需要排除不必要的文件但保留迁移文件
+  - '!**/*.{map,ts,tsx,jsx,less,scss,sass,css.d.ts,d.cts,d.mts,md,markdown,yaml,yml}'
+  - '!db/**/*.{ts,md,yaml,yml}' # 排除 db 目录中的非 js 文件
+  - '!**/{test,tests,__tests__,powered-test,coverage}/**'
+  - '!**/{example,examples}/**'
 asarUnpack:
   - resources/**
   - '**/*.{metal,exp,lib}'
