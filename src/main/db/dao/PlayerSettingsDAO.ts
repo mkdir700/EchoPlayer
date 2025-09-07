@@ -185,9 +185,19 @@ export class PlayerSettingsDAO extends BaseDAO<
    * 获取播放器设置总数
    */
   async getTotalCount(videoIds?: number[]): Promise<number> {
-    const whereConditions = videoIds
-      ? [{ field: 'videoId', op: 'in' as const, value: videoIds }]
-      : undefined
-    return await this.getRecordCount(whereConditions)
+    try {
+      let query = this.db
+        .selectFrom('playerSettings')
+        .select(({ fn }) => [fn.countAll().as('count')])
+
+      if (videoIds && videoIds.length > 0) {
+        query = query.where('videoId', 'in', videoIds)
+      }
+
+      const result = await query.executeTakeFirstOrThrow()
+      return Number(result.count)
+    } catch (error) {
+      this.handleDatabaseError(error, '获取总数')
+    }
   }
 }

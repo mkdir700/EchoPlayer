@@ -1,7 +1,7 @@
 import { loggerService } from '@logger'
-import type { PlayerSettingsSelect } from '@main/db/schemas'
 import { PlayerSettingsInsert } from '@shared/types/database'
 import { LoopMode, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
+import type { PlayerSettingsRecord } from 'packages/shared/types/database'
 
 import type { PlayerState } from '../state/stores/player.store'
 
@@ -71,7 +71,7 @@ export class PlayerSettingsService {
    * @param dbData 数据库数据
    * @returns PlayerState 部分数据
    */
-  private static mapDatabaseToState(dbData: PlayerSettingsSelect): PlayerState {
+  private static mapDatabaseToState(dbData: PlayerSettingsRecord): PlayerState {
     // 解析 JSON 字段
     const parseJsonField = <T>(jsonStr: string | null, defaultValue: T): T => {
       if (!jsonStr) return defaultValue

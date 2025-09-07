@@ -1,3 +1,3 @@
-import { loggerService } from '@logger'
+import { loggerService } from './services/Logger'
 
 loggerService.initWindowSource('mainWindow')

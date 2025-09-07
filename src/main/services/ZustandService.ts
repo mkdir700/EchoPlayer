@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import { EventEmitter } from 'events'
 
-import { windowManager } from '../window/windowManager'
+import { WindowService } from './WindowService'
 
 type StoreValue = unknown
 type Unsubscribe = () => void
@@ -49,7 +49,7 @@ class ZustandStateSyncService extends EventEmitter {
     const startTime = Date.now()
     while (Date.now() - startTime < timeout) {
       try {
-        const mainWindow = windowManager.getMainWindow()
+        const mainWindow = WindowService.getInstance().getMainWindow()
         if (!mainWindow) {
           throw new Error('Main window is not available')
         }
@@ -99,7 +99,7 @@ class ZustandStateSyncService extends EventEmitter {
         }
       }
 
-      const mainWindow = windowManager.getMainWindow()
+      const mainWindow = WindowService.getInstance().getMainWindow()
       if (!mainWindow) {
         throw new Error('Main window is not available')
       }
@@ -133,7 +133,7 @@ class ZustandStateSyncService extends EventEmitter {
 
   // 通过 store 名称获取状态
   async getStoreState(storeName: string): Promise<StoreValue> {
-    const mainWindow = windowManager.getMainWindow()
+    const mainWindow = WindowService.getInstance().getMainWindow()
     if (!mainWindow) {
       throw new Error('Main window is not available')
     }
@@ -148,7 +148,7 @@ class ZustandStateSyncService extends EventEmitter {
 
   // 设置状态（类似 dispatch）
   async setState(storeName: string, partialState: StoreValue, replace?: boolean): Promise<void> {
-    const mainWindow = windowManager.getMainWindow()
+    const mainWindow = WindowService.getInstance().getMainWindow()
     if (!mainWindow) {
       throw new Error('Main window is not available')
     }
@@ -162,7 +162,7 @@ class ZustandStateSyncService extends EventEmitter {
 
   // 获取整个状态树
   async getState(): Promise<ZustandState> {
-    const mainWindow = windowManager.getMainWindow()
+    const mainWindow = WindowService.getInstance().getMainWindow()
     if (!mainWindow) {
       throw new Error('Main window is not available')
     }
@@ -175,7 +175,7 @@ class ZustandStateSyncService extends EventEmitter {
 
   // 订阅状态变化
   async subscribe<T>(selector: Selector<T>, callback: (newValue: T) => void): Promise<Unsubscribe> {
-    const mainWindow = windowManager.getMainWindow()
+    const mainWindow = WindowService.getInstance().getMainWindow()
     if (!mainWindow) {
       throw new Error('Main window is not available')
     }
@@ -203,7 +203,7 @@ class ZustandStateSyncService extends EventEmitter {
 
   // 批量执行状态更新
   async batch(updates: BatchUpdate[]): Promise<void> {
-    const mainWindow = windowManager.getMainWindow()
+    const mainWindow = WindowService.getInstance().getMainWindow()
     if (!mainWindow) {
       throw new Error('Main window is not available')
     }
@@ -219,7 +219,7 @@ class ZustandStateSyncService extends EventEmitter {
 
   // 调用 store 方法
   async callStoreMethod<T>(storeName: string, methodName: string, ...args: unknown[]): Promise<T> {
-    const mainWindow = windowManager.getMainWindow()
+    const mainWindow = WindowService.getInstance().getMainWindow()
     if (!mainWindow) {
       throw new Error('Main window is not available')
     }

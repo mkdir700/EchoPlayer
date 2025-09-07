@@ -204,7 +204,7 @@ export class FileDAO extends BaseDAO<
    * 获取文件总数
    */
   async getTotalCount(type?: FileTypes): Promise<number> {
-    const whereConditions = type ? [{ field: 'type', op: '=', value: type }] : undefined
-    return await this.getRecordCount(whereConditions)
+    const whereCondition = type ? { field: 'type', value: type } : undefined
+    return await this.getRecordCount(whereCondition)
   }
 }

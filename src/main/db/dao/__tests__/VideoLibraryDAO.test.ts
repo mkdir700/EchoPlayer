@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely'
-import type { DB, VideoLibraryTable } from 'packages/shared/schema'
+import type { DB } from 'packages/shared/schema'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as dbIndex from '../../index'
@@ -12,15 +12,15 @@ describe('VideoLibraryDAO', () => {
   let dao: VideoLibraryDAO
   let mockKysely: any
 
-  const mockVideoRecord: Omit<VideoLibraryTable, 'id'> = {
+  const mockVideoRecord = {
     fileId: 'test-file-id-1',
     currentTime: 120.5,
     duration: 3600,
     playedAt: Date.now(),
     firstPlayedAt: Date.now() - 86400000, // 1 day ago
     playCount: 3,
-    isFinished: false,
-    isFavorite: true,
+    isFinished: 0, // SqlBool (0 for false)
+    isFavorite: 1, // SqlBool (1 for true)
     thumbnailPath: '/path/to/thumbnail.jpg'
   }
 
@@ -69,51 +69,24 @@ describe('VideoLibraryDAO', () => {
     })
   })
 
-  describe('upsertVideoRecord', () => {
-    it('应该插入新记录如果不存在', async () => {
-      const mockResult = { id: 1 }
-      mockKysely.executeTakeFirst.mockResolvedValue(undefined) // findByFileId returns undefined
-      mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
-
-      const result = await dao.upsertVideoRecord(mockVideoRecord)
-
-      expect(mockKysely.selectFrom).toHaveBeenCalledWith('videoLibrary')
-      expect(mockKysely.insertInto).toHaveBeenCalledWith('videoLibrary')
-      expect(mockKysely.values).toHaveBeenCalledWith(mockVideoRecord)
-      expect(mockKysely.returning).toHaveBeenCalledWith('id')
-      expect(result).toEqual(mockResult)
-    })
-
-    it('应该更新已存在的记录', async () => {
-      const existingRecord = { id: 1, ...mockVideoRecord }
-      const mockResult = { id: 1 }
-      mockKysely.executeTakeFirst.mockResolvedValue(existingRecord) // findByFileId returns existing
-      mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
-
-      const result = await dao.upsertVideoRecord(mockVideoRecord)
-
-      expect(mockKysely.updateTable).toHaveBeenCalledWith('videoLibrary')
-      expect(mockKysely.set).toHaveBeenCalledWith(mockVideoRecord)
-      expect(mockKysely.where).toHaveBeenCalledWith('fileId', '=', mockVideoRecord.fileId)
-      expect(mockKysely.returning).toHaveBeenCalledWith('id')
-      expect(result).toEqual(mockResult)
-    })
-
+  describe('addVideoRecord', () => {
     it('应该处理插入失败', async () => {
       const error = new Error('Insert failed')
       mockKysely.executeTakeFirst.mockResolvedValue(undefined)
       mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
 
-      await expect(dao.addVideoRecord(mockVideoRecord)).rejects.toThrow('Insert failed')
+      await expect(dao.addVideoRecord(mockVideoRecord as any)).rejects.toThrow('Insert failed')
     })
+  })
 
+  describe('updateRecord', () => {
     it('应该处理更新失败', async () => {
       const existingRecord = { id: 1, ...mockVideoRecord }
       const error = new Error('Update failed')
       mockKysely.executeTakeFirst.mockResolvedValue(existingRecord)
       mockKysely.executeTakeFirstOrThrow.mockRejectedValue(error)
 
-      await expect(dao.updateRecord(mockVideoRecord)).rejects.toThrow('Update failed')
+      await expect(dao.updateRecord(1, { currentTime: 100 })).rejects.toThrow('Update failed')
     })
   })
 
@@ -242,7 +215,7 @@ describe('VideoLibraryDAO', () => {
       const now = Date.now()
       vi.spyOn(Date, 'now').mockReturnValue(now)
 
-      const result = await dao.updatePlayProgress('test-file-id-1', 150.5)
+      const result = await dao.updatePlayProgress(1, 150.5)
 
       expect(mockKysely.updateTable).toHaveBeenCalledWith('videoLibrary')
       expect(mockKysely.set).toHaveBeenCalledWith({
@@ -260,7 +233,7 @@ describe('VideoLibraryDAO', () => {
       const now = Date.now()
       vi.spyOn(Date, 'now').mockReturnValue(now)
 
-      const result = await dao.updatePlayProgress('test-file-id-1', 3600, true)
+      const result = await dao.updatePlayProgress(1, 3600, true)
 
       expect(mockKysely.set).toHaveBeenCalledWith({
         currentTime: 3600,
@@ -277,7 +250,7 @@ describe('VideoLibraryDAO', () => {
       const now = Date.now()
       vi.spyOn(Date, 'now').mockReturnValue(now)
 
-      const result = await dao.updatePlayProgress('test-file-id-1', 150.5, undefined)
+      const result = await dao.updatePlayProgress(1, 150.5, undefined)
 
       expect(mockKysely.set).toHaveBeenCalledWith({
         currentTime: 150.5,
@@ -291,7 +264,7 @@ describe('VideoLibraryDAO', () => {
       const error = new Error('Update failed')
       mockKysely.execute.mockRejectedValue(error)
 
-      await expect(dao.updatePlayProgress('test-file-id-1', 150.5)).rejects.toThrow('Update failed')
+      await expect(dao.updatePlayProgress(1, 150.5)).rejects.toThrow('Update failed')
     })
   })
 
@@ -313,7 +286,7 @@ describe('VideoLibraryDAO', () => {
       const mockResult = { numUpdatedRows: 1 }
       mockKysely.execute.mockResolvedValue(mockResult)
 
-      const result = await dao.toggleFavorite('test-file-id-1')
+      const result = await dao.toggleFavorite(1)
 
       expect(mockKysely.updateTable).toHaveBeenCalledWith('videoLibrary')
       expect(mockKysely.set).toHaveBeenCalledWith(expect.any(Function))
@@ -325,7 +298,7 @@ describe('VideoLibraryDAO', () => {
       const mockResult = { numUpdatedRows: 1 }
       mockKysely.execute.mockResolvedValue(mockResult)
 
-      await dao.toggleFavorite('test-file-id-1')
+      await dao.toggleFavorite(1)
 
       // Verify that set was called with a function
       expect(mockKysely.set).toHaveBeenCalledWith(expect.any(Function))
@@ -353,7 +326,7 @@ describe('VideoLibraryDAO', () => {
       const error = new Error('Toggle failed')
       mockKysely.execute.mockRejectedValue(error)
 
-      await expect(dao.toggleFavorite('test-file-id-1')).rejects.toThrow('Toggle failed')
+      await expect(dao.toggleFavorite(1)).rejects.toThrow('Toggle failed')
     })
   })
 
@@ -371,7 +344,7 @@ describe('VideoLibraryDAO', () => {
       const mockResult = { numUpdatedRows: 1 }
       mockKysely.execute.mockResolvedValue(mockResult)
 
-      await dao.updatePlayProgress('test-file-id-1', -10)
+      await dao.updatePlayProgress(1, -10)
 
       expect(mockKysely.set).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -399,7 +372,7 @@ describe('VideoLibraryDAO', () => {
       mockKysely.executeTakeFirst.mockResolvedValue(undefined)
       mockKysely.executeTakeFirstOrThrow.mockResolvedValue(mockResult)
 
-      const result = await dao.upsertVideoRecord(recordWithLargeCount)
+      const result = await dao.addVideoRecord(recordWithLargeCount as any)
 
       expect(mockKysely.values).toHaveBeenCalledWith(recordWithLargeCount)
       expect(result).toEqual(mockResult)

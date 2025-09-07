@@ -50,14 +50,14 @@ describe('PlayerOrchestrator - 命令系统测试', () => {
       setCurrentTime: vi.fn(),
       setDuration: vi.fn(),
       setPlaying: vi.fn(),
-      setActiveCueIndex: vi.fn(),
       updateLoopRemaining: vi.fn(),
       // 新增的状态同步方法
       setPlaybackRate: vi.fn(),
       setVolume: vi.fn(),
       setMuted: vi.fn(),
       setSeeking: vi.fn(),
-      setEnded: vi.fn()
+      setEnded: vi.fn(),
+      updateUIState: vi.fn()
     }
 
     // 初始化 orchestrator

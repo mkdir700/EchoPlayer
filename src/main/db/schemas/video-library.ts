@@ -24,8 +24,8 @@ export const VideoLibraryInsertSchema = z.object({
   playedAt: SqlTimestampSchema,
   firstPlayedAt: SqlTimestampSchema,
   playCount: PositiveIntegerSchema.default(0),
-  isFinished: BooleanToSqlSchema.default(0),
-  isFavorite: BooleanToSqlSchema.default(0),
+  isFinished: BooleanToSqlSchema.default(false),
+  isFavorite: BooleanToSqlSchema.default(false),
   thumbnailPath: z.string().nullable().optional()
 })
 

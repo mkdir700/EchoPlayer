@@ -94,7 +94,7 @@ describe('DataTransforms', () => {
         name: 'test'
       }
 
-      const result = DataTransforms.prepareForInsert(input, ['isActive', 'isDeleted'])
+      const result = DataTransforms.prepareForInsert(input, [] as (keyof typeof input)[])
 
       expect(result).toEqual({
         id: 1,
@@ -212,7 +212,7 @@ describe('Integration tests', () => {
 
     // 转换为SQL格式
     const sqlFormat = DataTransforms.prepareForInsert(originalData, ['isActive', 'isDeleted'])
-    sqlFormat.createdAt = DataTransforms.dateToSql(sqlFormat.createdAt as Date)!
+    ;(sqlFormat as any).createdAt = DataTransforms.dateToSql(sqlFormat.createdAt as Date)!
 
     // 从SQL格式转换回来
     const restored = DataTransforms.prepareFromSelect(

@@ -1,6 +1,5 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { Check, Zap } from 'lucide-react'
-import React from 'react'
 import styled from 'styled-components'
 
 import { useControlMenuManager } from '../../../hooks/useControlMenuManager'

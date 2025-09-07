@@ -1,5 +1,6 @@
 import { loggerService } from '@main/services/LoggerService'
 import type { Kysely } from 'kysely'
+import { sql } from 'kysely'
 import type { DB } from 'packages/shared/schema'
 import { z } from 'zod'
 
@@ -111,14 +112,13 @@ export abstract class BaseDAO<
    */
   protected async recordExists(whereClause: { field: string; value: any }): Promise<boolean> {
     try {
-      const result = await this.db
-        .selectFrom(this.tableName)
-        .select(['1 as exists'])
-        .where(whereClause.field as any, '=', whereClause.value)
-        .limit(1)
-        .executeTakeFirst()
+      // 使用sql模板以避免复杂的类型问题
+      const result =
+        await sql`SELECT 1 FROM ${sql.table(this.tableName)} WHERE ${sql.id(whereClause.field)} = ${whereClause.value} LIMIT 1`.execute(
+          this.db
+        )
 
-      return !!result
+      return result.rows.length > 0
     } catch (error) {
       logger.error(`Failed to check record existence in table ${String(this.tableName)}:`, {
         error
@@ -130,21 +130,22 @@ export abstract class BaseDAO<
   /**
    * 获取记录总数
    */
-  protected async getRecordCount(
-    whereConditions?: Array<{ field: string; op: string; value: any }>
-  ): Promise<number> {
+  protected async getRecordCount(whereCondition?: { field: string; value: any }): Promise<number> {
     try {
-      let query = this.db.selectFrom(this.tableName).select((eb) => eb.fn.count('id').as('count'))
-
-      // 应用where条件
-      if (whereConditions) {
-        whereConditions.forEach((condition) => {
-          query = query.where(condition.field as any, condition.op as any, condition.value)
-        })
+      let result: any
+      if (whereCondition) {
+        // 使用sql模板构建带条件的查询
+        result =
+          await sql`SELECT COUNT(*) as count FROM ${sql.table(this.tableName)} WHERE ${sql.id(whereCondition.field)} = ${whereCondition.value}`.execute(
+            this.db
+          )
+      } else {
+        // 使用sql模板构建查询
+        result = await sql`SELECT COUNT(*) as count FROM ${sql.table(this.tableName)}`.execute(
+          this.db
+        )
       }
-
-      const result = await query.executeTakeFirst()
-      return Number(result?.count || 0)
+      return Number((result.rows[0] as any)?.count || 0)
     } catch (error) {
       logger.error(`Failed to get record count for table ${String(this.tableName)}:`, { error })
       return 0
@@ -164,12 +165,15 @@ export abstract class BaseDAO<
     for (let i = 0; i < validatedRecords.length; i += batchSize) {
       const batch = validatedRecords.slice(i, i + batchSize)
 
-      await this.safeExecute(async () => {
+      try {
         await this.db
           .insertInto(this.tableName)
           .values(batch as any[])
           .execute()
-      }, '批量插入')
+      } catch (error) {
+        logger.error(`批量插入失败:`, { error })
+        throw error
+      }
     }
   }
 

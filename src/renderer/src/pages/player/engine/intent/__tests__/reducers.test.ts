@@ -26,6 +26,7 @@ function createMockContext(overrides: Partial<PlaybackContext> = {}): PlaybackCo
     duration: 100,
     paused: false,
     playbackRate: 1,
+    volume: 1,
     activeCueIndex: -1,
     subtitles: [],
     loopEnabled: true,

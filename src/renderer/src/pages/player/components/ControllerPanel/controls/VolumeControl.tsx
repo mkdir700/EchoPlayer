@@ -1,7 +1,7 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { Slider } from 'antd'
 import { Volume1, Volume2, VolumeX } from 'lucide-react'
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import styled from 'styled-components'
 
 import { useControlMenuManager } from '../../../hooks/useControlMenuManager'

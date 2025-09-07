@@ -2,7 +2,7 @@ import { loggerService } from '@logger'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { Button } from 'antd'
 import { Play, X } from 'lucide-react'
-import React, { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import styled, { keyframes } from 'styled-components'
 
 import { usePlayerEngine } from '../hooks'

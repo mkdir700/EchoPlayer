@@ -1,7 +1,6 @@
 import { usePlayerCommands } from '@renderer/pages/player/hooks/usePlayerCommands'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { Maximize, Minimize } from 'lucide-react'
-import React from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 

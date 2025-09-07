@@ -4,7 +4,7 @@ import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { LoopMode } from '@types'
 import { Tooltip } from 'antd'
 import { Repeat } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 

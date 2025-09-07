@@ -1,5 +1,4 @@
 import { electronAPI } from '@electron-toolkit/preload'
-import { FileMetadataSelect, PlayerSettingsSelect } from '@main/db/schemas'
 import { UpgradeChannel } from '@shared/config/constant'
 import { LogLevel, LogSourceWithContext } from '@shared/config/logger'
 import { IpcChannel } from '@shared/IpcChannel'
@@ -10,6 +9,7 @@ import type {
   FileMetadataInsert,
   FileMetadataRecord,
   PlayerSettingsInsert,
+  PlayerSettingsRecord,
   PlayerSettingsUpdate,
   SubtitleLibraryInsert,
   SubtitleLibraryRecord,
@@ -310,7 +310,7 @@ const api = {
       findById: (id: string): Promise<FileMetadataRecord | null> =>
         ipcRenderer.invoke(IpcChannel.DB_Files_FindById, id),
 
-      update: (id: string, data: Partial<FileMetadata>): Promise<FileMetadataSelect> =>
+      update: (id: string, data: Partial<FileMetadata>): Promise<FileMetadataRecord> =>
         ipcRenderer.invoke(IpcChannel.DB_Files_Update, id, data),
 
       delete: (id: string | number): Promise<void> =>
@@ -414,19 +414,19 @@ const api = {
 
     // 播放器设置 DAO
     playerSettings: {
-      get: (videoId: number): Promise<PlayerSettingsSelect | null> =>
+      get: (videoId: number): Promise<PlayerSettingsRecord | null> =>
         ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Get, videoId),
 
       save: (
         videoId: number,
         settings: PlayerSettingsInsert | PlayerSettingsUpdate
-      ): Promise<PlayerSettingsSelect> =>
+      ): Promise<PlayerSettingsRecord> =>
         ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Save, videoId, settings),
 
       delete: (videoId: number): Promise<boolean> =>
         ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Delete, videoId),
 
-      getByVideoIds: (videoIds: number[]): Promise<PlayerSettingsSelect[]> =>
+      getByVideoIds: (videoIds: number[]): Promise<PlayerSettingsRecord[]> =>
         ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_GetByVideoIds, videoIds),
 
       has: (videoId: number): Promise<boolean> =>

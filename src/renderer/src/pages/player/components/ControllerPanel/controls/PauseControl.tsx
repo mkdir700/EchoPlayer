@@ -4,7 +4,7 @@ import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { InputNumber, Switch } from 'antd'
 import { Tooltip } from 'antd'
 import { PauseCircle } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
