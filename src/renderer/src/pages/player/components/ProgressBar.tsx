@@ -211,15 +211,15 @@ const StyledSlider = styled(Slider)<{
 
   /* 基于props的条件样式 - 悬停时显示handler */
   ${(props) =>
-    props.$isHovering &&
-    !props.$isDragging &&
+    (props.$isHovering || props.$isDragging) &&
     `
     .ant-slider-handle {
       opacity: 1 !important;
       transform: scale(1) !important;
       width: 12px !important;
       height: 12px !important;
-      margin-top: -3px !important; /* 居中对齐：(12px handler - 6px track) / 2 = -3px */
+      margin-top: 1px !important;
+      margin-left: -4px !important;
       /* 悬停时增强渐变效果 */
       background: radial-gradient(
         circle,
@@ -243,43 +243,6 @@ const StyledSlider = styled(Slider)<{
       border-radius: 3px !important;
       box-shadow: 0 0 8px var(--color-primary) !important;
       filter: opacity(1) !important;
-    }
-  `}
-
-  /* 拖动时的特殊样式 - 最强视觉反馈 */
-  ${(props) =>
-    props.$isDragging &&
-    `
-    .ant-slider-handle {
-      opacity: 1 !important;
-      transform: scale(1.1) !important;
-      width: 14px !important;
-      height: 14px !important;
-      margin-top: -3px !important; /* 居中对齐：(12px handler - 6px track) / 2 = -3px */
-      /* 拖动时最强烈的渐变效果 */
-      background: radial-gradient(
-        circle,
-        var(--color-primary) 0%,
-        var(--color-primary) 30%,
-        rgba(255, 255, 255, 1) 70%,
-        rgba(255, 255, 255, 0.9) 100%
-      ) !important;
-      border: 2px solid var(--color-primary) !important;
-      /* 最强烈的光晕效果 */
-      box-shadow:
-        0 0 12px rgba(var(--color-primary-rgb, 59, 130, 246), 0.8),
-        0 0 24px rgba(var(--color-primary-rgb, 59, 130, 246), 0.4),
-        0 4px 16px rgba(0, 0, 0, 0.2) !important;
-    }
-    .ant-slider-rail {
-      height: 6px !important;
-      border-radius: 3px !important;
-      opacity: 0.4 !important;
-    }
-    .ant-slider-track {
-      height: 6px !important;
-      border-radius: 3px !important;
-      box-shadow: 0 0 16px var(--color-primary) !important;
     }
   `}
 
