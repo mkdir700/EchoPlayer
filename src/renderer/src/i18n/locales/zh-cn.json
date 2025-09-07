@@ -148,6 +148,11 @@
           "original": "原文",
           "translation": "译文"
         },
+        "overlay": {
+          "resizeHandle": {
+            "tooltip": "拖动调整大小，双击横向扩展"
+          }
+        },
         "title": "字幕设置"
       },
       "title": "播放设置"

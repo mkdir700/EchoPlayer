@@ -54,8 +54,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     setSelectedText,
     updateContainerBounds,
     adaptToContainerResize,
-    avoidCollision,
-    calculateOptimalPosition
+    avoidCollision
   } = useSubtitleOverlayUI()
 
   // === 配置数据（来自当前视频项目） ===
@@ -86,7 +85,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         if (isInitial || !currentConfig?.isInitialized) {
           // 初始化时使用 updateContainerBounds
           updateContainerBounds(newBounds)
-          calculateOptimalPosition(newBounds)
+          // calculateOptimalPosition(newBounds)
         } else {
           // 容器尺寸变化时使用智能适应
           adaptToContainerResize(newBounds)
@@ -129,13 +128,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       window.removeEventListener('resize', handleResize)
       observer.disconnect()
     }
-  }, [
-    containerRef,
-    updateContainerBounds,
-    adaptToContainerResize,
-    calculateOptimalPosition,
-    currentConfig?.isInitialized
-  ])
+  }, [containerRef, updateContainerBounds, adaptToContainerResize, currentConfig?.isInitialized])
 
   // === 智能冲突检测 ===
   useEffect(() => {
