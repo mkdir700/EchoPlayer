@@ -54,7 +54,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // 获取 Ant Design 的 token 并生成样式
   const { token } = theme.useToken()
-  const styles = useMemo(() => buildStyles(token), [actualTheme, compactMode, token])
+  const styles = useMemo(() => buildStyles(token), [token])
 
   const toggleTheme = () => {
     const nextTheme = {
@@ -88,7 +88,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       document.body.setAttribute('theme-mode', actualTheme)
       setActualTheme(actualTheme)
     })
-  }, [actualTheme, initUserTheme, setSettedTheme, settedTheme])
+  }, [actualTheme, initUserTheme, navbarPosition, setSettedTheme, settedTheme])
 
   // 监听主题状态变化
   useEffect(() => {

@@ -184,10 +184,6 @@ const StyledSlider = styled(Slider)<{
         var(--color-primary-rgb, 59, 130, 246),
         ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_ALPHA}
       );
-    margin-top: ${COMPONENT_TOKENS.PROGRESS_BAR.calculateHandleOffset(
-      COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_BASE,
-      COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_BASE
-    )}px;
     /* 使用主题令牌的光晕阴影 */
     box-shadow:
       0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_BASE}px
@@ -231,15 +227,14 @@ const StyledSlider = styled(Slider)<{
 
   /* 基于props的条件样式 - 悬停时显示handler - 使用主题令牌 */
   ${(props) =>
-    props.$isHovering &&
-    !props.$isDragging &&
+    (props.$isHovering || props.$isDragging) &&
     `
     .ant-slider-handle {
       opacity: 1 !important;
       transform: scale(${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_HOVER}) !important;
       width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px !important;
       height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px !important;
-      margin-top: ${COMPONENT_TOKENS.PROGRESS_BAR.calculateHandleOffset(COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER, COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER)}px !important;
+      margin-left: -${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER / 2}px !important;
       /* 悬停时增强渐变效果 */
       background: radial-gradient(
         circle,
@@ -263,43 +258,6 @@ const StyledSlider = styled(Slider)<{
       border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
       box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_SHADOW_BLUR_HOVER}px var(--color-primary) !important;
       filter: opacity(1) !important;
-    }
-  `}
-
-  /* 拖动时的特殊样式 - 最强视觉反馈 - 使用主题令牌 */
-  ${(props) =>
-    props.$isDragging &&
-    `
-    .ant-slider-handle {
-      opacity: 1 !important;
-      transform: scale(${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_DRAG}) !important;
-      width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_DRAG}px !important;
-      height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_DRAG}px !important;
-      margin-top: ${COMPONENT_TOKENS.PROGRESS_BAR.calculateHandleOffset(COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_DRAG, COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_DRAG)}px !important;
-      /* 拖动时最强烈的渐变效果 */
-      background: radial-gradient(
-        circle,
-        var(--color-primary) 0%,
-        var(--color-primary) 30%,
-        rgba(255, 255, 255, 1) 70%,
-        rgba(255, 255, 255, 0.9) 100%
-      ) !important;
-      border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_DRAG}px solid var(--color-primary) !important;
-      /* 最强烈的光晕效果 */
-      box-shadow:
-        0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_DRAG_1}px rgba(var(--color-primary-rgb, 59, 130, 246), ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_ALPHA_DRAG}),
-        0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_DRAG_2}px rgba(var(--color-primary-rgb, 59, 130, 246), 0.4),
-        0 4px 16px rgba(0, 0, 0, 0.2) !important;
-    }
-    .ant-slider-rail {
-      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_DRAG}px !important;
-      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
-      opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_DRAG} !important;
-    }
-    .ant-slider-track {
-      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_DRAG}px !important;
-      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
-      box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_SHADOW_BLUR_DRAG}px var(--color-primary) !important;
     }
   `}
 
