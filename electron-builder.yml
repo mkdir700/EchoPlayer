@@ -124,6 +124,5 @@ publish:
   vPrefixedTagName: true
   releaseType: draft
   publishAutoUpdate: true
-generateUpdatesFilesForAllChannels: true
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
