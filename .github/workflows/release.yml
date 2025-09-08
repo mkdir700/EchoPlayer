@@ -6,13 +6,6 @@ on:
       version:
         description: 'Release version (e.g., v1.0.0, v1.0.0-beta.1, v1.0.0-alpha.1)'
         required: false
-      force_version_type:
-        description: 'Force version type (dev/test only, others determined by branch)'
-        required: false
-        type: choice
-        options:
-          - 'dev'
-          - 'test'
 
 permissions:
   contents: write
@@ -47,11 +40,7 @@ jobs:
           # Remove 'v' prefix for processing
           VERSION_NO_V="${VERSION#v}"
 
-          # Detect version type
-          if [ -n "${{ github.event.inputs.force_version_type }}" ]; then
-            # 手动指定的版本类型（仅限 dev/test）
-            VERSION_TYPE="${{ github.event.inputs.force_version_type }}"
-          elif [[ "${{ github.ref_name }}" == "main" ]]; then
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
             # main 分支 = stable
             VERSION_TYPE="stable"
           elif [[ "${{ github.ref_name }}" == "beta" ]]; then
