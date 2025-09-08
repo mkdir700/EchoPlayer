@@ -79,6 +79,11 @@ export enum IpcChannel {
   Ffmpeg_Transcode = 'ffmpeg:transcode',
   Ffmpeg_CancelTranscode = 'ffmpeg:cancel-transcode',
 
+  // MediaInfo 相关 IPC 通道 / MediaInfo related IPC channels
+  MediaInfo_CheckExists = 'mediainfo:check-exists',
+  MediaInfo_GetVersion = 'mediainfo:get-version',
+  MediaInfo_GetVideoInfo = 'mediainfo:get-video-info',
+
   // 文件系统相关 IPC 通道 / File system related IPC channels
   Fs_CheckFileExists = 'fs:check-file-exists',
   Fs_ReadFile = 'fs:read-file',

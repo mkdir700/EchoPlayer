@@ -13,6 +13,11 @@ const mockApi = {
   ffmpeg: {
     checkExists: vi.fn(),
     getVideoInfo: vi.fn()
+  },
+  mediainfo: {
+    checkExists: vi.fn(),
+    getVideoInfo: vi.fn(),
+    getVersion: vi.fn()
   }
 }
 
@@ -85,10 +90,11 @@ describe('VideoAddButton 功能测试', () => {
       thumbnailPath: undefined
     }
 
-    // 设置 mock 返回值
+    // 设置 mock 返回值 - MediaInfo 优先
     mockApi.file.select.mockResolvedValue([mockFile])
-    mockApi.ffmpeg.checkExists.mockResolvedValue(true)
-    mockApi.ffmpeg.getVideoInfo.mockResolvedValue(mockVideoInfo)
+    mockApi.mediainfo.checkExists.mockResolvedValue(true)
+    mockApi.mediainfo.getVideoInfo.mockResolvedValue(mockVideoInfo)
+    mockApi.ffmpeg.checkExists.mockResolvedValue(false) // 不会被调用，因为 MediaInfo 可用
     mockFileManager.addFile.mockResolvedValue(mockFile)
     mockVideoLibraryService.addOrUpdateRecord.mockResolvedValue(mockVideoRecord)
 
@@ -109,12 +115,12 @@ describe('VideoAddButton 功能测试', () => {
     expect(files).toHaveLength(1)
     expect(files[0]).toEqual(mockFile)
 
-    // 2. 检查 FFmpeg
-    const ffmpegExists = await mockApi.ffmpeg.checkExists()
-    expect(ffmpegExists).toBe(true)
+    // 2. 检查 MediaInfo 优先级
+    const mediaInfoExists = await mockApi.mediainfo.checkExists()
+    expect(mediaInfoExists).toBe(true)
 
-    // 3. 获取视频信息
-    const videoInfo = await mockApi.ffmpeg.getVideoInfo(mockFile.path)
+    // 3. 获取视频信息（使用 MediaInfo）
+    const videoInfo = await mockApi.mediainfo.getVideoInfo(mockFile.path)
     expect(videoInfo).toEqual(mockVideoInfo)
 
     // 验证所有 mock 函数都被正确调用
@@ -127,11 +133,13 @@ describe('VideoAddButton 功能测试', () => {
         }
       ]
     })
-    expect(mockApi.ffmpeg.checkExists).toHaveBeenCalled()
-    expect(mockApi.ffmpeg.getVideoInfo).toHaveBeenCalledWith(mockFile.path)
+    expect(mockApi.mediainfo.checkExists).toHaveBeenCalled()
+    expect(mockApi.mediainfo.getVideoInfo).toHaveBeenCalledWith(mockFile.path)
+    // FFmpeg 不应该被调用，因为 MediaInfo 可用
+    expect(mockApi.ffmpeg.checkExists).not.toHaveBeenCalled()
   })
 
-  it('应该处理 FFmpeg 不可用的情况', async () => {
+  it('应该在 MediaInfo 不可用时回退到 FFmpeg', async () => {
     const mockFile = {
       id: 'test-file-id',
       name: 'test-video.mp4',
@@ -143,8 +151,107 @@ describe('VideoAddButton 功能测试', () => {
       created_at: new Date().toISOString()
     }
 
-    // 设置 FFmpeg 不可用
+    // 设置 MediaInfo 不可用，回退到 FFmpeg
     mockApi.file.select.mockResolvedValue([mockFile])
+    mockApi.mediainfo.checkExists.mockResolvedValue(false)
+    mockApi.ffmpeg.checkExists.mockResolvedValue(true)
+
+    const mockVideoInfo = {
+      duration: 120,
+      videoCodec: 'h264',
+      audioCodec: 'aac',
+      resolution: '1920x1080',
+      bitrate: '2000kb/s'
+    }
+    mockApi.ffmpeg.getVideoInfo.mockResolvedValue(mockVideoInfo)
+
+    // 选择文件
+    const files = await mockApi.file.select({
+      properties: ['openFile'],
+      filters: [
+        {
+          name: 'Video Files',
+          extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm']
+        }
+      ]
+    })
+
+    expect(files).toHaveLength(1)
+
+    // 检查 MediaInfo（应该返回 false）
+    const mediaInfoExists = await mockApi.mediainfo.checkExists()
+    expect(mediaInfoExists).toBe(false)
+
+    // 检查 FFmpeg（应该返回 true）
+    const ffmpegExists = await mockApi.ffmpeg.checkExists()
+    expect(ffmpegExists).toBe(true)
+
+    // 使用 FFmpeg 获取视频信息
+    const videoInfo = await mockApi.ffmpeg.getVideoInfo(mockFile.path)
+    expect(videoInfo).toEqual(mockVideoInfo)
+
+    // 验证调用顺序
+    expect(mockApi.mediainfo.checkExists).toHaveBeenCalled()
+    expect(mockApi.ffmpeg.checkExists).toHaveBeenCalled()
+    expect(mockApi.ffmpeg.getVideoInfo).toHaveBeenCalledWith(mockFile.path)
+  })
+
+  it('应该处理无效视频文件的情况', async () => {
+    const mockFile = {
+      id: 'test-file-id',
+      name: 'invalid-video.mp4',
+      path: '/path/to/invalid-video.mp4',
+      size: 1024000,
+      ext: '.mp4',
+      type: 'video',
+      origin_name: 'invalid-video.mp4',
+      created_at: new Date().toISOString()
+    }
+
+    // 设置 mock 返回值 - MediaInfo 可用但无法解析
+    mockApi.file.select.mockResolvedValue([mockFile])
+    mockApi.mediainfo.checkExists.mockResolvedValue(true)
+    mockApi.mediainfo.getVideoInfo.mockResolvedValue(null) // 无法获取视频信息
+
+    // 选择文件
+    const files = await mockApi.file.select({
+      properties: ['openFile'],
+      filters: [
+        {
+          name: 'Video Files',
+          extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm']
+        }
+      ]
+    })
+
+    expect(files).toHaveLength(1)
+
+    // 检查 MediaInfo
+    const mediaInfoExists = await mockApi.mediainfo.checkExists()
+    expect(mediaInfoExists).toBe(true)
+
+    // 尝试获取视频信息（应该返回 null）
+    const videoInfo = await mockApi.mediainfo.getVideoInfo(mockFile.path)
+    expect(videoInfo).toBeNull()
+
+    // 在实际组件中，这里应该抛出错误并显示相应的错误消息
+  })
+
+  it('应该处理所有视频解析器都不可用的情况', async () => {
+    const mockFile = {
+      id: 'test-file-id',
+      name: 'test-video.mp4',
+      path: '/path/to/test-video.mp4',
+      size: 1024000,
+      ext: '.mp4',
+      type: 'video',
+      origin_name: 'test-video.mp4',
+      created_at: new Date().toISOString()
+    }
+
+    // 设置两个解析器都不可用
+    mockApi.file.select.mockResolvedValue([mockFile])
+    mockApi.mediainfo.checkExists.mockResolvedValue(false)
     mockApi.ffmpeg.checkExists.mockResolvedValue(false)
 
     // 选择文件
@@ -160,51 +267,19 @@ describe('VideoAddButton 功能测试', () => {
 
     expect(files).toHaveLength(1)
 
+    // 检查 MediaInfo（应该返回 false）
+    const mediaInfoExists = await mockApi.mediainfo.checkExists()
+    expect(mediaInfoExists).toBe(false)
+
     // 检查 FFmpeg（应该返回 false）
     const ffmpegExists = await mockApi.ffmpeg.checkExists()
     expect(ffmpegExists).toBe(false)
 
-    // 在实际组件中，这里应该抛出错误并显示相应的错误消息
-  })
+    // 验证调用顺序
+    expect(mockApi.mediainfo.checkExists).toHaveBeenCalled()
+    expect(mockApi.ffmpeg.checkExists).toHaveBeenCalled()
 
-  it('应该处理无效视频文件的情况', async () => {
-    const mockFile = {
-      id: 'test-file-id',
-      name: 'invalid-video.mp4',
-      path: '/path/to/invalid-video.mp4',
-      size: 1024000,
-      ext: '.mp4',
-      type: 'video',
-      origin_name: 'invalid-video.mp4',
-      created_at: new Date().toISOString()
-    }
-
-    // 设置 mock 返回值
-    mockApi.file.select.mockResolvedValue([mockFile])
-    mockApi.ffmpeg.checkExists.mockResolvedValue(true)
-    mockApi.ffmpeg.getVideoInfo.mockResolvedValue(null) // 无法获取视频信息
-
-    // 选择文件
-    const files = await mockApi.file.select({
-      properties: ['openFile'],
-      filters: [
-        {
-          name: 'Video Files',
-          extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm']
-        }
-      ]
-    })
-
-    expect(files).toHaveLength(1)
-
-    // 检查 FFmpeg
-    const ffmpegExists = await mockApi.ffmpeg.checkExists()
-    expect(ffmpegExists).toBe(true)
-
-    // 尝试获取视频信息（应该返回 null）
-    const videoInfo = await mockApi.ffmpeg.getVideoInfo(mockFile.path)
-    expect(videoInfo).toBeNull()
-
-    // 在实际组件中，这里应该抛出错误并显示相应的错误消息
+    // 在实际组件中，这里应该抛出错误并显示相应的错误消息：
+    // "视频解析器不可用。MediaInfo 和 FFmpeg 都无法使用，请检查系统配置。"
   })
 })

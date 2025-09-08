@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 import { CodeInspectorPlugin } from 'code-inspector-plugin'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import { resolve } from 'path'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = process.env.NODE_ENV === 'production'
@@ -13,6 +14,21 @@ export default defineConfig({
   main: {
     plugins: [
       externalizeDepsPlugin(),
+      // 复制 MediaInfo WASM 文件到构建输出
+      viteStaticCopy({
+        targets: [
+          {
+            src: path.join(
+              import.meta.dirname,
+              'node_modules',
+              'mediainfo.js',
+              'dist',
+              'MediaInfoModule.wasm'
+            ),
+            dest: 'assets'
+          }
+        ]
+      }),
       // 复制迁移文件到构建目录
       {
         name: 'copy-migrations',
