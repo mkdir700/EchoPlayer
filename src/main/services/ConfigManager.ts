@@ -19,6 +19,20 @@ export enum ConfigKeys {
   DisableHardwareAcceleration = 'disableHardwareAcceleration'
 }
 
+const defaultValues: Record<ConfigKeys, any> = {
+  [ConfigKeys.Language]: defaultLanguage,
+  [ConfigKeys.Theme]: ThemeMode.system,
+  [ConfigKeys.LaunchToTray]: false,
+  [ConfigKeys.Tray]: true,
+  [ConfigKeys.TrayOnClose]: true,
+  [ConfigKeys.Shortcuts]: [],
+  [ConfigKeys.AutoUpdate]: true,
+  [ConfigKeys.TestChannel]: UpgradeChannel.BETA,
+  [ConfigKeys.TestPlan]: false,
+  [ConfigKeys.SpellCheckLanguages]: [] as string[],
+  [ConfigKeys.DisableHardwareAcceleration]: false
+}
+
 export class ConfigManager {
   private store: Conf
   private subscribers: Map<string, Array<(newValue: any) => void>> = new Map()
@@ -28,7 +42,7 @@ export class ConfigManager {
   }
 
   getTheme(): ThemeMode {
-    return this.get(ConfigKeys.Theme, ThemeMode.system)
+    return this.get(ConfigKeys.Theme, defaultValues[ConfigKeys.Theme])
   }
 
   setTheme(theme: ThemeMode) {
@@ -38,7 +52,7 @@ export class ConfigManager {
   getLanguage(): LanguageVarious {
     const locale = Object.keys(locales).includes(app.getLocale())
       ? app.getLocale()
-      : defaultLanguage
+      : defaultValues[ConfigKeys.Language]
     return this.get(ConfigKeys.Language, locale) as LanguageVarious
   }
 
@@ -58,7 +72,7 @@ export class ConfigManager {
   }
 
   getAutoUpdate(): boolean {
-    return this.get<boolean>(ConfigKeys.AutoUpdate, true)
+    return this.get<boolean>(ConfigKeys.AutoUpdate, defaultValues[ConfigKeys.AutoUpdate])
   }
 
   setAutoUpdate(value: boolean) {
@@ -66,7 +80,7 @@ export class ConfigManager {
   }
 
   getTestChannel(): UpgradeChannel {
-    return this.get<UpgradeChannel>(ConfigKeys.TestChannel)
+    return this.get<UpgradeChannel>(ConfigKeys.TestChannel, defaultValues[ConfigKeys.TestChannel])
   }
 
   setTestChannel(value: UpgradeChannel) {
@@ -74,7 +88,7 @@ export class ConfigManager {
   }
 
   getTestPlan(): boolean {
-    return this.get<boolean>(ConfigKeys.TestPlan, false)
+    return this.get<boolean>(ConfigKeys.TestPlan, defaultValues[ConfigKeys.TestPlan])
   }
 
   setTestPlan(value: boolean) {
@@ -82,7 +96,7 @@ export class ConfigManager {
   }
 
   getLaunchToTray(): boolean {
-    return !!this.get(ConfigKeys.LaunchToTray, false)
+    return !!this.get(ConfigKeys.LaunchToTray, defaultValues[ConfigKeys.LaunchToTray])
   }
 
   setLaunchToTray(value: boolean) {
@@ -90,7 +104,7 @@ export class ConfigManager {
   }
 
   getTray(): boolean {
-    return !!this.get(ConfigKeys.Tray, true)
+    return !!this.get(ConfigKeys.Tray, defaultValues[ConfigKeys.Tray])
   }
 
   setTray(value: boolean) {
@@ -98,7 +112,7 @@ export class ConfigManager {
   }
 
   getTrayOnClose(): boolean {
-    return !!this.get(ConfigKeys.TrayOnClose, true)
+    return !!this.get(ConfigKeys.TrayOnClose, defaultValues[ConfigKeys.TrayOnClose])
   }
 
   setTrayOnClose(value: boolean) {
@@ -106,7 +120,10 @@ export class ConfigManager {
   }
 
   getDisableHardwareAcceleration(): boolean {
-    return this.get<boolean>(ConfigKeys.DisableHardwareAcceleration, false)
+    return this.get<boolean>(
+      ConfigKeys.DisableHardwareAcceleration,
+      defaultValues[ConfigKeys.DisableHardwareAcceleration]
+    )
   }
 
   setDisableHardwareAcceleration(value: boolean) {
@@ -163,7 +180,7 @@ export class ConfigManager {
    * @param defaultValue 默认值
    */
   get<T>(key: string, defaultValue?: T) {
-    return this.store.get(key, defaultValue) as T
+    return this.store.get(key, defaultValue ? defaultValue : defaultValues[key]) as T
   }
 }
 
