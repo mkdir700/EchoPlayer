@@ -50,25 +50,47 @@ class MediaInfoService {
         locateFile: (wasmPath: string) => {
           // 在 Electron 中寻找 WASM 文件路径
           if (wasmPath === 'MediaInfoModule.wasm') {
-            // 开发环境路径
-            const devPath = path.join(__dirname, 'assets', wasmPath)
-            if (fs.existsSync(devPath)) {
-              logger.info('🔧 使用开发环境 WASM 文件路径', { path: devPath })
-              return devPath
+            // 可能的路径列表，按优先级排序
+            const possiblePaths = [
+              // 开发环境路径
+              path.join(__dirname, 'assets', wasmPath),
+              path.join(__dirname, '..', 'assets', wasmPath),
+
+              // 生产环境路径（优先 asar.unpacked）
+              path.join(
+                process.resourcesPath || __dirname,
+                'app.asar.unpacked/out/main/assets',
+                wasmPath
+              ),
+              path.join(process.resourcesPath || __dirname, 'app/out/main/assets', wasmPath),
+
+              // 备用路径
+              path.join(process.resourcesPath || __dirname, 'assets', wasmPath),
+              path.join(__dirname, '../../../assets', wasmPath),
+              path.join(process.cwd(), 'assets', wasmPath),
+
+              // Windows特殊路径
+              path.join(__dirname, 'assets', wasmPath).replace(/\\/g, '/')
+            ]
+
+            // 逐一检查路径
+            for (const testPath of possiblePaths) {
+              if (fs.existsSync(testPath)) {
+                logger.info('🔧 找到 WASM 文件路径', {
+                  path: testPath,
+                  platform: process.platform
+                })
+                return testPath
+              }
             }
 
-            // 生产环境路径
-            const prodPath = path.join(
-              process.resourcesPath || __dirname,
-              'app.asar.unpacked/out/main/assets',
-              wasmPath
-            )
-            if (fs.existsSync(prodPath)) {
-              logger.info('🔧 使用生产环境 WASM 文件路径', { path: prodPath })
-              return prodPath
-            }
-
-            logger.warn('⚠️ 未找到 WASM 文件，使用默认路径')
+            logger.warn('⚠️ 未找到 WASM 文件，尝试的路径:', {
+              paths: possiblePaths,
+              platform: process.platform,
+              __dirname,
+              resourcesPath: process.resourcesPath,
+              cwd: process.cwd()
+            })
           }
           return wasmPath
         }

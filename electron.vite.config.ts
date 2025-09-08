@@ -18,13 +18,7 @@ export default defineConfig({
       viteStaticCopy({
         targets: [
           {
-            src: path.join(
-              import.meta.dirname,
-              'node_modules',
-              'mediainfo.js',
-              'dist',
-              'MediaInfoModule.wasm'
-            ),
+            src: 'node_modules/mediainfo.js/dist/MediaInfoModule.wasm',
             dest: 'assets'
           }
         ]
