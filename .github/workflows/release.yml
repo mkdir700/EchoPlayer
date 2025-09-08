@@ -7,15 +7,12 @@ on:
         description: 'Release version (e.g., v1.0.0, v1.0.0-beta.1, v1.0.0-alpha.1)'
         required: false
       force_version_type:
-        description: 'Force version type (overrides auto-detection)'
+        description: 'Force version type (dev/test only, others determined by branch)'
         required: false
         type: choice
         options:
           - 'dev'
           - 'test'
-          - 'alpha'
-          - 'beta'
-          - 'stable'
 
 permissions:
   contents: write
@@ -52,16 +49,31 @@ jobs:
 
           # Detect version type
           if [ -n "${{ github.event.inputs.force_version_type }}" ]; then
+            # 手动指定的版本类型（仅限 dev/test）
             VERSION_TYPE="${{ github.event.inputs.force_version_type }}"
+          elif [[ "${{ github.ref_name }}" == "main" ]]; then
+            # main 分支 = stable
+            VERSION_TYPE="stable"
+          elif [[ "${{ github.ref_name }}" == "beta" ]]; then
+            # beta 分支 = beta
+            VERSION_TYPE="beta"
+          elif [[ "${{ github.ref_name }}" == "alpha" ]]; then
+            # alpha 分支 = alpha
+            VERSION_TYPE="alpha"
           elif [[ "$VERSION_NO_V" == *"-dev"* ]]; then
+            # 版本号包含 dev 后缀
             VERSION_TYPE="dev"
           elif [[ "$VERSION_NO_V" == *"-test"* ]]; then
+            # 版本号包含 test 后缀
             VERSION_TYPE="test"
           elif [[ "$VERSION_NO_V" == *"-alpha"* ]]; then
+            # 版本号包含 alpha 后缀
             VERSION_TYPE="alpha"
           elif [[ "$VERSION_NO_V" == *"-beta"* ]]; then
+            # 版本号包含 beta 后缀
             VERSION_TYPE="beta"
           else
+            # 默认为 stable
             VERSION_TYPE="stable"
           fi
 
