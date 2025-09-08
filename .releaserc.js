@@ -1,5 +1,12 @@
 module.exports = {
-  branches: ['main', { name: 'beta', prerelease: true }, { name: 'alpha', prerelease: true }],
+  branches: [
+    // main 分支：稳定版本 (v1.0.0)
+    'main',
+    // beta 分支：测试版本 (v1.0.0-beta.1)
+    { name: 'beta', prerelease: true },
+    // alpha 分支：开发版本 (v1.0.0-alpha.1)
+    { name: 'alpha', prerelease: true }
+  ],
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
