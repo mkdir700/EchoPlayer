@@ -1,3 +1,15 @@
+# [1.0.0-alpha.3](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.2...v1.0.0-alpha.3) (2025-09-08)
+
+### Bug Fixes
+
+- **release:** remove custom labels from GitHub release assets ([#92](https://github.com/mkdir700/EchoPlayer/issues/92)) ([f066209](https://github.com/mkdir700/EchoPlayer/commit/f066209bdab482481a4564827490580b753b3c8e))
+- remove path unique constraint to allow duplicate video file addition ([#97](https://github.com/mkdir700/EchoPlayer/issues/97)) ([237dd30](https://github.com/mkdir700/EchoPlayer/commit/237dd301c995133e1781e76c2f56cf167b7a78c9))
+
+### Features
+
+- **ci:** add alpha and beta branch support to test workflow ([#94](https://github.com/mkdir700/EchoPlayer/issues/94)) ([a47466b](https://github.com/mkdir700/EchoPlayer/commit/a47466b8e236af17785db098a761fa6dd30c67b5))
+- replace FFmpeg with MediaInfo for video metadata extraction ([#95](https://github.com/mkdir700/EchoPlayer/issues/95)) ([2f64029](https://github.com/mkdir700/EchoPlayer/commit/2f640299078bc354735c8c665c190c849dc52615))
+
 # [1.0.0-alpha.2](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.1...v1.0.0-alpha.2) (2025-09-08)
 
 ### Bug Fixes
