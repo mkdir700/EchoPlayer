@@ -1,17 +1,20 @@
 import { loggerService } from '@logger'
 import { useSubtitleOverlay } from '@renderer/pages/player/hooks'
 import { useControlMenuManager } from '@renderer/pages/player/hooks/useControlMenuManager'
+import { useHoverMenu } from '@renderer/pages/player/hooks/useHoverMenu'
 import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import { Captions } from 'lucide-react'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
 
-import { ControlToggleButton } from '../styles/controls'
+import { ControlContainer, ControlToggleButton } from '../styles/controls'
 
 const logger = loggerService.withContext('CaptionsButton')
 
 export default function CaptionsButton() {
+  const { t } = useTranslation()
   const integration = useSubtitleOverlay()
 
   // 获取当前字幕配置
@@ -29,10 +32,21 @@ export default function CaptionsButton() {
   // 使用全局菜单管理器
   const {
     isMenuOpen: isCaptionsMenuOpen,
-    toggleMenu,
+    closeMenu: closeCaptionsMenu,
+    openMenu,
     containerRef
   } = useControlMenuManager({
     menuId: 'captions'
+  })
+
+  // 使用hover菜单Hook
+  const { buttonProps, menuProps } = useHoverMenu({
+    openDelay: 200,
+    closeDelay: 100,
+    disabled: false,
+    isMenuOpen: isCaptionsMenuOpen,
+    openMenu,
+    closeMenu: closeCaptionsMenu
   })
 
   // 显示模式选项
@@ -40,26 +54,26 @@ export default function CaptionsButton() {
     () => [
       {
         mode: SubtitleDisplayMode.NONE,
-        label: '隐藏',
-        tooltip: '隐藏字幕 (Ctrl+1)'
+        label: t('player.controls.subtitle.display-mode.hide.label'),
+        tooltip: t('player.controls.subtitle.display-mode.hide.tooltip')
       },
       {
         mode: SubtitleDisplayMode.ORIGINAL,
-        label: '原文',
-        tooltip: '仅显示原文 (Ctrl+2)'
+        label: t('player.controls.subtitle.display-mode.original.label'),
+        tooltip: t('player.controls.subtitle.display-mode.original.tooltip')
       },
       {
         mode: SubtitleDisplayMode.TRANSLATED,
-        label: '译文',
-        tooltip: '仅显示译文 (Ctrl+3)'
+        label: t('player.controls.subtitle.display-mode.translation.label'),
+        tooltip: t('player.controls.subtitle.display-mode.translation.tooltip')
       },
       {
         mode: SubtitleDisplayMode.BILINGUAL,
-        label: '双语',
-        tooltip: '显示双语字幕 (Ctrl+4)'
+        label: t('player.controls.subtitle.display-mode.bilingual.label'),
+        tooltip: t('player.controls.subtitle.display-mode.bilingual.tooltip')
       }
     ],
-    []
+    [t]
   )
 
   // 背景类型选项
@@ -67,22 +81,22 @@ export default function CaptionsButton() {
     () => [
       {
         type: SubtitleBackgroundType.TRANSPARENT,
-        tooltip: '透明背景'
+        tooltip: t('player.controls.subtitle.background-type.transparent.tooltip')
       },
       {
         type: SubtitleBackgroundType.BLUR,
-        tooltip: '模糊背景'
+        tooltip: t('player.controls.subtitle.background-type.blur.tooltip')
       },
       {
         type: SubtitleBackgroundType.SOLID_BLACK,
-        tooltip: '黑色背景'
+        tooltip: t('player.controls.subtitle.background-type.solid-black.tooltip')
       },
       {
         type: SubtitleBackgroundType.SOLID_GRAY,
-        tooltip: '灰色背景'
+        tooltip: t('player.controls.subtitle.background-type.solid-gray.tooltip')
       }
     ],
-    []
+    [t]
   )
 
   // 事件处理器
@@ -96,66 +110,74 @@ export default function CaptionsButton() {
     logger.info('字幕背景类型已切换', { type })
   }
 
+  // 切换字幕显示/隐藏（左键点击功能）
+  const toggleCaptions = () => {
+    if (displayMode === SubtitleDisplayMode.NONE) {
+      // 如果当前隐藏，默认显示双语
+      setDisplayMode(SubtitleDisplayMode.BILINGUAL)
+      logger.info('字幕已启用', { mode: SubtitleDisplayMode.BILINGUAL })
+    } else {
+      // 如果当前显示，则隐藏
+      setDisplayMode(SubtitleDisplayMode.NONE)
+      logger.info('字幕已隐藏')
+    }
+  }
+
   return (
-    <div ref={containerRef}>
+    <ControlContainer ref={containerRef}>
       <ControlToggleButton
         $active={displayMode !== SubtitleDisplayMode.NONE}
         $menuOpen={isCaptionsMenuOpen}
-        title="字幕控制"
-        aria-label="字幕控制"
-        onClick={toggleMenu}
-        onContextMenu={(e) => {
-          e.preventDefault()
-          toggleMenu()
-        }}
+        aria-label="Toggle captions / Hover for settings"
+        onClick={() => buttonProps.onClick(toggleCaptions)}
+        onMouseEnter={buttonProps.onMouseEnter}
+        onMouseLeave={buttonProps.onMouseLeave}
         aria-pressed={displayMode !== SubtitleDisplayMode.NONE}
       >
         <Captions size={18} />
-
-        {isCaptionsMenuOpen && (
-          <CaptionsMenu
-            role="menu"
-            onClick={(e) => e.stopPropagation()}
-            onContextMenu={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-            }}
-          >
-            <MenuSection>
-              <MenuTitle>显示模式</MenuTitle>
-              <MenuRow>
-                {displayModes.map(({ mode, label, tooltip }) => (
-                  <MenuOption
-                    key={mode}
-                    $active={displayMode === mode}
-                    onClick={() => handleModeChange(mode)}
-                    title={tooltip}
-                  >
-                    {label}
-                  </MenuOption>
-                ))}
-              </MenuRow>
-            </MenuSection>
-
-            <MenuSection>
-              <MenuTitle>背景样式</MenuTitle>
-              <MenuRow>
-                {backgroundTypes.map(({ type, tooltip }) => (
-                  <MenuOption
-                    key={type}
-                    $active={backgroundStyle.type === type}
-                    onClick={() => handleBackgroundChange(type)}
-                    title={tooltip}
-                  >
-                    <BackgroundPreview $type={type} />
-                  </MenuOption>
-                ))}
-              </MenuRow>
-            </MenuSection>
-          </CaptionsMenu>
-        )}
       </ControlToggleButton>
-    </div>
+
+      {isCaptionsMenuOpen && (
+        <CaptionsMenu
+          role="menu"
+          onClick={(e) => e.stopPropagation()}
+          onMouseEnter={menuProps.onMouseEnter}
+          onMouseLeave={menuProps.onMouseLeave}
+        >
+          <MenuSection>
+            <MenuTitle>{t('player.controls.subtitle.display-mode.title')}</MenuTitle>
+            <MenuRow>
+              {displayModes.map(({ mode, label, tooltip }) => (
+                <MenuOption
+                  key={mode}
+                  $active={displayMode === mode}
+                  onClick={() => handleModeChange(mode)}
+                  title={tooltip}
+                >
+                  {label}
+                </MenuOption>
+              ))}
+            </MenuRow>
+          </MenuSection>
+
+          <MenuSection>
+            <MenuTitle>{t('player.controls.subtitle.background-type.title')}</MenuTitle>
+            <MenuRow>
+              {backgroundTypes.map(({ type, tooltip }) => (
+                <MenuOption
+                  key={type}
+                  $active={backgroundStyle.type === type}
+                  onClick={() => handleBackgroundChange(type)}
+                  title={tooltip}
+                >
+                  <BackgroundPreview $type={type} />
+                </MenuOption>
+              ))}
+            </MenuRow>
+          </MenuSection>
+        </CaptionsMenu>
+      )}
+    </ControlContainer>
   )
 }
 

@@ -14,23 +14,9 @@
     "return": "返回",
     "search": "搜索",
     "search_no_results": "暂无搜索结果",
-    "search_placeholder": "搜索视频..."
-  },
-  "controls": {
-    "auto_pause": {
-      "disabled": "字幕未加载",
-      "enabled": "自动暂停",
-      "resume_delay": "恢复延迟（秒）",
-      "resume_title": "自动恢复播放"
-    },
-    "fullscreen": {
-      "enter": "全屏",
-      "exit": "退出全屏"
-    },
-    "loop": {
-      "disabled": "字幕未加载",
-      "enabled": "循环"
-    }
+    "search_placeholder": "搜索视频...",
+    "enabled": "已开启",
+    "disabled": "已关闭"
   },
   "docs": {
     "title": "帮助文档"
@@ -48,6 +34,64 @@
     }
   },
   "player": {
+    "controls": {
+      "auto_pause": {
+        "subtitle_end": "在单个字幕结束时暂停",
+        "disabled": "字幕未加载",
+        "enabled": "自动暂停",
+        "resume_delay": "恢复延迟（秒）",
+        "resume_title": "自动恢复播放"
+      },
+      "subtitle": {
+        "display-mode": {
+          "title": "显示模式",
+          "hide": {
+            "label": "隐藏",
+            "tooltip": "隐藏字幕 (Ctrl+1)"
+          },
+          "original": {
+            "label": "原文",
+            "tooltip": "仅显示原文字幕 (Ctrl+2)"
+          },
+          "translation": {
+            "label": "译文",
+            "tooltip": "仅显示译文字幕 (Ctrl+3)"
+          },
+          "bilingual": {
+            "label": "双语",
+            "tooltip": "显示双语字幕 (Ctrl+4)"
+          }
+        },
+        "background-type": {
+          "title": "背景样式",
+          "transparent": {
+            "tooltip": "透明背景"
+          },
+          "blur": {
+            "tooltip": "模糊背景"
+          },
+          "solid-black": {
+            "tooltip": "黑色背景"
+          },
+          "solid-gray": {
+            "tooltip": "灰色背景"
+          }
+        }
+      },
+      "loop": {
+        "count": "循环次数",
+        "mode": {
+          "single": "单句循环"
+        },
+        "title": "循环模式",
+        "disabled": "字幕未加载",
+        "enabled": "循环"
+      },
+      "fullscreen": {
+        "enter": "全屏",
+        "exit": "退出全屏"
+      }
+    },
     "subtitles": {
       "hide": "隐藏字幕列表",
       "show": "展开字幕列表"
