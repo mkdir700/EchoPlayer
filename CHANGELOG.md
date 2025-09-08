@@ -1,3 +1,13 @@
+# [1.0.0-alpha.4](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.3...v1.0.0-alpha.4) (2025-09-08)
+
+### Bug Fixes
+
+- **updater:** resolve auto-update channel handling and version-based test defaults ([#98](https://github.com/mkdir700/EchoPlayer/issues/98)) ([e30213b](https://github.com/mkdir700/EchoPlayer/commit/e30213babd3f0cc391864df8e2b95774e6d41051))
+
+### Features
+
+- **player:** implement hover menu system for control panel components ([#99](https://github.com/mkdir700/EchoPlayer/issues/99)) ([526e71a](https://github.com/mkdir700/EchoPlayer/commit/526e71a7a40268e88a0ba6c9f7dab9565d929a21))
+
 # [1.0.0-alpha.3](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.2...v1.0.0-alpha.3) (2025-09-08)
 
 ### Bug Fixes
