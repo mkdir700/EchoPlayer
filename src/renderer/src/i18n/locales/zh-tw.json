@@ -3,6 +3,9 @@
     "language": "語言"
   },
   "settings": {
+    "about": {
+      "updateError": "更新檢查失敗"
+    },
     "appearance": {
       "title": "外观设置"
     },
@@ -11,6 +14,14 @@
       "title": "開發者模式"
     },
     "general": {
+      "auto_check_update": {
+        "title": "自動更新"
+      },
+      "test_plan": {
+        "title": "測試計劃",
+        "tooltip": "加入測試計劃以提前體驗新功能",
+        "version_options": "測試版頻道"
+      },
       "title": "通用設置"
     },
     "launch": {
