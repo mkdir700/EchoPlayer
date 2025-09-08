@@ -1,14 +1,14 @@
 import { useControlMenuManager } from '@renderer/pages/player/hooks/useControlMenuManager'
+import { useHoverMenu } from '@renderer/pages/player/hooks/useHoverMenu'
 import { useSubtitles } from '@renderer/pages/player/state/player-context'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { InputNumber, Switch } from 'antd'
-import { Tooltip } from 'antd'
 import { PauseCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
-import { ControlToggleButton } from '../styles/controls'
+import { ControlContainer, ControlToggleButton } from '../styles/controls'
 
 export default function AutoPauseButton() {
   const { t } = useTranslation()
@@ -30,7 +30,12 @@ export default function AutoPauseButton() {
   const [pendingDelay, setPendingDelay] = useState<number>(resumeDelay)
 
   // 使用全局菜单管理器
-  const { isMenuOpen, closeMenu, toggleMenu, containerRef } = useControlMenuManager({
+  const {
+    isMenuOpen,
+    closeMenu: closeMenuManager,
+    openMenu,
+    containerRef
+  } = useControlMenuManager({
     menuId: 'pause',
     onOpen: () => {
       setPendingPauseOnSubtitleEnd(pauseOnSubtitleEnd)
@@ -47,104 +52,107 @@ export default function AutoPauseButton() {
     }
   })
 
+  // 使用hover菜单Hook
+  const { buttonProps, menuProps, closeMenu } = useHoverMenu({
+    openDelay: 200,
+    closeDelay: 100,
+    disabled: isDisabled,
+    isMenuOpen: isMenuOpen,
+    openMenu,
+    closeMenu: closeMenuManager,
+    onMenuOpen: () => {
+      setPendingPauseOnSubtitleEnd(pauseOnSubtitleEnd)
+      setPendingResumeEnabled(resumeEnabled)
+      setPendingDelay(resumeDelay)
+    },
+    onMenuClose: () => {
+      // 统一提交
+      if (pendingPauseOnSubtitleEnd !== pauseOnSubtitleEnd)
+        setPauseOnSubtitleEnd(pendingPauseOnSubtitleEnd)
+      if (pendingResumeEnabled !== resumeEnabled) setResumeEnabled(pendingResumeEnabled)
+      if (Number.isFinite(pendingDelay) && pendingDelay !== resumeDelay)
+        setResumeDelay(pendingDelay)
+    }
+  })
+
   const closeMenuAndApply = () => {
     closeMenu()
   }
 
   return (
-    <div ref={containerRef}>
-      <Tooltip
-        title={
-          isDisabled
-            ? `${t('controls.auto_pause.disabled')}`
-            : `${t('controls.auto_pause.enabled')}`
-        }
+    <ControlContainer ref={containerRef}>
+      <ControlToggleButton
+        $active={autoPauseEnabled && !isDisabled}
+        $menuOpen={isMenuOpen}
+        $disabled={isDisabled}
+        onClick={() => buttonProps.onClick(() => setAutoPauseEnabled(!autoPauseEnabled))}
+        onMouseEnter={buttonProps.onMouseEnter}
+        onMouseLeave={buttonProps.onMouseLeave}
+        aria-pressed={autoPauseEnabled && !isDisabled}
+        aria-disabled={isDisabled}
       >
-        <ControlToggleButton
-          $active={autoPauseEnabled && !isDisabled}
-          $menuOpen={isMenuOpen}
-          $disabled={isDisabled}
-          onClick={() => {
-            if (isDisabled || isMenuOpen) return // 禁用或菜单打开时，忽略点击
-            setAutoPauseEnabled(!autoPauseEnabled)
-          }}
-          onContextMenu={(e) => {
-            e.preventDefault()
-            if (isDisabled) return // 禁用时不显示菜单
-            toggleMenu()
-          }}
-          aria-pressed={autoPauseEnabled && !isDisabled}
-          aria-disabled={isDisabled}
+        <PauseCircle size={18} />
+      </ControlToggleButton>
+
+      {isMenuOpen && !isDisabled && (
+        <MenuContainer
+          role="menu"
+          onMouseEnter={menuProps.onMouseEnter}
+          onMouseLeave={menuProps.onMouseLeave}
+          onClick={(e) => e.stopPropagation()}
         >
-          <PauseCircle size={18} />
+          <MenuSection>
+            <MenuTitle>{t('player.controls.auto_pause.subtitle_end')}</MenuTitle>
+            <Row>
+              <Switch
+                size="small"
+                checked={pendingPauseOnSubtitleEnd}
+                onChange={(checked) => setPendingPauseOnSubtitleEnd(checked)}
+              />
+              <span style={{ fontSize: 12, color: 'var(--color-text-2)' }}>
+                {pendingPauseOnSubtitleEnd ? '已开启' : '已关闭'}
+              </span>
+            </Row>
+          </MenuSection>
 
-          {isMenuOpen && !isDisabled && (
-            <MenuContainer
-              role="menu"
-              onMouseLeave={closeMenuAndApply}
-              onClick={(e) => e.stopPropagation()}
-              onContextMenu={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-              }}
-            >
-              <MenuSection>
-                <MenuTitle>字幕结束暂停</MenuTitle>
-                <Row>
-                  <Switch
-                    size="small"
-                    checked={pendingPauseOnSubtitleEnd}
-                    onChange={(checked) => setPendingPauseOnSubtitleEnd(checked)}
-                  />
-                  <span style={{ fontSize: 12, color: 'var(--color-text-2)' }}>
-                    {pendingPauseOnSubtitleEnd ? '已开启' : '已关闭'}
-                  </span>
-                </Row>
-              </MenuSection>
+          <MenuSection>
+            <MenuTitle>{t('player.controls.auto_pause.resume_title')}</MenuTitle>
+            <Row>
+              <Switch
+                size="small"
+                checked={pendingResumeEnabled}
+                onChange={(checked) => setPendingResumeEnabled(checked)}
+              />
+              <span style={{ fontSize: 12, color: 'var(--color-text-2)' }}>
+                {pendingResumeEnabled ? t('common.enabled') : t('common.disabled')}
+              </span>
+            </Row>
+          </MenuSection>
 
-              <MenuSection>
-                <MenuTitle>{t('controls.auto_pause.resume_title')}</MenuTitle>
-                <Row>
-                  <Switch
-                    size="small"
-                    checked={pendingResumeEnabled}
-                    onChange={(checked) => setPendingResumeEnabled(checked)}
-                  />
-                  <span style={{ fontSize: 12, color: 'var(--color-text-2)' }}>
-                    {pendingResumeEnabled ? '已开启' : '已关闭'}
-                  </span>
-                </Row>
-              </MenuSection>
-
-              <MenuSection>
-                <MenuTitle>{t('controls.auto_pause.resume_delay')}</MenuTitle>
-                <Row>
-                  <InputNumber
-                    size="small"
-                    min={1}
-                    max={30}
-                    step={1}
-                    value={pendingDelay / 1000}
-                    onChange={(v) => setPendingDelay(typeof v === 'number' ? v * 1000 : 0)}
-                    onPressEnter={closeMenuAndApply}
-                    style={{ width: 100 }}
-                  />
-                  <QuickChip onClick={() => setPendingDelay(5000)} $active={pendingDelay === 5000}>
-                    5
-                  </QuickChip>
-                  <QuickChip
-                    onClick={() => setPendingDelay(10000)}
-                    $active={pendingDelay === 10000}
-                  >
-                    10
-                  </QuickChip>
-                </Row>
-              </MenuSection>
-            </MenuContainer>
-          )}
-        </ControlToggleButton>
-      </Tooltip>
-    </div>
+          <MenuSection>
+            <MenuTitle>{t('player.controls.auto_pause.resume_delay')}</MenuTitle>
+            <Row>
+              <InputNumber
+                size="small"
+                min={1}
+                max={30}
+                step={1}
+                value={pendingDelay / 1000}
+                onChange={(v) => setPendingDelay(typeof v === 'number' ? v * 1000 : 0)}
+                onPressEnter={closeMenuAndApply}
+                style={{ width: 100 }}
+              />
+              <QuickChip onClick={() => setPendingDelay(5000)} $active={pendingDelay === 5000}>
+                5
+              </QuickChip>
+              <QuickChip onClick={() => setPendingDelay(10000)} $active={pendingDelay === 10000}>
+                10
+              </QuickChip>
+            </Row>
+          </MenuSection>
+        </MenuContainer>
+      )}
+    </ControlContainer>
   )
 }
 

@@ -1,5 +1,9 @@
 import styled from 'styled-components'
 
+export const ControlContainer = styled.div`
+  position: relative;
+`
+
 // 通用：图标按钮（36x36，透明背景）
 export const ControlIconButton = styled.button`
   position: relative;

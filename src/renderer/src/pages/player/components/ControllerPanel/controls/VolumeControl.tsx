@@ -5,6 +5,7 @@ import { useCallback } from 'react'
 import styled from 'styled-components'
 
 import { useControlMenuManager } from '../../../hooks/useControlMenuManager'
+import { useHoverMenu } from '../../../hooks/useHoverMenu'
 import { usePlayerCommands } from '../../../hooks/usePlayerCommands'
 import { GlassPopup } from '../styles/controls'
 
@@ -16,10 +17,21 @@ export default function VolumeControl() {
   // 使用全局菜单管理器
   const {
     isMenuOpen: isVolumeOpen,
-    toggleMenu,
+    closeMenu: closeVolumeMenu,
+    openMenu,
     containerRef
   } = useControlMenuManager({
     menuId: 'volume'
+  })
+
+  // 使用hover菜单Hook
+  const { buttonProps, menuProps } = useHoverMenu({
+    openDelay: 200,
+    closeDelay: 100,
+    disabled: false,
+    isMenuOpen: isVolumeOpen,
+    openMenu,
+    closeMenu: closeVolumeMenu
   })
 
   const setVolumeLevel = useCallback(
@@ -45,7 +57,12 @@ export default function VolumeControl() {
 
   return (
     <VolumeControlWrap ref={containerRef}>
-      <VolumeButton onClick={toggleMenu} aria-label="Toggle volume panel" title="音量">
+      <VolumeButton
+        onClick={() => buttonProps.onClick(toggleMute)}
+        onMouseEnter={buttonProps.onMouseEnter}
+        onMouseLeave={buttonProps.onMouseLeave}
+        aria-label="Toggle mute / Hover for volume slider"
+      >
         {muted ? (
           <VolumeX size={18} />
         ) : volume > 0.5 ? (
@@ -55,7 +72,11 @@ export default function VolumeControl() {
         )}
       </VolumeButton>
       {isVolumeOpen && (
-        <VolumePopup role="dialog">
+        <VolumePopup
+          role="dialog"
+          onMouseEnter={menuProps.onMouseEnter}
+          onMouseLeave={menuProps.onMouseLeave}
+        >
           <StyledSlider
             vertical
             min={0}
