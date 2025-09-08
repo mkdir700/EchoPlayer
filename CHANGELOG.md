@@ -1,3 +1,10 @@
+# [1.0.0-alpha.2](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.1...v1.0.0-alpha.2) (2025-09-08)
+
+### Bug Fixes
+
+- **ci:** resolve duplicate GitHub releases issue ([#90](https://github.com/mkdir700/EchoPlayer/issues/90)) ([07c3e5f](https://github.com/mkdir700/EchoPlayer/commit/07c3e5f754502cd5780cbfc704aa305b3e9c2a95))
+- improve release workflow and build configuration ([#91](https://github.com/mkdir700/EchoPlayer/issues/91)) ([4534162](https://github.com/mkdir700/EchoPlayer/commit/4534162cae55c7bc4cb28200abe86df62af9a662))
+
 # 1.0.0-alpha.1 (2025-09-08)
 
 ### Bug Fixes
