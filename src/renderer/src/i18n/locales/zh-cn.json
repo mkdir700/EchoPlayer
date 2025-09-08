@@ -112,15 +112,15 @@
     },
     "general": {
       "auto_check_update": {
-        "title": "自动检查更新"
+        "title": "自动更新"
       },
       "test_plan": {
         "alpha_version": "Alpha 版",
         "alpha_version_tooltip": "Alpha 版 - 不稳定的测试版本，更新较快",
         "beta_version": "Beta 版",
         "beta_version_tooltip": "Beta 版 - 比 Alpha 更稳定的测试版本",
-        "title": "测试版程序",
-        "tooltip": "加入测试版程序以提前体验新功能",
+        "title": "测试计划",
+        "tooltip": "加入测试计划以提前体验新功能",
         "version_channel_not_match": "警告：您当前的版本通道与所选的测试通道不匹配",
         "version_options": "测试版通道"
       },

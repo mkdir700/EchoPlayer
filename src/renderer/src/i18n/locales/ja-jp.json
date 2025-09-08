@@ -7,38 +7,38 @@
   },
   "settings": {
     "about": {
-      "title": "について",
-      "description": "EchoPlayerは語学学習者向けの動画プレーヤーです",
-      "updateError": "アップデート確認に失敗しました",
-      "updateAvailable": "アップデート {{version}} が利用可能です",
-      "downloading": "ダウンロード中...",
       "checkUpdate": {
         "available": "アップデートをインストール",
         "label": "アップデートを確認"
       },
-      "releases": {
-        "title": "リリースノート",
-        "button": "リリースを表示"
-      },
-      "website": {
-        "title": "公式ウェブサイト",
-        "button": "ウェブサイトを訪問"
-      },
-      "feedback": {
-        "title": "バグ報告",
-        "button": "問題を報告"
-      },
-      "license": {
-        "title": "ライセンス",
-        "button": "ライセンスを表示"
-      },
       "contact": {
-        "title": "サポートへ連絡",
-        "button": "メールを送信"
+        "button": "メールを送信",
+        "title": "サポートへ連絡"
       },
       "debug": {
-        "title": "開発者ツール",
-        "open": "DevToolsを開く"
+        "open": "DevToolsを開く",
+        "title": "開発者ツール"
+      },
+      "description": "EchoPlayerは語学学習者向けの動画プレーヤーです",
+      "downloading": "ダウンロード中...",
+      "feedback": {
+        "button": "問題を報告",
+        "title": "バグ報告"
+      },
+      "license": {
+        "button": "ライセンスを表示",
+        "title": "ライセンス"
+      },
+      "releases": {
+        "button": "リリースを表示",
+        "title": "リリースノート"
+      },
+      "title": "について",
+      "updateAvailable": "アップデート {{version}} が利用可能です",
+      "updateError": "アップデート確認に失敗しました",
+      "website": {
+        "button": "ウェブサイトを訪問",
+        "title": "公式ウェブサイト"
       }
     },
     "appearance": {
@@ -49,20 +49,20 @@
       "title": "開発者モード"
     },
     "general": {
-      "title": "一般的な設定",
       "auto_check_update": {
-        "title": "自動アップデート確認"
+        "title": "自動更新"
       },
       "test_plan": {
+        "alpha_version": "Alphaバージョン",
+        "alpha_version_tooltip": "Alphaバージョン - 不安定なテスト版、更新頻度が高い",
+        "beta_version": "Betaバージョン",
+        "beta_version_tooltip": "Betaバージョン - Alphaより安定したテスト版",
         "title": "ベータテストプログラム",
         "tooltip": "新機能に早期アクセスするためのベータテストプログラムに参加",
         "version_channel_not_match": "警告：現在のバージョンチャンネルが選択されたテストチャンネルと一致しません",
-        "version_options": "ベータチャンネル",
-        "alpha_version_tooltip": "Alphaバージョン - 不安定なテスト版、更新頻度が高い",
-        "alpha_version": "Alphaバージョン",
-        "beta_version_tooltip": "Betaバージョン - Alphaより安定したテスト版",
-        "beta_version": "Betaバージョン"
-      }
+        "version_options": "ベータチャンネル"
+      },
+      "title": "一般的な設定"
     },
     "launch": {
       "onboot": "开机自启动",
