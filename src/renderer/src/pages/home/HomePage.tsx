@@ -1,6 +1,7 @@
 import { loggerService } from '@logger'
 import HomePageVideoService, { type HomePageVideoItem } from '@renderer/services/HomePageVideos'
 import { VideoLibraryService } from '@renderer/services/VideoLibrary'
+import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
 import { useSettingsStore } from '@renderer/state/stores/settings.store'
 import { useVideoListStore } from '@renderer/state/stores/video-list.store'
 import { message, Modal, Tooltip } from 'antd'
@@ -70,6 +71,7 @@ const gridVariants = {
 export function HomePage(): React.JSX.Element {
   const { videoListViewMode, setVideoListViewMode } = useSettingsStore()
   const { refreshTrigger, setLoading } = useVideoListStore()
+  const currentPlayingVideo = usePlayerSessionStore((state) => state.video)
 
   const [videos, setVideos] = React.useState<HomePageVideoItem[]>([])
   const navigate = useNavigate()
@@ -151,70 +153,89 @@ export function HomePage(): React.JSX.Element {
                 exit="exit"
               >
                 <VideoGrid viewMode={videoListViewMode}>
-                  {videos.map((video: HomePageVideoItem, index: number) => (
-                    <VideoCard
-                      key={video.id}
-                      variants={cardVariants}
-                      initial="hidden"
-                      animate="visible"
-                      custom={index}
-                      viewMode={videoListViewMode}
-                    >
-                      <CardContent
+                  {videos.map((video: HomePageVideoItem, index: number) => {
+                    const isCurrentlyPlaying = currentPlayingVideo?.id === video.id
+                    return (
+                      <VideoCard
+                        key={video.id}
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={index}
                         viewMode={videoListViewMode}
-                        onClick={() => navigate(`/player/${video.id}`)}
+                        $isPlaying={isCurrentlyPlaying}
                       >
-                        <ThumbnailContainer viewMode={videoListViewMode}>
-                          <ThumbnailWithFallback src={video.thumbnail} alt={video.title} />
-                          <ThumbnailOverlay>
-                            <Duration>{video.durationText}</Duration>
-                            <TopRightActions>
-                              <DeleteButton onClick={() => handleDeleteVideo(video)} />
-                            </TopRightActions>
-                          </ThumbnailOverlay>
-                          <ProgressBarContainer>
-                            <MotionProgressBar
-                              progress={video.watchProgress}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${video.watchProgress * 100}%` }}
+                        <CardContent
+                          viewMode={videoListViewMode}
+                          onClick={() => navigate(`/player/${video.id}`)}
+                        >
+                          <ThumbnailContainer viewMode={videoListViewMode}>
+                            <ThumbnailWithFallback src={video.thumbnail} alt={video.title} />
+                            <ThumbnailOverlay>
+                              <Duration>{video.durationText}</Duration>
+                              <TopRightActions>
+                                <DeleteButton onClick={() => handleDeleteVideo(video)} />
+                              </TopRightActions>
+                            </ThumbnailOverlay>
+                            {isCurrentlyPlaying && (
+                              <CurrentPlayingIndicator
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.3, ease: 'easeOut' }}
+                              >
+                                <PlayingIcon>▶</PlayingIcon>
+                                <PlayingText>正在播放</PlayingText>
+                              </CurrentPlayingIndicator>
+                            )}
+                            <ProgressBarContainer>
+                              <MotionProgressBar
+                                progress={video.watchProgress}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${video.watchProgress * 100}%` }}
+                                transition={{
+                                  duration: 1.2,
+                                  delay: index * 0.1 + 0.5,
+                                  ease: [0.25, 0.46, 0.45, 0.94]
+                                }}
+                              />
+                            </ProgressBarContainer>
+                          </ThumbnailContainer>
+
+                          <VideoInfo viewMode={videoListViewMode}>
+                            <VideoContent
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
                               transition={{
-                                duration: 1.2,
-                                delay: index * 0.1 + 0.5,
+                                duration: 0.5,
+                                delay: index * 0.1 + 0.3,
                                 ease: [0.25, 0.46, 0.45, 0.94]
                               }}
-                            />
-                          </ProgressBarContainer>
-                        </ThumbnailContainer>
-
-                        <VideoInfo viewMode={videoListViewMode}>
-                          <VideoContent
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{
-                              duration: 0.5,
-                              delay: index * 0.1 + 0.3,
-                              ease: [0.25, 0.46, 0.45, 0.94]
-                            }}
-                          >
-                            <VideoTitleTooltip
-                              title={video.title}
-                              mouseEnterDelay={0.6}
-                              placement="top"
-                              getPopupContainer={() => document.body}
                             >
-                              <VideoTitle>{video.title}</VideoTitle>
-                            </VideoTitleTooltip>
-                            <VideoMeta>
-                              <MetaRow>
-                                <MetaText>{formatDate(video.createdAt)}</MetaText>
-                                <MetaText>{video.publishedAt}</MetaText>
-                              </MetaRow>
-                            </VideoMeta>
-                          </VideoContent>
-                        </VideoInfo>
-                      </CardContent>
-                    </VideoCard>
-                  ))}
+                              <VideoTitleTooltip
+                                title={video.title}
+                                mouseEnterDelay={0.6}
+                                placement="top"
+                                getPopupContainer={() => document.body}
+                              >
+                                <VideoTitle>{video.title}</VideoTitle>
+                              </VideoTitleTooltip>
+                              <VideoMeta>
+                                {video.subtitle && (
+                                  <MetaRow>
+                                    <VideoSubtitle>{video.subtitle}</VideoSubtitle>
+                                  </MetaRow>
+                                )}
+                                <MetaRow>
+                                  <MetaText>{formatDate(video.createdAt)}</MetaText>
+                                  <MetaText>{video.publishedAt}</MetaText>
+                                </MetaRow>
+                              </VideoMeta>
+                            </VideoContent>
+                          </VideoInfo>
+                        </CardContent>
+                      </VideoCard>
+                    )
+                  })}
                 </VideoGrid>
               </motion.div>
             </AnimatePresence>
@@ -271,7 +292,7 @@ const VideoGrid = styled.div<{ viewMode: 'grid' | 'list' }>`
   }
 `
 
-const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list' }>`
+const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list'; $isPlaying?: boolean }>`
   --card-scale: 1;
   --card-y: 0px;
   --card-x: 0px;
@@ -280,7 +301,8 @@ const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list' }>`
   --bg-opacity: 1;
 
   background: var(--color-background);
-  border: 1px solid var(--color-border);
+  border: 1px solid
+    ${(props) => (props.$isPlaying ? 'var(--color-primary)' : 'var(--color-border)')};
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: ${(props) => (props.viewMode === 'list' ? '12px' : '20px')};
@@ -290,8 +312,18 @@ const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list' }>`
   will-change: transform, box-shadow;
   transform: translateZ(0) scale(var(--card-scale)) translateY(var(--card-y))
     translateX(var(--card-x));
-  box-shadow: 0 8px 32px rgba(0, 0, 0, var(--shadow-opacity));
+  box-shadow: ${(props) =>
+    props.$isPlaying
+      ? '0 8px 32px rgba(22, 119, 255, 0.25)'
+      : '0 8px 32px rgba(0, 0, 0, var(--shadow-opacity))'};
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  ${(props) =>
+    props.$isPlaying &&
+    `
+    --border-opacity: 1;
+    background: var(--color-background);
+  `}
 
   &:hover {
     --card-scale: ${(props) => (props.viewMode === 'list' ? '1' : '1.01')};
@@ -300,6 +332,12 @@ const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list' }>`
     --shadow-opacity: 0.15;
     --border-opacity: 0.8;
     --bg-opacity: 0.95;
+
+    ${(props) =>
+      props.$isPlaying &&
+      `
+      box-shadow: 0 12px 40px rgba(22, 119, 255, 0.4);
+    `}
   }
 
   [theme-mode='dark'] & {
@@ -495,6 +533,51 @@ const MetaText = styled.div`
   color: #8e8e93;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   letter-spacing: -0.1px;
+`
+
+const CurrentPlayingIndicator = styled(motion.div)`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(22, 119, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  box-shadow: 0 4px 16px rgba(22, 119, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 10;
+`
+
+const PlayingIcon = styled.span`
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`
+
+const PlayingText = styled.span`
+  letter-spacing: -0.2px;
+`
+
+const VideoSubtitle = styled.div`
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-3, #666);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  letter-spacing: -0.1px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `
 
 export default HomePage
