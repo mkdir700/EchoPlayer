@@ -23,7 +23,7 @@ const mockFileManager = {
 
 // Mock VideoLibraryService
 const mockVideoLibraryService = {
-  addOrUpdateRecord: vi.fn()
+  addRecord: vi.fn()
 }
 
 // Mock antd message（当前测试未直接使用，保留以便未来扩展示例）
@@ -90,7 +90,7 @@ describe('VideoAddButton 功能测试', () => {
     mockApi.ffmpeg.checkExists.mockResolvedValue(true)
     mockApi.ffmpeg.getVideoInfo.mockResolvedValue(mockVideoInfo)
     mockFileManager.addFile.mockResolvedValue(mockFile)
-    mockVideoLibraryService.addOrUpdateRecord.mockResolvedValue(mockVideoRecord)
+    mockVideoLibraryService.addRecord.mockResolvedValue(mockVideoRecord)
 
     // 这里应该测试实际的 VideoAddButton 组件
     // 由于这是一个集成测试示例，我们主要验证流程逻辑
@@ -206,5 +206,92 @@ describe('VideoAddButton 功能测试', () => {
     expect(videoInfo).toBeNull()
 
     // 在实际组件中，这里应该抛出错误并显示相应的错误消息
+  })
+
+  it('应该允许重复添加相同路径的视频文件 (单元测试)', async () => {
+    // 准备测试数据 - 同一个文件
+    const mockFile = {
+      id: 'test-file-id',
+      name: 'duplicate-video.mp4',
+      path: '/path/to/duplicate-video.mp4',
+      size: 1024000,
+      ext: '.mp4',
+      type: 'video',
+      origin_name: 'duplicate-video.mp4',
+      created_at: new Date().toISOString()
+    }
+
+    const mockVideoInfo = {
+      duration: 120,
+      videoCodec: 'h264',
+      audioCodec: 'aac',
+      resolution: '1920x1080',
+      bitrate: '2000kb/s'
+    }
+
+    // 模拟两次添加相同文件的返回结果
+    const mockVideoRecord1 = {
+      id: 1,
+      fileId: 'test-file-id-1',
+      currentTime: 0,
+      duration: 120,
+      playedAt: Date.now(),
+      firstPlayedAt: Date.now(),
+      playCount: 0,
+      isFinished: false,
+      isFavorite: false,
+      thumbnailPath: undefined
+    }
+
+    const mockVideoRecord2 = {
+      id: 2,
+      fileId: 'test-file-id-2',
+      currentTime: 0,
+      duration: 120,
+      playedAt: Date.now(),
+      firstPlayedAt: Date.now(),
+      playCount: 0,
+      isFinished: false,
+      isFavorite: false,
+      thumbnailPath: undefined
+    }
+
+    // 设置 mock 返回值
+    mockApi.file.select.mockResolvedValue([mockFile])
+    mockApi.ffmpeg.checkExists.mockResolvedValue(true)
+    mockApi.ffmpeg.getVideoInfo.mockResolvedValue(mockVideoInfo)
+
+    // 第一次添加
+    mockFileManager.addFile.mockResolvedValueOnce({
+      ...mockFile,
+      id: 'test-file-id-1'
+    })
+    mockVideoLibraryService.addRecord.mockResolvedValueOnce(mockVideoRecord1)
+
+    // 第二次添加相同文件
+    mockFileManager.addFile.mockResolvedValueOnce({
+      ...mockFile,
+      id: 'test-file-id-2'
+    })
+    mockVideoLibraryService.addRecord.mockResolvedValueOnce(mockVideoRecord2)
+
+    // 第一次添加文件
+    const files1 = await mockApi.file.select({
+      properties: ['openFile'],
+      filters: [{ name: 'Video Files', extensions: ['mp4'] }]
+    })
+    expect(files1).toHaveLength(1)
+
+    // 第一次添加文件
+    const addedFile1 = await mockFileManager.addFile(mockFile)
+    expect(addedFile1.id).toBe('test-file-id-1')
+
+    // 第二次添加相同路径文件（应该成功，因为删除了唯一约束）
+    const addedFile2 = await mockFileManager.addFile(mockFile)
+    expect(addedFile2.id).toBe('test-file-id-2')
+
+    // 验证两次都调用了 addFile，生成了不同的ID
+    expect(mockFileManager.addFile).toHaveBeenCalledTimes(2)
+    expect(addedFile1.id).not.toBe(addedFile2.id)
   })
 })

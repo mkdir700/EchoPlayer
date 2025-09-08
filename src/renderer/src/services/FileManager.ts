@@ -18,17 +18,12 @@ class FileManager {
   static async addFile(file: FileMetadata): Promise<FileMetadata> {
     logger.info('💾 开始添加文件到数据库', { fileName: file.name, filePath: file.path })
 
-    // 先检查文件是否已存在（通过路径查找）
-    const queryStartTime = performance.now()
-    const existingFile = await db.files.getFileByPath(file.path)
-    const queryEndTime = performance.now()
-    logger.info(`🔍 文件查询耗时: ${(queryEndTime - queryStartTime).toFixed(2)}ms`)
+    const addedFile = await db.files.addFile({ ...file, created_at: file.created_at.getTime() })
+    logger.info(`✅ 文件添加成功`, {
+      fileId: addedFile.id
+    })
 
-    if (existingFile) {
-      const updatedFile = await db.files.updateFile(existingFile.id, file)
-      return updatedFile || existingFile
-    }
-    return await db.files.addFile({ ...file, created_at: file.created_at.getTime() })
+    return addedFile
   }
 }
 
