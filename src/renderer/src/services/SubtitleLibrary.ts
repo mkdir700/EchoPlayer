@@ -1,5 +1,6 @@
 import { loggerService } from '@logger'
 import db from '@renderer/databases'
+import type { SubtitleItem } from '@types'
 import type { SubtitleLibraryRecord } from 'packages/shared/types/database'
 
 const logger = loggerService.withContext('SubtitleLibraryService')
@@ -251,6 +252,88 @@ export class SubtitleLibraryService {
       const errorMessage = `搜索字幕记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error('❌ 搜索字幕记录失败:', { error })
       throw new SubtitleLibraryServiceError(errorMessage, 'SEARCH_RECORDS_FAILED', error as Error)
+    }
+  }
+
+  /** 智能获取字幕数据（优先内存缓存，然后数据库，最后降级到文件解析） */
+  async getSubtitlesForVideo(videoId: number): Promise<SubtitleItem[]> {
+    const startTime = performance.now()
+
+    try {
+      logger.info('📋 智能获取视频字幕数据:', { videoId })
+
+      const result = await db.subtitleLibrary.getSubtitleWithData(videoId)
+
+      if (result && result.subtitles.length > 0) {
+        const loadTime = performance.now() - startTime
+        logger.info('✅ 从数据库加载字幕数据:', {
+          count: result.subtitles.length,
+          loadTime: `${loadTime.toFixed(2)}ms`
+        })
+        return result.subtitles
+      }
+
+      logger.info('ℹ️ 未找到任何字幕记录')
+      return []
+    } catch (error) {
+      const loadTime = performance.now() - startTime
+      logger.error('❌ 获取视频字幕数据失败:', { error, loadTime: `${loadTime.toFixed(2)}ms` })
+      logger.info('🔄 启用最终降级策略：返回空字幕列表')
+      return []
+    }
+  }
+
+  /** 添加带字幕数据的完整记录 */
+  async addRecordWithSubtitles(record: {
+    videoId: number
+    filePath: string
+    subtitles: SubtitleItem[]
+  }): Promise<SubtitleLibraryRecord> {
+    try {
+      logger.info('📝 添加带字幕数据的记录:', {
+        videoId: record.videoId,
+        filePath: record.filePath,
+        count: record.subtitles.length
+      })
+
+      // 检查是否已存在相同记录
+      const existing = await db.subtitleLibrary.getSubtitleByVideoIdAndPath(
+        record.videoId,
+        record.filePath
+      )
+
+      if (existing) {
+        // 更新现有记录的字幕数据
+        await db.subtitleLibrary.updateSubtitlesData(existing.id, record.subtitles)
+        logger.info('✅ 更新现有记录的字幕数据')
+        return existing
+      } else {
+        // 创建新记录
+        const newRecord = await db.subtitleLibrary.addSubtitleWithData(record)
+        logger.info('✅ 创建新的字幕记录')
+        return newRecord
+      }
+    } catch (error) {
+      const errorMessage = `添加带字幕数据的记录失败: ${error instanceof Error ? error.message : 'Unknown error'}`
+      logger.error('❌ 添加带字幕数据的记录失败:', { error })
+      throw new SubtitleLibraryServiceError(
+        errorMessage,
+        'ADD_RECORD_WITH_SUBTITLES_FAILED',
+        error as Error
+      )
+    }
+  }
+
+  /** 更新字幕数据 */
+  async updateSubtitles(id: number, subtitles: SubtitleItem[]): Promise<void> {
+    try {
+      logger.info('🔄 更新字幕数据:', { id, count: subtitles.length })
+      await db.subtitleLibrary.updateSubtitlesData(id, subtitles)
+      logger.info('✅ 字幕数据更新成功')
+    } catch (error) {
+      const errorMessage = `更新字幕数据失败: ${error instanceof Error ? error.message : 'Unknown error'}`
+      logger.error('❌ 更新字幕数据失败:', { error })
+      throw new SubtitleLibraryServiceError(errorMessage, 'UPDATE_SUBTITLES_FAILED', error as Error)
     }
   }
 }

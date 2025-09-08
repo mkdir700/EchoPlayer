@@ -1,4 +1,5 @@
 import { loggerService } from '@logger'
+import type { SubtitleItem } from '@types'
 import type { SubtitleLibraryInsert, SubtitleLibraryRecord } from 'packages/shared/types/database'
 
 const logger = loggerService.withContext('SubtitleLibraryService')
@@ -158,6 +159,84 @@ export class SubtitleLibraryService {
     } catch (error) {
       logger.error('Failed to delete subtitle:', { error })
       throw error
+    }
+  }
+
+  /**
+   * 添加带字幕数据的完整记录
+   */
+  async addSubtitleWithData(record: {
+    videoId: number
+    filePath: string
+    subtitles: SubtitleItem[]
+  }): Promise<SubtitleLibraryRecord> {
+    try {
+      const subtitleData: SubtitleLibraryInsert = {
+        videoId: record.videoId,
+        filePath: record.filePath,
+        subtitles: JSON.stringify(record.subtitles),
+        parsed_at: Date.now()
+      }
+
+      return await this.addSubtitle(subtitleData)
+    } catch (error) {
+      logger.error('Failed to add subtitle with data:', { error })
+      throw error
+    }
+  }
+
+  /**
+   * 更新字幕数据
+   */
+  async updateSubtitlesData(id: number, subtitles: SubtitleItem[]): Promise<void> {
+    try {
+      await this.updateSubtitle(id, {
+        subtitles: JSON.stringify(subtitles),
+        parsed_at: new Date()
+      })
+      logger.info('Updated subtitles data:', { id, count: subtitles.length })
+    } catch (error) {
+      logger.error('Failed to update subtitles data:', { error })
+      throw error
+    }
+  }
+
+  /**
+   * 获取带字幕数据的记录（优先返回有解析数据的记录）
+   */
+  async getSubtitleWithData(videoId: number): Promise<{
+    record: SubtitleLibraryRecord
+    subtitles: SubtitleItem[]
+  } | null> {
+    try {
+      const records = await this.getSubtitlesByVideoId(videoId)
+
+      // 优先选择有解析数据的记录
+      const recordWithData = records.find((r) => r.subtitles && r.parsed_at)
+      const targetRecord = recordWithData || records[0]
+
+      if (!targetRecord) return null
+
+      let subtitles: SubtitleItem[] = []
+
+      // 如果有解析数据，直接使用
+      if (targetRecord.subtitles) {
+        try {
+          subtitles = JSON.parse(targetRecord.subtitles)
+        } catch (parseError) {
+          logger.warn('Failed to parse stored subtitles, will need to reload from file:', {
+            parseError
+          })
+        }
+      }
+
+      return {
+        record: targetRecord,
+        subtitles
+      }
+    } catch (error) {
+      logger.error('Failed to get subtitle with data:', { error })
+      return null
     }
   }
 }

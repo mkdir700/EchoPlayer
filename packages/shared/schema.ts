@@ -66,6 +66,8 @@ export interface SubtitleLibraryTable {
   id: Generated<number>
   videoId: number
   filePath: string
+  subtitles: string | null
+  parsed_at: ColumnType<Date, number | undefined, never> | null
   created_at: ColumnType<Date, number | undefined, never>
 }
 
