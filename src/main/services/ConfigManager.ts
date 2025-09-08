@@ -5,6 +5,29 @@ import { ThemeMode } from '@types'
 import { app } from 'electron'
 import { Conf } from 'electron-conf/main'
 
+// 根据应用版本动态设置测试相关的默认值
+function getVersionBasedDefaults() {
+  const version = app.getVersion()
+
+  // 检查版本是否包含 alpha, beta 等标识
+  if (version.includes('alpha')) {
+    return {
+      testChannel: UpgradeChannel.ALPHA,
+      testPlan: true
+    }
+  } else if (version.includes('beta')) {
+    return {
+      testChannel: UpgradeChannel.BETA,
+      testPlan: true
+    }
+  } else {
+    return {
+      testChannel: UpgradeChannel.LATEST,
+      testPlan: false
+    }
+  }
+}
+
 export enum ConfigKeys {
   Language = 'language',
   Theme = 'theme',
@@ -19,6 +42,9 @@ export enum ConfigKeys {
   DisableHardwareAcceleration = 'disableHardwareAcceleration'
 }
 
+// 获取基于版本的动态默认值
+const versionBasedDefaults = getVersionBasedDefaults()
+
 const defaultValues: Record<ConfigKeys, any> = {
   [ConfigKeys.Language]: defaultLanguage,
   [ConfigKeys.Theme]: ThemeMode.system,
@@ -27,8 +53,8 @@ const defaultValues: Record<ConfigKeys, any> = {
   [ConfigKeys.TrayOnClose]: true,
   [ConfigKeys.Shortcuts]: [],
   [ConfigKeys.AutoUpdate]: true,
-  [ConfigKeys.TestChannel]: UpgradeChannel.BETA,
-  [ConfigKeys.TestPlan]: false,
+  [ConfigKeys.TestChannel]: versionBasedDefaults.testChannel,
+  [ConfigKeys.TestPlan]: versionBasedDefaults.testPlan,
   [ConfigKeys.SpellCheckLanguages]: [] as string[],
   [ConfigKeys.DisableHardwareAcceleration]: false
 }

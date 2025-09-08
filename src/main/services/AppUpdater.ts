@@ -173,11 +173,8 @@ export default class AppUpdater {
       const preReleaseUrl = `https://github.com/mkdir700/EchoPlayer/releases/download/${release.tag_name}`
       if (preReleaseUrl) {
         this.autoUpdater.setFeedURL(preReleaseUrl)
-        // Keep channel as 'latest' because GitHub releases only have latest-mac.yml, not alpha-mac.yml
-        this.autoUpdater.channel = UpgradeChannel.LATEST
-        logger.info(
-          `Using pre-release URL: ${preReleaseUrl} with channel: ${UpgradeChannel.LATEST}`
-        )
+        this.autoUpdater.channel = channel
+        logger.info(`Using pre-release URL: ${preReleaseUrl} with channel: ${channel}`)
         return
       }
 

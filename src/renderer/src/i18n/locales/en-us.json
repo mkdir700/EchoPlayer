@@ -10,38 +10,38 @@
   },
   "settings": {
     "about": {
-      "title": "About",
-      "description": "EchoPlayer is a video player designed for language learners",
-      "updateError": "Update check failed",
-      "updateAvailable": "Update {{version}} available",
-      "downloading": "Downloading...",
       "checkUpdate": {
         "available": "Install Update",
         "label": "Check for Updates"
       },
-      "releases": {
-        "title": "Release Notes",
-        "button": "View Releases"
-      },
-      "website": {
-        "title": "Official Website",
-        "button": "Visit Website"
-      },
-      "feedback": {
-        "title": "Bug Report",
-        "button": "Report Issue"
-      },
-      "license": {
-        "title": "License",
-        "button": "View License"
-      },
       "contact": {
-        "title": "Contact Support",
-        "button": "Send Email"
+        "button": "Send Email",
+        "title": "Contact Support"
       },
       "debug": {
-        "title": "Developer Tools",
-        "open": "Open DevTools"
+        "open": "Open DevTools",
+        "title": "Developer Tools"
+      },
+      "description": "EchoPlayer is a video player designed for language learners",
+      "downloading": "Downloading...",
+      "feedback": {
+        "button": "Report Issue",
+        "title": "Bug Report"
+      },
+      "license": {
+        "button": "View License",
+        "title": "License"
+      },
+      "releases": {
+        "button": "View Releases",
+        "title": "Release Notes"
+      },
+      "title": "About",
+      "updateAvailable": "Update {{version}} available",
+      "updateError": "Update check failed",
+      "website": {
+        "button": "Visit Website",
+        "title": "Official Website"
       }
     },
     "appearance": {
@@ -52,25 +52,51 @@
       "title": "Developer mode"
     },
     "general": {
-      "title": "General settings",
       "auto_check_update": {
-        "title": "Auto-check for updates"
+        "title": "Automatic Updates"
       },
       "test_plan": {
+        "alpha_version": "Alpha Version",
+        "alpha_version_tooltip": "Alpha - Unstable test version with frequent updates",
+        "beta_version": "Beta Version",
+        "beta_version_tooltip": "Beta - More stable test version, equivalent to RC",
         "title": "Beta Testing Program",
         "tooltip": "Join the beta testing program to receive early access to new features",
         "version_channel_not_match": "Warning: Your current version channel doesn't match the selected test channel",
-        "version_options": "Beta Channel",
-        "alpha_version_tooltip": "Alpha - Unstable test version with frequent updates",
-        "alpha_version": "Alpha Version",
-        "beta_version_tooltip": "Beta - More stable test version, equivalent to RC",
-        "beta_version": "Beta Version"
-      }
+        "version_options": "Beta Channel"
+      },
+      "title": "General settings"
     },
     "launch": {
       "onboot": "Auto-start on boot",
       "title": "start",
       "totray": "Minimize to tray on startup"
+    },
+    "playback": {
+      "defaultPlaybackSpeed": "Playback Speed",
+      "defaultVolume": "Default Volume",
+      "subtitle": {
+        "backgroundType": {
+          "blur": "Blur",
+          "solid": "Solid",
+          "transparent": "Transparent"
+        },
+        "defaultBackgroundType": "Default Background",
+        "defaultDisplayMode": "Default Display Mode",
+        "displayMode": {
+          "bilingual": "Bilingual",
+          "none": "Hidden",
+          "original": "Original",
+          "translation": "Translation"
+        },
+        "overlay": {
+          "resizeHandle": {
+            "tooltip": "Drag to resize, double-click to expand horizontally"
+          }
+        },
+        "title": "Subtitle Settings"
+      },
+      "title": "Playback Settings"
     },
     "shortcuts": {
       "action": "operation",
@@ -127,32 +153,6 @@
       "onclose": "Minimize to tray when closed",
       "show": "Show tray icon",
       "title": "tray"
-    },
-    "playback": {
-      "defaultPlaybackSpeed": "Playback Speed",
-      "defaultVolume": "Default Volume",
-      "subtitle": {
-        "backgroundType": {
-          "blur": "Blur",
-          "solid": "Solid",
-          "transparent": "Transparent"
-        },
-        "defaultBackgroundType": "Default Background",
-        "defaultDisplayMode": "Default Display Mode",
-        "displayMode": {
-          "bilingual": "Bilingual",
-          "none": "Hidden",
-          "original": "Original",
-          "translation": "Translation"
-        },
-        "overlay": {
-          "resizeHandle": {
-            "tooltip": "Drag to resize, double-click to expand horizontally"
-          }
-        },
-        "title": "Subtitle Settings"
-      },
-      "title": "Playback Settings"
     }
   },
   "title": "Settings",
