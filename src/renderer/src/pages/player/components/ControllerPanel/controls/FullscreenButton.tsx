@@ -15,7 +15,9 @@ export default function FullscreenButton() {
     <Button
       onClick={() => cmd.setFullscreen(!isFullscreen)}
       aria-label="Toggle fullscreen"
-      title={isFullscreen ? t('controls.fullscreen.exit') : t('controls.fullscreen.enter')}
+      title={
+        isFullscreen ? t('player.controls.fullscreen.exit') : t('player.controls.fullscreen.enter')
+      }
     >
       {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
     </Button>
