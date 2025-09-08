@@ -170,22 +170,6 @@ export function HomePage(): React.JSX.Element {
                             <Duration>{video.durationText}</Duration>
                             <TopRightActions>
                               <DeleteButton onClick={() => handleDeleteVideo(video)} />
-                              <WatchedIndicator watched={video.watchProgress >= 1}>
-                                {video.watchProgress >= 1 && (
-                                  <CheckIcon>
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                      <circle cx="8" cy="8" r="8" fill="#34D399" />
-                                      <path
-                                        d="m4 8 2 2 6-4"
-                                        stroke="white"
-                                        strokeWidth="1.5"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                    </svg>
-                                  </CheckIcon>
-                                )}
-                              </WatchedIndicator>
                             </TopRightActions>
                           </ThumbnailOverlay>
                           <ProgressBarContainer>
@@ -406,39 +390,6 @@ const Duration = styled.div`
   align-self: flex-end;
   margin-top: auto;
   will-change: transform;
-`
-
-const WatchedIndicator = styled.div<{ watched: boolean }>`
-  display: ${(props) => (props.watched ? 'flex' : 'none')};
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  will-change: transform;
-  transform: translateZ(0);
-`
-
-const CheckIcon = styled.div`
-  --check-scale: 0.8;
-  --check-opacity: 0.8;
-
-  transform: scale(var(--check-scale)) translateZ(0);
-  opacity: var(--check-opacity);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
-  ${VideoCard}:hover & {
-    --check-scale: 1;
-    --check-opacity: 1;
-  }
-
-  svg {
-    display: block;
-    will-change: transform;
-  }
 `
 
 const ProgressBarContainer = styled.div`
