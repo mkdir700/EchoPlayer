@@ -132,5 +132,5 @@ publish:
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
 releaseInfo:
-  releaseName: 'EchoPlayer v${version}'
+  releaseName: EchoPlayer v${version}
   releaseNotesFile: 'build/release-notes.md'
