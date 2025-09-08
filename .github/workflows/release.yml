@@ -159,17 +159,10 @@ jobs:
           echo "🔄 更新渠道: ${{ needs.detect-version.outputs.version_type == 'stable' && 'latest' || needs.detect-version.outputs.version_type }}"
           pnpm build
 
-          # 根据版本类型决定发布策略
-          if [[ "${{ needs.detect-version.outputs.version_type }}" == "dev" || "${{ needs.detect-version.outputs.version_type }}" == "test" ]]; then
-            echo "🚫 Dev/Test version - building without publishing"
-            pnpm exec electron-builder ${{ matrix.target }} --publish never
-          else
-            echo "🚀 Publishing version to GitHub"
-            # 使用 always 策略，无论是否有标签都会发布
-            # electron-builder 会根据版本号自动判断是否为 prerelease
-            echo "📦 Publishing with always strategy (supports both release and prerelease)"
-            pnpm exec electron-builder ${{ matrix.target }} --publish always
-          fi
+          # 构建产物但不发布，交给 semantic-release 统一发布
+          echo "🏗️ Building artifacts without publishing"
+          echo "📦 Semantic-release will handle the GitHub Release creation"
+          pnpm exec electron-builder ${{ matrix.target }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -225,6 +218,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # semantic-release 需要完整的 git 历史
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -251,6 +246,22 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare artifacts for release
+        run: |
+          echo "📦 Preparing artifacts for GitHub Release"
+          mkdir -p dist
+          # 复制所有构建产物到 dist 目录
+          find artifacts -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.yml" -o -name "*.yaml" -o -name "*.blockmap" | while read file; do
+            cp "$file" dist/
+            echo "📁 Copied: $(basename "$file")"
+          done
+          ls -la dist/
 
       - name: Run Semantic Release
         env:
