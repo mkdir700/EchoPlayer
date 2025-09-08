@@ -5,6 +5,10 @@
   "main": "./out/main/index.js",
   "author": "echoplayer.cc",
   "homepage": "https://echoplayer.cc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkdir700/EchoPlayer.git"
+  },
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
