@@ -24,6 +24,7 @@ import DictionaryService from './services/DictionaryService'
 import FFmpegService from './services/FFmpegService'
 import FileStorage from './services/FileStorage'
 import { loggerService } from './services/LoggerService'
+import MediaInfoService from './services/MediaInfoService'
 import NotificationService from './services/NotificationService'
 import { registerShortcuts, unregisterAllShortcuts } from './services/ShortcutService'
 import { themeService } from './services/ThemeService'
@@ -36,6 +37,7 @@ const logger = loggerService.withContext('IPC')
 const fileManager = new FileStorage()
 const dictionaryService = new DictionaryService()
 const ffmpegService = new FFmpegService()
+const mediaInfoService = new MediaInfoService()
 
 /**
  * Register all IPC handlers used by the main process.
@@ -440,6 +442,17 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   })
   ipcMain.handle(IpcChannel.Ffmpeg_GetPath, async () => {
     return ffmpegService.getFFmpegPath()
+  })
+
+  // MediaInfo
+  ipcMain.handle(IpcChannel.MediaInfo_CheckExists, async () => {
+    return await mediaInfoService.checkMediaInfoExists()
+  })
+  ipcMain.handle(IpcChannel.MediaInfo_GetVersion, async () => {
+    return await mediaInfoService.getMediaInfoVersion()
+  })
+  ipcMain.handle(IpcChannel.MediaInfo_GetVideoInfo, async (_, inputPath: string) => {
+    return await mediaInfoService.getVideoInfo(inputPath)
   })
 
   // shortcuts

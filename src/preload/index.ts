@@ -190,11 +190,12 @@ const api = {
     cancelTranscode: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.Ffmpeg_CancelTranscode),
     getPath: (): Promise<string> => ipcRenderer.invoke(IpcChannel.Ffmpeg_GetPath)
   },
-  // export: {
-  //   toWord: (markdown: string, fileName: string) =>
-  //     ipcRenderer.invoke(IpcChannel.Export_Word, markdown, fileName)
-  // },
-  // openPath: (path: string) => ipcRenderer.invoke(IpcChannel.Open_Path, path),
+  mediainfo: {
+    checkExists: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.MediaInfo_CheckExists),
+    getVersion: (): Promise<string | null> => ipcRenderer.invoke(IpcChannel.MediaInfo_GetVersion),
+    getVideoInfo: (inputPath: string): Promise<FFmpegVideoInfo | null> =>
+      ipcRenderer.invoke(IpcChannel.MediaInfo_GetVideoInfo, inputPath)
+  },
   shortcuts: {
     update: (shortcuts: Shortcut[]) => ipcRenderer.invoke(IpcChannel.Shortcuts_Update, shortcuts)
   },
