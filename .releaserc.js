@@ -37,21 +37,20 @@ module.exports = {
       {
         assets: [
           // Windows 产物
-          { path: 'dist/*.exe', label: 'Windows Installer (${nextRelease.gitTag})' },
-          { path: 'dist/*-win.zip', label: 'Windows Portable (${nextRelease.gitTag})' },
+          'dist/*.exe',
+          'dist/*.zip',
 
           // macOS 产物
-          { path: 'dist/*.dmg', label: 'macOS Installer (${nextRelease.gitTag})' },
-          { path: 'dist/*-mac.zip', label: 'macOS App Bundle (${nextRelease.gitTag})' },
+          'dist/*.dmg',
 
           // Linux 产物
-          { path: 'dist/*.AppImage', label: 'Linux AppImage (${nextRelease.gitTag})' },
-          { path: 'dist/*.deb', label: 'Linux DEB Package (${nextRelease.gitTag})' },
+          'dist/*.AppImage',
+          'dist/*.deb',
 
           // 自动更新文件
-          { path: 'dist/*.yml', label: 'Auto-update manifest' },
-          { path: 'dist/*.yaml', label: 'Auto-update manifest' },
-          { path: 'dist/*.blockmap', label: 'Block map for incremental updates' }
+          'dist/*.yml',
+          'dist/*.yaml',
+          'dist/*.blockmap'
         ]
       }
     ]
