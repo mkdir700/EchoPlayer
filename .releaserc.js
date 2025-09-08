@@ -31,12 +31,28 @@ module.exports = {
       }
     ],
 
-    // 创建 Draft Release
+    // 创建 Release 并上传构建产物
     [
       '@semantic-release/github',
       {
-        draft: true,
-        assets: [] // 不上传产物，electron-builder 会自动创建 Release 并上传产物
+        assets: [
+          // Windows 产物
+          { path: 'dist/*.exe', label: 'Windows Installer (${nextRelease.gitTag})' },
+          { path: 'dist/*-win.zip', label: 'Windows Portable (${nextRelease.gitTag})' },
+
+          // macOS 产物
+          { path: 'dist/*.dmg', label: 'macOS Installer (${nextRelease.gitTag})' },
+          { path: 'dist/*-mac.zip', label: 'macOS App Bundle (${nextRelease.gitTag})' },
+
+          // Linux 产物
+          { path: 'dist/*.AppImage', label: 'Linux AppImage (${nextRelease.gitTag})' },
+          { path: 'dist/*.deb', label: 'Linux DEB Package (${nextRelease.gitTag})' },
+
+          // 自动更新文件
+          { path: 'dist/*.yml', label: 'Auto-update manifest' },
+          { path: 'dist/*.yaml', label: 'Auto-update manifest' },
+          { path: 'dist/*.blockmap', label: 'Block map for incremental updates' }
+        ]
       }
     ]
   ]
