@@ -21,9 +21,10 @@ export interface UseVideoFileSelectReturn {
 /**
  * Hook to select a video file, validate/process it, and add it to the video library.
  *
- * Opens a file picker restricted to configured video extensions, verifies FFmpeg availability,
- * persists the file via FileManager, extracts video metadata (duration, codec, resolution)
- * using FFmpeg, creates a VideoLibrary record, and invokes an optional success callback.
+ * Opens a file picker restricted to configured video extensions, verifies video parser availability
+ * (MediaInfo WebAssembly preferred, FFmpeg as fallback), persists the file via FileManager,
+ * extracts video metadata (duration, codec, resolution) using the available parser,
+ * creates a VideoLibrary record, and invokes an optional success callback.
  * Exposes a function to trigger the flow and a flag that indicates ongoing processing to
  * prevent concurrent operations.
  *
@@ -50,14 +51,21 @@ export function useVideoFileSelect(
         })
 
         try {
-          // 1. 检查 FFmpeg 是否可用
-          monitor.startTiming('FFmpeg检查')
-          const ffmpegExists = await window.api.ffmpeg.checkExists()
-          monitor.endTiming('FFmpeg检查')
+          // 1. 检查 MediaInfo 是否可用（优先使用），回退到 FFmpeg
+          monitor.startTiming('视频解析器检查')
+          const mediaInfoExists = await window.api.mediainfo.checkExists()
+          const ffmpegExists = !mediaInfoExists ? await window.api.ffmpeg.checkExists() : false
+          monitor.endTiming('视频解析器检查')
 
-          if (!ffmpegExists) {
-            throw new Error('FFmpeg 不可用。请确保系统已安装 FFmpeg 并添加到 PATH 环境变量中。')
+          if (!mediaInfoExists && !ffmpegExists) {
+            throw new Error('视频解析器不可用。MediaInfo 和 FFmpeg 都无法使用，请检查系统配置。')
           }
+
+          const usingMediaInfo = mediaInfoExists
+          logger.info(`📊 使用视频解析器: ${usingMediaInfo ? 'MediaInfo' : 'FFmpeg'}`, {
+            mediaInfoAvailable: mediaInfoExists,
+            ffmpegAvailable: ffmpegExists
+          })
 
           // 2. 将文件添加到文件数据库
           monitor.startTiming('文件数据库添加', { fileName: file.name, fileSize: file.size })
@@ -65,12 +73,16 @@ export function useVideoFileSelect(
           monitor.endTiming('文件数据库添加')
 
           // 3. 解析视频文件信息，包括：分辨率、码率、时长等
-          // TODO: 当前使用系统 FFmpeg，后续需要实现：
-          // - FFmpeg 的自动下载和安装
-          // - 更完整的视频信息解析（包括分辨率、帧率、编解码器等）
-          monitor.startTiming('视频信息获取', { filePath: file.path })
-          const videoInfo = await window.api.ffmpeg.getVideoInfo(file.path)
+          // 优先使用 MediaInfo (WebAssembly)，回退到 FFmpeg
+          monitor.startTiming('视频信息获取', {
+            filePath: file.path,
+            parser: usingMediaInfo ? 'MediaInfo' : 'FFmpeg'
+          })
+          const videoInfo = usingMediaInfo
+            ? await window.api.mediainfo.getVideoInfo(file.path)
+            : await window.api.ffmpeg.getVideoInfo(file.path)
           monitor.endTiming('视频信息获取', {
+            parser: usingMediaInfo ? 'MediaInfo' : 'FFmpeg',
             duration: videoInfo?.duration,
             videoCodec: videoInfo?.videoCodec,
             resolution: videoInfo?.resolution
