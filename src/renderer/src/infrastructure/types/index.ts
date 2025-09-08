@@ -8,6 +8,7 @@ export * from './update'
 export * from './video'
 export * from './video-library'
 export * from './video-settings'
+export * from '@shared/types/mediainfo'
 
 /**
  * 可序列化数据类型 / Serializable data types
