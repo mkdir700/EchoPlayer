@@ -1,14 +1,14 @@
 import { useControlMenuManager } from '@renderer/pages/player/hooks/useControlMenuManager'
+import { useHoverMenu } from '@renderer/pages/player/hooks/useHoverMenu'
 import { useSubtitles } from '@renderer/pages/player/state/player-context'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { LoopMode } from '@types'
-import { Tooltip } from 'antd'
 import { Repeat } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
-import { ControlToggleButton } from '../styles/controls'
+import { ControlContainer, ControlToggleButton } from '../styles/controls'
 
 export default function LoopControl() {
   const { t } = useTranslation()
@@ -30,7 +30,7 @@ export default function LoopControl() {
   const {
     isMenuOpen: isLoopMenuOpen,
     closeMenu: closeLoopMenu,
-    toggleMenu,
+    openMenu,
     containerRef
   } = useControlMenuManager({
     menuId: 'loop',
@@ -46,115 +46,122 @@ export default function LoopControl() {
     }
   })
 
+  // 使用hover菜单Hook
+  const { buttonProps, menuProps, closeMenu } = useHoverMenu({
+    openDelay: 200,
+    closeDelay: 100,
+    disabled: isDisabled,
+    isMenuOpen: isLoopMenuOpen,
+    openMenu,
+    closeMenu: closeLoopMenu,
+    onMenuOpen: () => {
+      setPendingLoopCount(loopCount)
+    },
+    onMenuClose: () => {
+      // 应用挂起的循环次数
+      if (pendingLoopCount !== null && pendingLoopCount !== loopCount) {
+        setLoopCount(pendingLoopCount)
+      }
+      setPendingLoopCount(null)
+    }
+  })
+
   const closeLoopMenuAndApply = () => {
-    closeLoopMenu()
+    closeMenu()
   }
 
   const activeCount = isLoopMenuOpen && pendingLoopCount !== null ? pendingLoopCount : loopCount
 
   return (
-    <div ref={containerRef}>
-      <Tooltip
-        title={isDisabled ? `${t('controls.loop.disabled')}` : `${t('controls.loop.enabled')}`}
+    <ControlContainer ref={containerRef}>
+      <ControlToggleButton
+        $active={loopEnabled && !isDisabled}
+        $menuOpen={isLoopMenuOpen}
+        $disabled={isDisabled}
+        onClick={() => buttonProps.onClick(() => setLoopEnabled(!loopEnabled))}
+        onMouseEnter={buttonProps.onMouseEnter}
+        onMouseLeave={buttonProps.onMouseLeave}
+        aria-pressed={loopEnabled && !isDisabled}
+        aria-disabled={isDisabled}
       >
-        <ControlToggleButton
-          $active={loopEnabled && !isDisabled}
-          $menuOpen={isLoopMenuOpen}
-          $disabled={isDisabled}
-          onClick={() => {
-            if (isDisabled || isLoopMenuOpen) return // 禁用或菜单打开时，忽略点击
-            setLoopEnabled(!loopEnabled)
-          }}
-          onContextMenu={(e) => {
-            e.preventDefault()
-            if (isDisabled) return // 禁用时不显示菜单
-            toggleMenu()
-          }}
-          aria-pressed={loopEnabled && !isDisabled}
-          aria-disabled={isDisabled}
-        >
-          <Repeat size={18} />
-          {loopEnabled && !isDisabled && (loopRemaining === -1 || loopRemaining > 0) && (
-            <LoopBadge $active={loopEnabled && !isDisabled} aria-hidden="true">
-              {loopRemaining === -1
-                ? '∞'
-                : loopCount > 0
-                  ? `${loopCount - loopRemaining + 1}/${loopCount}`
-                  : '0'}
-            </LoopBadge>
-          )}
-          {isLoopMenuOpen && !isDisabled && (
-            <LoopMenu
-              role="menu"
-              onMouseLeave={closeLoopMenuAndApply}
-              onClick={(e) => e.stopPropagation()}
-              onContextMenu={(e) => {
-                // 防止在菜单内部右键触发外层开关逻辑
-                e.preventDefault()
-                e.stopPropagation()
-              }}
-            >
-              <MenuSection>
-                <MenuTitle>循环模式</MenuTitle>
-                <MenuRow>
-                  <MenuOption
-                    $active={loopMode === LoopMode.SINGLE}
-                    onClick={() => {
-                      setLoopMode(LoopMode.SINGLE)
-                    }}
-                  >
-                    单句循环
-                  </MenuOption>
-                  {/* 预留：AB 循环（暂不实现） */}
-                  <MenuOption $disabled>AB 循环（开发中）</MenuOption>
-                </MenuRow>
-              </MenuSection>
+        <Repeat size={18} />
+        {loopEnabled && !isDisabled && (loopRemaining === -1 || loopRemaining > 0) && (
+          <LoopBadge $active={loopEnabled && !isDisabled} aria-hidden="true">
+            {loopRemaining === -1
+              ? '∞'
+              : loopCount > 0
+                ? `${loopCount - loopRemaining + 1}/${loopCount}`
+                : '0'}
+          </LoopBadge>
+        )}
+      </ControlToggleButton>
 
-              <MenuSection>
-                <MenuTitle>循环次数</MenuTitle>
-                <MenuRow>
-                  <MenuOption
-                    onClick={() => {
-                      setPendingLoopCount(-1)
-                    }}
-                    $active={activeCount === -1}
-                  >
-                    ∞
-                  </MenuOption>
-                  {[2, 5, 10].map((n) => (
-                    <MenuOption
-                      key={n}
-                      onClick={() => {
-                        setPendingLoopCount(n)
-                      }}
-                      $active={activeCount === n}
-                    >
-                      {n}
-                    </MenuOption>
-                  ))}
-                  <CustomInput
-                    type="number"
-                    min={1}
-                    max={99}
-                    placeholder=""
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const v = Number((e.target as HTMLInputElement).value)
-                        if (Number.isFinite(v)) {
-                          const n = Math.max(1, Math.min(99, Math.floor(v)))
-                          setPendingLoopCount(n)
-                        }
-                        closeLoopMenuAndApply()
-                      }
-                    }}
-                  />
-                </MenuRow>
-              </MenuSection>
-            </LoopMenu>
-          )}
-        </ControlToggleButton>
-      </Tooltip>
-    </div>
+      {isLoopMenuOpen && !isDisabled && (
+        <LoopMenu
+          role="menu"
+          onMouseEnter={menuProps.onMouseEnter}
+          onMouseLeave={menuProps.onMouseLeave}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MenuSection>
+            <MenuTitle>{t('player.controls.loop.title')}</MenuTitle>
+            <MenuRow>
+              <MenuOption
+                $active={loopMode === LoopMode.SINGLE}
+                onClick={() => {
+                  setLoopMode(LoopMode.SINGLE)
+                }}
+              >
+                {t('player.controls.loop.mode.single')}
+              </MenuOption>
+              {/* 预留：AB 循环（暂不实现） */}
+              {/* <MenuOption $disabled>AB 循环（开发中）</MenuOption> */}
+            </MenuRow>
+          </MenuSection>
+
+          <MenuSection>
+            <MenuTitle>{t('player.controls.loop.count')}</MenuTitle>
+            <MenuRow>
+              <MenuOption
+                onClick={() => {
+                  setPendingLoopCount(-1)
+                }}
+                $active={activeCount === -1}
+              >
+                ∞
+              </MenuOption>
+              {[2, 5, 10].map((n) => (
+                <MenuOption
+                  key={n}
+                  onClick={() => {
+                    setPendingLoopCount(n)
+                  }}
+                  $active={activeCount === n}
+                >
+                  {n}
+                </MenuOption>
+              ))}
+              <CustomInput
+                type="number"
+                min={1}
+                max={99}
+                placeholder=""
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const v = Number((e.target as HTMLInputElement).value)
+                    if (Number.isFinite(v)) {
+                      const n = Math.max(1, Math.min(99, Math.floor(v)))
+                      setPendingLoopCount(n)
+                    }
+                    closeLoopMenuAndApply()
+                  }
+                }}
+              />
+            </MenuRow>
+          </MenuSection>
+        </LoopMenu>
+      )}
+    </ControlContainer>
   )
 }
 

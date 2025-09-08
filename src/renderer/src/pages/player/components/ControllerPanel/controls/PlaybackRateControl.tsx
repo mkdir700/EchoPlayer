@@ -3,8 +3,9 @@ import { Check, Zap } from 'lucide-react'
 import styled from 'styled-components'
 
 import { useControlMenuManager } from '../../../hooks/useControlMenuManager'
+import { useHoverMenu } from '../../../hooks/useHoverMenu'
 import { usePlayerCommands } from '../../../hooks/usePlayerCommands'
-import { GlassPopup } from '../styles/controls'
+import { ControlContainer, GlassPopup } from '../styles/controls'
 
 const RATE_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
@@ -17,9 +18,19 @@ export default function PlaybackRateControl() {
     isMenuOpen: isRateOpen,
     toggleMenu,
     closeMenu,
+    openMenu,
     containerRef
   } = useControlMenuManager({
     menuId: 'playback-rate'
+  })
+
+  // 使用hover菜单逻辑
+  const { buttonProps, menuProps } = useHoverMenu({
+    isMenuOpen: isRateOpen,
+    openMenu,
+    closeMenu,
+    openDelay: 200,
+    closeDelay: 100
   })
 
   const setSpeed = (rate: number) => {
@@ -28,13 +39,17 @@ export default function PlaybackRateControl() {
   }
 
   return (
-    <PlaybackRateControlWrap ref={containerRef}>
-      <RateButton onClick={toggleMenu} aria-label="Playback rate">
+    <ControlContainer ref={containerRef}>
+      <RateButton
+        {...buttonProps}
+        onClick={() => buttonProps.onClick(toggleMenu)}
+        aria-label="Playback rate"
+      >
         <Zap size={16} />
         <span>{playbackRate.toFixed(2).replace(/\.00$/, '')}x</span>
       </RateButton>
       {isRateOpen && (
-        <RateDropdown role="menu">
+        <RateDropdown role="menu" {...menuProps}>
           <RateGrid>
             {RATE_OPTIONS.map((opt) => {
               const active = Math.abs(opt - playbackRate) < 1e-6
@@ -55,13 +70,9 @@ export default function PlaybackRateControl() {
           </RateGrid>
         </RateDropdown>
       )}
-    </PlaybackRateControlWrap>
+    </ControlContainer>
   )
 }
-
-const PlaybackRateControlWrap = styled.div`
-  position: relative;
-`
 
 const RateButton = styled.button`
   display: flex;
