@@ -1,6 +1,7 @@
 import { loggerService } from '@logger'
 import { AntdProvider, NotificationProvider, ThemeProvider } from '@renderer/contexts'
 import { configSyncService } from '@renderer/services'
+import { appLifecycleService } from '@renderer/services/AppLifecycleService'
 import React, { useEffect, useState } from 'react'
 
 import { SearchOverlay } from './components/SearchOverlay'
@@ -51,6 +52,21 @@ function App(): React.JSX.Element {
     }
 
     initializeApp()
+  }, [])
+
+  // 初始化应用生命周期管理服务
+  useEffect(() => {
+    logger.debug('应用生命周期服务已初始化')
+
+    // 组件卸载时清理服务
+    return () => {
+      try {
+        appLifecycleService.dispose()
+        logger.debug('应用生命周期服务已清理')
+      } catch (error) {
+        logger.error('清理应用生命周期服务时出错:', { error })
+      }
+    }
   }, [])
 
   // 启动页面退出动画完成后完全隐藏
