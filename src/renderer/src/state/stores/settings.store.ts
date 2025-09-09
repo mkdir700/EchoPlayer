@@ -36,9 +36,11 @@ export interface SettingsState {
     defaultPlaybackSpeed: number
     defaultSubtitleDisplayMode: SubtitleDisplayMode
     defaultSubtitleBackgroundType: SubtitleBackgroundType
-    /** 循环“默认设置”（全局偏好，右键菜单可调整；用于初始化新视频时的默认值） */
+    /** 循环"默认设置"（全局偏好，右键菜单可调整；用于初始化新视频时的默认值） */
     defaultLoopMode: LoopMode
     defaultLoopCount: number // -1=无限；1-99
+    /** 默认常用播放速度列表（全局偏好，用于初始化新视频时的默认值） */
+    defaultFavoriteRates: number[]
   }
   autoCheckUpdate: boolean
   testPlan: boolean
@@ -74,6 +76,8 @@ type Actions = {
   // 循环默认设置（全局偏好）
   setDefaultLoopMode: (mode: LoopMode) => void
   setDefaultLoopCount: (count: number) => void // -1=∞；1-99
+  // 常用播放速度默认设置（全局偏好）
+  setDefaultFavoriteRates: (rates: number[]) => void
 }
 
 export type SettingsStore = SettingsState & Actions
@@ -98,7 +102,8 @@ const initialState: SettingsState = {
     defaultVolume: 1.0,
     defaultSubtitleBackgroundType: SubtitleBackgroundType.BLUR,
     defaultLoopCount: -1,
-    defaultLoopMode: LoopMode.SINGLE
+    defaultLoopMode: LoopMode.SINGLE,
+    defaultFavoriteRates: [1.0]
   },
   autoCheckUpdate: true,
   testPlan: false,
@@ -169,7 +174,12 @@ const createSettingsStore: StateCreator<
     set((state) => {
       const clamped = count === -1 ? -1 : Math.max(1, Math.min(99, Math.floor(count)))
       return { playback: { ...state.playback, defaultLoopCount: clamped } }
-    })
+    }),
+  // 常用播放速度默认设置（全局偏好）
+  setDefaultFavoriteRates: (rates) =>
+    set((state) => ({
+      playback: { ...state.playback, defaultFavoriteRates: rates }
+    }))
 })
 
 export const useSettingsStore = create<SettingsStore>()(

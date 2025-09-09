@@ -2,34 +2,12 @@ import { z } from 'zod'
 
 import {
   BooleanToSqlSchema,
+  JsonStringSchema,
   PositiveIntegerSchema,
   SqlBooleanSchema,
   SqlTimestampSchema,
   TimestampToDateSchema
 } from './transforms'
-
-/**
- * PlayerSettings 表的 Zod Schema 定义
- */
-
-/**
- * JSON 字符串验证器
- * 验证 JSON 字符串格式并允许 null
- */
-const JsonStringSchema = z
-  .string()
-  .refine(
-    (str) => {
-      try {
-        JSON.parse(str)
-        return true
-      } catch {
-        return false
-      }
-    },
-    { message: 'Invalid JSON string' }
-  )
-  .nullable()
 
 /**
  * 播放速度验证器 (0.25 - 3.0)
@@ -48,6 +26,7 @@ const VolumeSchema = z.number().min(0).max(1)
 export const PlayerSettingsInsertSchema = z.object({
   videoId: PositiveIntegerSchema,
   playbackRate: PlaybackRateSchema.default(1.0),
+  favoriteRates: JsonStringSchema.default(JSON.stringify([])),
   volume: VolumeSchema.default(1.0),
   muted: BooleanToSqlSchema.default(false),
   loopSettings: JsonStringSchema.optional(),
@@ -60,6 +39,7 @@ export const PlayerSettingsInsertSchema = z.object({
  */
 export const PlayerSettingsUpdateSchema = z.object({
   playbackRate: PlaybackRateSchema.optional(),
+  favoriteRates: JsonStringSchema.optional(),
   volume: VolumeSchema.optional(),
   muted: BooleanToSqlSchema.optional(),
   loopSettings: JsonStringSchema.optional(),
@@ -76,6 +56,7 @@ export const PlayerSettingsSelectSchema = z.object({
   id: PositiveIntegerSchema,
   videoId: PositiveIntegerSchema,
   playbackRate: PlaybackRateSchema,
+  favoriteRates: JsonStringSchema,
   volume: VolumeSchema,
   muted: SqlBooleanSchema,
   loopSettings: z.string().nullable(),

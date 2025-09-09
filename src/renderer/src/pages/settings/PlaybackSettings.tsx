@@ -19,11 +19,12 @@ const PlaybackSettings: FC = () => {
   const { theme } = useTheme()
   const { t } = useTranslation()
   const {
-    playback: { defaultSubtitleDisplayMode, defaultSubtitleBackgroundType },
+    playback: { defaultSubtitleDisplayMode, defaultSubtitleBackgroundType, defaultFavoriteRates },
     setDefaultVolume,
     setDefaultPlaybackSpeed,
     setDefaultSubtitleBackgroundType,
-    setDefaultSubtitleDisplayMode
+    setDefaultSubtitleDisplayMode,
+    setDefaultFavoriteRates
   } = useSettings()
 
   const volumeOptions = [
@@ -49,6 +50,9 @@ const PlaybackSettings: FC = () => {
     { label: '1.75x', value: 1.75 },
     { label: '2.0x', value: 2.0 }
   ]
+
+  // 常用速度选项（用于多选）
+  const favoriteRateOptions = playbackSpeedOptions
 
   return (
     <SettingContainer theme={theme}>
@@ -82,6 +86,20 @@ const PlaybackSettings: FC = () => {
               label: speed.label,
               value: speed.value
             }))}
+          />
+        </SettingRow>
+        <SettingDivider />
+        <SettingRow>
+          <SettingRowTitle>{t('settings.playback.favoriteRates.label')}</SettingRowTitle>
+          <Selector
+            size={14}
+            multiple
+            value={defaultFavoriteRates}
+            onChange={(value) => {
+              setDefaultFavoriteRates(value as number[])
+            }}
+            options={favoriteRateOptions}
+            placeholder={t('settings.playback.favoriteRates.placeholder')}
           />
         </SettingRow>
       </SettingGroup>

@@ -16,7 +16,8 @@
     "search_no_results": "暂无搜索结果",
     "search_placeholder": "搜索视频...",
     "enabled": "已开启",
-    "disabled": "已关闭"
+    "disabled": "已关闭",
+    "selectedItems": "已选择 {{count}} 项"
   },
   "docs": {
     "title": "帮助文档"
@@ -178,6 +179,10 @@
     "playback": {
       "defaultPlaybackSpeed": "播放速度",
       "defaultVolume": "默认音量",
+      "favoriteRates": {
+        "label": "常用播放速度",
+        "placeholder": "选择常用播放速度"
+      },
       "subtitle": {
         "backgroundType": {
           "blur": "模糊",
@@ -233,6 +238,8 @@
       "show_app": "显示 / 隐藏应用",
       "show_settings": "打开设置",
       "single_loop": "循环播放",
+      "playback_rate_next": "下一个常用速度",
+      "playback_rate_prev": "上一个常用速度",
       "title": "快捷键",
       "toggle_fullscreen": "切换全屏",
       "toggle_new_context": "清除上下文",

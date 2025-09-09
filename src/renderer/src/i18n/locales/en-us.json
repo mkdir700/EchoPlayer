@@ -3,7 +3,10 @@
     "favorites": "Favorites",
     "favorites_developing": "This feature is under development",
     "home": "Home",
-    "language": "language"
+    "language": "language",
+    "selectedItems": "{{count}} items selected",
+    "selectedItems_one": "{{count}} item selected",
+    "selectedItems_other": "{{count}} items selected"
   },
   "docs": {
     "title": "Documentation"
@@ -75,6 +78,7 @@
     "playback": {
       "defaultPlaybackSpeed": "Playback Speed",
       "defaultVolume": "Default Volume",
+      "favoriteRates": "Favorite Rates",
       "subtitle": {
         "backgroundType": {
           "blur": "Blur",
@@ -126,6 +130,8 @@
       "show_app": "Show / Hide App",
       "show_settings": "Open settings",
       "single_loop": "Loop playback",
+      "playback_rate_next": "Next favorite rate",
+      "playback_rate_prev": "Previous favorite rate",
       "title": "Shortcut keys",
       "toggle_fullscreen": "Switch to fullscreen",
       "toggle_new_context": "Clear context",
