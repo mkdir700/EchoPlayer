@@ -5,22 +5,8 @@ import { PlayerSettingsService } from './PlayerSettingsLoader'
 
 const logger = loggerService.withContext('PlayerSettingsPersistenceService')
 
-// 仅选择需要持久化的切片
 function selectPersistedSlice(state: ReturnType<typeof usePlayerStore.getState>): PlayerSettings {
-  return {
-    volume: state.volume,
-    muted: state.muted,
-    playbackRate: state.playbackRate,
-    loopEnabled: state.loopEnabled,
-    loopMode: state.loopMode,
-    loopCount: state.loopCount,
-    loopRemainingCount: state.loopRemainingCount,
-    autoPauseEnabled: state.autoPauseEnabled,
-    pauseOnSubtitleEnd: state.pauseOnSubtitleEnd,
-    resumeEnabled: state.resumeEnabled,
-    resumeDelay: state.resumeDelay,
-    subtitleOverlay: state.subtitleOverlay
-  }
+  return state as PlayerSettings
 }
 
 function deepEqual(a: any, b: any): boolean {

@@ -1,5 +1,5 @@
 // 播放速度预设常量 / Playback Rate Presets Constants
-export const PLAYBACK_RATE_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0] as const
+export const PLAYBACK_RATE_PRESETS: number[] = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0] as const
 
 // 音量设置常量 / Volume Settings Constants
 export const VOLUME_SETTINGS = {

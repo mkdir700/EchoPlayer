@@ -11,7 +11,7 @@ const logger = loggerService.withContext('TransportBar')
 export function usePlayerShortcuts() {
   const cmd = usePlayerCommands()
   const { setDisplayMode } = useSubtitleOverlay()
-  const { toggleSubtitlePanel } = usePlayerStore()
+  const { toggleSubtitlePanel, cycleFavoriteRateNext, cycleFavoriteRatePrev } = usePlayerStore()
 
   useShortcut('play_pause', () => {
     cmd.playPause()
@@ -75,5 +75,16 @@ export function usePlayerShortcuts() {
   useShortcut('toggle_subtitle_panel', () => {
     toggleSubtitlePanel()
     logger.info('字幕面板切换')
+  })
+
+  // 播放速度切换
+  useShortcut('playback_rate_next', () => {
+    cycleFavoriteRateNext()
+    logger.info('播放速度切换: 下一个常用速度')
+  })
+
+  useShortcut('playback_rate_prev', () => {
+    cycleFavoriteRatePrev()
+    logger.info('播放速度切换: 上一个常用速度')
   })
 }

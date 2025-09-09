@@ -4,6 +4,7 @@ import { LoopMode, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import type { PlayerSettingsRecord } from 'packages/shared/types/database'
 
 import type { PlayerState } from '../state/stores/player.store'
+import { useSettingsStore } from '../state/stores/settings.store'
 
 const logger = loggerService.withContext('PlayerSettingsService')
 
@@ -14,8 +15,8 @@ export class PlayerSettingsService {
 
       const dbSettings = await window.api.db.playerSettings.get(videoId)
       if (!dbSettings) {
-        logger.debug('未找到播放器设置:', { videoId })
-        return null
+        logger.debug('未找到播放器设置，使用全局默认设置:', { videoId })
+        return this.createDefaultPlayerState()
       }
 
       const playerState = this.mapDatabaseToState(dbSettings)
@@ -25,6 +26,64 @@ export class PlayerSettingsService {
     } catch (error) {
       logger.error('加载播放器设置失败:', { videoId, error })
       return null
+    }
+  }
+
+  /**
+   * 创建基于全局设置的默认播放器状态
+   */
+  private static createDefaultPlayerState(): PlayerState {
+    const globalSettings = useSettingsStore.getState().playback
+
+    return {
+      // 基础播放状态（不从数据库恢复这些实时状态）
+      currentTime: 0,
+      duration: 0,
+      paused: true,
+      isFullscreen: false,
+
+      // 从全局设置获取的默认值
+      volume: globalSettings.defaultVolume,
+      muted: false,
+      playbackRate: globalSettings.defaultPlaybackSpeed,
+
+      // 常用播放速度设置（从全局设置获取）
+      favoriteRates: globalSettings.defaultFavoriteRates,
+      currentFavoriteIndex: Math.max(
+        0,
+        globalSettings.defaultFavoriteRates.indexOf(globalSettings.defaultPlaybackSpeed)
+      ),
+
+      // 循环设置（从全局设置获取）
+      loopEnabled: false,
+      loopMode: globalSettings.defaultLoopMode,
+      loopCount: globalSettings.defaultLoopCount,
+      loopRemainingCount: globalSettings.defaultLoopCount,
+
+      // 自动暂停设置（默认值）
+      autoPauseEnabled: false,
+      pauseOnSubtitleEnd: true,
+      resumeEnabled: false,
+      resumeDelay: 5000,
+
+      // 字幕覆盖层设置（从全局设置获取）
+      subtitleOverlay: {
+        displayMode: globalSettings.defaultSubtitleDisplayMode,
+        backgroundStyle: {
+          type: globalSettings.defaultSubtitleBackgroundType,
+          opacity: 0.8
+        },
+        position: { x: 10, y: 75 },
+        size: { width: 80, height: 20 },
+        autoPositioning: true,
+        isInitialized: false
+      },
+
+      // UI 短时态（不持久化）
+      isSettingsOpen: false,
+      wasPlayingBeforeOpen: false,
+      isAutoResumeCountdownOpen: false,
+      subtitlePanelVisible: true
     }
   }
 
@@ -72,6 +131,7 @@ export class PlayerSettingsService {
    * @returns PlayerState 部分数据
    */
   private static mapDatabaseToState(dbData: PlayerSettingsRecord): PlayerState {
+    const globalSettings = useSettingsStore.getState().playback
     // 解析 JSON 字段
     const parseJsonField = <T>(jsonStr: string | null, defaultValue: T): T => {
       if (!jsonStr) return defaultValue
@@ -124,6 +184,16 @@ export class PlayerSettingsService {
       volume: dbData.volume,
       muted: Boolean(dbData.muted),
       playbackRate: dbData.playbackRate,
+
+      // 常用播放速度设置（解析 JSON 字段，使用全局设置作为默认值）
+      favoriteRates: parseJsonField(dbData.favoriteRates, globalSettings.defaultFavoriteRates),
+      // currentFavoriteIndex 是运行时状态，根据当前播放速度和常用列表计算
+      currentFavoriteIndex: Math.max(
+        0,
+        parseJsonField(dbData.favoriteRates, globalSettings.defaultFavoriteRates).indexOf(
+          dbData.playbackRate
+        )
+      ),
 
       // 循环设置
       loopEnabled: loopSettings.loopEnabled,
@@ -178,6 +248,8 @@ export class PlayerSettingsService {
       playbackRate: state.playbackRate,
       volume: state.volume,
       muted: state.muted,
+      favoriteRates: JSON.stringify(state.favoriteRates),
+      // currentFavoriteIndex 是运行时状态，不需要持久化
       loopSettings: JSON.stringify(loopSettings),
       autoPauseSettings: JSON.stringify(autoPauseSettings),
       subtitleOverlaySettings: JSON.stringify(subtitleOverlaySettings)
