@@ -261,14 +261,14 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
 
       const nextIndex = (currentFavoriteIndex + 1) % favoriteRates.length
       s.currentFavoriteIndex = nextIndex
-      s.playbackRate = favoriteRates[nextIndex]
+      s.playbackRate = Number(favoriteRates[nextIndex])
     }),
   setCurrentFavoriteIndex: (index) =>
     set((s: Draft<PlayerStore>) => {
       const { favoriteRates } = s
       if (index >= 0 && index < favoriteRates.length) {
         s.currentFavoriteIndex = index
-        s.playbackRate = favoriteRates[index]
+        s.playbackRate = Number(favoriteRates[index])
       }
     }),
   cycleFavoriteRateNext: () =>
@@ -279,13 +279,13 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
         const allRates = PLAYBACK_RATE_PRESETS
         const currentIndex = allRates.findIndex((rate) => Math.abs(rate - s.playbackRate) < 1e-6)
         const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % allRates.length
-        s.playbackRate = allRates[nextIndex]
+        s.playbackRate = Number(allRates[nextIndex])
         return
       }
 
       const nextIndex = (currentFavoriteIndex + 1) % favoriteRates.length
       s.currentFavoriteIndex = nextIndex
-      s.playbackRate = favoriteRates[nextIndex]
+      s.playbackRate = Number(favoriteRates[nextIndex])
     }),
   cycleFavoriteRatePrev: () =>
     set((s: Draft<PlayerStore>) => {
@@ -298,13 +298,13 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
           currentIndex === -1
             ? allRates.length - 1
             : (currentIndex - 1 + allRates.length) % allRates.length
-        s.playbackRate = allRates[prevIndex]
+        s.playbackRate = Number(allRates[prevIndex])
         return
       }
 
       const prevIndex = (currentFavoriteIndex - 1 + favoriteRates.length) % favoriteRates.length
       s.currentFavoriteIndex = prevIndex
-      s.playbackRate = favoriteRates[prevIndex]
+      s.playbackRate = Number(favoriteRates[prevIndex])
     }),
 
   // 循环控制
