@@ -33,11 +33,26 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
 
       // 连接到新的播放器引擎
       if (node) {
+        // 确保视频元素始终以暂停状态开始
+        if (!node.paused) {
+          node.pause()
+          logger.debug('视频元素连接时确保暂停状态')
+        }
+
         connectVideoElement(node)
         logger.debug('视频元素已连接到播放器引擎', { src: node.src })
+
+        // 强制同步暂停状态到播放器引擎
+        // 延迟执行确保引擎完全初始化
+        setTimeout(() => {
+          if (orchestrator) {
+            orchestrator.onPause() // 确保引擎状态为暂停
+            logger.debug('强制同步暂停状态到播放器引擎')
+          }
+        }, 10)
       }
     },
-    [connectVideoElement]
+    [connectVideoElement, orchestrator]
   )
 
   // 获取媒体事件处理器
@@ -54,6 +69,18 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
       videoWidth: video.videoWidth,
       videoHeight: video.videoHeight
     })
+
+    // 确保视频始终处于暂停状态（防止浏览器自动播放行为）
+    if (!video.paused) {
+      video.pause()
+      logger.debug('视频自动暂停（防止意外播放）')
+    }
+
+    // 强制同步暂停状态到播放器引擎
+    if (orchestrator) {
+      orchestrator.onPause()
+      logger.debug('元数据加载完成后强制同步暂停状态到播放器引擎')
+    }
 
     // 恢复保存的播放时间（在元数据加载完成后执行，通过引擎统一调度）
     if (currentTime > 0 && Math.abs(video.currentTime - currentTime) > 0.1) {
@@ -148,6 +175,7 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
         controlsList="nodownload"
         disablePictureInPicture={false}
         preload="metadata"
+        autoPlay={false} // 明确禁用自动播放
         playsInline
         // 添加更多有用的事件处理
         // onCanPlay={() => {
