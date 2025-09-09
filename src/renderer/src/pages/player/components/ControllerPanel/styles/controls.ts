@@ -159,7 +159,7 @@ export const GlassPopup = styled.div`
   left: 50%;
   transform: translateX(-50%);
   background: var(--modal-background-glass);
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 10px;
   display: flex;
   flex-direction: column;

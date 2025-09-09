@@ -134,47 +134,61 @@ export const getSidebarIconLabel = (key: string): string => {
   return sidebarIconKeyMap[key] ? t(sidebarIconKeyMap[key]) : key
 }
 
-const shortcutKeyMap = {
-  action: 'settings.shortcuts.action',
-  actions: 'settings.shortcuts.actions',
-  clear_shortcut: 'settings.shortcuts.clear_shortcut',
-  clear_topic: 'settings.shortcuts.clear_topic',
-  copy_last_message: 'settings.shortcuts.copy_last_message',
-  enabled: 'settings.shortcuts.enabled',
-  exit_fullscreen: 'settings.shortcuts.exit_fullscreen',
-  label: 'settings.shortcuts.label',
-  mini_window: 'settings.shortcuts.mini_window',
-  new_topic: 'settings.shortcuts.new_topic',
-  press_shortcut: 'settings.shortcuts.press_shortcut',
-  reset_defaults: 'settings.shortcuts.reset_defaults',
-  reset_defaults_confirm: 'settings.shortcuts.reset_defaults_confirm',
-  reset_to_default: 'settings.shortcuts.reset_to_default',
-  search_message: 'settings.shortcuts.search_message',
-  search_message_in_chat: 'settings.shortcuts.search_message_in_chat',
-  selection_assistant_select_text: 'settings.shortcuts.selection_assistant_select_text',
-  selection_assistant_toggle: 'settings.shortcuts.selection_assistant_toggle',
-  show_app: 'settings.shortcuts.show_app',
-  show_settings: 'settings.shortcuts.show_settings',
-  title: 'settings.shortcuts.title',
-  toggle_new_context: 'settings.shortcuts.toggle_new_context',
-  toggle_show_assistants: 'settings.shortcuts.toggle_show_assistants',
-  toggle_show_topics: 'settings.shortcuts.toggle_show_topics',
-  zoom_in: 'settings.shortcuts.zoom_in',
-  zoom_out: 'settings.shortcuts.zoom_out',
-  zoom_reset: 'settings.shortcuts.zoom_reset',
-  play_pause: 'settings.shortcuts.play_pause',
-  seek_backward: 'settings.shortcuts.seek_backward',
-  seek_forward: 'settings.shortcuts.seek_forward',
-  volume_up: 'settings.shortcuts.volume_up',
-  volume_down: 'settings.shortcuts.volume_down',
-  previous_subtitle: 'settings.shortcuts.previous_subtitle',
-  next_subtitle: 'settings.shortcuts.next_subtitle',
-  single_loop: 'settings.shortcuts.single_loop',
-  replay_current_subtitle: 'settings.shortcuts.replay_current_subtitle',
-  toggle_fullscreen: 'settings.shortcuts.toggle_fullscreen',
-  escape_fullscreen: 'settings.shortcuts.escape_fullscreen',
-  toggle_subtitle_panel: 'settings.shortcuts.toggle_subtitle_panel'
-} as const
+const shortcutKeys = [
+  'action',
+  'actions',
+  'clear_shortcut',
+  'clear_topic',
+  'copy_last_message',
+  'enabled',
+  'exit_fullscreen',
+  'label',
+  'mini_window',
+  'new_topic',
+  'press_shortcut',
+  'reset_defaults',
+  'reset_defaults_confirm',
+  'reset_to_default',
+  'search_message',
+  'search_message_in_chat',
+  'selection_assistant_select_text',
+  'selection_assistant_toggle',
+  'show_app',
+  'show_settings',
+  'title',
+  'toggle_new_context',
+  'toggle_show_assistants',
+  'toggle_show_topics',
+  'zoom_in',
+  'zoom_out',
+  'zoom_reset',
+  'play_pause',
+  'seek_backward',
+  'seek_forward',
+  'volume_up',
+  'volume_down',
+  'previous_subtitle',
+  'next_subtitle',
+  'single_loop',
+  'replay_current_subtitle',
+  'toggle_fullscreen',
+  'escape_fullscreen',
+  'toggle_subtitle_panel',
+  'playback_rate_next',
+  'playback_rate_prev',
+  'subtitle_mode_none',
+  'subtitle_mode_original',
+  'subtitle_mode_translated',
+  'subtitle_mode_bilingual'
+] as const
+
+const shortcutKeyMap = shortcutKeys.reduce(
+  (acc, key) => {
+    acc[key] = `settings.shortcuts.${key}` as const
+    return acc
+  },
+  {} as Record<(typeof shortcutKeys)[number], `settings.shortcuts.${(typeof shortcutKeys)[number]}`>
+)
 
 export const getShortcutLabel = (key: string): string => {
   return shortcutKeyMap[key] ? t(shortcutKeyMap[key]) : key

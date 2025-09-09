@@ -116,5 +116,19 @@ export const DEFAULT_SHORTCUTS: Shortcut[] = [
     editable: true,
     enabled: true,
     system: false
+  },
+  {
+    key: 'playback_rate_next',
+    shortcut: ['Shift', 'BracketRight'],
+    editable: true,
+    enabled: true,
+    system: false
+  },
+  {
+    key: 'playback_rate_prev',
+    shortcut: ['Shift', 'BracketLeft'],
+    editable: true,
+    enabled: true,
+    system: false
   }
 ]

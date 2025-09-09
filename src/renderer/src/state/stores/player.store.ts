@@ -1,3 +1,4 @@
+import { PLAYBACK_RATE_PRESETS } from '@renderer/infrastructure'
 import { LoopMode, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import { Draft } from 'immer'
 import { create, StateCreator } from 'zustand'
@@ -42,6 +43,12 @@ export interface PlayerState {
 
   /** 播放速度 */
   playbackRate: number
+
+  /** 常用播放速度列表（当前视频独立保存） */
+  favoriteRates: number[]
+
+  /** 当前常用速度索引（用于循环切换） */
+  currentFavoriteIndex: number
 
   // === 循环设置 / Loop Settings ===
   /** 循环播放 */
@@ -94,6 +101,15 @@ export interface PlayerActions {
   setMuted: (m: boolean) => void // 引擎专用：通过 orchestrator.requestToggleMute() 调用
   setPlaybackRate: (r: number) => void // 引擎专用：通过 orchestrator.requestSetPlaybackRate() 调用
 
+  // === 常用速度控制 ===
+  // 组件可调用：用户设置
+  setFavoriteRates: (rates: number[]) => void
+  toggleFavoriteRate: (rate: number) => void // 添加或移除常用速度
+  cycleFavoriteRate: () => void // 循环切换常用速度
+  setCurrentFavoriteIndex: (index: number) => void
+  cycleFavoriteRateNext: () => void // 切换到下一个常用速度
+  cycleFavoriteRatePrev: () => void // 切换到上一个常用速度
+
   // === 循环控制 ===
   // 组件可调用：用户设置
   toggleLoopEnabled: () => void
@@ -135,6 +151,8 @@ const initialState: PlayerState = {
   volume: 1,
   muted: false,
   playbackRate: 1,
+  favoriteRates: [1.0], // 默认常用速度
+  currentFavoriteIndex: 1, // 默认选择 1.0x
   isFullscreen: false,
 
   // === 循环设置 / Loop Settings ===
@@ -173,6 +191,7 @@ export type PlayerSettings = Pick<
   | 'volume'
   | 'muted'
   | 'playbackRate'
+  | 'favoriteRates'
   | 'loopEnabled'
   | 'loopMode'
   | 'loopCount'
@@ -200,6 +219,93 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
   setPlaybackRate: (r) =>
     set((s: Draft<PlayerStore>) => void (s.playbackRate = Math.max(0.25, Math.min(3, r)))),
   setFullscreen: (f) => set((s: Draft<PlayerStore>) => void (s.isFullscreen = !!f)),
+
+  // 常用速度控制
+  setFavoriteRates: (rates) =>
+    set((s: Draft<PlayerStore>) => {
+      s.favoriteRates = rates
+      // 如果当前索引超出范围，重置为0
+      if (s.currentFavoriteIndex >= rates.length) {
+        s.currentFavoriteIndex = 0
+      }
+    }),
+  toggleFavoriteRate: (rate) =>
+    set((s: Draft<PlayerStore>) => {
+      const existingIndex = s.favoriteRates.findIndex((fav) => Math.abs(fav - rate) < 1e-6)
+
+      if (existingIndex >= 0) {
+        // 如果已存在，则移除
+        s.favoriteRates.splice(existingIndex, 1)
+        // 如果移除的是当前选中的项，需要调整索引
+        if (s.currentFavoriteIndex >= s.favoriteRates.length) {
+          s.currentFavoriteIndex = Math.max(0, s.favoriteRates.length - 1)
+        } else if (existingIndex < s.currentFavoriteIndex) {
+          s.currentFavoriteIndex -= 1
+        }
+      } else {
+        // 如果不存在，则添加并保持排序
+        const newRates = [...s.favoriteRates, rate].sort((a, b) => a - b)
+        const newIndex = newRates.findIndex((fav) => Math.abs(fav - rate) < 1e-6)
+        s.favoriteRates = newRates
+
+        // 如果插入位置在当前索引之前，需要调整索引
+        if (newIndex <= s.currentFavoriteIndex) {
+          s.currentFavoriteIndex += 1
+        }
+      }
+    }),
+  cycleFavoriteRate: () =>
+    set((s: Draft<PlayerStore>) => {
+      const { favoriteRates, currentFavoriteIndex } = s
+      if (favoriteRates.length === 0) return
+
+      const nextIndex = (currentFavoriteIndex + 1) % favoriteRates.length
+      s.currentFavoriteIndex = nextIndex
+      s.playbackRate = Number(favoriteRates[nextIndex])
+    }),
+  setCurrentFavoriteIndex: (index) =>
+    set((s: Draft<PlayerStore>) => {
+      const { favoriteRates } = s
+      if (index >= 0 && index < favoriteRates.length) {
+        s.currentFavoriteIndex = index
+        s.playbackRate = Number(favoriteRates[index])
+      }
+    }),
+  cycleFavoriteRateNext: () =>
+    set((s: Draft<PlayerStore>) => {
+      const { favoriteRates, currentFavoriteIndex } = s
+      if (favoriteRates.length === 0) {
+        // 如果常用速度为空，基于所有速度选择
+        const allRates = PLAYBACK_RATE_PRESETS
+        const currentIndex = allRates.findIndex((rate) => Math.abs(rate - s.playbackRate) < 1e-6)
+        const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % allRates.length
+        s.playbackRate = Number(allRates[nextIndex])
+        return
+      }
+
+      const nextIndex = (currentFavoriteIndex + 1) % favoriteRates.length
+      s.currentFavoriteIndex = nextIndex
+      s.playbackRate = Number(favoriteRates[nextIndex])
+    }),
+  cycleFavoriteRatePrev: () =>
+    set((s: Draft<PlayerStore>) => {
+      const { favoriteRates, currentFavoriteIndex } = s
+      if (favoriteRates.length === 0) {
+        // 如果常用速度为空，基于所有速度选择
+        const allRates = PLAYBACK_RATE_PRESETS
+        const currentIndex = allRates.findIndex((rate) => Math.abs(rate - s.playbackRate) < 1e-6)
+        const prevIndex =
+          currentIndex === -1
+            ? allRates.length - 1
+            : (currentIndex - 1 + allRates.length) % allRates.length
+        s.playbackRate = Number(allRates[prevIndex])
+        return
+      }
+
+      const prevIndex = (currentFavoriteIndex - 1 + favoriteRates.length) % favoriteRates.length
+      s.currentFavoriteIndex = prevIndex
+      s.playbackRate = Number(favoriteRates[prevIndex])
+    }),
 
   // 循环控制
   toggleLoopEnabled: () =>
@@ -292,6 +398,14 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
       }
       if (settings.playbackRate !== undefined) {
         s.playbackRate = settings.playbackRate
+      }
+      if (settings.favoriteRates !== undefined) {
+        s.favoriteRates = settings.favoriteRates
+        // 当 favoriteRates 更新时，根据当前播放速度重新计算 currentFavoriteIndex
+        const currentRateIndex = settings.favoriteRates.findIndex(
+          (rate) => Math.abs(rate - s.playbackRate) < 1e-6
+        )
+        s.currentFavoriteIndex = Math.max(0, currentRateIndex)
       }
       if (settings.loopEnabled !== undefined) {
         s.loopEnabled = settings.loopEnabled

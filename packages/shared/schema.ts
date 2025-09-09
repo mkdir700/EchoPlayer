@@ -78,6 +78,8 @@ export interface PlayerSettingsTable {
   videoId: number
   /** 播放速度 */
   playbackRate: number
+  /** 收藏的播放速度 JSON 数组字符串 */
+  favoriteRates: string
   /** 音量 (0-1) */
   volume: number
   /** 是否静音 */
