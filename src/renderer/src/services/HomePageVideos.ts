@@ -5,6 +5,7 @@ import { VideoLibraryService } from '@renderer/services/VideoLibrary'
 export interface HomePageVideoItem {
   id: number
   title: string
+  subtitle?: string // 添加副标题信息，用于显示文件路径或大小等
   thumbnail?: string
   duration: number
   durationText: string
@@ -49,6 +50,27 @@ function formatTimeAgo(timestampMs: number): string {
   return new Date(timestampMs).toLocaleDateString('zh-CN')
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+function getFileDirectory(filePath: string): string {
+  if (!filePath) return ''
+  const lastSlash = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'))
+  if (lastSlash === -1) return ''
+  const dir = filePath.substring(0, lastSlash)
+  const parts = dir.split(/[/\\]/)
+  // 返回最后两级目录，方便用户识别
+  if (parts.length >= 2) {
+    return parts.slice(-2).join('/')
+  }
+  return parts[parts.length - 1] || ''
+}
+
 export class HomePageVideoService {
   private readonly videoLibrary = new VideoLibraryService()
 
@@ -70,11 +92,17 @@ export class HomePageVideoService {
       const durationText = formatDuration(duration)
       const watchProgress = r.isFinished ? 1 : clamp01(duration > 0 ? r.currentTime / duration : 0)
 
+      // 创建副标题信息来帮助区分相似的视频
+      const fileSize = file?.size ? formatFileSize(file.size) : ''
+      const fileDir = file?.path ? getFileDirectory(file.path) : ''
+      const subtitle = [fileDir, fileSize].filter(Boolean).join(' • ')
+
       const thumbnail = r.thumbnailPath ? toFileUrl(r.thumbnailPath) : undefined
 
       items.push({
         id: r.id,
         title,
+        subtitle,
         thumbnail,
         duration,
         durationText,

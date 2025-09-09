@@ -205,6 +205,11 @@ export function HomePage(): React.JSX.Element {
                               <VideoTitle>{video.title}</VideoTitle>
                             </VideoTitleTooltip>
                             <VideoMeta>
+                              {video.subtitle && (
+                                <MetaRow>
+                                  <VideoSubtitle>{video.subtitle}</VideoSubtitle>
+                                </MetaRow>
+                              )}
                               <MetaRow>
                                 <MetaText>{formatDate(video.createdAt)}</MetaText>
                                 <MetaText>{video.publishedAt}</MetaText>
@@ -495,6 +500,18 @@ const MetaText = styled.div`
   color: #8e8e93;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   letter-spacing: -0.1px;
+`
+
+const VideoSubtitle = styled.div`
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-3, #666);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  letter-spacing: -0.1px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `
 
 export default HomePage
