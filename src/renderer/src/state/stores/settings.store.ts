@@ -31,12 +31,14 @@ export interface SettingsState {
   windowStyle: 'transparent' | 'opaque'
   messageStyle: 'plain' | 'bubble'
   videoListViewMode: 'grid' | 'list'
+  /** 当前选中/播放的视频 ID，用于在视频库中显示高亮 */
+  currentVideoId: number | null
   playback: {
     defaultVolume: number
     defaultPlaybackSpeed: number
     defaultSubtitleDisplayMode: SubtitleDisplayMode
     defaultSubtitleBackgroundType: SubtitleBackgroundType
-    /** 循环“默认设置”（全局偏好，右键菜单可调整；用于初始化新视频时的默认值） */
+    /** 循环"默认设置"（全局偏好，右键菜单可调整；用于初始化新视频时的默认值） */
     defaultLoopMode: LoopMode
     defaultLoopCount: number // -1=无限；1-99
   }
@@ -58,6 +60,7 @@ type Actions = {
   setWindowStyle: (windowStyle: 'transparent' | 'opaque') => void
   setMessageStyle: (messageStyle: 'plain' | 'bubble') => void
   setVideoListViewMode: (mode: 'grid' | 'list') => void
+  setCurrentVideoId: (id: number | null) => void
   setPlayback: (playback: SettingsState['playback']) => void
   setLaunchOnBoot: (isLaunchOnBoot: boolean) => void
   setLaunchToTray: (isLaunchToTray: boolean) => void
@@ -92,6 +95,7 @@ const initialState: SettingsState = {
   windowStyle: 'transparent',
   messageStyle: 'bubble',
   videoListViewMode: 'grid',
+  currentVideoId: null,
   playback: {
     defaultPlaybackSpeed: 1.0,
     defaultSubtitleDisplayMode: DEFAULT_SUBTITLE_DISPLAY_MODE,
@@ -135,6 +139,7 @@ const createSettingsStore: StateCreator<
   setWindowStyle: (windowStyle) => set({ windowStyle }),
   setMessageStyle: (messageStyle) => set({ messageStyle }),
   setVideoListViewMode: (mode) => set({ videoListViewMode: mode }),
+  setCurrentVideoId: (id) => set({ currentVideoId: id }),
   setPlayback: (playback) => set({ playback }),
   setAutoCheckUpdate: (autoCheckUpdate) => set({ autoCheckUpdate }),
   setTestPlan: (testPlan) => set({ testPlan }),
@@ -182,6 +187,7 @@ export const useSettingsStore = create<SettingsStore>()(
       windowStyle: state.windowStyle,
       messageStyle: state.messageStyle,
       videoListViewMode: state.videoListViewMode,
+      currentVideoId: state.currentVideoId,
       playback: state.playback,
       enableDeveloperMode: state.enableDeveloperMode
     }),

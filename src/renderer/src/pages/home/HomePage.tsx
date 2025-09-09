@@ -1,7 +1,6 @@
 import { loggerService } from '@logger'
 import HomePageVideoService, { type HomePageVideoItem } from '@renderer/services/HomePageVideos'
 import { VideoLibraryService } from '@renderer/services/VideoLibrary'
-import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
 import { useSettingsStore } from '@renderer/state/stores/settings.store'
 import { useVideoListStore } from '@renderer/state/stores/video-list.store'
 import { message, Modal, Tooltip } from 'antd'
@@ -69,9 +68,9 @@ const gridVariants = {
 }
 
 export function HomePage(): React.JSX.Element {
-  const { videoListViewMode, setVideoListViewMode } = useSettingsStore()
+  const { videoListViewMode, setVideoListViewMode, currentVideoId, setCurrentVideoId } =
+    useSettingsStore()
   const { refreshTrigger, setLoading } = useVideoListStore()
-  const currentPlayingVideo = usePlayerSessionStore((state) => state.video)
 
   const [videos, setVideos] = React.useState<HomePageVideoItem[]>([])
   const navigate = useNavigate()
@@ -154,7 +153,7 @@ export function HomePage(): React.JSX.Element {
               >
                 <VideoGrid viewMode={videoListViewMode}>
                   {videos.map((video: HomePageVideoItem, index: number) => {
-                    const isCurrentlyPlaying = currentPlayingVideo?.id === video.id
+                    const isCurrentlyPlaying = currentVideoId === video.id
                     return (
                       <VideoCard
                         key={video.id}
@@ -167,7 +166,10 @@ export function HomePage(): React.JSX.Element {
                       >
                         <CardContent
                           viewMode={videoListViewMode}
-                          onClick={() => navigate(`/player/${video.id}`)}
+                          onClick={() => {
+                            setCurrentVideoId(video.id)
+                            navigate(`/player/${video.id}`)
+                          }}
                         >
                           <ThumbnailContainer viewMode={videoListViewMode}>
                             <ThumbnailWithFallback src={video.thumbnail} alt={video.title} />
