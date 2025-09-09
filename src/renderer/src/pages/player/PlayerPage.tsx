@@ -6,7 +6,6 @@ import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
 import { playerSettingsPersistenceService } from '@renderer/services/PlayerSettingsSaver'
 import { usePlayerStore } from '@renderer/state'
 import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
-import { useSettingsStore } from '@renderer/state/stores/settings.store'
 import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
@@ -129,8 +128,6 @@ function PlayerPage() {
         if (!cancelled) setVideoData(vd)
         // 同步到全局会话 store，供任意组件访问
         if (!cancelled) usePlayerSessionStore.getState().setVideo(vd)
-        // 设置持久化的当前视频 ID，用于主页高亮显示
-        if (!cancelled) useSettingsStore.getState().setCurrentVideoId(videoId)
         // 注入播放器设置
         if (playerSettings) {
           usePlayerStore.getState().loadSettings(playerSettings)
