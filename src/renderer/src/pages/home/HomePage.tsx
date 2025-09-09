@@ -179,16 +179,6 @@ export function HomePage(): React.JSX.Element {
                                 <DeleteButton onClick={() => handleDeleteVideo(video)} />
                               </TopRightActions>
                             </ThumbnailOverlay>
-                            {isCurrentlyPlaying && (
-                              <CurrentPlayingIndicator
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.3, ease: 'easeOut' }}
-                              >
-                                <PlayingIcon>▶</PlayingIcon>
-                                <PlayingText>正在播放</PlayingText>
-                              </CurrentPlayingIndicator>
-                            )}
                             <ProgressBarContainer>
                               <MotionProgressBar
                                 progress={video.watchProgress}
@@ -535,39 +525,6 @@ const MetaText = styled.div`
   color: #8e8e93;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   letter-spacing: -0.1px;
-`
-
-const CurrentPlayingIndicator = styled(motion.div)`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(22, 119, 255, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: white;
-  padding: 8px 12px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  box-shadow: 0 4px 16px rgba(22, 119, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  z-index: 10;
-`
-
-const PlayingIcon = styled.span`
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`
-
-const PlayingText = styled.span`
-  letter-spacing: -0.2px;
 `
 
 const VideoSubtitle = styled.div`
