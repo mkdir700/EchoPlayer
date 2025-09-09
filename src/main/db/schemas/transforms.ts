@@ -209,3 +209,26 @@ export function withDataTransforms<T extends Record<string, any>>(schema: z.ZodS
     fromSelect: (data: unknown) => schema.parse(data)
   }
 }
+
+/**
+ * PlayerSettings 表的 Zod Schema 定义
+ */
+
+/**
+ * JSON 字符串验证器
+ * 验证 JSON 字符串格式并允许 null
+ */
+export const JsonStringSchema = z
+  .string()
+  .refine(
+    (str) => {
+      try {
+        JSON.parse(str)
+        return true
+      } catch {
+        return false
+      }
+    },
+    { message: 'Invalid JSON string' }
+  )
+  .nullable()

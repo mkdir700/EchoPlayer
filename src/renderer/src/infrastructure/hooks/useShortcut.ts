@@ -63,7 +63,7 @@ export function useShortcuts(): { shortcuts: Shortcut[] } {
   return { shortcuts: orderBy(shortcuts, 'system', 'desc') }
 }
 
-export function useShortcutDisplay(key: string) {
+export function useShortcutDisplay(key: string): string {
   const formatShortcut = useCallback((shortcut: string[]) => {
     return shortcut
       .map((key) => {

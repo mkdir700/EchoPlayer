@@ -46,6 +46,7 @@ export function useSettings() {
   const setDefaultSubtitleDisplayMode = useSettingsStore(
     (state) => state.setDefaultSubtitleDisplayMode
   )
+  const setDefaultFavoriteRates = useSettingsStore((state) => state.setDefaultFavoriteRates)
 
   // ✅ 复合操作使用 useCallback 稳定引用
   const setLaunch = useCallback(
@@ -151,7 +152,8 @@ export function useSettings() {
     setDefaultVolume,
     setDefaultPlaybackSpeed,
     setDefaultSubtitleBackgroundType,
-    setDefaultSubtitleDisplayMode
+    setDefaultSubtitleDisplayMode,
+    setDefaultFavoriteRates
   }
 }
 
