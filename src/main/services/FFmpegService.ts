@@ -1,5 +1,6 @@
 import type { TranscodeOptions, TranscodeProgress } from '@types'
 import { ChildProcess, spawn } from 'child_process'
+import { app } from 'electron'
 import * as fs from 'fs'
 import { createWriteStream } from 'fs'
 import * as https from 'https'
@@ -294,21 +295,110 @@ class FFmpegService {
     }
   }
 
+  // 获取内置 FFmpeg 路径
+  private getBundledFFmpegPath(): string | null {
+    try {
+      const platform = process.platform
+      const arch = process.arch
+      const platformKey = `${platform}-${arch}`
+
+      const executableName =
+        this.FFMPEG_DOWNLOAD_URLS[platform as keyof typeof this.FFMPEG_DOWNLOAD_URLS]?.executable ||
+        'ffmpeg'
+
+      // 生产环境：从应用安装目录获取
+      if (app.isPackaged) {
+        const resourcesPath = process.resourcesPath
+        const ffmpegPath = path.join(resourcesPath, 'ffmpeg', platformKey, executableName)
+
+        if (fs.existsSync(ffmpegPath)) {
+          logger.info('找到打包的 FFmpeg', { path: ffmpegPath })
+          return ffmpegPath
+        }
+      } else {
+        // 开发环境：从项目目录获取
+        const appPath = app.getAppPath()
+        const ffmpegPath = path.join(appPath, 'resources', 'ffmpeg', platformKey, executableName)
+
+        if (fs.existsSync(ffmpegPath)) {
+          logger.info('找到开发环境 FFmpeg', { path: ffmpegPath })
+          return ffmpegPath
+        }
+
+        // 也尝试从构建输出目录查找
+        const outFfmpegPath = path.join(
+          appPath,
+          'out',
+          'resources',
+          'ffmpeg',
+          platformKey,
+          executableName
+        )
+        if (fs.existsSync(outFfmpegPath)) {
+          logger.info('找到构建输出 FFmpeg', { path: outFfmpegPath })
+          return outFfmpegPath
+        }
+      }
+
+      logger.warn('未找到内置 FFmpeg', {
+        platform,
+        arch,
+        platformKey,
+        executableName,
+        isPackaged: app.isPackaged,
+        searchPaths: app.isPackaged
+          ? [path.join(process.resourcesPath, 'ffmpeg', platformKey, executableName)]
+          : [
+              path.join(app.getAppPath(), 'resources', 'ffmpeg', platformKey, executableName),
+              path.join(app.getAppPath(), 'out', 'resources', 'ffmpeg', platformKey, executableName)
+            ]
+      })
+
+      return null
+    } catch (error) {
+      logger.error(
+        '获取内置 FFmpeg 路径失败:',
+        error instanceof Error ? error : new Error(String(error))
+      )
+      return null
+    }
+  }
+
   // 获取 FFmpeg 可执行文件路径
   public getFFmpegPath(): string {
-    // TODO: 实现 FFmpeg 的下载和安装流程
-    // 当前直接使用系统环境中的 FFmpeg 命令行工具
-    // 后续需要：
-    // 1. 检查系统是否已安装 FFmpeg
-    // 2. 如果没有安装，提供下载和安装功能
-    // 3. 支持自动下载适合当前平台的 FFmpeg 二进制文件
-    // 4. 提供 FFmpeg 版本管理和更新功能
+    // 1. 优先使用内置的 FFmpeg
+    const bundledPath = this.getBundledFFmpegPath()
+    if (bundledPath) {
+      return bundledPath
+    }
 
+    // 2. 降级到系统 FFmpeg
     const platform = process.platform as keyof typeof this.FFMPEG_DOWNLOAD_URLS
     const executable = this.FFMPEG_DOWNLOAD_URLS[platform]?.executable || 'ffmpeg'
 
-    // 暂时直接返回系统命令，假设 FFmpeg 已在 PATH 中
+    logger.info('使用系统 FFmpeg', { executable })
     return executable
+  }
+
+  // 检查是否正在使用内置 FFmpeg
+  public isUsingBundledFFmpeg(): boolean {
+    return this.getBundledFFmpegPath() !== null
+  }
+
+  // 获取 FFmpeg 信息
+  public getFFmpegInfo(): {
+    path: string
+    isBundled: boolean
+    platform: string
+    arch: string
+  } {
+    const bundledPath = this.getBundledFFmpegPath()
+    return {
+      path: bundledPath || this.getFFmpegPath(),
+      isBundled: bundledPath !== null,
+      platform: process.platform,
+      arch: process.arch
+    }
   }
 
   // 检查 FFmpeg 是否存在
