@@ -1,13 +1,59 @@
+import VideoSearchService from '@renderer/services/VideoSearchService'
 import { useSearchStore } from '@renderer/state/stores/search.store'
-import { Search } from 'lucide-react'
-import { FC, useEffect, useRef } from 'react'
+import { Loader2, Search } from 'lucide-react'
+import { FC, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
+import VideoSearchResult from './VideoSearchResult'
+
 const SearchOverlay: FC = () => {
   const { t } = useTranslation()
-  const { isSearchVisible, searchQuery, hideSearch, setSearchQuery, clearSearch } = useSearchStore()
+  const {
+    isSearchVisible,
+    searchQuery,
+    searchResults,
+    isSearching,
+    hideSearch,
+    setSearchQuery,
+    clearSearch,
+    setSearchResults,
+    setSearching
+  } = useSearchStore()
   const inputRef = useRef<HTMLInputElement>(null)
+  const searchServiceRef = useRef(new VideoSearchService())
+
+  // 执行搜索的函数
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setSearchResults([])
+        setSearching(false)
+        return
+      }
+
+      setSearching(true)
+      try {
+        const results = await searchServiceRef.current.searchVideos(query)
+        setSearchResults(results)
+      } catch (error) {
+        // 由于这是UI层组件，这里简单处理错误即可
+        setSearchResults([])
+      } finally {
+        setSearching(false)
+      }
+    },
+    [setSearchResults, setSearching]
+  )
+
+  // 搜索防抖
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      performSearch(searchQuery)
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, performSearch])
 
   // 处理键盘事件
   useEffect(() => {
@@ -89,7 +135,27 @@ const SearchOverlay: FC = () => {
           {/* 搜索结果区域 - 与输入框一体化 */}
           {searchQuery && (
             <SearchResults>
-              <EmptyState>{t('common.search_no_results', '暂无搜索结果')}</EmptyState>
+              {isSearching ? (
+                <LoadingState>
+                  <Loader2 size={20} className="spin" />
+                  <span>{t('search.searching', '搜索中...')}</span>
+                </LoadingState>
+              ) : searchResults.length > 0 ? (
+                <>
+                  <ResultsHeader>
+                    {t('search.found_videos', '找到 {{count}} 个视频', {
+                      count: searchResults.length
+                    })}
+                  </ResultsHeader>
+                  <ResultsList>
+                    {searchResults.map((video) => (
+                      <VideoSearchResult key={video.id} video={video} searchQuery={searchQuery} />
+                    ))}
+                  </ResultsList>
+                </>
+              ) : (
+                <EmptyState>{t('search.no_videos_found', '未找到相关视频')}</EmptyState>
+              )}
             </SearchResults>
           )}
         </UnifiedSearchBox>
@@ -153,10 +219,9 @@ const UnifiedSearchBox = styled.div`
   overflow: hidden; /* 确保内容不会超出圆角边界 */
 
   &:focus-within {
-    border-color: var(--color-primary);
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.16),
-      0 0 0 3px rgba(22, 119, 255, 0.1);
+      0 0 0 2px rgba(0, 0, 0, 0.15),
+      0 0 0 3px rgba(0, 0, 0, 0.15);
   }
 
   /* 确保在亮色主题下也有合适的背景色 */
@@ -197,7 +262,7 @@ const SearchInput = styled.input`
   padding: 0 16px 0 0;
 
   &::placeholder {
-    color: var(--color-text-tertiary);
+    color: var(--color-text-secondary);
   }
 `
 
@@ -245,6 +310,61 @@ const SearchResults = styled.div`
     height: 1px;
     background: var(--color-border-soft);
     opacity: 0.5;
+  }
+`
+
+const LoadingState = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 32px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`
+
+const ResultsHeader = styled.div`
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-soft);
+  background-color: var(--color-background-soft);
+`
+
+const ResultsList = styled.div`
+  max-height: 320px;
+  overflow-y: auto;
+
+  /* 自定义滚动条样式 */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-hover);
   }
 `
 
