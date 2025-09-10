@@ -1,5 +1,7 @@
 name: Release
 
+run-name: 🚀 Release ${{ github.event.inputs.version || format('v{0}', github.run_number) }} ${{ github.ref_name != 'main' && format('({0})', github.ref_name) || '' }}
+
 on:
   workflow_dispatch:
     inputs:
