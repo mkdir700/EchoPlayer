@@ -23,6 +23,7 @@ import {
   SubtitleListPanel,
   VideoSurface
 } from './components'
+import { disposeGlobalOrchestrator } from './hooks/usePlayerEngine'
 import { PlayerPageProvider } from './state/player-page.provider'
 
 const logger = loggerService.withContext('PlayerPage')
@@ -149,6 +150,14 @@ function PlayerPage() {
       // 页面卸载时清理会话态
       usePlayerSessionStore.getState().clear()
       playerSettingsPersistenceService.detach()
+
+      // 清理播放器编排器资源
+      try {
+        disposeGlobalOrchestrator()
+        logger.debug('播放器编排器已清理')
+      } catch (error) {
+        logger.error('清理播放器编排器时出错:', { error })
+      }
     }
   }, [videoId])
 

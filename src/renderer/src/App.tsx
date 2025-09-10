@@ -2,6 +2,7 @@ import { loggerService } from '@logger'
 import { AntdProvider, NotificationProvider, ThemeProvider } from '@renderer/contexts'
 import { useSettings } from '@renderer/infrastructure/hooks/useSettings'
 import { configSyncService } from '@renderer/services'
+import { appLifecycleService } from '@renderer/services/AppLifecycleService'
 import HomePageVideoService from '@renderer/services/HomePageVideos'
 import { useVideoListStore } from '@renderer/state/stores/video-list.store'
 import React, { useCallback, useEffect, useState } from 'react'
@@ -124,6 +125,18 @@ function App(): React.JSX.Element {
     }
 
     initializeApp()
+    
+    logger.debug('应用生命周期服务已初始化')
+
+    // 组件卸载时清理服务
+    return () => {
+      try {
+        appLifecycleService.dispose()
+        logger.debug('应用生命周期服务已清理')
+      } catch (error) {
+        logger.error('清理应用生命周期服务时出错:', { error })
+      }
+    }
   }, [])
 
   return (

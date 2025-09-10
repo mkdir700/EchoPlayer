@@ -331,6 +331,8 @@ export class WindowService {
     mainWindow.on('close', (event) => {
       // 如果已经触发退出，直接退出
       if (app.isQuitting) {
+        // 通知渲染进程应用即将退出，让它进行资源清理
+        mainWindow.webContents.send('app-will-quit')
         return app.quit()
       }
 
