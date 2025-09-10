@@ -159,6 +159,7 @@
       "auto_check_update": {
         "title": "自动更新"
       },
+      "show_startup_intro": "显示启动界面",
       "test_plan": {
         "alpha_version": "Alpha 版",
         "alpha_version_tooltip": "Alpha 版 - 不稳定的测试版本，更新较快",
