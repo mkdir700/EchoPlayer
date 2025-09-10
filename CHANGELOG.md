@@ -1,3 +1,13 @@
+# [1.0.0-alpha.6](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.5...v1.0.0-alpha.6) (2025-09-10)
+
+### Bug Fixes
+
+- **subtitle:** improve ASS subtitle parsing for bilingual text ([#111](https://github.com/mkdir700/EchoPlayer/issues/111)) ([444476b](https://github.com/mkdir700/EchoPlayer/commit/444476bae35afcd916f098dbc544eced7542a4b9))
+
+### Features
+
+- **search:** implement video search engine with live results and highlighting ([#110](https://github.com/mkdir700/EchoPlayer/issues/110)) ([bb2ac30](https://github.com/mkdir700/EchoPlayer/commit/bb2ac3028a45df5e49f74ac4cab6752806af048d))
+
 # [1.0.0-alpha.5](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.4...v1.0.0-alpha.5) (2025-09-10)
 
 ### Bug Fixes
