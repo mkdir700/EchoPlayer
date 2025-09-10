@@ -6,6 +6,7 @@ import { HomePage, PlayerPage, SettingsPage } from '@renderer/pages'
 import { FC } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 
+import { SearchOverlay } from './components/SearchOverlay'
 import NavigationHandler from './infrastructure/handler/NavigationHandler'
 
 const AppContent: FC = () => {
@@ -23,6 +24,7 @@ const AppContent: FC = () => {
     <>
       {!isPlayerPage && <Sidebar />}
       {routes}
+      <SearchOverlay />
       <NavigationHandler />
     </>
   )

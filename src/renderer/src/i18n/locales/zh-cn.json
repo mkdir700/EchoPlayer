@@ -22,6 +22,12 @@
   "docs": {
     "title": "帮助文档"
   },
+  "search": {
+    "searching": "搜索中...",
+    "found_videos": "找到 {{count}} 个视频",
+    "no_videos_found": "未找到相关视频",
+    "search_videos": "搜索视频"
+  },
   "home": {
     "add_video": "新增视频",
     "no_video": "空空如也",
