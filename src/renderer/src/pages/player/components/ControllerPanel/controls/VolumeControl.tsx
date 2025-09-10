@@ -1,12 +1,13 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { Slider } from 'antd'
 import { Volume1, Volume2, VolumeX } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import styled from 'styled-components'
 
 import { useControlMenuManager } from '../../../hooks/useControlMenuManager'
 import { useHoverMenu } from '../../../hooks/useHoverMenu'
 import { usePlayerCommands } from '../../../hooks/usePlayerCommands'
+import { useVolumeWheelControl } from '../../../hooks/useVolumeWheelControl'
 import { GlassPopup } from '../styles/controls'
 
 export default function VolumeControl() {
@@ -33,6 +34,18 @@ export default function VolumeControl() {
     openMenu,
     closeMenu: closeVolumeMenu
   })
+
+  // 使用滚轮控制Hook
+  const { containerRef: wheelContainerRef } = useVolumeWheelControl({
+    enabled: isVolumeOpen
+  })
+
+  // 同步ref - 让滚轮控制的ref指向菜单管理器的容器元素
+  useEffect(() => {
+    if (containerRef.current && wheelContainerRef.current !== containerRef.current) {
+      wheelContainerRef.current = containerRef.current
+    }
+  }, [containerRef, wheelContainerRef])
 
   const setVolumeLevel = useCallback(
     (level: number) => {
@@ -63,7 +76,7 @@ export default function VolumeControl() {
         onMouseLeave={buttonProps.onMouseLeave}
         aria-label="Toggle mute / Hover for volume slider"
       >
-        {muted ? (
+        {muted || volume === 0 ? (
           <VolumeX size={18} />
         ) : volume > 0.5 ? (
           <Volume2 size={18} />
