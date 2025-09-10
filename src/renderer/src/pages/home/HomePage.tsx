@@ -12,6 +12,7 @@ import styled from 'styled-components'
 import DeleteButton from './DeleteButton'
 import EmptyState from './EmptyState'
 import HeaderNavbar from './HeaderNavbar'
+import LoadingState from './LoadingState'
 import ThumbnailWithFallback from './ThumbnailWithFallback'
 
 const logger = loggerService.withContext('HomePage')
@@ -69,10 +70,26 @@ const gridVariants = {
 
 export function HomePage(): React.JSX.Element {
   const { videoListViewMode, setVideoListViewMode } = useSettingsStore()
-  const { refreshTrigger, setLoading } = useVideoListStore()
+  const {
+    refreshTrigger,
+    isLoading,
+    isInitialized,
+    cachedVideos,
+    setLoading,
+    setInitialized,
+    setCachedVideos
+  } = useVideoListStore()
 
   const [videos, setVideos] = React.useState<HomePageVideoItem[]>([])
   const navigate = useNavigate()
+
+  // 初始化时使用缓存数据
+  React.useEffect(() => {
+    if (isInitialized && cachedVideos.length > 0 && videos.length === 0) {
+      logger.info('HomePage 使用缓存数据初始化', { cachedCount: cachedVideos.length })
+      setVideos(cachedVideos)
+    }
+  }, [isInitialized, cachedVideos, videos.length])
 
   const loadVideos = React.useCallback(async () => {
     try {
@@ -80,17 +97,32 @@ export function HomePage(): React.JSX.Element {
       const svc = new HomePageVideoService()
       const items = await svc.getHomePageVideos(50)
       setVideos(items)
+      setCachedVideos(items)
+
+      // 标记为已初始化
+      if (!isInitialized) {
+        setInitialized(true)
+      }
     } catch (error) {
       logger.error('加载视频列表失败', { error })
     } finally {
       setLoading(false)
     }
-  }, [setLoading])
+  }, [setLoading, isInitialized, setInitialized, setCachedVideos])
 
   // 监听刷新触发器变化
   React.useEffect(() => {
+    // 如果已经初始化且不是刷新触发（refreshTrigger = 0），则跳过加载
+    if (isInitialized && refreshTrigger === 0) {
+      logger.info('HomePage 跳过重复数据加载，已在 App.tsx 中预加载', {
+        isInitialized,
+        refreshTrigger
+      })
+      return
+    }
+
     loadVideos()
-  }, [loadVideos, refreshTrigger])
+  }, [loadVideos, refreshTrigger, isInitialized])
 
   const handleVideoAdded = React.useCallback(() => {
     loadVideos()
@@ -139,7 +171,9 @@ export function HomePage(): React.JSX.Element {
       />
       <ContentContainer id="content-container">
         <ContentBody>
-          {videos.length === 0 ? (
+          {isLoading && !isInitialized ? (
+            <LoadingState />
+          ) : videos.length === 0 ? (
             <EmptyState onVideoAdded={handleVideoAdded} />
           ) : (
             <AnimatePresence mode="wait">
@@ -150,7 +184,7 @@ export function HomePage(): React.JSX.Element {
                 animate="animate"
                 exit="exit"
               >
-                <VideoGrid viewMode={videoListViewMode}>
+                <VideoGrid $viewMode={videoListViewMode}>
                   {videos.map((video: HomePageVideoItem, index: number) => (
                     <VideoCard
                       key={video.id}
@@ -158,13 +192,13 @@ export function HomePage(): React.JSX.Element {
                       initial="hidden"
                       animate="visible"
                       custom={index}
-                      viewMode={videoListViewMode}
+                      $viewMode={videoListViewMode}
                     >
                       <CardContent
-                        viewMode={videoListViewMode}
+                        $viewMode={videoListViewMode}
                         onClick={() => navigate(`/player/${video.id}`)}
                       >
-                        <ThumbnailContainer viewMode={videoListViewMode}>
+                        <ThumbnailContainer $viewMode={videoListViewMode}>
                           <ThumbnailWithFallback src={video.thumbnail} alt={video.title} />
                           <ThumbnailOverlay>
                             <Duration>{video.durationText}</Duration>
@@ -186,7 +220,7 @@ export function HomePage(): React.JSX.Element {
                           </ProgressBarContainer>
                         </ThumbnailContainer>
 
-                        <VideoInfo viewMode={videoListViewMode}>
+                        <VideoInfo $viewMode={videoListViewMode}>
                           <VideoContent
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -252,31 +286,31 @@ const ContentBody = styled.div`
   min-height: 0;
 `
 
-const VideoGrid = styled.div<{ viewMode: 'grid' | 'list' }>`
+const VideoGrid = styled.div<{ $viewMode: 'grid' | 'list' }>`
   display: grid;
   /* 默认：中屏 3 列 */
-  grid-template-columns: ${(props) => (props.viewMode === 'list' ? '1fr' : 'repeat(3, 1fr)')};
-  gap: ${(props) => (props.viewMode === 'list' ? '16px' : '24px')};
+  grid-template-columns: ${(props) => (props.$viewMode === 'list' ? '1fr' : 'repeat(3, 1fr)')};
+  gap: ${(props) => (props.$viewMode === 'list' ? '16px' : '24px')};
   will-change: transform;
   transform: translateZ(0); /* 强制 GPU 加速 */
 
   /* 小屏：≤900px → 2 列 */
   @media (max-width: 900px) {
-    grid-template-columns: ${(props) => (props.viewMode === 'list' ? '1fr' : 'repeat(2, 1fr)')};
+    grid-template-columns: ${(props) => (props.$viewMode === 'list' ? '1fr' : 'repeat(2, 1fr)')};
   }
 
   /* 大屏：≥1025px → 4 列 */
   @media (min-width: 1025px) {
-    grid-template-columns: ${(props) => (props.viewMode === 'list' ? '1fr' : 'repeat(4, 1fr)')};
+    grid-template-columns: ${(props) => (props.$viewMode === 'list' ? '1fr' : 'repeat(4, 1fr)')};
   }
 
   /* 超大屏：≥1440px → 6 列（1920 宽标准可见 6 列）*/
   @media (min-width: 1440px) {
-    grid-template-columns: ${(props) => (props.viewMode === 'list' ? '1fr' : 'repeat(6, 1fr)')};
+    grid-template-columns: ${(props) => (props.$viewMode === 'list' ? '1fr' : 'repeat(6, 1fr)')};
   }
 `
 
-const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list' }>`
+const VideoCard = styled(motion.div)<{ $viewMode: 'grid' | 'list' }>`
   --card-scale: 1;
   --card-y: 0px;
   --card-x: 0px;
@@ -288,7 +322,7 @@ const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list' }>`
   border: 1px solid var(--color-border);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-radius: ${(props) => (props.viewMode === 'list' ? '12px' : '20px')};
+  border-radius: ${(props) => (props.$viewMode === 'list' ? '12px' : '20px')};
   overflow: hidden;
   cursor: pointer;
   position: relative;
@@ -299,9 +333,9 @@ const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list' }>`
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    --card-scale: ${(props) => (props.viewMode === 'list' ? '1' : '1.01')};
-    --card-y: ${(props) => (props.viewMode === 'list' ? '0px' : '-2px')};
-    --card-x: ${(props) => (props.viewMode === 'list' ? '4px' : '0px')};
+    --card-scale: ${(props) => (props.$viewMode === 'list' ? '1' : '1.01')};
+    --card-y: ${(props) => (props.$viewMode === 'list' ? '0px' : '-2px')};
+    --card-x: ${(props) => (props.$viewMode === 'list' ? '4px' : '0px')};
     --shadow-opacity: 0.15;
     --border-opacity: 0.8;
     --bg-opacity: 0.95;
@@ -317,9 +351,9 @@ const VideoCard = styled(motion.div)<{ viewMode: 'grid' | 'list' }>`
 `
 
 // 普通的卡片内容容器 - 不使用 motion
-const CardContent = styled.div<{ viewMode: 'grid' | 'list' }>`
+const CardContent = styled.div<{ $viewMode: 'grid' | 'list' }>`
   display: flex;
-  flex-direction: ${(props) => (props.viewMode === 'list' ? 'row' : 'column')};
+  flex-direction: ${(props) => (props.$viewMode === 'list' ? 'row' : 'column')};
   height: 100%;
   width: 100%;
   will-change: transform;
@@ -370,12 +404,12 @@ const TopRightActions = styled.div`
   }
 `
 
-const ThumbnailContainer = styled.div<{ viewMode: 'grid' | 'list' }>`
+const ThumbnailContainer = styled.div<{ $viewMode: 'grid' | 'list' }>`
   position: relative;
-  width: ${(props) => (props.viewMode === 'list' ? '240px' : '100%')};
+  width: ${(props) => (props.$viewMode === 'list' ? '240px' : '100%')};
   aspect-ratio: 16/9;
   overflow: hidden;
-  border-radius: ${(props) => (props.viewMode === 'list' ? '11px 0 0 11px' : '19px 19px 0 0')};
+  border-radius: ${(props) => (props.$viewMode === 'list' ? '11px 0 0 11px' : '19px 19px 0 0')};
   background: var(--color-background-mute);
   flex-shrink: 0;
   will-change: transform;
@@ -424,8 +458,8 @@ const MotionProgressBar = styled(motion.div)<{ progress: number }>`
   }
 `
 
-const VideoInfo = styled.div<{ viewMode: 'grid' | 'list' }>`
-  padding: ${(props) => (props.viewMode === 'list' ? '16px 20px' : '20px')};
+const VideoInfo = styled.div<{ $viewMode: 'grid' | 'list' }>`
+  padding: ${(props) => (props.$viewMode === 'list' ? '16px 20px' : '20px')};
   background-color: var(--color-background);
   flex: 1;
   display: flex;

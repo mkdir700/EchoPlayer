@@ -12,6 +12,7 @@ export function useSettings() {
   const windowStyle = useSettingsStore((state) => state.windowStyle)
   const messageStyle = useSettingsStore((state) => state.messageStyle)
   const videoListViewMode = useSettingsStore((state) => state.videoListViewMode)
+  const showStartupIntro = useSettingsStore((state) => state.showStartupIntro)
   const playback = useSettingsStore((state) => state.playback)
   const autoCheckUpdate = useSettingsStore((state) => state.autoCheckUpdate)
   const testPlan = useSettingsStore((state) => state.testPlan)
@@ -30,6 +31,7 @@ export function useSettings() {
   const setWindowStyle = useSettingsStore((state) => state.setWindowStyle)
   const setMessageStyle = useSettingsStore((state) => state.setMessageStyle)
   const setVideoListViewMode = useSettingsStore((state) => state.setVideoListViewMode)
+  const setShowStartupIntro = useSettingsStore((state) => state.setShowStartupIntro)
   const setPlayback = useSettingsStore((state) => state.setPlayback)
   const setAutoCheckUpdate = useSettingsStore((state) => state.setAutoCheckUpdate)
   const setTestPlan = useSettingsStore((state) => state.setTestPlan)
@@ -119,6 +121,7 @@ export function useSettings() {
     windowStyle,
     messageStyle,
     videoListViewMode,
+    showStartupIntro,
     playback,
     autoCheckUpdate,
     testPlan,
@@ -134,6 +137,7 @@ export function useSettings() {
     setUserTheme,
     setMessageStyle,
     setVideoListViewMode,
+    setShowStartupIntro,
     setPlayback,
 
     // 复合操作
