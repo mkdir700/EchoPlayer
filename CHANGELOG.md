@@ -1,3 +1,18 @@
+# [1.0.0-alpha.5](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.4...v1.0.0-alpha.5) (2025-09-10)
+
+### Bug Fixes
+
+- **player:** ensure video always starts paused and sync UI state correctly ([#102](https://github.com/mkdir700/EchoPlayer/issues/102)) ([c6c8909](https://github.com/mkdir700/EchoPlayer/commit/c6c890986d6a0137cb6a70e01144c9c995589840))
+- **player:** improve subtitle overlay positioning and remove i18n dependencies ([#109](https://github.com/mkdir700/EchoPlayer/issues/109)) ([bd7f5c3](https://github.com/mkdir700/EchoPlayer/commit/bd7f5c3ec319c174bd8b0244e935daef8ec90d9d))
+
+### Features
+
+- **ci:** configure CodeRabbit for alpha, beta, and main branch PR reviews ([#108](https://github.com/mkdir700/EchoPlayer/issues/108)) ([4f5bad2](https://github.com/mkdir700/EchoPlayer/commit/4f5bad2e220f4b8e814d9a9a3df16224f4d620ae))
+- **player:** implement favorite playback rates with hover menu system ([#100](https://github.com/mkdir700/EchoPlayer/issues/100)) ([df83095](https://github.com/mkdir700/EchoPlayer/commit/df830955971080e5db393590a082e86718da10cd))
+- **player:** implement volume wheel control with intelligent acceleration ([#105](https://github.com/mkdir700/EchoPlayer/issues/105)) ([b675150](https://github.com/mkdir700/EchoPlayer/commit/b6751504ccff70f71fe518393587b3e70e6d7dba))
+- **startup:** implement configurable startup intro with preloading optimization ([#104](https://github.com/mkdir700/EchoPlayer/issues/104)) ([e5f4109](https://github.com/mkdir700/EchoPlayer/commit/e5f41092843333c39dc2029bd040aae6854a1036))
+- **ui:** enhance video selection clarity and simplify display ([#101](https://github.com/mkdir700/EchoPlayer/issues/101)) ([a951877](https://github.com/mkdir700/EchoPlayer/commit/a95187723ddc7706f52e72a66f61ceb6b2ceb439))
+
 # [1.0.0-alpha.4](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.3...v1.0.0-alpha.4) (2025-09-08)
 
 ### Bug Fixes
