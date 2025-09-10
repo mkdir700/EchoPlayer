@@ -125,7 +125,7 @@ function App(): React.JSX.Element {
     }
 
     initializeApp()
-    
+
     logger.debug('应用生命周期服务已初始化')
 
     // 组件卸载时清理服务
