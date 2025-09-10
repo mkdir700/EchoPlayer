@@ -1,3 +1,15 @@
+# [1.0.0-alpha.7](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.6...v1.0.0-alpha.7) (2025-09-10)
+
+### Bug Fixes
+
+- **ci:** sync package.json version with manual trigger input ([#116](https://github.com/mkdir700/EchoPlayer/issues/116)) ([0ca1d39](https://github.com/mkdir700/EchoPlayer/commit/0ca1d3963208d9eb7b825c7c1b31e269532fa3eb))
+
+### Features
+
+- **ci:** add dynamic workflow names to show release version in actions list ([#115](https://github.com/mkdir700/EchoPlayer/issues/115)) ([1ff9550](https://github.com/mkdir700/EchoPlayer/commit/1ff95509c8849d19028bdaa29e8f79703d69424e))
+- **ffmpeg:** integrate bundled FFmpeg with automatic fallback mechanism ([#112](https://github.com/mkdir700/EchoPlayer/issues/112)) ([5a4f26a](https://github.com/mkdir700/EchoPlayer/commit/5a4f26a230f8bf54f31873d30ed05abfbf887b06))
+- **player:** implement comprehensive video error recovery ([#113](https://github.com/mkdir700/EchoPlayer/issues/113)) ([c25f17a](https://github.com/mkdir700/EchoPlayer/commit/c25f17ab83b0be7a60bbd589d971637bf74eb8b6))
+
 # [1.0.0-alpha.6](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.5...v1.0.0-alpha.6) (2025-09-10)
 
 ### Bug Fixes
