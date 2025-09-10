@@ -12,7 +12,10 @@ const logger = loggerService.withContext('VideoSurface')
 interface VideoSurfaceProps {
   src?: string
   onLoadedMetadata?: () => void
-  onError?: (error: string) => void
+  onError?: (
+    error: string,
+    errorType?: 'file-missing' | 'unsupported-format' | 'decode-error' | 'network-error' | 'unknown'
+  ) => void
 }
 
 function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
@@ -111,39 +114,75 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
     pause()
   }, [pause])
 
-  // 优化的错误处理
-  const handleVideoError = useCallback(() => {
+  // 增强的错误处理 - 支持错误类型检测和文件存在性检查
+  const handleVideoError = useCallback(async () => {
     const video = videoRef.current
     if (!video || !video.error) return
 
     const error = video.error
     let errorMessage = '视频播放错误'
+    let errorType:
+      | 'file-missing'
+      | 'unsupported-format'
+      | 'decode-error'
+      | 'network-error'
+      | 'unknown' = 'unknown'
 
-    // 提供更详细的错误信息
+    // 基于MediaError代码进行初步分类
     switch (error.code) {
       case MediaError.MEDIA_ERR_ABORTED:
         errorMessage = '视频加载被中断'
+        errorType = 'unknown'
         break
       case MediaError.MEDIA_ERR_NETWORK:
         errorMessage = '网络错误导致视频加载失败'
+        errorType = 'network-error'
         break
       case MediaError.MEDIA_ERR_DECODE:
         errorMessage = '视频解码错误'
+        errorType = 'decode-error'
         break
       case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-        errorMessage = '不支持的视频格式或路径'
+        // 对于"不支持的源"错误，需要进一步检查是文件缺失还是格式不支持
+        if (src && src.startsWith('file://')) {
+          try {
+            // 从file://URL中提取文件路径
+            const filePath = decodeURIComponent(src.replace('file://', ''))
+            const fileExists = await window.api.fs.checkFileExists(filePath)
+
+            if (!fileExists) {
+              errorMessage = '视频文件不存在'
+              errorType = 'file-missing'
+              logger.info('文件存在性检查：文件不存在', { filePath, src })
+            } else {
+              errorMessage = '不支持的视频格式'
+              errorType = 'unsupported-format'
+              logger.info('文件存在性检查：文件存在但格式不支持', { filePath, src })
+            }
+          } catch (checkError) {
+            logger.error('检查文件存在性时出错', { src, checkError })
+            errorMessage = '无法访问视频文件'
+            errorType = 'file-missing'
+          }
+        } else {
+          errorMessage = '不支持的视频格式或路径'
+          errorType = 'unsupported-format'
+        }
         break
       default:
         errorMessage = error.message || '未知视频错误'
+        errorType = 'unknown'
     }
 
     logger.error('视频错误:', {
       code: error.code,
       message: error.message,
-      src
+      src,
+      errorType,
+      finalMessage: errorMessage
     })
 
-    onError?.(errorMessage)
+    onError?.(errorMessage, errorType)
   }, [onError, src])
 
   // 组件卸载清理
