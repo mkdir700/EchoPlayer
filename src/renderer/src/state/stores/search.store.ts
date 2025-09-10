@@ -1,3 +1,4 @@
+import { HomePageVideoItem } from '@renderer/services/HomePageVideos'
 import { Draft } from 'immer'
 import { create, StateCreator } from 'zustand'
 
@@ -6,6 +7,8 @@ import { MiddlewarePresets } from '../infrastructure'
 export interface SearchState {
   isSearchVisible: boolean
   searchQuery: string
+  searchResults: HomePageVideoItem[]
+  isSearching: boolean
 }
 
 export interface SearchActions {
@@ -14,13 +17,17 @@ export interface SearchActions {
   toggleSearch: () => void
   setSearchQuery: (query: string) => void
   clearSearch: () => void
+  setSearchResults: (results: HomePageVideoItem[]) => void
+  setSearching: (isSearching: boolean) => void
 }
 
 export type SearchStore = SearchState & SearchActions
 
 const initialState: SearchState = {
   isSearchVisible: false,
-  searchQuery: ''
+  searchQuery: '',
+  searchResults: [],
+  isSearching: false
 }
 
 const createSearchStore: StateCreator<
@@ -59,6 +66,20 @@ const createSearchStore: StateCreator<
   clearSearch: () => {
     set((state: Draft<SearchStore>) => {
       state.searchQuery = ''
+      state.searchResults = []
+      state.isSearching = false
+    })
+  },
+
+  setSearchResults: (results: HomePageVideoItem[]) => {
+    set((state: Draft<SearchStore>) => {
+      state.searchResults = results
+    })
+  },
+
+  setSearching: (isSearching: boolean) => {
+    set((state: Draft<SearchStore>) => {
+      state.isSearching = isSearching
     })
   }
 })
