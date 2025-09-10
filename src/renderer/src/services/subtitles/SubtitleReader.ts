@@ -337,15 +337,16 @@ export class SubtitleReader {
   }
 
   // 多脚本识别 + 原文优先策略（可扩展到多语言）
+  // 对于中英双语字幕，通常英文是原文，中文是译文
   private readonly preferredOriginalScripts: Script[] = [
-    'Latin',
-    'Han',
-    'Hiragana',
-    'Katakana',
-    'Hangul',
-    'Cyrillic',
-    'Arabic',
-    'Devanagari',
+    'Latin', // 英文等拉丁字母优先作为原文
+    'Hiragana', // 日文假名
+    'Katakana', // 日文片假名
+    'Hangul', // 韩文
+    'Cyrillic', // 西里尔字母（俄语等）
+    'Arabic', // 阿拉伯语
+    'Devanagari', // 梵文字母（印地语等）
+    'Han', // 中文汉字通常是译文
     'Other'
   ]
 
@@ -381,13 +382,19 @@ export class SubtitleReader {
     const trimmed = text.trim()
     if (!trimmed) return { originalText: '' }
 
+    // 先按换行符分割（包括从stripAssTags转换过来的 \N）
     const lines = trimmed
       .split(/\n+/)
       .map((l) => l.trim())
       .filter(Boolean)
 
     const pickByScript = (parts: string[]) => {
+      if (parts.length === 0) return { originalText: '' }
+      if (parts.length === 1) return { originalText: parts[0] }
+
       const scored = parts.map((p) => ({ text: p, script: this.detectScript(p) }))
+
+      // 找到第一个匹配优先脚本的文本作为原文
       const hit = this.preferredOriginalScripts.find((scr) => scored.some((x) => x.script === scr))
       if (hit) {
         const orig = scored.find((x) => x.script === hit)!.text
@@ -397,9 +404,12 @@ export class SubtitleReader {
           .join('\n')
         return rest ? { originalText: orig, translatedText: rest } : { originalText: orig }
       }
+
+      // 如果没有匹配的脚本，默认第一行为原文，其余为译文
       return { originalText: parts[0], translatedText: parts.slice(1).join('\n') }
     }
 
+    // 多行情况：按脚本类型分配
     if (lines.length >= 2) {
       return pickByScript(lines)
     }
@@ -413,6 +423,7 @@ export class SubtitleReader {
       return pickByScript(segs)
     }
 
+    // 单行单语言
     return { originalText: trimmed }
   }
 
@@ -454,10 +465,14 @@ export class SubtitleReader {
   }
 
   private stripAssTags(s: string): string {
-    // 去掉样式 {\i1} 等；将 \N 转换为换行
+    // 去掉样式标记，支持嵌套和复杂格式
+    // {\3c&HFF8000&\fnKaiTi}{\an8} -> 空字符串
+    // {\fnTahoma\fs12\3c&H400000&\b1\i1} -> 空字符串
     return s
-      .replace(/\{[^}]*\}/g, '')
-      .replace(/\\N/g, '\n')
+      .replace(/\{[^}]*\}/g, '') // 去掉所有 {...} 样式标记
+      .replace(/\\N/g, '\n') // 将 \N 转换为换行
+      .replace(/\\h/g, ' ') // 将 \h 转换为空格（硬空格）
+      .replace(/\\n/g, '\n') // 将 \n 转换为换行（小写）
       .trim()
   }
 }
