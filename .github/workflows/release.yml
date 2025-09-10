@@ -153,6 +153,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Sync version from detect-version job
+        shell: bash
+        run: |
+          echo "🔄 同步版本号到 package.json"
+          echo "Current package.json version: $(node -p "require('./package.json').version")"
+          echo "Target version from detect-version: ${{ needs.detect-version.outputs.version }}"
+
+          # 从版本号中移除 'v' 前缀（如果存在）
+          TARGET_VERSION="${{ needs.detect-version.outputs.version }}"
+          VERSION_NO_V="${TARGET_VERSION#v}"
+
+          # 使用 node 脚本更新 package.json 中的版本号
+          node -e "
+            const fs = require('fs');
+            const package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            package.version = '${VERSION_NO_V}';
+            fs.writeFileSync('package.json', JSON.stringify(package, null, 2) + '\n');
+            console.log('✅ Updated package.json version to:', package.version);
+          "
+
+          echo "Updated package.json version: $(node -p "require('./package.json').version")"
+
       - name: Build for ${{ matrix.platform }}
         shell: bash
         run: |
