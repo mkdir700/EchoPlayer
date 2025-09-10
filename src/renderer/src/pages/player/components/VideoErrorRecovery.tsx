@@ -2,6 +2,7 @@ import { loggerService } from '@logger'
 import { Button, Modal, Space } from 'antd'
 import { AlertTriangle, FileSearch, RotateCcw, Trash2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 
@@ -28,6 +29,7 @@ function VideoErrorRecovery({
   onFileRelocate,
   onRemoveFromLibrary
 }: VideoErrorRecoveryProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [isRelocating, setIsRelocating] = useState(false)
   const [showRelocateConfirm, setShowRelocateConfirm] = useState(false)
@@ -38,31 +40,31 @@ function VideoErrorRecovery({
     switch (errorType) {
       case 'file-missing':
         return {
-          title: '视频文件缺失',
-          description: '原视频文件可能已被删除、移动或重命名'
+          title: t('player.errorRecovery.errors.fileMissing.title'),
+          description: t('player.errorRecovery.errors.fileMissing.description')
         }
       case 'unsupported-format':
         return {
-          title: '不支持的视频格式',
-          description: '当前视频格式不受支持或文件已损坏'
+          title: t('player.errorRecovery.errors.unsupportedFormat.title'),
+          description: t('player.errorRecovery.errors.unsupportedFormat.description')
         }
       case 'decode-error':
         return {
-          title: '视频解码错误',
-          description: '视频文件可能损坏或编码格式不兼容'
+          title: t('player.errorRecovery.errors.decodeError.title'),
+          description: t('player.errorRecovery.errors.decodeError.description')
         }
       case 'network-error':
         return {
-          title: '网络错误',
-          description: '加载网络视频时发生连接错误'
+          title: t('player.errorRecovery.errors.networkError.title'),
+          description: t('player.errorRecovery.errors.networkError.description')
         }
       default:
         return {
-          title: '播放错误',
-          description: '视频播放时发生未知错误'
+          title: t('player.errorRecovery.errors.unknown.title'),
+          description: t('player.errorRecovery.errors.unknown.description')
         }
     }
-  }, [errorType])
+  }, [errorType, t])
 
   const handleRelocateFile = useCallback(() => {
     if (!onFileRelocate) return
@@ -81,8 +83,11 @@ function VideoErrorRecovery({
       const files = await window.api.file.select({
         properties: ['openFile'],
         filters: [
-          { name: '视频文件', extensions: ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'] },
-          { name: '所有文件', extensions: ['*'] }
+          {
+            name: t('player.errorRecovery.fileDialog.videoFiles'),
+            extensions: ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm']
+          },
+          { name: t('player.errorRecovery.fileDialog.allFiles'), extensions: ['*'] }
         ]
       })
 
@@ -96,6 +101,7 @@ function VideoErrorRecovery({
     } finally {
       setIsRelocating(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId, originalPath, onFileRelocate])
 
   const handleRemoveFromLibrary = useCallback(() => {
@@ -127,17 +133,17 @@ function VideoErrorRecovery({
           loading={isRelocating}
           onClick={handleRelocateFile}
         >
-          重新选择文件
+          {t('player.errorRecovery.actions.relocateFile')}
         </Button>
       )}
 
       <Button icon={<RotateCcw size={16} />} onClick={handleBackToHome}>
-        返回首页
+        {t('player.errorRecovery.actions.backToHome')}
       </Button>
 
       {(errorType === 'file-missing' || errorType === 'unsupported-format') && (
         <Button danger icon={<Trash2 size={16} />} onClick={handleRemoveFromLibrary}>
-          从媒体库移除
+          {t('player.errorRecovery.actions.removeFromLibrary')}
         </Button>
       )}
     </Space>
@@ -167,7 +173,7 @@ function VideoErrorRecovery({
 
           {originalPath && (
             <PathInfo>
-              <PathLabel>文件路径</PathLabel>
+              <PathLabel>{t('player.errorRecovery.pathInfo.label')}</PathLabel>
               <PathValue title={originalPath}>{originalPath}</PathValue>
             </PathInfo>
           )}
@@ -176,46 +182,46 @@ function VideoErrorRecovery({
 
       {/* 重新选择文件确认对话框 */}
       <Modal
-        title="重新选择文件"
+        title={t('player.errorRecovery.dialogs.relocate.title')}
         open={showRelocateConfirm}
         onOk={handleConfirmRelocate}
         onCancel={() => setShowRelocateConfirm(false)}
-        okText="我已了解，继续选择"
-        cancelText="取消"
+        okText={t('player.errorRecovery.dialogs.relocate.confirmText')}
+        cancelText={t('common.cancel')}
         centered
       >
         <div>
           <p style={{ marginBottom: '12px', color: 'var(--color-text-2)' }}>
-            请务必选择与当前视频记录对应的<strong>原始文件</strong>。
+            {t('player.errorRecovery.dialogs.relocate.content.warning')}
           </p>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--color-text-3)' }}>
-            ⚠️ 选择错误的文件可能导致播放进度、字幕等数据不匹配。
+            {t('player.errorRecovery.dialogs.relocate.content.note')}
           </p>
         </div>
       </Modal>
 
       {/* 从媒体库移除确认对话框 */}
       <Modal
-        title="确认从媒体库移除？"
+        title={t('player.errorRecovery.dialogs.remove.title')}
         open={showRemoveConfirm}
         onOk={handleConfirmRemove}
         onCancel={() => setShowRemoveConfirm(false)}
-        okText="确认移除"
-        cancelText="取消"
+        okText={t('player.errorRecovery.dialogs.remove.confirmText')}
+        cancelText={t('common.cancel')}
         okType="danger"
         centered
       >
         <div>
           <p style={{ marginBottom: '12px', color: 'var(--color-text-2)' }}>
-            此操作将从媒体库中永久删除该视频记录，包括：
+            {t('player.errorRecovery.dialogs.remove.content.description')}
           </p>
           <ul style={{ margin: '0 0 12px 0', paddingLeft: '20px', color: 'var(--color-text-2)' }}>
-            <li>播放进度和历史记录</li>
-            <li>已导入的字幕文件关联</li>
-            <li>个人设置和标记</li>
+            <li>{t('player.errorRecovery.dialogs.remove.content.items.playbackHistory')}</li>
+            <li>{t('player.errorRecovery.dialogs.remove.content.items.subtitleLinks')}</li>
+            <li>{t('player.errorRecovery.dialogs.remove.content.items.personalSettings')}</li>
           </ul>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--color-warning)' }}>
-            ⚠️ 此操作不可撤销，但不会删除原视频文件。
+            {t('player.errorRecovery.dialogs.remove.content.warning')}
           </p>
         </div>
       </Modal>
