@@ -46,6 +46,11 @@ files:
 asarUnpack:
   - resources/**
   - '**/*.{metal,exp,lib}'
+extraResources:
+  - from: resources/ffmpeg
+    to: ffmpeg
+    filter:
+      - '**/*'
 copyright: Copyright © 2025 EchoPlayer
 win:
   executableName: EchoPlayer

@@ -66,7 +66,12 @@
     "check:i18n": "tsx scripts/check-i18n.ts",
     "sync:i18n": "tsx scripts/sync-i18n.ts",
     "update:i18n": "dotenv -e .env -- tsx scripts/update-i18n.ts",
-    "auto:i18n": "dotenv -e .env -- tsx scripts/auto-translate-i18n.ts"
+    "auto:i18n": "dotenv -e .env -- tsx scripts/auto-translate-i18n.ts",
+    "ffmpeg:download": "tsx scripts/download-ffmpeg.ts current",
+    "ffmpeg:download-all": "tsx scripts/download-ffmpeg.ts all",
+    "ffmpeg:clean": "tsx scripts/download-ffmpeg.ts clean",
+    "ffmpeg:test": "tsx scripts/test-ffmpeg-integration.ts",
+    "prebuild": "npm run ffmpeg:download"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.1",
