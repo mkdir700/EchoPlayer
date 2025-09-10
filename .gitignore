@@ -48,3 +48,6 @@ docs/.vitepress/cache/deps
 
 .mcp.json
 dist-test
+
+resources/ffmpeg/
+.ffmpeg-cache
