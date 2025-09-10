@@ -1,3 +1,9 @@
+# [1.0.0-alpha.8](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.7...v1.0.0-alpha.8) (2025-09-10)
+
+### Features
+
+- **ci:** implement semantic-release with automatic version detection ([#117](https://github.com/mkdir700/EchoPlayer/issues/117)) ([4030234](https://github.com/mkdir700/EchoPlayer/commit/4030234c7dbaf3b358f4697c5321565e7c0fdd64))
+
 # [1.0.0-alpha.7](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.6...v1.0.0-alpha.7) (2025-09-10)
 
 ### Bug Fixes
