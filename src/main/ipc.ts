@@ -455,6 +455,18 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
     return await mediaParserService.getVideoInfo(inputPath)
   })
 
+  // 文件系统相关 IPC 处理程序 / File system-related IPC handlers
+  ipcMain.handle(IpcChannel.Fs_CheckFileExists, async (_, filePath: string) => {
+    try {
+      const exists = fs.existsSync(filePath)
+      logger.debug('检查文件存在性', { filePath, exists })
+      return exists
+    } catch (error) {
+      logger.error('检查文件存在性时出错', { filePath, error })
+      return false
+    }
+  })
+
   // shortcuts
   ipcMain.handle(IpcChannel.Shortcuts_Update, (_, shortcuts: Shortcut[]) => {
     configManager.setShortcuts(shortcuts)
