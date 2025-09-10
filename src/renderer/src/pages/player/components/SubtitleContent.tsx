@@ -13,7 +13,6 @@ import { loggerService } from '@logger'
 import { isClickableToken, tokenizeText, type WordToken } from '@renderer/utils/textTokenizer'
 import { SubtitleDisplayMode } from '@types'
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
 const logger = loggerService.withContext('SubtitleContent')
@@ -46,7 +45,6 @@ export const SubtitleContent = memo(function SubtitleContent({
   className,
   style
 }: SubtitleContentProps) {
-  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
 
   // 划词选择状态
@@ -285,14 +283,14 @@ export const SubtitleContent = memo(function SubtitleContent({
 
       case SubtitleDisplayMode.ORIGINAL:
         if (!originalText.trim()) {
-          return <EmptyState>{t('subtitle-overlay.no-original')}</EmptyState>
+          return <EmptyState>--Empty--</EmptyState>
         }
         return <OriginalTextLine>{renderTokenizedText(originalTokens)}</OriginalTextLine>
 
       case SubtitleDisplayMode.TRANSLATED: {
         const textToShow = translatedText?.trim() || originalText.trim()
         if (!textToShow) {
-          return <EmptyState>{t('subtitle-overlay.no-translated')}</EmptyState>
+          return <EmptyState>--Empty--</EmptyState>
         }
         // 译文显示整句，原文显示分词
         return (
@@ -304,7 +302,7 @@ export const SubtitleContent = memo(function SubtitleContent({
 
       case SubtitleDisplayMode.BILINGUAL:
         if (!originalText.trim()) {
-          return <EmptyState>{t('subtitle-overlay.no-original')}</EmptyState>
+          return <EmptyState>--Empty--</EmptyState>
         }
         return (
           <>
@@ -317,7 +315,7 @@ export const SubtitleContent = memo(function SubtitleContent({
 
       default:
         logger.warn('未知的字幕显示模式', { displayMode })
-        return <EmptyState>{t('subtitle-overlay.unknown')}</EmptyState>
+        return <EmptyState>--Empty--</EmptyState>
     }
   }
 
@@ -336,8 +334,6 @@ export const SubtitleContent = memo(function SubtitleContent({
       onKeyDown={handleKeyDown}
       tabIndex={0} // 使元素可聚焦，支持键盘操作
       role="region"
-      aria-label="字幕内容"
-      aria-live="polite" // 屏幕阅读器支持
       data-testid="subtitle-content"
     >
       {content}
@@ -394,7 +390,6 @@ const TranslatedTextLine = styled.div`
   font-size: 15px;
   font-weight: 500;
   opacity: 0.95;
-  color: var(--color-text-2, #f0f0f0);
   text-shadow: var(--subtitle-text-shadow);
   margin-top: 0;
   transition: all var(--subtitle-transition-duration);
@@ -402,7 +397,6 @@ const TranslatedTextLine = styled.div`
 
 const EmptyState = styled.div`
   font-size: 14px;
-  color: var(--color-text-3, #999999);
   font-style: italic;
   opacity: 0.7;
   background: rgba(0, 0, 0, 0.4);
