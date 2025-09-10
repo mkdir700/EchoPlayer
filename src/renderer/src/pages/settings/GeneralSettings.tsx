@@ -24,9 +24,11 @@ const GeneralSettings: FC = () => {
     launchToTray,
     trayOnClose,
     language,
+    showStartupIntro,
     setTray,
     setLaunch,
-    setLanguage
+    setLanguage,
+    setShowStartupIntro
   } = useSettings()
   const { theme } = useTheme()
   const { enableDeveloperMode, setEnableDeveloperMode } = useEnableDeveloperMode()
@@ -103,6 +105,11 @@ const GeneralSettings: FC = () => {
               value: lang.value
             }))}
           />
+        </SettingRow>
+        <SettingDivider />
+        <SettingRow>
+          <SettingRowTitle>{t('settings.general.show_startup_intro')}</SettingRowTitle>
+          <Switch checked={showStartupIntro} onChange={setShowStartupIntro} />
         </SettingRow>
       </SettingGroup>
       <SettingGroup theme={theme}>
