@@ -1,111 +1,122 @@
 name: Release
 
-run-name: 🚀 Release ${{ github.event.inputs.version || format('v{0}', github.run_number) }} ${{ github.ref_name != 'main' && format('({0})', github.ref_name) || '' }}
+run-name: 🚀 Release ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g., v1.0.0, v1.0.0-beta.1, v1.0.0-alpha.1)'
-        required: false
+  push:
+    branches:
+      - main
+      - alpha
+      - beta
 
 permissions:
   contents: write
   pull-requests: read
 
 jobs:
-  detect-version:
+  version-analysis:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
-      version_type: ${{ steps.version.outputs.version_type }}
-      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
-      upload_path: ${{ steps.version.outputs.upload_path }}
-      autoupdate_path: ${{ steps.version.outputs.autoupdate_path }}
+      next_version: ${{ steps.semantic.outputs.next_version }}
+      version_type: ${{ steps.branch.outputs.version_type }}
+      is_prerelease: ${{ steps.branch.outputs.is_prerelease }}
+      channel: ${{ steps.branch.outputs.channel }}
+      should_release: ${{ steps.semantic.outputs.should_release }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Detect version and type
-        id: version
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Detect branch type and channel
+        id: branch
         shell: bash
         run: |
-          # Get version from input, tag, or package.json
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          elif [ -n "${{ github.ref_name }}" ] && [[ "${{ github.ref_name }}" == v* ]]; then
-            VERSION="${{ github.ref_name }}"
-          else
-            VERSION="v$(node -p "require('./package.json').version")"
-          fi
-
-          # Remove 'v' prefix for processing
-          VERSION_NO_V="${VERSION#v}"
-
+          # 根据分支名确定版本类型和更新渠道
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            # main 分支 = stable
             VERSION_TYPE="stable"
-          elif [[ "${{ github.ref_name }}" == "beta" ]]; then
-            # beta 分支 = beta
-            VERSION_TYPE="beta"
-          elif [[ "${{ github.ref_name }}" == "alpha" ]]; then
-            # alpha 分支 = alpha
-            VERSION_TYPE="alpha"
-          elif [[ "$VERSION_NO_V" == *"-dev"* ]]; then
-            # 版本号包含 dev 后缀
-            VERSION_TYPE="dev"
-          elif [[ "$VERSION_NO_V" == *"-test"* ]]; then
-            # 版本号包含 test 后缀
-            VERSION_TYPE="test"
-          elif [[ "$VERSION_NO_V" == *"-alpha"* ]]; then
-            # 版本号包含 alpha 后缀
-            VERSION_TYPE="alpha"
-          elif [[ "$VERSION_NO_V" == *"-beta"* ]]; then
-            # 版本号包含 beta 后缀
-            VERSION_TYPE="beta"
-          else
-            # 默认为 stable
-            VERSION_TYPE="stable"
-          fi
-
-          # Determine if it's a prerelease
-          if [[ "$VERSION_TYPE" != "stable" ]]; then
-            IS_PRERELEASE="true"
-          else
             IS_PRERELEASE="false"
+            CHANNEL="latest"
+          elif [[ "${{ github.ref_name }}" == "beta" ]]; then
+            VERSION_TYPE="beta"
+            IS_PRERELEASE="true"
+            CHANNEL="beta"
+          elif [[ "${{ github.ref_name }}" == "alpha" ]]; then
+            VERSION_TYPE="alpha"
+            IS_PRERELEASE="true"
+            CHANNEL="alpha"
+          else
+            echo "❌ Unsupported branch: ${{ github.ref_name }}"
+            exit 1
           fi
 
-          # Set upload paths based on version type
-          case "$VERSION_TYPE" in
-            "dev"|"test")
-              UPLOAD_PATH="/test-releases/"
-              AUTOUPDATE_PATH="/test-autoupdate/"
-              ;;
-            "alpha"|"beta")
-              UPLOAD_PATH="/prerelease/"
-              AUTOUPDATE_PATH="/prerelease-autoupdate/"
-              ;;
-            "stable")
-              UPLOAD_PATH="/releases/"
-              AUTOUPDATE_PATH="/autoupdate/"
-              ;;
-          esac
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
           echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
-          echo "upload_path=$UPLOAD_PATH" >> $GITHUB_OUTPUT
-          echo "autoupdate_path=$AUTOUPDATE_PATH" >> $GITHUB_OUTPUT
+          echo "channel=$CHANNEL" >> $GITHUB_OUTPUT
 
-          echo "🏷️ Version: $VERSION"
           echo "📦 Version Type: $VERSION_TYPE"
           echo "🚀 Is Prerelease: $IS_PRERELEASE"
-          echo "📁 Upload Path: $UPLOAD_PATH"
-          echo "🔄 AutoUpdate Path: $AUTOUPDATE_PATH"
+          echo "📺 Channel: $CHANNEL"
+
+      - name: Run semantic-release for version analysis
+        id: semantic
+        shell: bash
+        run: |
+          echo "🔍 Analyzing commits to determine next version..."
+
+          # 创建临时的分析配置文件
+          cat > .releaserc.temp.js << 'EOF'
+          module.exports = {
+            branches: [
+              'main',
+              { name: 'beta', prerelease: true },
+              { name: 'alpha', prerelease: true }
+            ],
+            plugins: [
+              '@semantic-release/commit-analyzer',
+              '@semantic-release/release-notes-generator'
+            ]
+          }
+          EOF
+
+          # 使用临时配置进行版本分析
+          OUTPUT=$(pnpm semantic-release --dry-run -c .releaserc.temp.js 2>&1)
+          echo "$OUTPUT"
+
+          # 清理临时文件
+          rm -f .releaserc.temp.js
+
+          # 检查是否有新版本需要发布
+          if echo "$OUTPUT" | grep -q "The next release version is"; then
+            NEXT_VERSION=$(echo "$OUTPUT" | grep "The next release version is" | sed 's/.*The next release version is \([0-9.a-z-]*\).*/\1/')
+            echo "✅ Next version: $NEXT_VERSION"
+            echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "ℹ️ No new version to release"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
-    needs: detect-version
+    needs: version-analysis
     runs-on: ${{ matrix.os }}
+    if: needs.version-analysis.outputs.should_release == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -153,40 +164,39 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Sync version from detect-version job
+      - name: Update package.json version
         shell: bash
         run: |
-          echo "🔄 同步版本号到 package.json"
-          echo "Current package.json version: $(node -p "require('./package.json').version")"
-          echo "Target version from detect-version: ${{ needs.detect-version.outputs.version }}"
+          echo "📋 Current package.json version: $(node -p "require('./package.json').version")"
+          echo "🔄 Target version: ${{ needs.version-analysis.outputs.next_version }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo "📦 Version type: ${{ needs.version-analysis.outputs.version_type }}"
+          echo "🚀 Is prerelease: ${{ needs.version-analysis.outputs.is_prerelease }}"
+          echo "📺 Channel: ${{ needs.version-analysis.outputs.channel }}"
 
-          # 从版本号中移除 'v' 前缀（如果存在）
-          TARGET_VERSION="${{ needs.detect-version.outputs.version }}"
-          VERSION_NO_V="${TARGET_VERSION#v}"
-
-          # 使用 node 脚本更新 package.json 中的版本号
+          # 更新 package.json 中的版本号
           node -e "
             const fs = require('fs');
             const package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            package.version = '${VERSION_NO_V}';
+            package.version = '${{ needs.version-analysis.outputs.next_version }}';
             fs.writeFileSync('package.json', JSON.stringify(package, null, 2) + '\n');
             console.log('✅ Updated package.json version to:', package.version);
           "
 
-          echo "Updated package.json version: $(node -p "require('./package.json').version")"
+          echo "📋 Updated package.json version: $(node -p "require('./package.json').version")"
 
       - name: Build for ${{ matrix.platform }}
         shell: bash
         run: |
           echo "🏗️ Building for ${{ matrix.platform }}"
-          echo "构建平台: ${{ matrix.platform }}"
-          echo "📦 版本类型: ${{ needs.detect-version.outputs.version_type }}"
-          echo "🔄 更新渠道: ${{ needs.detect-version.outputs.version_type == 'stable' && 'latest' || needs.detect-version.outputs.version_type }}"
+          echo "📦 版本号: ${{ needs.version-analysis.outputs.next_version }}"
+          echo "📦 版本类型: ${{ needs.version-analysis.outputs.version_type }}"
+          echo "🔄 更新渠道: ${{ needs.version-analysis.outputs.channel }}"
           pnpm build
 
-          # 构建产物但不发布，交给 semantic-release 统一发布
-          echo "🏗️ Building artifacts without publishing"
-          echo "📦 Semantic-release will handle the GitHub Release creation"
+          # 构建产物但不发布，版本号已经正确
+          echo "🏗️ Building artifacts with correct version number"
+          echo "📦 Artifacts will be uploaded by final release job"
           pnpm exec electron-builder ${{ matrix.target }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -195,8 +205,8 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          # 根据版本类型设置更新渠道，stable 版本使用 latest，其他版本使用对应类型名称
-          ELECTRON_BUILDER_CHANNEL: ${{ needs.detect-version.outputs.version_type == 'stable' && 'latest' || needs.detect-version.outputs.version_type }}
+          # 根据分支设置更新渠道
+          ELECTRON_BUILDER_CHANNEL: ${{ needs.version-analysis.outputs.channel }}
 
       - name: List build artifacts
         shell: bash
@@ -237,9 +247,9 @@ jobs:
           if-no-files-found: warn
 
   semantic-release:
-    needs: [detect-version, release]
+    needs: [version-analysis, release]
     runs-on: ubuntu-latest
-    if: needs.detect-version.outputs.version_type != 'dev' && needs.detect-version.outputs.version_type != 'test'
+    if: needs.version-analysis.outputs.should_release == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -277,6 +287,21 @@ jobs:
         with:
           path: artifacts
 
+      - name: Update package.json version for release
+        shell: bash
+        run: |
+          echo "🔄 Updating package.json version for semantic-release"
+          echo "Target version: ${{ needs.version-analysis.outputs.next_version }}"
+
+          # 更新 package.json 中的版本号，确保与分析阶段一致
+          node -e "
+            const fs = require('fs');
+            const package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            package.version = '${{ needs.version-analysis.outputs.next_version }}';
+            fs.writeFileSync('package.json', JSON.stringify(package, null, 2) + '\n');
+            console.log('✅ Updated package.json version to:', package.version);
+          "
+
       - name: Prepare artifacts for release
         run: |
           echo "📦 Preparing artifacts for GitHub Release"
@@ -291,10 +316,13 @@ jobs:
       - name: Run Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm semantic-release
+        run: |
+          echo "🚀 Creating GitHub Release with semantic-release"
+          echo "📦 Version: ${{ needs.version-analysis.outputs.next_version }}"
+          pnpm semantic-release
 
   notify:
-    needs: [detect-version, release]
+    needs: [version-analysis, release, semantic-release]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -302,19 +330,27 @@ jobs:
         run: |
           echo "🏗️ Build Summary"
           echo "==============="
-          echo "Version: ${{ needs.detect-version.outputs.version }}"
-          echo "Type: ${{ needs.detect-version.outputs.version_type }}"
-          echo "Prerelease: ${{ needs.detect-version.outputs.is_prerelease }}"
-          echo "Status: ${{ needs.release.result }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Next Version: ${{ needs.version-analysis.outputs.next_version }}"
+          echo "Type: ${{ needs.version-analysis.outputs.version_type }}"
+          echo "Channel: ${{ needs.version-analysis.outputs.channel }}"
+          echo "Prerelease: ${{ needs.version-analysis.outputs.is_prerelease }}"
+          echo "Should Release: ${{ needs.version-analysis.outputs.should_release }}"
+          echo "Build Status: ${{ needs.release.result }}"
+          echo "Release Status: ${{ needs.semantic-release.result }}"
           echo "Trigger: ${{ github.event_name }}"
           echo ""
 
-          if [ "${{ needs.release.result }}" == "success" ]; then
-            if [ "${{ needs.detect-version.outputs.version_type }}" != "dev" ] && [ "${{ needs.detect-version.outputs.version_type }}" != "test" ]; then
-              echo "🎉 GitHub Release created successfully!"
+          if [ "${{ needs.version-analysis.outputs.should_release }}" == "false" ]; then
+            echo "ℹ️ No new version to release - no commits since last release"
+          elif [ "${{ needs.release.result }}" == "success" ]; then
+            if [ "${{ needs.semantic-release.result }}" == "success" ]; then
+              echo "🎉 Release ${{ needs.version-analysis.outputs.next_version }} created successfully!"
               echo "📍 Check: https://github.com/${{ github.repository }}/releases"
+              echo "🔄 Version was automatically determined based on commit messages"
+              echo "📦 Artifacts have correct version numbers in filenames"
               echo ""
-              if [ "${{ needs.detect-version.outputs.is_prerelease }}" == "true" ]; then
+              if [ "${{ needs.version-analysis.outputs.is_prerelease }}" == "true" ]; then
                 echo "🧪 This is a prerelease version:"
                 echo "- Alpha/Beta versions are marked as prerelease"
                 echo "- Auto-update is enabled for prerelease users"
@@ -322,7 +358,8 @@ jobs:
                 echo "🚀 This is a stable release"
               fi
             else
-              echo "📦 Build completed but not published (dev/test version)"
+              echo "📦 Build completed but semantic-release failed"
+              echo "💡 Check semantic-release logs for details"
             fi
           else
             echo "❌ Build failed - check logs for details"
