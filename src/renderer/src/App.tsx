@@ -7,7 +7,6 @@ import HomePageVideoService from '@renderer/services/HomePageVideos'
 import { useVideoListStore } from '@renderer/state/stores/video-list.store'
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { SearchOverlay } from './components/SearchOverlay'
 import { StartupLoadingState } from './components/StartupIntro'
 import TopViewContainer from './components/TopView'
 import Router from './Router'
@@ -96,7 +95,6 @@ const AppContent: React.FC = () => {
       {shouldRenderMainApp && (
         <>
           <Router />
-          <SearchOverlay />
         </>
       )}
 
