@@ -216,6 +216,7 @@
       &.ant-btn-dangerous {
         background: var(--color-error);
         border: 1px solid var(--color-error);
+        color: #ffffff !important;
 
         &:hover {
           background: rgba(244, 67, 54, 0.8);
@@ -306,7 +307,7 @@
     .ant-btn.ant-btn-dangerous {
       background: var(--color-error);
       border: 1px solid var(--color-error);
-      color: var(--color-icon-white);
+      color: #ffffff !important;
 
       &:hover {
         background: rgba(244, 67, 54, 0.8);
