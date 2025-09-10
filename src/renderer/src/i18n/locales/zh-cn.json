@@ -102,6 +102,65 @@
     "subtitles": {
       "hide": "隐藏字幕列表",
       "show": "展开字幕列表"
+    },
+    "errorRecovery": {
+      "errors": {
+        "fileMissing": {
+          "title": "视频文件缺失",
+          "description": "原视频文件可能已被删除、移动或重命名"
+        },
+        "unsupportedFormat": {
+          "title": "不支持的视频格式",
+          "description": "当前视频格式不受支持或文件已损坏"
+        },
+        "decodeError": {
+          "title": "视频解码错误",
+          "description": "视频文件可能损坏或编码格式不兼容"
+        },
+        "networkError": {
+          "title": "网络错误",
+          "description": "加载网络视频时发生连接错误"
+        },
+        "unknown": {
+          "title": "播放错误",
+          "description": "视频播放时发生未知错误"
+        }
+      },
+      "actions": {
+        "relocateFile": "重新选择文件",
+        "backToHome": "返回首页",
+        "removeFromLibrary": "从媒体库移除"
+      },
+      "dialogs": {
+        "relocate": {
+          "title": "重新选择文件",
+          "confirmText": "我已了解，继续选择",
+          "content": {
+            "warning": "请务必选择与当前视频记录对应的原始文件。",
+            "note": "⚠️ 选择错误的文件可能导致播放进度、字幕等数据不匹配。"
+          }
+        },
+        "remove": {
+          "title": "确认从媒体库移除？",
+          "confirmText": "确认移除",
+          "content": {
+            "description": "此操作将从媒体库中永久删除该视频记录，包括：",
+            "items": {
+              "playbackHistory": "播放进度和历史记录",
+              "subtitleLinks": "已导入的字幕文件关联",
+              "personalSettings": "个人设置和标记"
+            },
+            "warning": "⚠️ 此操作不可撤销，但不会删除原视频文件。"
+          }
+        }
+      },
+      "fileDialog": {
+        "videoFiles": "视频文件",
+        "allFiles": "所有文件"
+      },
+      "pathInfo": {
+        "label": "文件路径"
+      }
     }
   },
   "settings": {

@@ -10,7 +10,7 @@ import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
 import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
@@ -21,6 +21,7 @@ import {
   ProgressBar,
   SettingsPopover,
   SubtitleListPanel,
+  VideoErrorRecovery,
   VideoSurface
 } from './components'
 import { disposeGlobalOrchestrator } from './hooks/usePlayerEngine'
@@ -81,6 +82,11 @@ function PlayerPage() {
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [videoError, setVideoError] = useState<{
+    message: string
+    type: 'file-missing' | 'unsupported-format' | 'decode-error' | 'network-error' | 'unknown'
+    originalPath?: string
+  } | null>(null)
   // const { pokeInteraction } = usePlayerUI()
 
   // 加载视频数据
@@ -161,9 +167,69 @@ function PlayerPage() {
     }
   }, [videoId])
 
-  const handleVideoError = (errorMessage: string) => {
-    setError(errorMessage)
-  }
+  const handleVideoError = useCallback(
+    (
+      errorMessage: string,
+      errorType?:
+        | 'file-missing'
+        | 'unsupported-format'
+        | 'decode-error'
+        | 'network-error'
+        | 'unknown'
+    ) => {
+      logger.error('视频播放错误', { errorMessage, errorType, videoId })
+      setVideoError({
+        message: errorMessage,
+        type: errorType || 'unknown',
+        originalPath: videoData?.src
+          ? decodeURIComponent(videoData.src.replace('file://', ''))
+          : undefined
+      })
+    },
+    [videoId, videoData?.src]
+  )
+
+  const handleFileRelocate = useCallback(
+    async (newPath: string) => {
+      if (!videoData) return
+
+      try {
+        logger.info('开始重新定位视频文件', { videoId, newPath })
+
+        // 更新数据库中的文件路径
+        // 这里需要调用数据库服务来更新文件记录
+        // 暂时先更新本地状态，实际实现需要更新数据库
+        const newFileUrl = toFileUrl(newPath)
+        const updatedVideoData = {
+          ...videoData,
+          src: newFileUrl
+        }
+
+        setVideoData(updatedVideoData)
+        setVideoError(null) // 清除错误状态
+
+        logger.info('视频文件路径已更新', { videoId, newPath, newFileUrl })
+      } catch (error) {
+        logger.error('重新定位视频文件时出错', { error })
+      }
+    },
+    [videoData, videoId]
+  )
+
+  const handleRemoveFromLibrary = useCallback(async () => {
+    try {
+      logger.info('从媒体库中移除视频', { videoId })
+
+      // 调用数据库服务删除记录
+      const videoLibService = new VideoLibraryService()
+      await videoLibService.deleteRecord(videoId)
+
+      // 返回首页
+      navigate('/')
+    } catch (error) {
+      logger.error('从媒体库移除视频时出错', { error })
+    }
+  }, [videoId, navigate])
 
   if (loading) {
     return (
@@ -263,6 +329,18 @@ function PlayerPage() {
           </ContentBody>
           <SettingsPopover />
         </ContentContainer>
+
+        {/* 错误恢复 Modal */}
+        <VideoErrorRecovery
+          open={!!videoError}
+          onClose={() => setVideoError(null)}
+          videoId={videoId}
+          videoTitle={videoData.title}
+          originalPath={videoError?.originalPath}
+          errorType={videoError?.type || 'unknown'}
+          onFileRelocate={handleFileRelocate}
+          onRemoveFromLibrary={handleRemoveFromLibrary}
+        />
       </Container>
     </PlayerPageProvider>
   )

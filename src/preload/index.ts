@@ -196,6 +196,10 @@ const api = {
     getVideoInfo: (inputPath: string): Promise<FFmpegVideoInfo | null> =>
       ipcRenderer.invoke(IpcChannel.MediaInfo_GetVideoInfo, inputPath)
   },
+  fs: {
+    checkFileExists: (filePath: string): Promise<boolean> =>
+      ipcRenderer.invoke(IpcChannel.Fs_CheckFileExists, filePath)
+  },
   shortcuts: {
     update: (shortcuts: Shortcut[]) => ipcRenderer.invoke(IpcChannel.Shortcuts_Update, shortcuts)
   },
