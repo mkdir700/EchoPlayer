@@ -31,6 +31,7 @@ export interface SettingsState {
   windowStyle: 'transparent' | 'opaque'
   messageStyle: 'plain' | 'bubble'
   videoListViewMode: 'grid' | 'list'
+  showStartupIntro: boolean
   playback: {
     defaultVolume: number
     defaultPlaybackSpeed: number
@@ -60,6 +61,7 @@ type Actions = {
   setWindowStyle: (windowStyle: 'transparent' | 'opaque') => void
   setMessageStyle: (messageStyle: 'plain' | 'bubble') => void
   setVideoListViewMode: (mode: 'grid' | 'list') => void
+  setShowStartupIntro: (showStartupIntro: boolean) => void
   setPlayback: (playback: SettingsState['playback']) => void
   setLaunchOnBoot: (isLaunchOnBoot: boolean) => void
   setLaunchToTray: (isLaunchToTray: boolean) => void
@@ -96,6 +98,7 @@ const initialState: SettingsState = {
   windowStyle: 'transparent',
   messageStyle: 'bubble',
   videoListViewMode: 'grid',
+  showStartupIntro: true,
   playback: {
     defaultPlaybackSpeed: 1.0,
     defaultSubtitleDisplayMode: DEFAULT_SUBTITLE_DISPLAY_MODE,
@@ -140,6 +143,7 @@ const createSettingsStore: StateCreator<
   setWindowStyle: (windowStyle) => set({ windowStyle }),
   setMessageStyle: (messageStyle) => set({ messageStyle }),
   setVideoListViewMode: (mode) => set({ videoListViewMode: mode }),
+  setShowStartupIntro: (showStartupIntro) => set({ showStartupIntro }),
   setPlayback: (playback) => set({ playback }),
   setAutoCheckUpdate: (autoCheckUpdate) => set({ autoCheckUpdate }),
   setTestPlan: (testPlan) => set({ testPlan }),
@@ -192,6 +196,7 @@ export const useSettingsStore = create<SettingsStore>()(
       windowStyle: state.windowStyle,
       messageStyle: state.messageStyle,
       videoListViewMode: state.videoListViewMode,
+      showStartupIntro: state.showStartupIntro,
       playback: state.playback,
       enableDeveloperMode: state.enableDeveloperMode
     }),

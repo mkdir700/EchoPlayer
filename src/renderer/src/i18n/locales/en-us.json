@@ -58,6 +58,7 @@
       "auto_check_update": {
         "title": "Automatic Updates"
       },
+      "show_startup_intro": "Show startup intro",
       "test_plan": {
         "alpha_version": "Alpha Version",
         "alpha_version_tooltip": "Alpha - Unstable test version with frequent updates",
