@@ -45,8 +45,7 @@ files:
   - '!**/{example,examples}/**'
 asarUnpack:
   - resources/**
-  - '**/*.{metal,exp,lib,wasm}'
-  - '**/assets/MediaInfoModule.wasm'
+  - '**/*.{metal,exp,lib}'
 copyright: Copyright © 2025 EchoPlayer
 win:
   executableName: EchoPlayer
