@@ -329,19 +329,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       event.preventDefault()
       event.stopPropagation()
 
-      // 计算当前字幕框的中心点
-      const currentCenterX = position.x + size.width / 2
-
       const maxWidth = 95 // 最大宽度95%
 
-      // 计算新的位置，让字幕框向两边扩展
-      const newX = Math.max(
-        0, // 不能超出左边界
-        Math.min(
-          100 - maxWidth, // 不能超出右边界
-          currentCenterX - maxWidth / 2 // 以中心点为基准向两边扩展
-        )
-      )
+      // 计算扩展后的居中位置（95%宽度居中）
+      const expandedCenterX = 50 - maxWidth / 2
 
       const newSize = {
         ...size,
@@ -350,7 +341,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 
       const newPosition = {
         ...position,
-        x: newX
+        x: Math.max(0, Math.min(100 - maxWidth, expandedCenterX))
       }
 
       // 同时更新尺寸和位置
@@ -360,8 +351,8 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       logger.info('字幕覆盖层双击扩展', {
         newSize,
         newPosition,
-        currentCenterX,
-        expandedFromCenter: true
+        centerFirst: true,
+        thenExpand: true
       })
     },
     [size, position, setSize, setPosition]
