@@ -3,13 +3,16 @@ import { nodeReader } from '@remotion/media-parser/node'
 import type { FFmpegVideoInfo } from '@types'
 import * as fs from 'fs'
 
+import FFmpegService from './FFmpegService'
 import { loggerService } from './LoggerService'
 
 const logger = loggerService.withContext('MediaParserService')
 
 class MediaParserService {
+  private ffmpegService: FFmpegService
+
   constructor() {
-    // 构造函数可以用于初始化操作
+    this.ffmpegService = new FFmpegService()
   }
 
   /**
@@ -119,11 +122,11 @@ class MediaParserService {
   }
 
   /**
-   * 获取视频文件信息
+   * 获取视频文件信息，优先使用 Remotion，失败时 fallback 到 FFmpeg
    */
   public async getVideoInfo(inputPath: string): Promise<FFmpegVideoInfo | null> {
     const startTime = Date.now()
-    logger.info('🎬 开始获取视频信息 (Remotion)', { inputPath })
+    logger.info('🎬 开始获取视频信息 (Remotion + FFmpeg fallback)', { inputPath })
 
     try {
       // 转换文件路径
@@ -132,8 +135,8 @@ class MediaParserService {
       const pathConvertEndTime = Date.now()
 
       logger.info(`🔄 路径转换耗时: ${pathConvertEndTime - pathConvertStartTime}ms`, {
-        原始输入路径: inputPath,
-        转换后本地路径: localInputPath
+        inputPath,
+        localInputPath
       })
 
       // 检查文件是否存在
@@ -142,7 +145,7 @@ class MediaParserService {
       const fileCheckEndTime = Date.now()
 
       logger.info(`📁 文件存在性检查耗时: ${fileCheckEndTime - fileCheckStartTime}ms`, {
-        文件存在性: fileExists
+        fileExists
       })
 
       if (!fileExists) {
@@ -157,70 +160,103 @@ class MediaParserService {
       const fileStatsEndTime = Date.now()
 
       logger.info(`📊 文件信息获取耗时: ${fileStatsEndTime - fileStatsStartTime}ms`, {
-        文件大小: `${Math.round((fileSize / 1024 / 1024) * 100) / 100}MB`
+        fileSize: `${Math.round((fileSize / 1024 / 1024) * 100) / 100}MB`
       })
 
-      // 使用 Remotion parseMedia 分析文件
-      const analysisStartTime = Date.now()
-      const result = await parseMedia({
-        src: localInputPath,
-        reader: nodeReader,
-        fields: {
-          durationInSeconds: true,
-          dimensions: true,
-          videoCodec: true,
-          audioCodec: true,
-          tracks: true,
-          container: true
-        },
-        logLevel: 'error' // 减少日志输出
-      })
-      const analysisEndTime = Date.now()
-
-      logger.info(`🔍 Remotion 分析耗时: ${analysisEndTime - analysisStartTime}ms`)
-
-      // 解析结果
-      const parseStartTime = Date.now()
-      const videoInfo = this.parseRemotionResult(result)
-      const parseEndTime = Date.now()
-
-      logger.info(`📊 结果解析耗时: ${parseEndTime - parseStartTime}ms`)
-
-      if (videoInfo) {
-        const totalTime = Date.now() - startTime
-        logger.info(`✅ 成功获取视频信息 (Remotion)，总耗时: ${totalTime}ms`, {
-          ...videoInfo,
-          性能统计: {
-            路径转换: `${pathConvertEndTime - pathConvertStartTime}ms`,
-            文件检查: `${fileCheckEndTime - fileCheckStartTime}ms`,
-            文件信息获取: `${fileStatsEndTime - fileStatsStartTime}ms`,
-            Remotion分析: `${analysisEndTime - analysisStartTime}ms`,
-            结果解析: `${parseEndTime - parseStartTime}ms`,
-            总耗时: `${totalTime}ms`
-          }
+      // 首先尝试使用 Remotion parseMedia 分析文件
+      try {
+        const result = await parseMedia({
+          src: localInputPath,
+          reader: nodeReader,
+          fields: {
+            durationInSeconds: true,
+            dimensions: true,
+            videoCodec: true,
+            audioCodec: true,
+            tracks: true,
+            container: true
+          },
+          logLevel: 'error' // 减少日志输出
         })
-        return videoInfo
-      } else {
-        logger.error('❌ 无法解析视频信息')
-        return null
+
+        // 解析结果
+        const parseStartTime = Date.now()
+        const videoInfo = this.parseRemotionResult(result)
+        const parseEndTime = Date.now()
+
+        logger.info(`📊 Remotion 结果解析耗时: ${parseEndTime - parseStartTime}ms`)
+
+        if (videoInfo) {
+          const totalTime = Date.now() - startTime
+          logger.info(`✅ 成功获取视频信息 (Remotion)，总耗时: ${totalTime}ms`, {
+            ...videoInfo
+          })
+          return videoInfo
+        } else {
+          logger.warn('⚠️ Remotion 解析结果为空，尝试 FFmpeg fallback')
+        }
+      } catch (remotionError) {
+        const remotionErrorMsg =
+          remotionError instanceof Error ? remotionError.message : String(remotionError)
+        logger.warn('⚠️ Remotion 解析失败，尝试 FFmpeg fallback', {
+          remotionError: remotionErrorMsg
+        })
       }
+
+      // Remotion 失败时，fallback 到 FFmpeg
+      logger.info('🔄 开始 FFmpeg fallback 解析')
+
+      try {
+        const ffmpegVideoInfo = await this.ffmpegService.getVideoInfo(inputPath)
+
+        if (ffmpegVideoInfo) {
+          const totalTime = Date.now() - startTime
+          logger.info(`✅ 成功获取视频信息 (FFmpeg fallback)，总耗时: ${totalTime}ms`, {
+            ...ffmpegVideoInfo
+          })
+          return ffmpegVideoInfo
+        } else {
+          logger.error('❌ FFmpeg fallback 也无法解析视频信息')
+        }
+      } catch (ffmpegError) {
+        const ffmpegErrorMsg =
+          ffmpegError instanceof Error ? ffmpegError.message : String(ffmpegError)
+        logger.error('❌ FFmpeg fallback 解析失败', {
+          ffmpegError: ffmpegErrorMsg
+        })
+      }
+
+      // 两种方法都失败
+      const totalTime = Date.now() - startTime
+      logger.error(`❌ 所有解析方法都失败，总耗时: ${totalTime}ms`, {
+        inputPath
+      })
+      return null
     } catch (error) {
       const totalTime = Date.now() - startTime
       logger.error(`❌ 获取视频信息失败，耗时: ${totalTime}ms`, {
         inputPath,
-        error: error instanceof Error ? error.message : String(error),
-        总耗时: `${totalTime}ms`
+        error: error instanceof Error ? error.message : String(error)
       })
       return null
     }
   }
 
   /**
-   * 检查媒体解析器是否可用
+   * 检查媒体解析器是否可用 (Remotion + FFmpeg fallback)
    */
   public async checkExists(): Promise<boolean> {
     try {
-      // Remotion media-parser 不需要特殊初始化，总是可用
+      // Remotion media-parser 总是可用（包含在应用中），但如果需要 fallback，也检查 FFmpeg
+      const ffmpegExists = await this.ffmpegService.checkFFmpegExists()
+
+      logger.info('📊 媒体解析器可用性检查', {
+        remotion: true,
+        ffmpeg: ffmpegExists,
+        fallbackAvailable: ffmpegExists
+      })
+
+      // 只要有一个可用就返回 true，优先使用 Remotion，FFmpeg 作为 fallback
       return true
     } catch (error) {
       logger.error('媒体解析器检查失败:', {
@@ -235,13 +271,18 @@ class MediaParserService {
    */
   public async getVersion(): Promise<string | null> {
     try {
-      // 返回 Remotion media-parser 标识
-      return '@remotion/media-parser'
+      const ffmpegVersion = await this.ffmpegService.getFFmpegVersion()
+      const versionInfo = ffmpegVersion
+        ? `@remotion/media-parser + FFmpeg(${ffmpegVersion})`
+        : '@remotion/media-parser (FFmpeg not available)'
+
+      logger.info('📊 媒体解析器版本信息', { versionInfo })
+      return versionInfo
     } catch (error) {
       logger.error('获取媒体解析器版本失败:', {
         error: error instanceof Error ? error : new Error(String(error))
       })
-      return null
+      return '@remotion/media-parser (version check failed)'
     }
   }
 

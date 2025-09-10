@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import react from '@vitejs/plugin-react-swc'
+import { spawn } from 'child_process'
 import { CodeInspectorPlugin } from 'code-inspector-plugin'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import { resolve } from 'path'
@@ -9,13 +10,57 @@ import { resolve } from 'path'
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = process.env.NODE_ENV === 'production'
 
+// FFmpeg 下载插件
+function ffmpegDownloadPlugin() {
+  return {
+    name: 'ffmpeg-download',
+    async buildStart() {
+      // 只在生产构建时下载 FFmpeg
+      if (!isProd) return
+
+      console.log('Downloading FFmpeg...')
+
+      try {
+        // 根据构建目标决定下载哪个平台
+        const targetPlatform = process.env.BUILD_TARGET_PLATFORM || process.platform
+        const targetArch = process.env.BUILD_TARGET_ARCH || process.arch
+
+        await new Promise<void>((resolve, reject) => {
+          const downloadScript = spawn(
+            'tsx',
+            ['scripts/download-ffmpeg.ts', 'platform', targetPlatform, targetArch],
+            {
+              stdio: 'inherit'
+            }
+          )
+
+          downloadScript.on('close', (code) => {
+            if (code === 0) {
+              console.log('FFmpeg Downloaded successfully')
+              resolve()
+            } else {
+              reject(new Error(`FFmpeg Download failed with exit code: ${code}`))
+            }
+          })
+
+          downloadScript.on('error', (error) => {
+            reject(error)
+          })
+        })
+      } catch (error) {
+        console.warn('FFmpeg Download failed', error)
+      }
+    }
+  }
+}
+
 export default defineConfig({
   main: {
     plugins: [
       externalizeDepsPlugin(),
-      // 复制迁移文件到构建目录
+      ffmpegDownloadPlugin(),
       {
-        name: 'copy-migrations',
+        name: 'copy-files',
         generateBundle() {
           // 优先使用新的 db/migrations 路径
           const newMigrationsDir = path.resolve('db/migrations')
@@ -49,6 +94,41 @@ export default defineConfig({
                   fs.copyFileSync(srcFile, destFile)
                 }
               }
+            }
+          }
+
+          // 复制 FFmpeg 文件到构建目录
+          const ffmpegResourcesDir = path.resolve('resources/ffmpeg')
+          if (fs.existsSync(ffmpegResourcesDir)) {
+            const outResourcesDir = path.resolve('out/resources/ffmpeg')
+
+            try {
+              // 确保输出目录存在
+              fs.mkdirSync(outResourcesDir, { recursive: true })
+
+              // 复制整个 ffmpeg 目录
+              const copyDirectoryRecursive = (src: string, dest: string) => {
+                if (!fs.existsSync(src)) return
+
+                fs.mkdirSync(dest, { recursive: true })
+                const items = fs.readdirSync(src)
+
+                for (const item of items) {
+                  const srcPath = path.join(src, item)
+                  const destPath = path.join(dest, item)
+
+                  if (fs.statSync(srcPath).isDirectory()) {
+                    copyDirectoryRecursive(srcPath, destPath)
+                  } else {
+                    fs.copyFileSync(srcPath, destPath)
+                  }
+                }
+              }
+
+              copyDirectoryRecursive(ffmpegResourcesDir, outResourcesDir)
+              console.log('FFmpeg files copied successfully')
+            } catch (error) {
+              console.warn('Failed to copy FFmpeg files:', error)
             }
           }
         }
