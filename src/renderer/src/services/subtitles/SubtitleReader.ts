@@ -468,11 +468,14 @@ export class SubtitleReader {
     // 去掉样式标记，支持嵌套和复杂格式
     // {\3c&HFF8000&\fnKaiTi}{\an8} -> 空字符串
     // {\fnTahoma\fs12\3c&H400000&\b1\i1} -> 空字符串
+    // 处理subsrt库可能部分处理后的残留标记，如：\3c&HFF8000&\fnKaiTi}
     return s
-      .replace(/\{[^}]*\}/g, '') // 去掉所有 {...} 样式标记
+      .replace(/\{[^}]*\}/g, '') // 去掉完整的 {...} 样式标记
+      .replace(/\\[a-zA-Z0-9&]+[^}]*\}/g, '') // 去掉缺少开头括号的残留样式标记，如 \3c&HFF8000&\fnKaiTi}
+      .replace(/\\[a-zA-Z]+\d*[&\w]*(?=[^}]|$)/g, '') // 去掉没有结束括号的ASS标记
       .replace(/\\N/g, '\n') // 将 \N 转换为换行
-      .replace(/\\h/g, ' ') // 将 \h 转换为空格（硬空格）
       .replace(/\\n/g, '\n') // 将 \n 转换为换行（小写）
+      .replace(/\\h/g, ' ') // 将 \h 转换为空格（硬空格）
       .trim()
   }
 }
