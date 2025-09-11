@@ -12,17 +12,36 @@ export function getFileDirectory(filePath: string): string {
 }
 
 /**
- * 从文件路径中提取文件扩展名。
+ * 从文件路径中提取文件扩展名，增强 Windows 兼容性。
  * @param {string} filePath 文件路径
- * @returns {string} 文件扩展名（小写），如果没有则返回 '.'
+ * @returns {string} 文件扩展名（小写），如果没有则返回空字符串
  */
 export function getFileExtension(filePath: string): string {
-  const parts = filePath.split('.')
+  if (!filePath) {
+    return ''
+  }
+
+  // 标准化路径分隔符和清理路径
+  let normalizedPath = filePath.trim()
+
+  // 处理反斜杠（Windows 路径）
+  normalizedPath = normalizedPath.replace(/\\/g, '/')
+
+  // 获取文件名部分（移除路径）
+  const fileName = normalizedPath.split('/').pop() || normalizedPath
+
+  // 分割文件名以获取扩展名
+  const parts = fileName.split('.')
   if (parts.length > 1) {
     const extension = parts.slice(-1)[0].toLowerCase()
-    return '.' + extension
+
+    // 验证扩展名有效性：不能为空，不能包含路径分隔符
+    if (extension && !extension.includes('/') && !extension.includes('\\')) {
+      return '.' + extension
+    }
   }
-  return '.'
+
+  return ''
 }
 
 /**
