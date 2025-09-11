@@ -213,6 +213,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           const deltaX = moveEvent.clientX - startX
           const deltaY = moveEvent.clientY - startY
 
+          // 使用估算的字幕高度（自适应模式下约为 160px）
+          const estimatedHeightPercent = Math.min(12, (160 / containerBounds.height) * 100)
+
           const newPosition = {
             x: Math.max(
               0,
@@ -220,7 +223,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
             ),
             y: Math.max(
               0,
-              Math.min(100 - 20, startPosition.y + (deltaY / containerBounds.height) * 100)
+              Math.min(
+                100 - estimatedHeightPercent,
+                startPosition.y + (deltaY / containerBounds.height) * 100
+              )
             )
           }
           setPosition(newPosition)
@@ -403,6 +409,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           translatedText={integration.currentSubtitle?.translatedText}
           onTextSelection={handleTextSelection}
           onWordClick={handleWordClick}
+          containerHeight={containerBounds.height}
         />
       </ContentContainer>
 
@@ -441,8 +448,9 @@ const OverlayContainer = styled.div<{
   left: ${(props) => props.$position.x}%;
   top: ${(props) => props.$position.y}%;
   width: ${(props) => props.$size.width}%;
+  height: auto;
   min-height: 60px;
-  max-height: 200px;
+  max-height: 160px;
 
   /* 基础样式 */
   pointer-events: auto;
