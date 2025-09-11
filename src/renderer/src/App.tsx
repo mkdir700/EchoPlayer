@@ -76,8 +76,11 @@ const AppContent: React.FC = () => {
     }
 
     logger.info('🚀 开始应用初始化', { showStartupIntro })
+
+    // 无论是否显示启动界面，都进行数据预加载
+    // 这样可以与 FFmpeg 预热并行进行，提升整体启动效率
     preloadHomePageData().then(() => {
-      logger.info('✅ 主应用条件满足（跳过启动界面）')
+      logger.info('✅ 数据预加载完成', { showStartupIntro })
     })
     setIsInitialized(true)
 
