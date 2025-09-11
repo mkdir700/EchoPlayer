@@ -29,6 +29,8 @@ export interface SubtitleContentProps {
   onTextSelection?: (selectedText: string) => void
   /** 单词点击回调 */
   onWordClick?: (word: string, token: WordToken) => void
+  /** 容器高度（用于响应式字体大小计算） */
+  containerHeight?: number
   /** 自定义类名 */
   className?: string
   /** 自定义样式 */
@@ -42,10 +44,32 @@ export const SubtitleContent = memo(function SubtitleContent({
   translatedText,
   onTextSelection,
   onWordClick,
+  containerHeight = 600, // 默认高度
   className,
   style
 }: SubtitleContentProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // === 响应式字体大小计算 ===
+  const responsiveFontSizes = useMemo(() => {
+    // 基础字体大小（基于 600px 高度容器的标准尺寸）
+    const baseSizes = {
+      original: 22,
+      originalBilingual: 22,
+      translated: 22,
+      empty: 16
+    }
+
+    // 计算缩放比例（最小 0.7，最大 1.5）
+    const scaleFactor = Math.max(0.7, Math.min(1.5, containerHeight / 600))
+
+    return {
+      original: `${baseSizes.original * scaleFactor}px`,
+      originalBilingual: `${baseSizes.originalBilingual * scaleFactor}px`,
+      translated: `${baseSizes.translated * scaleFactor}px`,
+      empty: `${baseSizes.empty * scaleFactor}px`
+    }
+  }, [containerHeight])
 
   // 划词选择状态
   const [selectionState, setSelectionState] = useState<{
@@ -283,18 +307,22 @@ export const SubtitleContent = memo(function SubtitleContent({
 
       case SubtitleDisplayMode.ORIGINAL:
         if (!originalText.trim()) {
-          return <EmptyState>--Empty--</EmptyState>
+          return <EmptyState $fontSize={responsiveFontSizes.empty}>--Empty--</EmptyState>
         }
-        return <OriginalTextLine>{renderTokenizedText(originalTokens)}</OriginalTextLine>
+        return (
+          <OriginalTextLine $fontSize={responsiveFontSizes.original}>
+            {renderTokenizedText(originalTokens)}
+          </OriginalTextLine>
+        )
 
       case SubtitleDisplayMode.TRANSLATED: {
         const textToShow = translatedText?.trim() || originalText.trim()
         if (!textToShow) {
-          return <EmptyState>--Empty--</EmptyState>
+          return <EmptyState $fontSize={responsiveFontSizes.empty}>--Empty--</EmptyState>
         }
         // 译文显示整句，原文显示分词
         return (
-          <TranslatedTextLine>
+          <TranslatedTextLine $fontSize={responsiveFontSizes.translated}>
             {translatedText?.trim() ? textToShow : renderTokenizedText(originalTokens)}
           </TranslatedTextLine>
         )
@@ -302,20 +330,27 @@ export const SubtitleContent = memo(function SubtitleContent({
 
       case SubtitleDisplayMode.BILINGUAL:
         if (!originalText.trim()) {
-          return <EmptyState>--Empty--</EmptyState>
+          return <EmptyState $fontSize={responsiveFontSizes.empty}>--Empty--</EmptyState>
         }
         return (
           <>
-            <OriginalTextLine className="bilingual">
+            <OriginalTextLine
+              className="bilingual"
+              $fontSize={responsiveFontSizes.originalBilingual}
+            >
               {renderTokenizedText(originalTokens)}
             </OriginalTextLine>
-            {translatedText?.trim() && <TranslatedTextLine>{translatedText}</TranslatedTextLine>}
+            {translatedText?.trim() && (
+              <TranslatedTextLine $fontSize={responsiveFontSizes.translated}>
+                {translatedText}
+              </TranslatedTextLine>
+            )}
           </>
         )
 
       default:
         logger.warn('未知的字幕显示模式', { displayMode })
-        return <EmptyState>--Empty--</EmptyState>
+        return <EmptyState $fontSize={responsiveFontSizes.empty}>--Empty--</EmptyState>
     }
   }
 
@@ -372,8 +407,8 @@ const ContentContainer = styled.div`
   --subtitle-transition-duration: 200ms;
 `
 
-const OriginalTextLine = styled.div`
-  font-size: 16px;
+const OriginalTextLine = styled.div<{ $fontSize?: string }>`
+  font-size: ${(props) => props.$fontSize || '16px'};
   font-weight: 600;
   text-shadow: var(--subtitle-text-shadow);
   margin-bottom: 0;
@@ -382,12 +417,11 @@ const OriginalTextLine = styled.div`
   /* 在双语模式下添加间距 */
   &.bilingual {
     margin-bottom: 8px;
-    font-size: 18px;
   }
 `
 
-const TranslatedTextLine = styled.div`
-  font-size: 15px;
+const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
+  font-size: ${(props) => props.$fontSize || '15px'};
   font-weight: 500;
   opacity: 0.95;
   text-shadow: var(--subtitle-text-shadow);
@@ -395,8 +429,8 @@ const TranslatedTextLine = styled.div`
   transition: all var(--subtitle-transition-duration);
 `
 
-const EmptyState = styled.div`
-  font-size: 14px;
+const EmptyState = styled.div<{ $fontSize?: string }>`
+  font-size: ${(props) => props.$fontSize || '14px'};
   font-style: italic;
   opacity: 0.7;
   background: rgba(0, 0, 0, 0.4);
