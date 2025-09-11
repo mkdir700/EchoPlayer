@@ -191,6 +191,7 @@
       height: 36px;
       padding: 0 16px;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      box-shadow: none !important;
 
       &.ant-btn-default {
         background: var(--color-background-soft);
@@ -284,6 +285,7 @@
   font-weight: 500;
   height: 36px;
   margin-left: 8px;
+  box-shadow: none !important;
 
   &:first-child {
     margin-left: 0;
