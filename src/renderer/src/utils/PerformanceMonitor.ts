@@ -3,6 +3,8 @@
  * 用于统一管理性能日志记录和分析
  */
 
+// TODO: 已迁移至 @shared/utils/PerformanceMonitor
+
 import { loggerService } from '@logger'
 
 const logger = loggerService.withContext('PerformanceMonitor')

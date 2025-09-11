@@ -2,7 +2,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { UpgradeChannel } from '@shared/config/constant'
 import { LogLevel, LogSourceWithContext } from '@shared/config/logger'
 import { IpcChannel } from '@shared/IpcChannel'
-import { FFmpegVideoInfo, Shortcut, ThemeMode, TranscodeOptions } from '@types'
+import { FFmpegVideoInfo, Shortcut, ThemeMode } from '@types'
 import { contextBridge, ipcRenderer, OpenDialogOptions, shell, webUtils } from 'electron'
 import type {
   FileMetadata,
@@ -177,24 +177,33 @@ const api = {
   ffmpeg: {
     checkExists: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.Ffmpeg_CheckExists),
     getVersion: (): Promise<string | null> => ipcRenderer.invoke(IpcChannel.Ffmpeg_GetVersion),
-    download: (onProgress?: (progress: number) => void): Promise<boolean> =>
-      ipcRenderer.invoke(IpcChannel.Ffmpeg_Download, onProgress),
     getVideoInfo: (inputPath: string): Promise<FFmpegVideoInfo | null> =>
       ipcRenderer.invoke(IpcChannel.Ffmpeg_GetVideoInfo, inputPath),
-    transcode: (
-      inputPath: string,
-      outputPath: string,
-      options: TranscodeOptions
-    ): Promise<boolean> =>
-      ipcRenderer.invoke(IpcChannel.Ffmpeg_Transcode, inputPath, outputPath, options),
-    cancelTranscode: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.Ffmpeg_CancelTranscode),
-    getPath: (): Promise<string> => ipcRenderer.invoke(IpcChannel.Ffmpeg_GetPath)
+    getPath: (): Promise<string> => ipcRenderer.invoke(IpcChannel.Ffmpeg_GetPath),
+    warmup: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.Ffmpeg_Warmup),
+    getWarmupStatus: (): Promise<{ isWarmedUp: boolean; isWarming: boolean }> =>
+      ipcRenderer.invoke(IpcChannel.Ffmpeg_GetWarmupStatus)
   },
   mediainfo: {
     checkExists: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.MediaInfo_CheckExists),
     getVersion: (): Promise<string | null> => ipcRenderer.invoke(IpcChannel.MediaInfo_GetVersion),
     getVideoInfo: (inputPath: string): Promise<FFmpegVideoInfo | null> =>
-      ipcRenderer.invoke(IpcChannel.MediaInfo_GetVideoInfo, inputPath)
+      ipcRenderer.invoke(IpcChannel.MediaInfo_GetVideoInfo, inputPath),
+    getVideoInfoWithStrategy: (
+      inputPath: string,
+      strategy:
+        | 'remotion-first'
+        | 'ffmpeg-first'
+        | 'remotion-only'
+        | 'ffmpeg-only' = 'remotion-first',
+      timeoutMs: number = 10000
+    ): Promise<FFmpegVideoInfo | null> =>
+      ipcRenderer.invoke(
+        IpcChannel.MediaInfo_GetVideoInfoWithStrategy,
+        inputPath,
+        strategy,
+        timeoutMs
+      )
   },
   fs: {
     checkFileExists: (filePath: string): Promise<boolean> =>

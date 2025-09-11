@@ -74,15 +74,15 @@ export enum IpcChannel {
   Ffmpeg_GetPath = 'ffmpeg:get-path',
   Ffmpeg_CheckExists = 'ffmpeg:check-exists',
   Ffmpeg_GetVersion = 'ffmpeg:get-version',
-  Ffmpeg_Download = 'ffmpeg:download',
   Ffmpeg_GetVideoInfo = 'ffmpeg:get-video-info',
-  Ffmpeg_Transcode = 'ffmpeg:transcode',
-  Ffmpeg_CancelTranscode = 'ffmpeg:cancel-transcode',
+  Ffmpeg_Warmup = 'ffmpeg:warmup',
+  Ffmpeg_GetWarmupStatus = 'ffmpeg:get-warmup-status',
 
   // MediaInfo 相关 IPC 通道 / MediaInfo related IPC channels
   MediaInfo_CheckExists = 'mediainfo:check-exists',
   MediaInfo_GetVersion = 'mediainfo:get-version',
   MediaInfo_GetVideoInfo = 'mediainfo:get-video-info',
+  MediaInfo_GetVideoInfoWithStrategy = 'mediainfo:get-video-info-with-strategy',
 
   // 文件系统相关 IPC 通道 / File system related IPC channels
   Fs_CheckFileExists = 'fs:check-file-exists',
