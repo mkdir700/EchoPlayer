@@ -6,6 +6,7 @@ import { useVideoListStore } from '@renderer/state/stores/video-list.store'
 import { message, Modal, Tooltip } from 'antd'
 import { AnimatePresence, motion } from 'framer-motion'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 
@@ -69,6 +70,7 @@ const gridVariants = {
 }
 
 export function HomePage(): React.JSX.Element {
+  const { t } = useTranslation()
   const { videoListViewMode, setVideoListViewMode } = useSettingsStore()
   const {
     refreshTrigger,
@@ -132,20 +134,22 @@ export function HomePage(): React.JSX.Element {
   const handleDeleteVideo = React.useCallback(
     async (video: HomePageVideoItem) => {
       Modal.confirm({
-        title: '确认删除',
+        title: t('home.delete.confirm_title'),
         centered: true,
         content: (
           <div>
-            <p>
-              确定要删除视频 <strong>"{video.title}"</strong> 的观看记录吗？
-            </p>
+            <p
+              dangerouslySetInnerHTML={{
+                __html: t('home.delete.confirm_content', { title: video.title })
+              }}
+            />
             <p style={{ color: 'var(--color-status-warning)', fontSize: '14px', marginTop: '8px' }}>
-              ⚠️ 此操作将删除该视频的播放历史和进度信息
+              ⚠️ {t('home.delete.confirm_warning')}
             </p>
           </div>
         ),
-        okText: '删除',
-        cancelText: '取消',
+        okText: t('home.delete.button_ok'),
+        cancelText: t('home.delete.button_cancel'),
         okType: 'danger',
         onOk: async () => {
           try {
@@ -158,15 +162,15 @@ export function HomePage(): React.JSX.Element {
             // 同步更新store缓存，确保UI状态一致
             setCachedVideos(cachedVideos.filter((v) => v.id !== video.id))
 
-            message.success('视频记录删除成功')
+            message.success(t('home.delete.success_message'))
           } catch (error) {
             logger.error('删除视频记录失败', { error })
-            message.error('删除失败，请重试')
+            message.error(t('home.delete.error_message'))
           }
         }
       })
     },
-    [setCachedVideos, cachedVideos]
+    [t, setCachedVideos, cachedVideos]
   )
 
   return (
