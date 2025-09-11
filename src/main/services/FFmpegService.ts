@@ -1,34 +1,34 @@
-import type { TranscodeOptions, TranscodeProgress } from '@types'
-import { ChildProcess, spawn } from 'child_process'
+import { PerformanceMonitor } from '@shared/utils/PerformanceMonitor'
+import { spawn } from 'child_process'
 import { app } from 'electron'
 import * as fs from 'fs'
-import { createWriteStream } from 'fs'
-import * as https from 'https'
 import * as path from 'path'
 
-import { getDataPath } from '../utils'
 import { loggerService } from './LoggerService'
 
 const logger = loggerService.withContext('FFmpegService')
 
 class FFmpegService {
-  // 类属性用于管理正在进行的转码进程
-  private currentTranscodeProcess: ChildProcess | null = null
-  private isTranscodeCancelled = false // 标记转码是否被用户主动取消
   private forceKillTimeout: NodeJS.Timeout | null = null // 强制终止超时句柄
 
+  // FFmpeg 可用性缓存
+  private static ffmpegAvailabilityCache: { [key: string]: boolean } = {}
+  private static ffmpegCacheTimestamp: { [key: string]: number } = {}
+  private static readonly CACHE_TTL = 30 * 1000 // 缓存30秒
+
+  // FFmpeg 预热状态
+  private static isWarmedUp = false
+  private static warmupPromise: Promise<boolean> | null = null
+
   // FFmpeg 下载 URL（跨平台）
-  private readonly FFMPEG_DOWNLOAD_URLS = {
+  private readonly FFMPEG_EXEC_NAMES = {
     win32: {
-      url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip',
       executable: 'ffmpeg.exe'
     },
     darwin: {
-      url: 'https://evermeet.cx/ffmpeg/ffmpeg-6.1.zip',
       executable: 'ffmpeg'
     },
     linux: {
-      url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz',
       executable: 'ffmpeg'
     }
   }
@@ -36,42 +36,6 @@ class FFmpegService {
   constructor() {
     // 构造函数可以用于初始化操作
   }
-
-  // 生成输出文件路径
-
-  // 备用方法，暂时未使用
-  /* private generateOutputPath(inputPath: string, outputFormat: string = 'mp4'): string {
-    // 转换file://URL为本地路径
-    const localInputPath = this.convertFileUrlToLocalPath(inputPath)
-
-    // 获取原视频文件的目录
-    const inputDir = path.dirname(localInputPath)
-
-    // 从本地路径提取文件名，确保已解码
-    const localFileName = path.basename(localInputPath)
-    const originalName = path.parse(localFileName).name
-
-    // 生成时间戳
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-
-    // 生成输出文件名
-    const outputFilename = `${originalName}_transcoded_${timestamp}.${outputFormat}`
-
-    // 将输出文件放在原视频的同目录下
-    const outputPath = path.join(inputDir, outputFilename)
-
-    logger.info('生成输出路径', {
-      输入路径: inputPath,
-      本地输入路径: localInputPath,
-      输入目录: inputDir,
-      本地文件名: localFileName,
-      原始文件名: originalName,
-      输出文件名: outputFilename,
-      输出路径: outputPath
-    })
-
-    return outputPath
-  } */
 
   // 将file://URL转换为本地文件路径
   private convertFileUrlToLocalPath(inputPath: string): string {
@@ -148,153 +112,6 @@ class FFmpegService {
     return inputPath
   }
 
-  // 解压 ZIP 文件
-  private async extractZipFile(zipPath: string, extractDir: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (process.platform === 'win32') {
-        // Windows 使用 PowerShell 的 Expand-Archive 命令
-        const powershellCommand = `Expand-Archive -Path "${zipPath}" -DestinationPath "${extractDir}" -Force`
-        const powershell = spawn('powershell.exe', ['-Command', powershellCommand], {
-          windowsHide: true
-        })
-
-        powershell.stdout.on('data', (data) => {
-          logger.info('PowerShell 解压输出:', data.toString())
-        })
-
-        powershell.stderr.on('data', (data) => {
-          logger.warn('PowerShell 解压警告:', data.toString())
-        })
-
-        powershell.on('close', (code) => {
-          if (code === 0) {
-            logger.info('ZIP 解压成功 (PowerShell)')
-            resolve()
-          } else {
-            reject(new Error(`PowerShell 解压失败，退出代码: ${code}`))
-          }
-        })
-
-        powershell.on('error', (error) => {
-          reject(new Error(`PowerShell 解压命令执行失败: ${error.message}`))
-        })
-      } else {
-        // macOS/Linux 使用 unzip 命令
-        const unzip = spawn('unzip', ['-o', zipPath, '-d', extractDir])
-
-        unzip.stdout.on('data', (data) => {
-          logger.info('解压输出:', data.toString())
-        })
-
-        unzip.stderr.on('data', (data) => {
-          logger.warn('解压警告:', data.toString())
-        })
-
-        unzip.on('close', (code) => {
-          if (code === 0) {
-            logger.info('ZIP 解压成功')
-            resolve()
-          } else {
-            reject(new Error(`解压失败，退出代码: ${code}`))
-          }
-        })
-
-        unzip.on('error', (error) => {
-          reject(new Error(`解压命令执行失败: ${error.message}`))
-        })
-      }
-    })
-  }
-
-  // 解压 TAR.XZ 文件
-  private async extractTarFile(tarPath: string, extractDir: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const tar = spawn('tar', ['-xJf', tarPath, '-C', extractDir])
-
-      tar.stdout.on('data', (data) => {
-        logger.info('解压输出:', data.toString())
-      })
-
-      tar.stderr.on('data', (data) => {
-        logger.warn('解压警告:', data.toString())
-      })
-
-      tar.on('close', (code) => {
-        if (code === 0) {
-          logger.info('TAR.XZ 解压成功')
-          resolve()
-        } else {
-          reject(new Error(`解压失败，退出代码: ${code}`))
-        }
-      })
-
-      tar.on('error', (error) => {
-        reject(new Error(`解压命令执行失败: ${error.message}`))
-      })
-    })
-  }
-
-  // 查找并移动可执行文件
-  private async findAndMoveExecutable(extractDir: string, executableName: string): Promise<void> {
-    const targetPath = this.getFFmpegPath()
-
-    try {
-      // 递归查找可执行文件
-      const foundPath = await this.findExecutableRecursively(extractDir, executableName)
-
-      if (!foundPath) {
-        throw new Error(`在解压目录中未找到可执行文件: ${executableName}`)
-      }
-
-      logger.info('找到可执行文件', { foundPath, targetPath })
-
-      // 移动文件到目标位置
-      await fs.promises.copyFile(foundPath, targetPath)
-
-      // 设置执行权限
-      await fs.promises.chmod(targetPath, 0o755)
-
-      logger.info('FFmpeg 可执行文件安装完成', { targetPath })
-    } catch (error) {
-      logger.error(
-        '查找或移动可执行文件失败:',
-        error instanceof Error ? error : new Error(String(error))
-      )
-      throw error
-    }
-  }
-
-  // 递归查找可执行文件
-  private async findExecutableRecursively(
-    dir: string,
-    executableName: string
-  ): Promise<string | null> {
-    try {
-      const items = await fs.promises.readdir(dir, { withFileTypes: true })
-
-      for (const item of items) {
-        const fullPath = path.join(dir, item.name)
-
-        if (item.isDirectory()) {
-          // 递归搜索子目录
-          const found = await this.findExecutableRecursively(fullPath, executableName)
-          if (found) return found
-        } else if (item.isFile() && item.name === executableName) {
-          // 找到目标文件
-          return fullPath
-        }
-      }
-
-      return null
-    } catch (error) {
-      logger.error(
-        `搜索目录失败: ${dir}`,
-        error instanceof Error ? error : new Error(String(error))
-      )
-      return null
-    }
-  }
-
   // 获取内置 FFmpeg 路径
   private getBundledFFmpegPath(): string | null {
     try {
@@ -303,7 +120,7 @@ class FFmpegService {
       const platformKey = `${platform}-${arch}`
 
       const executableName =
-        this.FFMPEG_DOWNLOAD_URLS[platform as keyof typeof this.FFMPEG_DOWNLOAD_URLS]?.executable ||
+        this.FFMPEG_EXEC_NAMES[platform as keyof typeof this.FFMPEG_EXEC_NAMES]?.executable ||
         'ffmpeg'
 
       // 生产环境：从应用安装目录获取
@@ -373,8 +190,8 @@ class FFmpegService {
     }
 
     // 2. 降级到系统 FFmpeg
-    const platform = process.platform as keyof typeof this.FFMPEG_DOWNLOAD_URLS
-    const executable = this.FFMPEG_DOWNLOAD_URLS[platform]?.executable || 'ffmpeg'
+    const platform = process.platform as keyof typeof this.FFMPEG_EXEC_NAMES
+    const executable = this.FFMPEG_EXEC_NAMES[platform]?.executable || 'ffmpeg'
 
     logger.info('使用系统 FFmpeg', { executable })
     return executable
@@ -401,64 +218,144 @@ class FFmpegService {
     }
   }
 
-  // 检查 FFmpeg 是否存在
-  public async checkFFmpegExists(): Promise<boolean> {
+  // 快速检查 FFmpeg 是否存在（文件系统级别检查）
+  public fastCheckFFmpegExists(): boolean {
     const startTime = Date.now()
     const ffmpegPath = this.getFFmpegPath()
 
+    try {
+      // 检查文件是否存在
+      if (!fs.existsSync(ffmpegPath)) {
+        logger.info('⚡ 快速检查: FFmpeg 文件不存在', { ffmpegPath })
+        return false
+      }
+
+      // 检查是否为文件（非目录）
+      const stats = fs.statSync(ffmpegPath)
+      if (!stats.isFile()) {
+        logger.info('⚡ 快速检查: FFmpeg 路径不是文件', { ffmpegPath })
+        return false
+      }
+
+      // 检查是否有执行权限 (Unix/Linux/macOS)
+      if (process.platform !== 'win32') {
+        const hasExecutePermission = (stats.mode & 0o111) !== 0
+        if (!hasExecutePermission) {
+          logger.info('⚡ 快速检查: FFmpeg 没有执行权限', {
+            ffmpegPath,
+            mode: stats.mode.toString(8)
+          })
+          return false
+        }
+      }
+
+      const totalTime = Date.now() - startTime
+      logger.info(`⚡ 快速检查 FFmpeg 通过，耗时: ${totalTime}ms`, {
+        ffmpegPath,
+        文件大小: `${Math.round((stats.size / 1024 / 1024) * 100) / 100}MB`,
+        执行权限: process.platform !== 'win32' ? 'yes' : 'n/a'
+      })
+
+      return true
+    } catch (error) {
+      const totalTime = Date.now() - startTime
+      logger.warn(`⚡ 快速检查 FFmpeg 失败，耗时: ${totalTime}ms`, {
+        ffmpegPath,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return false
+    }
+  }
+
+  // 检查 FFmpeg 是否存在（带缓存的完整检查）
+  public async checkFFmpegExists(useCache = true): Promise<boolean> {
+    const startTime = Date.now()
+    const ffmpegPath = this.getFFmpegPath()
+
+    // 检查缓存
+    if (useCache) {
+      const cached = FFmpegService.ffmpegAvailabilityCache[ffmpegPath]
+      const cacheTime = FFmpegService.ffmpegCacheTimestamp[ffmpegPath]
+
+      if (cached !== undefined && cacheTime && Date.now() - cacheTime < FFmpegService.CACHE_TTL) {
+        logger.info('📋 使用缓存的 FFmpeg 可用性结果', {
+          ffmpegPath,
+          cached,
+          缓存时间: `${Date.now() - cacheTime}ms前`
+        })
+        return cached
+      }
+    }
+
     logger.info('🔍 开始检查 FFmpeg 是否存在', {
       ffmpegPath,
-      platform: process.platform
+      platform: process.platform,
+      useCache
     })
 
     try {
-      // TODO: 当前直接检查系统 FFmpeg，后续需要支持本地安装的 FFmpeg
-      // 使用 spawn 来检查 FFmpeg 是否可用
-      return new Promise((resolve) => {
-        const spawnStartTime = Date.now()
-        const ffmpeg = spawn(ffmpegPath, ['-version'])
+      const fastCheckPassed = this.fastCheckFFmpegExists()
+      if (!fastCheckPassed) {
+        // 快速检查失败，直接缓存结果并返回
+        FFmpegService.ffmpegAvailabilityCache[ffmpegPath] = false
+        FFmpegService.ffmpegCacheTimestamp[ffmpegPath] = Date.now()
 
-        ffmpeg.on('close', (code) => {
-          const spawnEndTime = Date.now()
-          const totalTime = spawnEndTime - startTime
-          const spawnTime = spawnEndTime - spawnStartTime
-
-          const exists = code === 0
-          if (exists) {
-            logger.info(`✅ 系统 FFmpeg 可用，检查耗时: ${totalTime}ms`, {
-              ffmpegPath,
-              spawn耗时: `${spawnTime}ms`,
-              总耗时: `${totalTime}ms`
-            })
-          } else {
-            logger.warn(`⚠️ 系统 FFmpeg 不可用，检查耗时: ${totalTime}ms`, {
-              ffmpegPath,
-              exitCode: code,
-              spawn耗时: `${spawnTime}ms`,
-              总耗时: `${totalTime}ms`
-            })
-          }
-          resolve(exists)
-        })
-
-        ffmpeg.on('error', (error) => {
-          const totalTime = Date.now() - startTime
-          logger.warn(`❌ FFmpeg 检查失败，耗时: ${totalTime}ms`, {
-            ffmpegPath,
-            error: error.message,
-            总耗时: `${totalTime}ms`
-          })
-          resolve(false)
-        })
-      })
+        const totalTime = Date.now() - startTime
+        logger.warn(`❌ FFmpeg 快速检查失败，总耗时: ${totalTime}ms`, { ffmpegPath })
+        return false
+      }
+      return true
     } catch (error) {
       const totalTime = Date.now() - startTime
+
+      // 缓存异常结果
+      FFmpegService.ffmpegAvailabilityCache[ffmpegPath] = false
+      FFmpegService.ffmpegCacheTimestamp[ffmpegPath] = Date.now()
+
       logger.warn(`FFmpeg 检查异常，耗时: ${totalTime}ms`, {
         ffmpegPath,
         error: error instanceof Error ? error.message : String(error),
         总耗时: `${totalTime}ms`
       })
       return false
+    }
+  }
+
+  // 清除 FFmpeg 可用性缓存
+  public static clearFFmpegCache(ffmpegPath?: string): void {
+    if (ffmpegPath) {
+      delete FFmpegService.ffmpegAvailabilityCache[ffmpegPath]
+      delete FFmpegService.ffmpegCacheTimestamp[ffmpegPath]
+      logger.info('清除指定路径的 FFmpeg 缓存', { ffmpegPath })
+    } else {
+      FFmpegService.ffmpegAvailabilityCache = {}
+      FFmpegService.ffmpegCacheTimestamp = {}
+      logger.info('清除所有 FFmpeg 缓存')
+    }
+  }
+
+  // 获取缓存状态信息
+  public static getCacheInfo(): {
+    cachedPaths: string[]
+    cacheCount: number
+    oldestCache?: { path: string; ageMs: number }
+  } {
+    const paths = Object.keys(FFmpegService.ffmpegAvailabilityCache)
+    const now = Date.now()
+
+    let oldestCache: { path: string; ageMs: number } | undefined
+
+    for (const path of paths) {
+      const age = now - (FFmpegService.ffmpegCacheTimestamp[path] || 0)
+      if (!oldestCache || age > oldestCache.ageMs) {
+        oldestCache = { path, ageMs: age }
+      }
+    }
+
+    return {
+      cachedPaths: paths,
+      cacheCount: paths.length,
+      oldestCache
     }
   }
 
@@ -487,219 +384,6 @@ class FFmpegService {
         resolve(null)
       })
     })
-  }
-
-  // 下载 FFmpeg
-  public async downloadFFmpeg(onProgress?: (progress: number) => void): Promise<boolean> {
-    const platform = process.platform as keyof typeof this.FFMPEG_DOWNLOAD_URLS
-    const downloadInfo = this.FFMPEG_DOWNLOAD_URLS[platform]
-
-    if (!downloadInfo) {
-      throw new Error(`不支持的平台: ${platform}`)
-    }
-
-    const dataDir = getDataPath()
-    const ffmpegDir = path.join(dataDir, 'ffmpeg')
-
-    // 确保目录存在
-    await fs.promises.mkdir(ffmpegDir, { recursive: true })
-
-    const downloadPath = path.join(
-      ffmpegDir,
-      `ffmpeg-download.${downloadInfo.url.split('.').pop()}`
-    )
-
-    try {
-      logger.info('开始下载 FFmpeg...', { url: downloadInfo.url, path: downloadPath })
-
-      // 下载文件，支持重定向
-      await new Promise<void>((resolve, reject) => {
-        const downloadTimeout = setTimeout(
-          () => {
-            reject(new Error('下载超时: 请检查网络连接'))
-          },
-          30 * 60 * 1000
-        ) // 30分钟超时
-
-        const cleanup = (): void => {
-          if (downloadTimeout) {
-            clearTimeout(downloadTimeout)
-          }
-        }
-
-        const downloadFile = (url: string, maxRedirects: number = 5): void => {
-          if (maxRedirects <= 0) {
-            cleanup()
-            reject(new Error('下载失败: 重定向次数过多'))
-            return
-          }
-
-          const request = https
-            .get(
-              url,
-              {
-                timeout: 30000, // 30秒连接超时
-                headers: {
-                  'User-Agent': 'EchoPlayer/1.0.0 (Electron FFmpeg Downloader)'
-                }
-              },
-              (response) => {
-                // 处理重定向
-                if (response.statusCode === 301 || response.statusCode === 302) {
-                  const redirectUrl = response.headers.location
-                  if (redirectUrl) {
-                    logger.info(`处理重定向: ${response.statusCode}`, {
-                      from: url,
-                      to: redirectUrl,
-                      remainingRedirects: maxRedirects - 1
-                    })
-                    downloadFile(redirectUrl, maxRedirects - 1)
-                    return
-                  } else {
-                    cleanup()
-                    reject(new Error(`下载失败: HTTP ${response.statusCode} 但未提供重定向地址`))
-                    return
-                  }
-                }
-
-                // 检查最终响应状态
-                if (response.statusCode !== 200) {
-                  cleanup()
-                  reject(
-                    new Error(
-                      `下载失败: HTTP ${response.statusCode} - ${response.statusMessage || '未知错误'}`
-                    )
-                  )
-                  return
-                }
-
-                const totalSize = parseInt(response.headers['content-length'] || '0', 10)
-                let downloadedSize = 0
-
-                logger.info('开始接收文件数据', {
-                  contentLength: totalSize,
-                  contentType: response.headers['content-type']
-                })
-
-                const fileStream = createWriteStream(downloadPath)
-
-                response.on('data', (chunk) => {
-                  downloadedSize += chunk.length
-                  if (onProgress && totalSize > 0) {
-                    const progress = (downloadedSize / totalSize) * 100
-                    onProgress(progress)
-
-                    // 每10%记录一次日志
-                    if (Math.floor(progress) % 10 === 0 && Math.floor(progress) !== 0) {
-                      logger.debug('下载进度更新', {
-                        progress: `${Math.floor(progress)}%`,
-                        downloaded: `${Math.round(downloadedSize / 1024 / 1024)}MB`,
-                        total: `${Math.round(totalSize / 1024 / 1024)}MB`
-                      })
-                    }
-                  }
-                })
-
-                response.pipe(fileStream)
-
-                fileStream.on('finish', () => {
-                  fileStream.close()
-                  cleanup()
-                  logger.info('文件下载完成', {
-                    finalSize: downloadedSize,
-                    expectedSize: totalSize
-                  })
-                  resolve()
-                })
-
-                fileStream.on('error', (error) => {
-                  cleanup()
-                  logger.error('文件写入错误:', error)
-                  reject(error)
-                })
-
-                response.on('error', (error) => {
-                  cleanup()
-                  logger.error('响应流错误:', error)
-                  reject(error)
-                })
-              }
-            )
-            .on('error', (error) => {
-              cleanup()
-              logger.error('请求错误:', error)
-              reject(error)
-            })
-            .on('timeout', () => {
-              cleanup()
-              request.destroy()
-              reject(new Error('连接超时: 请检查网络连接'))
-            })
-        }
-
-        // 开始下载
-        downloadFile(downloadInfo.url)
-      })
-
-      logger.info('FFmpeg 下载完成', {
-        downloadPath,
-        ffmpegDir,
-        platform,
-        targetExecutable: this.getFFmpegPath()
-      })
-
-      // 检查下载的文件是否存在
-      const downloadedFileExists = await fs.promises
-        .access(downloadPath, fs.constants.F_OK)
-        .then(() => true)
-        .catch(() => false)
-      logger.info('下载文件检查结果', { downloadPath, exists: downloadedFileExists })
-
-      if (!downloadedFileExists) {
-        throw new Error('下载的文件不存在')
-      }
-
-      // 获取下载文件的信息
-      try {
-        const stats = await fs.promises.stat(downloadPath)
-        logger.info('下载文件信息', {
-          size: stats.size,
-          isFile: stats.isFile(),
-          path: downloadPath
-        })
-      } catch (error) {
-        logger.error(
-          '获取下载文件信息失败',
-          error instanceof Error ? error : new Error(String(error))
-        )
-      }
-
-      // 实现解压逻辑（根据平台和文件格式）
-      logger.info('开始解压 FFmpeg...', { downloadPath, ffmpegDir })
-
-      try {
-        if (platform === 'darwin' || platform === 'win32') {
-          // 解压 ZIP 文件
-          await this.extractZipFile(downloadPath, ffmpegDir)
-        } else if (platform === 'linux') {
-          // 解压 TAR.XZ 文件
-          await this.extractTarFile(downloadPath, ffmpegDir)
-        }
-
-        logger.info('FFmpeg 解压完成', { ffmpegDir })
-
-        // 查找解压后的可执行文件
-        await this.findAndMoveExecutable(ffmpegDir, downloadInfo.executable)
-      } catch (error) {
-        logger.error('解压 FFmpeg 失败:', error instanceof Error ? error : new Error(String(error)))
-        throw error
-      }
-
-      return true
-    } catch (error) {
-      logger.error('下载 FFmpeg 失败:', error instanceof Error ? error : new Error(String(error)))
-      throw error
-    }
   }
 
   // 解析 FFmpeg 输出中的视频信息
@@ -761,33 +445,7 @@ class FFmpegService {
     }
   }
 
-  // 解析 FFmpeg 进度输出
-  private parseFFmpegProgress(line: string, duration?: number): Partial<TranscodeProgress> | null {
-    // frame=  123 fps= 25 q=28.0 size=    1024kB time=00:00:04.92 bitrate=1703.5kbits/s speed=   1x
-    const fpsMatch = line.match(/fps=\s*([\d.]+)/)
-    const timeMatch = line.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/)
-    const bitrateMatch = line.match(/bitrate=\s*([\d.]+\w+\/s)/)
-    const speedMatch = line.match(/speed=\s*([\d.]+x)/)
-
-    if (!timeMatch) return null
-
-    const currentTime =
-      parseInt(timeMatch[1]) * 3600 +
-      parseInt(timeMatch[2]) * 60 +
-      parseInt(timeMatch[3]) +
-      parseInt(timeMatch[4]) / 100
-    const progress = duration ? Math.min((currentTime / duration) * 100, 100) : 0
-
-    return {
-      progress,
-      time: `${timeMatch[1]}:${timeMatch[2]}:${timeMatch[3]}`,
-      fps: fpsMatch ? fpsMatch[1] : '0',
-      bitrate: bitrateMatch ? bitrateMatch[1] : '0kb/s',
-      speed: speedMatch ? speedMatch[1] : '0x'
-    }
-  }
-
-  // 获取视频信息
+  // 获取视频信息 - 使用 FFprobe 替换 FFmpeg
   public async getVideoInfo(inputPath: string): Promise<{
     duration: number
     videoCodec: string
@@ -795,296 +453,204 @@ class FFmpegService {
     resolution: string
     bitrate: string
   } | null> {
-    const startTime = Date.now()
+    const pm = new PerformanceMonitor('GetVideoInfo')
     logger.info('🎬 开始获取视频信息', { inputPath })
 
-    const ffmpegPath = this.getFFmpegPath()
+    try {
+      // 转换路径
+      pm.startTiming(this.convertFileUrlToLocalPath)
+      const localInputPath = this.convertFileUrlToLocalPath(inputPath)
+      pm.endTiming(this.convertFileUrlToLocalPath)
 
-    // 转换file://URL为本地路径
-    const pathConvertStartTime = Date.now()
-    const localInputPath = this.convertFileUrlToLocalPath(inputPath)
-    const pathConvertEndTime = Date.now()
-    logger.info(`🔄 路径转换耗时: ${pathConvertEndTime - pathConvertStartTime}ms`, {
-      原始输入路径: inputPath,
-      转换后本地路径: localInputPath
-    })
+      // 检查文件是否存在
+      if (!fs.existsSync(localInputPath)) {
+        logger.error(`❌ 文件不存在: ${localInputPath}`)
+        return null
+      }
 
-    // 检查文件是否存在
-    const fileCheckStartTime = Date.now()
-    const fileExists = fs.existsSync(localInputPath)
-    const fileCheckEndTime = Date.now()
-    logger.info(`📁 文件存在性检查耗时: ${fileCheckEndTime - fileCheckStartTime}ms`, {
-      FFmpeg路径: ffmpegPath,
-      文件存在性: fileExists
-    })
+      // 执行 FFmpeg 命令
+      pm.startTiming(this.executeFFmpegDirect)
+      const args = ['-i', localInputPath]
+      const result = await this.executeFFmpegDirect(args, 15000)
+      pm.endTiming(this.executeFFmpegDirect)
 
-    if (!fileExists) {
-      logger.error(`❌ 文件不存在: ${localInputPath}`)
+      // 解析 FFmpeg 输出中的视频信息
+      const info = this.parseFFmpegVideoInfo(result)
+
+      const report = pm.finish()
+      if (info) {
+        logger.info(`✅ 使用 FFmpeg fallback 成功获取视频信息`, { info, report })
+        return info
+      } else {
+        logger.error('❌ 无法解析视频信息')
+        return null
+      }
+    } catch (error) {
+      const report = pm.finish()
+      logger.error(`❌ 获取视频信息失败`, {
+        inputPath,
+        report,
+        error: error instanceof Error ? error.message : String(error)
+      })
       return null
     }
-
-    // 使用 FFmpeg 获取视频信息，仅指定输入文件即可
-    const args = ['-i', localInputPath]
-
-    logger.info('🚀 启动 FFmpeg 命令获取视频信息', {
-      command: ffmpegPath,
-      args: args,
-      fullCommand: `"${ffmpegPath}" ${args.map((arg) => `"${arg}"`).join(' ')}`
-    })
-
-    return new Promise((resolve) => {
-      const ffmpegStartTime = Date.now()
-      const ffmpeg = spawn(ffmpegPath, args)
-
-      let errorOutput = ''
-
-      // FFmpeg 输出视频信息到 stderr
-      ffmpeg.stderr.on('data', (data) => {
-        errorOutput += data.toString()
-      })
-
-      ffmpeg.on('close', (code) => {
-        const ffmpegEndTime = Date.now()
-        const ffmpegDuration = ffmpegEndTime - ffmpegStartTime
-
-        logger.info('📊 FFmpeg 执行结果', {
-          exitCode: code,
-          hasErrorOutput: errorOutput.length > 0,
-          errorOutputLength: errorOutput.length,
-          ffmpeg执行耗时: `${ffmpegDuration}ms`
-        })
-
-        // FFmpeg 返回 1 是正常的（因为没有输出文件），视频信息在 stderr 中
-        if (code === 1) {
-          // code 1 是正常的（因为没有指定输出文件）
-          try {
-            const parseStartTime = Date.now()
-            // 解析 FFmpeg 输出中的视频信息
-            const info = this.parseFFmpegVideoInfo(errorOutput)
-            const parseEndTime = Date.now()
-
-            logger.info(`🔍 视频信息解析耗时: ${parseEndTime - parseStartTime}ms`)
-
-            if (info) {
-              const totalTime = Date.now() - startTime
-              logger.info(`✅ 成功获取视频信息，总耗时: ${totalTime}ms`, {
-                ...info,
-                性能统计: {
-                  路径转换: `${pathConvertEndTime - pathConvertStartTime}ms`,
-                  文件检查: `${fileCheckEndTime - fileCheckStartTime}ms`,
-                  FFmpeg执行: `${ffmpegDuration}ms`,
-                  信息解析: `${parseEndTime - parseStartTime}ms`,
-                  总耗时: `${totalTime}ms`
-                }
-              })
-              resolve(info)
-            } else {
-              logger.error('❌ 无法解析视频信息')
-              resolve(null)
-            }
-          } catch (error) {
-            logger.error(
-              `❌ 解析视频信息失败: ${error instanceof Error ? error.message : String(error)}`
-            )
-            resolve(null)
-          }
-        } else {
-          logger.error(
-            `❌ FFmpeg 执行失败: 退出代码 ${code}, 错误输出: ${errorOutput.substring(0, 500)}, 命令: "${ffmpegPath}" ${args.map((arg) => `"${arg}"`).join(' ')}`
-          )
-          resolve(null)
-        }
-      })
-
-      ffmpeg.on('error', (error) => {
-        logger.error(
-          `❌ FFmpeg 进程启动失败: ${error.message}, FFmpeg路径: ${ffmpegPath}, 参数: ${args.join(' ')}`
-        )
-        resolve(null)
-      })
-    })
   }
 
-  // 转码视频
-  public async transcodeVideo(
-    inputPath: string,
-    outputPath: string,
-    options: TranscodeOptions = {},
-    onProgress?: (progress: TranscodeProgress) => void
-  ): Promise<boolean> {
-    const ffmpegPath = this.getFFmpegPath()
-
-    // 转换file://URL为本地路径
-    const localInputPath = this.convertFileUrlToLocalPath(inputPath)
-    const localOutputPath = this.convertFileUrlToLocalPath(outputPath)
-
-    // 确保输出目录存在
-    const outputDir = path.dirname(localOutputPath)
-    try {
-      await fs.promises.mkdir(outputDir, { recursive: true })
-      logger.info('输出目录已创建', { outputDir })
-    } catch (error) {
-      logger.error('创建输出目录失败:', error instanceof Error ? error : new Error(String(error)))
-      throw new Error(`无法创建输出目录: ${outputDir}`)
-    }
-
-    const {
-      videoCodec = 'libx264',
-      audioCodec = 'aac',
-      videoBitrate,
-      audioBitrate = '128k',
-      crf = 23,
-      preset = 'fast'
-    } = options
-
-    // 构建 FFmpeg 命令
-    const args = ['-i', localInputPath, '-y'] // -y 覆盖输出文件
-
-    // 视频编码参数
-    if (videoCodec === 'copy') {
-      args.push('-c:v', 'copy')
-    } else {
-      args.push('-c:v', videoCodec)
-      if (videoCodec === 'libx264' || videoCodec === 'libx265') {
-        args.push('-crf', crf.toString())
-        args.push('-preset', preset)
-      }
-      if (videoBitrate) {
-        args.push('-b:v', videoBitrate)
-      }
-    }
-
-    // 音频编码参数
-    if (audioCodec === 'copy') {
-      args.push('-c:a', 'copy')
-    } else {
-      args.push('-c:a', audioCodec)
-      args.push('-b:a', audioBitrate)
-    }
-
-    // 进度报告
-    args.push('-progress', 'pipe:1')
-    args.push(localOutputPath)
-
-    // 获取视频信息用于计算进度
-    const videoInfo = await this.getVideoInfo(inputPath)
-    const duration = videoInfo?.duration || 0
-
+  /**
+   * 直接执行 FFmpeg
+   */
+  private async executeFFmpegDirect(args: string[], timeout: number): Promise<string> {
     return new Promise((resolve, reject) => {
-      logger.info('开始转码...', {
-        原始输入路径: inputPath,
-        本地输入路径: localInputPath,
-        原始输出路径: outputPath,
-        本地输出路径: localOutputPath,
-        命令参数: args
-      })
-
+      const ffmpegPath = this.getFFmpegPath()
       const ffmpeg = spawn(ffmpegPath, args)
-      this.currentTranscodeProcess = ffmpeg // 保存当前转码进程引用
-      this.isTranscodeCancelled = false // 重置取消标志
-      let hasError = false
 
-      ffmpeg.stdout.on('data', (data) => {
-        const lines = data.toString().split('\n')
-        for (const line of lines) {
-          if (line.includes('progress=')) {
-            const progress = this.parseFFmpegProgress(line, duration)
-            if (progress && onProgress) {
-              onProgress(progress as TranscodeProgress)
-            }
-          }
+      let output = ''
+      let hasTimedOut = false
+
+      const timeoutHandle = setTimeout(() => {
+        hasTimedOut = true
+        if (ffmpeg && !ffmpeg.killed) {
+          ffmpeg.kill('SIGKILL')
         }
+        reject(new Error(`FFmpeg direct execution timeout after ${timeout}ms`))
+      }, timeout)
+
+      ffmpeg.stderr?.on('data', (data) => {
+        output += data.toString()
       })
 
-      ffmpeg.stderr.on('data', (data) => {
-        const line = data.toString()
-        logger.debug('FFmpeg stderr:', line)
-
-        // 解析进度信息（有些信息在 stderr 中）
-        const progress = this.parseFFmpegProgress(line, duration)
-        if (progress && onProgress) {
-          onProgress(progress as TranscodeProgress)
-        }
+      ffmpeg.stdout?.on('data', (data) => {
+        output += data.toString()
       })
 
       ffmpeg.on('close', (code) => {
-        this.currentTranscodeProcess = null // 清除进程引用
+        clearTimeout(timeoutHandle)
 
-        // 清理强制终止超时
-        if (this.forceKillTimeout) {
-          clearTimeout(this.forceKillTimeout)
-          this.forceKillTimeout = null
+        if (hasTimedOut) {
+          return
         }
 
-        if (code === 0 && !hasError) {
-          logger.info('转码完成')
-          resolve(true)
-        } else if (this.isTranscodeCancelled && (code === 255 || code === 130 || code === 143)) {
-          // 用户主动取消转码，退出代码255(SIGTERM)、130(SIGINT)、143(SIGTERM)都是正常的
-          logger.info('转码已被用户取消', { exitCode: code })
-          this.isTranscodeCancelled = false // 重置标志
-          reject(new Error('转码已被用户取消'))
+        if (code === 0 || code === 1) {
+          // code 1 也可能是正常的
+          resolve(output)
         } else {
-          const errorMessage = `转码失败，退出代码: ${code}`
-          logger.error(errorMessage)
-          reject(new Error(errorMessage))
+          reject(new Error(`FFmpeg failed with exit code ${code}: ${output.substring(0, 500)}`))
         }
       })
 
       ffmpeg.on('error', (error) => {
-        hasError = true
-        this.currentTranscodeProcess = null // 清除进程引用
-
-        // 清理强制终止超时
-        if (this.forceKillTimeout) {
-          clearTimeout(this.forceKillTimeout)
-          this.forceKillTimeout = null
+        clearTimeout(timeoutHandle)
+        if (!hasTimedOut) {
+          reject(error)
         }
-
-        logger.error('FFmpeg 进程错误:', error)
-        reject(error)
       })
     })
   }
 
-  // 取消当前转码进程
-  public cancelTranscode(): boolean {
-    if (this.currentTranscodeProcess && !this.currentTranscodeProcess.killed) {
-      logger.info('正在取消转码进程...', { pid: this.currentTranscodeProcess.pid })
+  /**
+   * FFmpeg 预热
+   * 在应用启动时执行简单命令来预加载 FFmpeg 并初始化编解码器
+   */
+  public async warmupFFmpeg(): Promise<boolean> {
+    // 如果已经预热过了，直接返回
+    if (FFmpegService.isWarmedUp) {
+      logger.info('🔥 FFmpeg 已预热，跳过')
+      return true
+    }
 
-      try {
-        // 设置取消标志
-        this.isTranscodeCancelled = true
+    // 如果正在预热中，等待结果
+    if (FFmpegService.warmupPromise) {
+      logger.info('🔥 FFmpeg 正在预热中，等待结果...')
+      return await FFmpegService.warmupPromise
+    }
 
-        // 清理之前的强制终止超时（如果存在）
-        if (this.forceKillTimeout) {
-          clearTimeout(this.forceKillTimeout)
-          this.forceKillTimeout = null
-        }
+    // 开始预热
+    FFmpegService.warmupPromise = this._performWarmup()
 
-        // 尝试优雅地终止进程
-        this.currentTranscodeProcess.kill('SIGTERM')
+    try {
+      const result = await FFmpegService.warmupPromise
+      FFmpegService.isWarmedUp = result
+      return result
+    } catch (error) {
+      logger.error('FFmpeg 预热失败:', { error })
+      return false
+    } finally {
+      FFmpegService.warmupPromise = null
+    }
+  }
 
-        // 如果优雅终止失败，强制终止
-        this.forceKillTimeout = setTimeout(() => {
-          if (this.currentTranscodeProcess && !this.currentTranscodeProcess.killed) {
-            logger.warn('优雅终止失败，强制终止转码进程', { pid: this.currentTranscodeProcess.pid })
-            this.currentTranscodeProcess.kill('SIGKILL')
-          }
-          this.forceKillTimeout = null
-        }, 5000) // 5秒后强制终止
+  /**
+   * 执行实际的预热操作
+   */
+  private async _performWarmup(): Promise<boolean> {
+    const startTime = Date.now()
+    logger.info('🔥 开始 FFmpeg 预热...')
 
-        logger.info('转码取消信号已发送')
-        return true
-      } catch (error) {
-        logger.error('取消转码进程失败:', error instanceof Error ? error : new Error(String(error)))
-        this.isTranscodeCancelled = false // 重置标志
+    try {
+      // 首先检查 FFmpeg 是否可用
+      const isAvailable = await this.checkFFmpegExists(false) // 不使用缓存
+      if (!isAvailable) {
+        logger.error('🔥 FFmpeg 预热失败: FFmpeg 不可用')
         return false
       }
-    } else {
-      logger.warn('没有正在运行的转码进程需要取消')
+
+      // 执行简单的版本查询命令来预热 FFmpeg
+      // 这会加载所有必要的动态库和初始化编解码器
+      const args = ['-version']
+      const output = await this.executeFFmpegDirect(args, 10000)
+
+      const duration = Date.now() - startTime
+      logger.info(`🔥 FFmpeg 预热成功，耗时: ${duration}ms`, {
+        duration: `${duration}ms`,
+        outputPreview: output.substring(0, 200) + '...'
+      })
+
+      return true
+    } catch (error) {
+      const duration = Date.now() - startTime
+      logger.error(`🔥 FFmpeg 预热失败，耗时: ${duration}ms`, {
+        duration: `${duration}ms`,
+        error: error instanceof Error ? error.message : String(error)
+      })
       return false
     }
+  }
+
+  /**
+   * 重置预热状态（用于测试或手动重置）
+   */
+  public static resetWarmupState(): void {
+    FFmpegService.isWarmedUp = false
+    FFmpegService.warmupPromise = null
+    logger.info('🔥 FFmpeg 预热状态已重置')
+  }
+
+  /**
+   * 检查预热状态
+   */
+  public static getWarmupStatus(): { isWarmedUp: boolean; isWarming: boolean } {
+    return {
+      isWarmedUp: FFmpegService.isWarmedUp,
+      isWarming: FFmpegService.warmupPromise !== null
+    }
+  }
+
+  /**
+   * 销毁服务，清理资源
+   */
+  public async destroy(): Promise<void> {
+    logger.info('销毁 FFmpeg 服务')
+
+    // 清理超时句柄
+    if (this.forceKillTimeout) {
+      clearTimeout(this.forceKillTimeout)
+      this.forceKillTimeout = null
+    }
+
+    // 重置预热状态
+    FFmpegService.resetWarmupState()
+
+    logger.info('FFmpeg 服务已销毁')
   }
 }
 

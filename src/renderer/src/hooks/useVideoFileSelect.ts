@@ -1,6 +1,7 @@
 import { loggerService } from '@logger'
 import FileManager from '@renderer/services/FileManager'
 import { VideoLibraryService } from '@renderer/services/VideoLibrary'
+import { ParallelVideoProcessor } from '@renderer/utils/ParallelVideoProcessor'
 import { createPerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
 import { videoExts } from '@shared/config/constant'
 import { message } from 'antd'
@@ -44,48 +45,67 @@ export function useVideoFileSelect(
     async (file: FileMetadata) => {
       try {
         // 创建性能监控器
-        const monitor = createPerformanceMonitor('视频添加流程')
+        const monitor = createPerformanceMonitor('视频添加流程（优化版）')
 
         logger.info('📄 选中的文件信息:', {
-          file: file
+          file: file,
+          fileSize: `${Math.round(file.size / 1024 / 1024)}MB`
         })
 
         try {
-          // 1. 检查 MediaInfo 是否可用（优先使用），回退到 FFmpeg
-          monitor.startTiming('视频解析器检查')
-          const mediaInfoExists = await window.api.mediainfo.checkExists()
-          const ffmpegExists = !mediaInfoExists ? await window.api.ffmpeg.checkExists() : false
-          monitor.endTiming('视频解析器检查')
+          // 1. 并行准备处理（文件验证、解析器检查、格式分析）
+          monitor.startTiming('并行准备阶段')
+          const context = await ParallelVideoProcessor.prepareProcessing(file)
+          monitor.endTiming('并行准备阶段')
 
-          if (!mediaInfoExists && !ffmpegExists) {
-            throw new Error('视频解析器不可用。MediaInfo 和 FFmpeg 都无法使用，请检查系统配置。')
+          // 验证处理上下文
+          const validationErrors = ParallelVideoProcessor.validateContext(context)
+          if (validationErrors.length > 0) {
+            throw new Error(`处理准备失败: ${validationErrors.join(', ')}`)
           }
 
-          const usingMediaInfo = mediaInfoExists
-          logger.info(`📊 使用视频解析器: ${usingMediaInfo ? 'MediaInfo' : 'FFmpeg'}`, {
-            mediaInfoAvailable: mediaInfoExists,
-            ffmpegAvailable: ffmpegExists
+          // 获取优化的解析策略
+          const { useParser, allowFallback, timeoutMs } =
+            ParallelVideoProcessor.getOptimizedStrategy(context)
+
+          logger.info('📊 使用优化策略:', {
+            useParser,
+            allowFallback,
+            timeoutMs: `${timeoutMs}ms`,
+            strategy: context.formatAnalysis.strategy,
+            confidence: context.formatAnalysis.confidence,
+            reasoning: context.formatAnalysis.reasoning
           })
 
-          // 2. 将文件添加到文件数据库
-          monitor.startTiming('文件数据库添加', { fileName: file.name, fileSize: file.size })
-          const addedFile = await FileManager.addFile(file)
-          monitor.endTiming('文件数据库添加')
+          // 2. 并行执行文件添加和视频信息解析准备
+          monitor.startTiming('文件数据库添加')
+          const addFilePromise = FileManager.addFile(file)
 
-          // 3. 解析视频文件信息，包括：分辨率、码率、时长等
-          // 优先使用 MediaInfo (WebAssembly)，回退到 FFmpeg
-          monitor.startTiming('视频信息获取', {
+          // 3. 策略化解析视频文件信息
+          monitor.startTiming('策略化视频信息获取', {
             filePath: file.path,
-            parser: usingMediaInfo ? 'MediaInfo' : 'FFmpeg'
+            strategy: context.formatAnalysis.strategy,
+            parser: useParser,
+            timeout: timeoutMs
           })
-          const videoInfo = usingMediaInfo
-            ? await window.api.mediainfo.getVideoInfo(file.path)
-            : await window.api.ffmpeg.getVideoInfo(file.path)
-          monitor.endTiming('视频信息获取', {
-            parser: usingMediaInfo ? 'MediaInfo' : 'FFmpeg',
+
+          const videoInfoPromise = window.api.mediainfo.getVideoInfoWithStrategy(
+            file.path,
+            context.formatAnalysis.strategy,
+            timeoutMs
+          )
+
+          // 等待并行操作完成
+          const [addedFile, videoInfo] = await Promise.all([addFilePromise, videoInfoPromise])
+
+          monitor.endTiming('文件数据库添加')
+          monitor.endTiming('策略化视频信息获取', {
+            parser: useParser,
+            strategy: context.formatAnalysis.strategy,
             duration: videoInfo?.duration,
             videoCodec: videoInfo?.videoCodec,
-            resolution: videoInfo?.resolution
+            resolution: videoInfo?.resolution,
+            success: !!videoInfo
           })
 
           if (!videoInfo) {
@@ -114,7 +134,21 @@ export function useVideoFileSelect(
           const report = monitor.finish(50) // 50ms 作为性能瓶颈阈值
 
           const totalTimeMs = Math.round(report.totalDuration)
-          logger.info(`视频文件添加成功！总耗时: ${totalTimeMs}ms`)
+          const preparationTime = monitor.getDuration('并行准备阶段') || 0
+          const parseTime = monitor.getDuration('策略化视频信息获取') || 0
+
+          logger.info(`✅ 视频文件添加成功！总耗时: ${totalTimeMs}ms`, {
+            preparationTime: `${preparationTime.toFixed(2)}ms`,
+            parseTime: `${parseTime.toFixed(2)}ms`,
+            strategy: context.formatAnalysis.strategy,
+            actualParser: useParser,
+            estimatedTime: `${context.formatAnalysis.estimatedTime}ms`,
+            performanceGain:
+              context.formatAnalysis.estimatedTime > totalTimeMs
+                ? `节省 ${Math.round(((context.formatAnalysis.estimatedTime - totalTimeMs) / context.formatAnalysis.estimatedTime) * 100)}%`
+                : '符合预期'
+          })
+
           // 调用成功回调
           onSuccess?.()
         } catch (error) {
