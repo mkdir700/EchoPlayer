@@ -425,23 +425,17 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(IpcChannel.Ffmpeg_GetVersion, async () => {
     return await ffmpegService.getFFmpegVersion()
   })
-  ipcMain.handle(IpcChannel.Ffmpeg_Download, async (_, onProgress?: (progress: number) => void) => {
-    return await ffmpegService.downloadFFmpeg(onProgress)
-  })
   ipcMain.handle(IpcChannel.Ffmpeg_GetVideoInfo, async (_, inputPath: string) => {
     return await ffmpegService.getVideoInfo(inputPath)
   })
-  ipcMain.handle(
-    IpcChannel.Ffmpeg_Transcode,
-    async (_, inputPath: string, outputPath: string, options: any) => {
-      return await ffmpegService.transcodeVideo(inputPath, outputPath, options)
-    }
-  )
-  ipcMain.handle(IpcChannel.Ffmpeg_CancelTranscode, () => {
-    return ffmpegService.cancelTranscode()
-  })
   ipcMain.handle(IpcChannel.Ffmpeg_GetPath, async () => {
     return ffmpegService.getFFmpegPath()
+  })
+  ipcMain.handle(IpcChannel.Ffmpeg_Warmup, async () => {
+    return await ffmpegService.warmupFFmpeg()
+  })
+  ipcMain.handle(IpcChannel.Ffmpeg_GetWarmupStatus, async () => {
+    return FFmpegService.getWarmupStatus()
   })
 
   // MediaParser (Remotion)
@@ -454,6 +448,21 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(IpcChannel.MediaInfo_GetVideoInfo, async (_, inputPath: string) => {
     return await mediaParserService.getVideoInfo(inputPath)
   })
+  ipcMain.handle(
+    IpcChannel.MediaInfo_GetVideoInfoWithStrategy,
+    async (
+      _,
+      inputPath: string,
+      strategy:
+        | 'remotion-first'
+        | 'ffmpeg-first'
+        | 'remotion-only'
+        | 'ffmpeg-only' = 'remotion-first',
+      timeoutMs: number = 10000
+    ) => {
+      return await mediaParserService.getVideoInfoWithStrategy(inputPath, strategy, timeoutMs)
+    }
+  )
 
   // 文件系统相关 IPC 处理程序 / File system-related IPC handlers
   ipcMain.handle(IpcChannel.Fs_CheckFileExists, async (_, filePath: string) => {
