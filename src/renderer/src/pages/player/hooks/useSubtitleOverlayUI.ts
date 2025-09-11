@@ -190,22 +190,27 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
       const widthRatio = newBounds.width / Math.max(oldBounds.width, 1)
       const heightRatio = newBounds.height / Math.max(oldBounds.height, 1)
 
-      if (Math.abs(widthRatio - 1) > 0.2 || Math.abs(heightRatio - 1) > 0.2) {
+      if (Math.abs(widthRatio - 1) > 0.05 || Math.abs(heightRatio - 1) > 0.05) {
+        // 使用估算的字幕高度（自适应模式下约为 160px）
+        const estimatedHeightPercent = Math.min(12, (160 / newBounds.height) * 100)
+
         const adjustedPosition = {
           x: Math.max(0, Math.min(100 - subtitleOverlay.size.width, subtitleOverlay.position.x)),
-          y: Math.max(0, Math.min(100 - 15, subtitleOverlay.position.y))
+          y: Math.max(0, Math.min(100 - estimatedHeightPercent, subtitleOverlay.position.y))
         }
 
-        const newAspectRatio = newBounds.width / newBounds.height
+        // 保持原有尺寸，只进行必要的边界约束
         const newSize = { ...subtitleOverlay.size }
 
-        if (newAspectRatio > 2.5 && newSize.width > 80) {
-          newSize.width = Math.min(newSize.width, 70)
-          adjustedPosition.x = Math.max(15, adjustedPosition.x)
-        } else if (newAspectRatio < 1.0 && newSize.width < 85) {
-          newSize.width = Math.max(newSize.width, 85)
-          adjustedPosition.x = Math.max(0, Math.min(15, adjustedPosition.x))
-        }
+        // 确保尺寸在合理范围内，但不强制修改用户设置
+        if (newSize.width > 95) newSize.width = 95
+        if (newSize.width < 20) newSize.width = 20
+        if (newSize.height > 40) newSize.height = 40
+        if (newSize.height < 5) newSize.height = 5
+
+        // 重新计算位置确保不超出边界
+        adjustedPosition.x = Math.max(0, Math.min(100 - newSize.width, adjustedPosition.x))
+        adjustedPosition.y = Math.max(0, Math.min(100 - newSize.height, adjustedPosition.y))
 
         // 使用 PlayerStore 的配置更新方法
         setSubtitleOverlay({
@@ -231,11 +236,14 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
     (conflictAreas: Array<{ x: number; y: number; width: number; height: number }>) => {
       if (conflictAreas.length === 0 || !subtitleOverlay) return
 
+      // 使用估算的字幕高度（自适应模式下约为 160px）
+      const estimatedHeightPercent = Math.min(12, (160 / containerBounds.height) * 100)
+
       const currentBounds = {
         x: subtitleOverlay.position.x,
         y: subtitleOverlay.position.y,
         width: subtitleOverlay.size.width,
-        height: 15
+        height: estimatedHeightPercent
       }
 
       const hasCollision = conflictAreas.some((area) => {
@@ -261,7 +269,7 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
         const candidateBounds = {
           ...candidate,
           width: subtitleOverlay.size.width,
-          height: 15
+          height: estimatedHeightPercent
         }
 
         const hasConflict = conflictAreas.some((area) => {
