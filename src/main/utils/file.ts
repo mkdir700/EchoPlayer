@@ -117,14 +117,14 @@ export function getFileExt(filePath: string): string {
 }
 
 /**
- * Returns the path to the CherryStudio temporary directory.
+ * Returns the path to the EchoPlayer temporary directory.
  *
- * The path is constructed by joining the Electron system temporary directory with "CherryStudio".
+ * The path is constructed by joining the Electron system temporary directory with "EchoPlayer".
  *
- * @returns The full filesystem path for CherryStudio's temporary directory.
+ * @returns The full filesystem path for EchoPlayer's temporary directory.
  */
 export function getTempDir() {
-  return path.join(app.getPath('temp'), 'CherryStudio')
+  return path.join(app.getPath('temp'), 'EchoPlayer')
 }
 
 export function getFilesDir() {
@@ -132,7 +132,7 @@ export function getFilesDir() {
 }
 
 export function getConfigDir() {
-  return path.join(os.homedir(), '.cherrystudio', 'config')
+  return path.join(os.homedir(), '.echoplayer', 'config')
 }
 
 export function getCacheDir() {
@@ -144,7 +144,7 @@ export function getAppConfigDir(name: string) {
 }
 
 export function getMcpDir() {
-  return path.join(os.homedir(), '.cherrystudio', 'mcp')
+  return path.join(os.homedir(), '.echoplayer', 'mcp')
 }
 
 /**

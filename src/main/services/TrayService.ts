@@ -50,7 +50,7 @@ export class TrayService {
       this.tray.setContextMenu(this.contextMenu)
     }
 
-    this.tray.setToolTip('Cherry Studio')
+    this.tray.setToolTip('EchoPlayer')
 
     this.tray.on('right-click', () => {
       if (this.contextMenu) {
