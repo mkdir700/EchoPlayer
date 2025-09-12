@@ -376,11 +376,28 @@ class FFmpegDownloader {
 // CLI 入口
 async function main() {
   const args = process.argv.slice(2)
-  const command = args[0] || 'current'
+  let command = args[0]
 
   const downloader = new FFmpegDownloader()
 
   try {
+    // 优先检查环境变量，如果设置了构建目标则使用目标平台
+    if (process.env.BUILD_TARGET_PLATFORM) {
+      console.log(
+        `检测到构建目标平台: ${process.env.BUILD_TARGET_PLATFORM}-${process.env.BUILD_TARGET_ARCH || process.arch}`
+      )
+      await downloader.downloadFFmpeg(
+        process.env.BUILD_TARGET_PLATFORM,
+        process.env.BUILD_TARGET_ARCH || process.arch
+      )
+      return
+    }
+
+    // 如果没有环境变量，按原逻辑处理命令参数
+    if (!command) {
+      command = 'current'
+    }
+
     switch (command) {
       case 'all':
         await downloader.downloadAllPlatforms()
@@ -416,6 +433,10 @@ async function main() {
   win32: x64, arm64
   darwin: x64, arm64
   linux: x64, arm64
+
+环境变量:
+  BUILD_TARGET_PLATFORM - 构建目标平台 (win32, darwin, linux)
+  BUILD_TARGET_ARCH     - 构建目标架构 (x64, arm64)
         `)
     }
   } catch (error) {
