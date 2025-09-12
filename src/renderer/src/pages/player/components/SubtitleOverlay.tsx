@@ -466,14 +466,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         />
       </Tooltip>
 
-      <ToastContainer
-        $visible={toastVisible}
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >
+      <ToastContainer $visible={toastVisible} role="status" aria-live="polite" aria-atomic="true">
         <ToastContent>{toastMessage}</ToastContent>
       </ToastContainer>
+    </OverlayContainer>
   )
 })
 
