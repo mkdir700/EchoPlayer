@@ -1,44 +1,26 @@
-name: Dev Release
-
-run-name: '🚀 Dev Release'
+name: Dev Release Build
 
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version for dev release (optional)'
-        required: false
-        default: ''
       platform:
-        description: 'Target platform for dev release'
+        description: 'Target platform'
         required: true
-        default: macos
         type: choice
         options:
           - macos
           - linux
           - windows
-
-permissions:
-  contents: write
-  pull-requests: read
+      version:
+        description: 'Version to set (optional)'
+        required: false
+        type: string
 
 jobs:
-  dev-release:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - platform: macos
-            os: macos-latest
-            target: --mac
-          - platform: linux
-            os: ubuntu-latest
-            target: --linux
-          - platform: windows
-            os: windows-latest
-            target: --win
-    if: matrix.platform == github.event.inputs.platform
+  build-macos:
+    runs-on: macos-latest
+    if: ${{ inputs.platform == 'macos' }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,34 +34,203 @@ jobs:
         uses: pnpm/action-setup@v3
         with:
           version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install
 
       - name: Set version
-        if: ${{ github.event.inputs.version != '' }}
+        if: ${{ inputs.version != '' }}
+        shell: bash
         run: |
-          node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));pkg.version='${{ github.event.inputs.version }}';fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2)+'\n');"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${{ inputs.version }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log(\`Version set to \${pkg.version}\`);
+          "
 
-      - name: Build dev package
+      - name: Build macOS package
         run: |
           pnpm build
-          pnpm exec electron-builder ${{ matrix.target }} --publish never
+          pnpm exec electron-builder --mac --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILDER_CHANNEL: dev
 
+      - name: List build artifacts
+        shell: bash
+        run: |
+          echo "Build artifacts:"
+          find dist -type f -name "*" | head -20
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-dev-artifacts
+          name: macos-dev-artifacts
           path: |
-            dist/*.exe
             dist/*.dmg
             dist/*.zip
+            dist/*.yml
+            dist/*.yaml
+            dist/*.blockmap
+          retention-days: 30
+          if-no-files-found: warn
+
+  build-linux:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.platform == 'linux' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Set version
+        if: ${{ inputs.version != '' }}
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${{ inputs.version }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log(\`Version set to \${pkg.version}\`);
+          "
+
+      - name: Build Linux package
+        run: |
+          pnpm build
+          pnpm exec electron-builder --linux --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILDER_CHANNEL: dev
+
+      - name: List build artifacts
+        shell: bash
+        run: |
+          echo "Build artifacts:"
+          find dist -type f -name "*" | head -20
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-dev-artifacts
+          path: |
             dist/*.AppImage
             dist/*.deb
             dist/*.yml
             dist/*.yaml
             dist/*.blockmap
           retention-days: 30
+          if-no-files-found: warn
+
+  build-windows:
+    runs-on: windows-latest
+    if: ${{ inputs.platform == 'windows' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Set version
+        if: ${{ inputs.version != '' }}
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${{ inputs.version }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log(\`Version set to \${pkg.version}\`);
+          "
+
+      - name: Build Windows package
+        run: |
+          pnpm build
+          pnpm exec electron-builder --win --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILDER_CHANNEL: dev
+
+      - name: List build artifacts
+        shell: bash
+        run: |
+          echo "Build artifacts:"
+          find dist -type f -name "*" | head -20
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-dev-artifacts
+          path: |
+            dist/*.exe
+            dist/*.yml
+            dist/*.yaml
+            dist/*.blockmap
+          retention-days: 30
+          if-no-files-found: warn
