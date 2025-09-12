@@ -196,6 +196,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       if (isResizing) return
 
       event.preventDefault()
+      event.stopPropagation() // 阻止事件冒泡，防止触发VideoSurface的点击事件
       const startX = event.clientX
       const startY = event.clientY
       const startPosition = { x: position.x, y: position.y }
@@ -254,7 +255,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const handleResizeMouseDown = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault()
-      event.stopPropagation()
+      event.stopPropagation() // 阻止事件冒泡，防止触发VideoSurface的点击事件
 
       const startX = event.clientX
       const startY = event.clientY
@@ -329,11 +330,17 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     // TODO: 实现单词点击的 popup 功能
   }, [])
 
+  // === 通用点击处理（阻止冒泡到VideoSurface） ===
+  const handleClick = useCallback((event: React.MouseEvent) => {
+    // 阻止所有点击事件冒泡到VideoSurface，防止触发播放/暂停
+    event.stopPropagation()
+  }, [])
+
   // === ResizeHandle 双击扩展处理 ===
   const handleResizeDoubleClick = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault()
-      event.stopPropagation()
+      event.stopPropagation() // 阻止事件冒泡，防止触发VideoSurface的点击事件
 
       const maxWidth = 95 // 最大宽度95%
 
@@ -395,6 +402,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       $backgroundType={backgroundStyle.type}
       $opacity={backgroundStyle.opacity}
       onMouseDown={handleMouseDown}
+      onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       data-testid="subtitle-overlay"
