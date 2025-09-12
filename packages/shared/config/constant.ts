@@ -1,6 +1,23 @@
 export const videoExts = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv']
 export const audioExts = ['.mp3', '.wav', '.ogg', '.flac', '.aac']
 
+/**
+ * 将扩展名数组转换为 Electron dialog 所需的格式（不含点）
+ * @param extArray 扩展名数组（可包含或不包含点）
+ * @returns 不含点的扩展名数组
+ */
+export function toDialogExtensions(extArray: string[]): string[] {
+  return extArray.map((ext) => (ext.startsWith('.') ? ext.slice(1) : ext))
+}
+
+/**
+ * 获取用于 Electron dialog 的视频文件扩展名数组
+ * @returns 不含点的视频扩展名数组
+ */
+export function getVideoDialogExtensions(): string[] {
+  return toDialogExtensions(videoExts)
+}
+
 export const KB = 1024
 export const MB = 1024 * KB
 export const GB = 1024 * MB
