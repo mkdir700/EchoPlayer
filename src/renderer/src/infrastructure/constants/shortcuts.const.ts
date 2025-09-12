@@ -130,5 +130,12 @@ export const DEFAULT_SHORTCUTS: Shortcut[] = [
     editable: true,
     enabled: true,
     system: false
+  },
+  {
+    key: 'copy_subtitle',
+    shortcut: ['CommandOrControl', 'C'],
+    editable: true,
+    enabled: true,
+    system: false
   }
 ]

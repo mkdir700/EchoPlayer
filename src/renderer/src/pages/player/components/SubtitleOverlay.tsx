@@ -11,10 +11,21 @@
  */
 
 import { loggerService } from '@logger'
+import {
+  ANIMATION_DURATION,
+  BORDER_RADIUS,
+  EASING,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  GLASS_EFFECT,
+  SHADOWS,
+  SPACING,
+  Z_INDEX
+} from '@renderer/infrastructure/styles/theme'
 import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import { Tooltip } from 'antd'
-import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
 
@@ -70,6 +81,37 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 
   // === 本地状态 ===
   const overlayRef = useRef<HTMLDivElement>(null)
+  const [toastVisible, setToastVisible] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const hideToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // === 复制成功toast监听器 ===
+  useEffect(() => {
+    const handleSubtitleCopied = (event: CustomEvent<{ message: string }>) => {
+      const { message } = event.detail
+      setToastMessage(message)
+      setToastVisible(true)
+
+      // 2秒后自动隐藏toast（防抖）
+      if (hideToastTimerRef.current) {
+        clearTimeout(hideToastTimerRef.current)
+      }
+      hideToastTimerRef.current = setTimeout(() => {
+        setToastVisible(false)
+        hideToastTimerRef.current = null
+      }, 800)
+    }
+
+    window.addEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
+
+    return () => {
+      if (hideToastTimerRef.current) {
+        clearTimeout(hideToastTimerRef.current)
+        hideToastTimerRef.current = null
+      }
+      window.removeEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
+    }
+  }, [])
 
   // === 初始化和容器边界更新 ===
   useEffect(() => {
@@ -434,6 +476,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           data-testid="subtitle-resize-handle"
         />
       </Tooltip>
+
+      <ToastContainer $visible={toastVisible} role="status" aria-live="polite" aria-atomic="true">
+        <ToastContent>{toastMessage}</ToastContent>
+      </ToastContainer>
     </OverlayContainer>
   )
 })
@@ -568,4 +614,29 @@ const ResizeHandle = styled.div<{ $visible: boolean }>`
     transform: scale(1.2);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
   }
+`
+
+const ToastContainer = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: ${(props) => (props.$visible ? 1 : 0)};
+  visibility: ${(props) => (props.$visible ? 'visible' : 'hidden')};
+  transition: opacity ${ANIMATION_DURATION.SLOW} ${EASING.APPLE};
+  z-index: ${Z_INDEX.MODAL};
+  pointer-events: none;
+`
+
+const ToastContent = styled.div`
+  background: rgba(0, 0, 0, ${GLASS_EFFECT.BACKGROUND_ALPHA.LIGHT});
+  color: #ffffff;
+  padding: ${SPACING.XS}px ${SPACING.MD}px;
+  border-radius: ${BORDER_RADIUS.SM}px;
+  font-size: ${FONT_SIZES.SM}px;
+  font-weight: ${FONT_WEIGHTS.MEDIUM};
+  white-space: nowrap;
+  backdrop-filter: blur(${GLASS_EFFECT.BLUR_STRENGTH.SUBTLE}px);
+  border: 1px solid rgba(255, 255, 255, ${GLASS_EFFECT.BORDER_ALPHA.SUBTLE});
+  box-shadow: ${SHADOWS.SM};
 `
