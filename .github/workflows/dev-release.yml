@@ -1,0 +1,85 @@
+name: Dev Release
+
+run-name: '🚀 Dev Release'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version for dev release (optional)'
+        required: false
+        default: ''
+      platform:
+        description: 'Target platform for dev release'
+        required: true
+        default: macos
+        type: choice
+        options:
+          - macos
+          - linux
+          - windows
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  dev-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - platform: macos
+            os: macos-latest
+            target: --mac
+          - platform: linux
+            os: ubuntu-latest
+            target: --linux
+          - platform: windows
+            os: windows-latest
+            target: --win
+    if: matrix.platform == github.event.inputs.platform
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Set version
+        if: ${{ github.event.inputs.version != '' }}
+        run: |
+          node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));pkg.version='${{ github.event.inputs.version }}';fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2)+'\n');"
+
+      - name: Build dev package
+        run: |
+          pnpm build
+          pnpm exec electron-builder ${{ matrix.target }} --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILDER_CHANNEL: dev
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-dev-artifacts
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.yml
+            dist/*.yaml
+            dist/*.blockmap
+          retention-days: 30
