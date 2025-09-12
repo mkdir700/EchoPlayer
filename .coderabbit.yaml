@@ -11,6 +11,7 @@ reviews:
       - 'alpha'
       - 'beta'
       - 'main'
+      - 'dev'
     ignore_title_keywords:
       - 'wip'
       - 'draft'
