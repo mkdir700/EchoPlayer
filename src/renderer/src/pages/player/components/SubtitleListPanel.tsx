@@ -140,7 +140,7 @@ function SubtitleListPanel({
               data-subtitle-item
               data-index={index}
               data-active={index === currentIndex}
-              active={index === currentIndex}
+              $active={index === currentIndex}
               onClick={() => handleItemClick(index)}
             >
               <TimesRow>
@@ -281,18 +281,19 @@ const ActionButton = styled(Button)`
   border-radius: 12px;
 `
 
-const SubtitleItem = styled.div<{ active: boolean }>`
+const SubtitleItem = styled.div<{ $active: boolean }>`
   display: block;
   margin: 6px 8px;
   padding: 10px 12px;
   cursor: pointer;
   border-radius: 12px;
-  background: ${(p) => (p.active ? 'var(--color-primary-mute)' : 'transparent')};
-  box-shadow: ${(p) => (p.active ? '0 1px 6px rgba(0,0,0,.25)' : 'none')};
+  background: ${(p) => (p.$active ? 'var(--color-primary-mute)' : 'transparent')};
+  box-shadow: ${(p) => (p.$active ? '0 1px 6px rgba(0,0,0,.25)' : 'none')};
   transition: background 0.2s;
 
   &:hover {
-    background: ${(p) => (p.active ? 'var(--color-primary-mute)' : 'var(--color-list-item-hover)')};
+    background: ${(p) =>
+      p.$active ? 'var(--color-primary-mute)' : 'var(--color-list-item-hover)'};
   }
 `
 

@@ -1,4 +1,5 @@
 export * from './AppLifecycleService'
 export * from './ConfigSyncService'
+export * from './FFmpegWarmupManager'
 export * from './FileManager'
 export * from './VideoLibrary'

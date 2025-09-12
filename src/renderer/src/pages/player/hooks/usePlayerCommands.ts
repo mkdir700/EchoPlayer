@@ -19,7 +19,6 @@ export function usePlayerCommands() {
   const { orchestrator } = usePlayerEngine()
   const subtitles = usePlayerSubtitlesStore((s) => s.subtitles)
   const toggleLoopEnabled = usePlayerStore((s) => s.toggleLoopEnabled)
-  const setFullscreen = usePlayerStore((s) => s.setFullscreen)
 
   // 播放/暂停
   const playPause = useCallback(async () => {
@@ -159,14 +158,42 @@ export function usePlayerCommands() {
     }
 
     const context = orchestrator.getContext()
-    const prevIndex = context.activeCueIndex - 1
+    let prevIndex: number
+
+    // 如果当前没有活跃字幕（activeCueIndex为-1），则基于当前时间找到上一个字幕
+    if (context.activeCueIndex === -1) {
+      // 找到最后一个结束时间小于等于当前时间的字幕
+      prevIndex = -1
+      for (let i = subtitles.length - 1; i >= 0; i--) {
+        if (subtitles[i].endTime <= context.currentTime) {
+          prevIndex = i
+          break
+        }
+      }
+
+      // 如果没找到，则不执行跳转
+      if (prevIndex === -1) {
+        logger.info('Command: goToPreviousSubtitle - no subtitle found before current time', {
+          currentTime: context.currentTime
+        })
+        return
+      }
+    } else {
+      // 正常情况：跳转到上一个字幕
+      prevIndex = context.activeCueIndex - 1
+    }
 
     if (prevIndex >= 0) {
       const prev = subtitles[prevIndex]
       orchestrator.requestUserSeekBySubtitleIndex(prevIndex)
       logger.info('Command: goToPreviousSubtitle executed', {
+        from: context.activeCueIndex,
         to: prev.startTime,
         index: prevIndex
+      })
+    } else {
+      logger.info('Command: goToPreviousSubtitle - already at first subtitle', {
+        currentIndex: context.activeCueIndex
       })
     }
   }, [orchestrator, subtitles])
@@ -178,14 +205,38 @@ export function usePlayerCommands() {
     }
 
     const context = orchestrator.getContext()
-    const nextSubtitleIndex = context.activeCueIndex + 1
+    let nextSubtitleIndex: number
+
+    // 如果当前没有活跃字幕（activeCueIndex为-1），则基于当前时间找到下一个字幕
+    if (context.activeCueIndex === -1) {
+      // 找到第一个开始时间大于当前时间的字幕
+      nextSubtitleIndex = subtitles.findIndex(
+        (subtitle) => subtitle.startTime > context.currentTime
+      )
+
+      // 如果没找到（说明当前时间已经超过了所有字幕），则不执行跳转
+      if (nextSubtitleIndex === -1) {
+        logger.info('Command: goToNextSubtitle - no subtitle found after current time', {
+          currentTime: context.currentTime
+        })
+        return
+      }
+    } else {
+      // 正常情况：跳转到下一个字幕
+      nextSubtitleIndex = context.activeCueIndex + 1
+    }
 
     if (nextSubtitleIndex < subtitles.length) {
       orchestrator.requestUserSeekBySubtitleIndex(nextSubtitleIndex)
       const next = subtitles[nextSubtitleIndex]
       logger.info('Command: goToNextSubtitle executed', {
+        from: context.activeCueIndex,
         to: next.startTime,
         index: nextSubtitleIndex
+      })
+    } else {
+      logger.info('Command: goToNextSubtitle - already at last subtitle', {
+        currentIndex: context.activeCueIndex
       })
     }
   }, [orchestrator, subtitles])
@@ -235,7 +286,6 @@ export function usePlayerCommands() {
     goToNextSubtitle,
 
     // 功能控制
-    toggleLoopEnabled,
-    setFullscreen
+    toggleLoopEnabled
   }
 }

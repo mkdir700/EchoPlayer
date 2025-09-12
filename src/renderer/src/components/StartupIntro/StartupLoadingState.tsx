@@ -1,6 +1,7 @@
 import { loggerService } from '@logger'
+import { ffmpegWarmupManager, WarmupState } from '@renderer/services/FFmpegWarmupManager'
 import { AudioWaveform } from 'lucide-react'
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import styled, { keyframes } from 'styled-components'
 
 const logger = loggerService.withContext('StartupLoadingState')
@@ -14,6 +15,45 @@ export const StartupLoadingState: React.FC<StartupLoadingStateProps> = ({
   visible,
   onComplete
 }) => {
+  const [warmupState, setWarmupState] = useState<WarmupState>({
+    isWarming: false,
+    isComplete: false,
+    hasError: false
+  })
+  const [minDisplayTimeElapsed, setMinDisplayTimeElapsed] = useState(false)
+
+  // 预热状态变化回调
+  const handleWarmupStateChange = useCallback((state: WarmupState) => {
+    setWarmupState(state)
+    logger.info('🔥 预热状态变化', state)
+  }, [])
+
+  // 检查是否可以完成启动
+  const checkCanComplete = useCallback(() => {
+    const canComplete = minDisplayTimeElapsed && warmupState.isComplete
+
+    if (canComplete) {
+      logger.info('✅ 启动条件满足，执行完成回调', {
+        minDisplayTimeElapsed,
+        warmupComplete: warmupState.isComplete,
+        warmupError: warmupState.hasError,
+        warmupDuration: warmupState.duration
+      })
+      onComplete?.()
+    } else {
+      logger.info('⏳ 启动条件未满足，继续等待', {
+        minDisplayTimeElapsed,
+        warmupComplete: warmupState.isComplete
+      })
+    }
+  }, [
+    minDisplayTimeElapsed,
+    warmupState.isComplete,
+    warmupState.hasError,
+    warmupState.duration,
+    onComplete
+  ])
+
   useEffect(() => {
     logger.info('🎦 StartupLoadingState useEffect 执行', {
       visible
@@ -25,24 +65,40 @@ export const StartupLoadingState: React.FC<StartupLoadingStateProps> = ({
       // 检查是否开启了减少动效偏好
       const reduced =
         window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      const delay = reduced ? 100 : 1800 // 稍长一些的展示时间
+      const minDisplayTime = reduced ? 100 : 1800 // 最小展示时间
 
-      logger.info(`⏱️ StartupLoadingState 将在 ${delay}ms 后自动完成`, { reduced })
+      logger.info(`⏱️ 最小展示时间: ${minDisplayTime}ms`, { reduced })
 
-      // 自动完成
-      const timer = setTimeout(() => {
-        logger.info('✅ StartupLoadingState 定时器触发，执行完成回调')
-        onComplete?.()
-      }, delay)
+      // 开始预热 FFmpeg
+      ffmpegWarmupManager.startWarmup().catch((error) => {
+        logger.error('启动预热失败:', { error })
+      })
+
+      // 订阅预热状态变化
+      const unsubscribe = ffmpegWarmupManager.subscribe(handleWarmupStateChange)
+
+      // 最小展示时间计时器
+      const minDisplayTimer = setTimeout(() => {
+        logger.info('⏰ 最小展示时间已到')
+        setMinDisplayTimeElapsed(true)
+      }, minDisplayTime)
 
       return () => {
-        logger.info('🧹 StartupLoadingState useEffect 清理定时器')
-        clearTimeout(timer)
+        logger.info('🧹 StartupLoadingState useEffect 清理')
+        clearTimeout(minDisplayTimer)
+        unsubscribe()
       }
     }
 
     return undefined
-  }, [visible, onComplete])
+  }, [visible, handleWarmupStateChange])
+
+  // 当条件满足时检查是否可以完成
+  useEffect(() => {
+    if (visible) {
+      checkCanComplete()
+    }
+  }, [visible, checkCanComplete])
 
   if (!visible) {
     return null

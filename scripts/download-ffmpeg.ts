@@ -277,12 +277,15 @@ class FFmpegDownloader {
     // 检查缓存
     if (!fs.existsSync(cachePath)) {
       console.log(`下载 ${config.url}...`)
+      let lastLoggedProgress = -1
       await this.downloadFile(config.url, cachePath, (progress) => {
-        if (Math.floor(progress) % 10 === 0) {
-          console.log(`下载进度: ${Math.floor(progress)}%`)
+        const currentProgress = Math.floor(progress / 10) * 10 // 取整到10的倍数
+        if (currentProgress !== lastLoggedProgress && currentProgress >= lastLoggedProgress + 10) {
+          process.stdout.write(`\r下载进度: ${currentProgress}%`)
+          lastLoggedProgress = currentProgress
         }
       })
-      console.log('下载完成')
+      console.log('\n下载完成')
     } else {
       console.log('使用缓存文件')
     }

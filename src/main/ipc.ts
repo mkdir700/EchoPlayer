@@ -384,6 +384,43 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
     win && win.webContents.toggleDevTools()
   })
 
+  // 全屏相关 IPC 处理器 / Fullscreen-related IPC handlers
+  ipcMain.handle(IpcChannel.Window_IsFullScreen, (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    return win ? win.isFullScreen() : false
+  })
+
+  ipcMain.handle(IpcChannel.Window_EnterFullScreen, (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win && !win.isFullScreen()) {
+      win.setFullScreen(true)
+      // 通知渲染进程全屏状态已改变
+      win.webContents.send(IpcChannel.FullscreenStatusChanged, true)
+      logger.info('Window entered fullscreen')
+    }
+  })
+
+  ipcMain.handle(IpcChannel.Window_ExitFullScreen, (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win && win.isFullScreen()) {
+      win.setFullScreen(false)
+      // 通知渲染进程全屏状态已改变
+      win.webContents.send(IpcChannel.FullscreenStatusChanged, false)
+      logger.info('Window exited fullscreen')
+    }
+  })
+
+  ipcMain.handle(IpcChannel.Window_ToggleFullScreen, (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win) {
+      const isCurrentlyFullscreen = win.isFullScreen()
+      win.setFullScreen(!isCurrentlyFullscreen)
+      // 通知渲染进程全屏状态已改变
+      win.webContents.send(IpcChannel.FullscreenStatusChanged, !isCurrentlyFullscreen)
+      logger.info(`Window fullscreen toggled to: ${!isCurrentlyFullscreen}`)
+    }
+  })
+
   // file
   ipcMain.handle(IpcChannel.File_Open, fileManager.open.bind(fileManager))
   ipcMain.handle(IpcChannel.File_OpenPath, fileManager.openPath.bind(fileManager))
@@ -425,23 +462,17 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(IpcChannel.Ffmpeg_GetVersion, async () => {
     return await ffmpegService.getFFmpegVersion()
   })
-  ipcMain.handle(IpcChannel.Ffmpeg_Download, async (_, onProgress?: (progress: number) => void) => {
-    return await ffmpegService.downloadFFmpeg(onProgress)
-  })
   ipcMain.handle(IpcChannel.Ffmpeg_GetVideoInfo, async (_, inputPath: string) => {
     return await ffmpegService.getVideoInfo(inputPath)
   })
-  ipcMain.handle(
-    IpcChannel.Ffmpeg_Transcode,
-    async (_, inputPath: string, outputPath: string, options: any) => {
-      return await ffmpegService.transcodeVideo(inputPath, outputPath, options)
-    }
-  )
-  ipcMain.handle(IpcChannel.Ffmpeg_CancelTranscode, () => {
-    return ffmpegService.cancelTranscode()
-  })
   ipcMain.handle(IpcChannel.Ffmpeg_GetPath, async () => {
     return ffmpegService.getFFmpegPath()
+  })
+  ipcMain.handle(IpcChannel.Ffmpeg_Warmup, async () => {
+    return await ffmpegService.warmupFFmpeg()
+  })
+  ipcMain.handle(IpcChannel.Ffmpeg_GetWarmupStatus, async () => {
+    return FFmpegService.getWarmupStatus()
   })
 
   // MediaParser (Remotion)
@@ -454,6 +485,21 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(IpcChannel.MediaInfo_GetVideoInfo, async (_, inputPath: string) => {
     return await mediaParserService.getVideoInfo(inputPath)
   })
+  ipcMain.handle(
+    IpcChannel.MediaInfo_GetVideoInfoWithStrategy,
+    async (
+      _,
+      inputPath: string,
+      strategy:
+        | 'remotion-first'
+        | 'ffmpeg-first'
+        | 'remotion-only'
+        | 'ffmpeg-only' = 'remotion-first',
+      timeoutMs: number = 10000
+    ) => {
+      return await mediaParserService.getVideoInfoWithStrategy(inputPath, strategy, timeoutMs)
+    }
+  )
 
   // 文件系统相关 IPC 处理程序 / File system-related IPC handlers
   ipcMain.handle(IpcChannel.Fs_CheckFileExists, async (_, filePath: string) => {

@@ -1,5 +1,6 @@
 import { parseMedia } from '@remotion/media-parser'
 import { nodeReader } from '@remotion/media-parser/node'
+import { PathConverter } from '@shared/utils/PathConverter'
 import type { FFmpegVideoInfo } from '@types'
 import * as fs from 'fs'
 
@@ -116,6 +117,118 @@ class MediaParserService {
     } catch (error) {
       logger.error('解析 Remotion 结果失败:', {
         error: error instanceof Error ? error : new Error(String(error))
+      })
+      return null
+    }
+  }
+
+  /**
+   * 策略化获取视频信息，支持自定义解析策略和超时
+   */
+  public async getVideoInfoWithStrategy(
+    inputPath: string,
+    strategy:
+      | 'remotion-first'
+      | 'ffmpeg-first'
+      | 'remotion-only'
+      | 'ffmpeg-only' = 'remotion-first',
+    timeoutMs: number = 10000
+  ): Promise<FFmpegVideoInfo | null> {
+    const startTime = Date.now()
+    logger.info('🎬 开始策略化获取视频信息', {
+      inputPath,
+      strategy,
+      timeout: `${timeoutMs}ms`
+    })
+
+    try {
+      // 使用优化的路径转换
+      const pathResult = PathConverter.convertToLocalPath(inputPath)
+
+      if (!pathResult.isValid) {
+        logger.error(`❌ 路径转换失败: ${pathResult.error}`)
+        return null
+      }
+
+      // 快速检查文件存在性
+      if (!fs.existsSync(pathResult.localPath)) {
+        logger.error(`❌ 文件不存在: ${pathResult.localPath}`)
+        return null
+      }
+
+      const fileSize = fs.statSync(pathResult.localPath).size
+      logger.info(`📊 文件大小: ${Math.round((fileSize / 1024 / 1024) * 100) / 100}MB`)
+
+      // 根据策略选择解析器
+      const parsers = this.getParsersFromStrategy(strategy)
+
+      for (const parser of parsers) {
+        const parseStartTime = Date.now()
+        try {
+          let result: FFmpegVideoInfo | null = null
+
+          if (parser === 'remotion') {
+            result = await Promise.race([
+              this.parseWithRemotion(pathResult.localPath),
+              this.createTimeoutPromise<typeof result>(timeoutMs, 'Remotion')
+            ])
+          } else {
+            result = await Promise.race([
+              this.ffmpegService.getVideoInfo(inputPath),
+              this.createTimeoutPromise<typeof result>(timeoutMs, 'FFmpeg')
+            ])
+          }
+
+          if (result) {
+            const totalTime = Date.now() - startTime
+            const parseTime = Date.now() - parseStartTime
+            logger.info(
+              `✅ 成功获取视频信息 (${parser})，解析耗时: ${parseTime}ms，总耗时: ${totalTime}ms`,
+              {
+                ...result,
+                parser,
+                strategy
+              }
+            )
+            return result
+          }
+        } catch (error) {
+          const parseTime = Date.now() - parseStartTime
+          const errorMsg = error instanceof Error ? error.message : String(error)
+
+          if (errorMsg.includes('timeout')) {
+            logger.warn(`⏰ ${parser} 解析超时 (${parseTime}ms)，尝试下一个解析器`, {
+              parser,
+              timeout: timeoutMs
+            })
+          } else {
+            logger.warn(`⚠️ ${parser} 解析失败 (${parseTime}ms)，尝试下一个解析器`, {
+              parser,
+              error: errorMsg
+            })
+          }
+
+          // 如果是 only 模式，直接失败
+          if (strategy.endsWith('-only')) {
+            throw error
+          }
+        }
+      }
+
+      // 所有解析器都失败
+      const totalTime = Date.now() - startTime
+      logger.error(`❌ 所有解析器都失败，总耗时: ${totalTime}ms`, {
+        inputPath,
+        strategy,
+        parsers
+      })
+      return null
+    } catch (error) {
+      const totalTime = Date.now() - startTime
+      logger.error(`❌ 策略化获取视频信息失败，耗时: ${totalTime}ms`, {
+        inputPath,
+        strategy,
+        error: error instanceof Error ? error.message : String(error)
       })
       return null
     }
@@ -284,6 +397,56 @@ class MediaParserService {
       })
       return '@remotion/media-parser (version check failed)'
     }
+  }
+
+  /**
+   * 根据策略获取解析器列表
+   */
+  private getParsersFromStrategy(strategy: string): ('remotion' | 'ffmpeg')[] {
+    switch (strategy) {
+      case 'remotion-first':
+        return ['remotion', 'ffmpeg']
+      case 'ffmpeg-first':
+        return ['ffmpeg', 'remotion']
+      case 'remotion-only':
+        return ['remotion']
+      case 'ffmpeg-only':
+        return ['ffmpeg']
+      default:
+        return ['remotion', 'ffmpeg']
+    }
+  }
+
+  /**
+   * 使用 Remotion 解析视频信息
+   */
+  private async parseWithRemotion(localInputPath: string): Promise<FFmpegVideoInfo | null> {
+    const result = await parseMedia({
+      src: localInputPath,
+      reader: nodeReader,
+      fields: {
+        durationInSeconds: true,
+        dimensions: true,
+        videoCodec: true,
+        audioCodec: true,
+        tracks: true,
+        container: true
+      },
+      logLevel: 'error' // 减少日志输出
+    })
+
+    return this.parseRemotionResult(result)
+  }
+
+  /**
+   * 创建超时 Promise
+   */
+  private createTimeoutPromise<T>(timeoutMs: number, parserName: string): Promise<T> {
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`${parserName} parsing timeout after ${timeoutMs}ms`))
+      }, timeoutMs)
+    })
   }
 
   /**
