@@ -1,3 +1,19 @@
+# [1.0.0-alpha.9](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.8...v1.0.0-alpha.9) (2025-09-12)
+
+### Bug Fixes
+
+- **homepage:** Fix UI desynchronization issue after deleting video records + i18n support ([#120](https://github.com/mkdir700/EchoPlayer/issues/120)) ([7879ef4](https://github.com/mkdir700/EchoPlayer/commit/7879ef442b888d6956a74739c3c0c1c54bb87387))
+- **player:** Fix subtitle navigation when activeCueIndex is -1 ([#119](https://github.com/mkdir700/EchoPlayer/issues/119)) ([b4ad16f](https://github.com/mkdir700/EchoPlayer/commit/b4ad16f2115d324aabd34b08b2a05ca98a3de101))
+- **player:** Fix subtitle overlay dragging to bottom and improve responsive design ([#122](https://github.com/mkdir700/EchoPlayer/issues/122)) ([d563c92](https://github.com/mkdir700/EchoPlayer/commit/d563c924c9471caeeab45a3d2ddd6dda5520fcac))
+- **player:** Prevent subtitle overlay interactions from triggering video play/pause ([#128](https://github.com/mkdir700/EchoPlayer/issues/128)) ([9730ba1](https://github.com/mkdir700/EchoPlayer/commit/9730ba1184cffe2012dd30e9207a562e88eec140))
+- **ui:** Remove white border shadow from modal buttons in dark mode ([#124](https://github.com/mkdir700/EchoPlayer/issues/124)) ([29f70f6](https://github.com/mkdir700/EchoPlayer/commit/29f70f66806f3dc0e3e473a9b3b27867cf67ac0d))
+
+### Features
+
+- **performance:** implement video import performance optimization with parallel processing and warmup strategies ([#121](https://github.com/mkdir700/EchoPlayer/issues/121)) ([2c65f5a](https://github.com/mkdir700/EchoPlayer/commit/2c65f5ae92460391302c24f3fb291f386043e7cd))
+- **player:** Implement fullscreen toggle functionality with keyboard shortcuts ([#127](https://github.com/mkdir700/EchoPlayer/issues/127)) ([78d3629](https://github.com/mkdir700/EchoPlayer/commit/78d3629c7d5a14e8bc378967a7f161135c5b5042))
+- **scripts:** optimize FFmpeg download progress display ([#125](https://github.com/mkdir700/EchoPlayer/issues/125)) ([be33316](https://github.com/mkdir700/EchoPlayer/commit/be33316f0a66f7b5b2de64d275d7166f12f50379))
+
 # [1.0.0-alpha.8](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.7...v1.0.0-alpha.8) (2025-09-10)
 
 ### Features
