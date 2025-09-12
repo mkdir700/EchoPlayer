@@ -6,6 +6,7 @@ import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
 import { playerSettingsPersistenceService } from '@renderer/services/PlayerSettingsSaver'
 import { usePlayerStore } from '@renderer/state'
 import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
+import { IpcChannel } from '@shared/IpcChannel'
 import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
@@ -230,6 +231,37 @@ function PlayerPage() {
       logger.error('从媒体库移除视频时出错', { error })
     }
   }, [videoId, navigate])
+
+  // 处理全屏快捷键
+  const handleToggleFullscreen = useCallback(async () => {
+    try {
+      await window.electron.ipcRenderer.invoke(IpcChannel.Window_ToggleFullScreen)
+    } catch (error) {
+      logger.error('切换全屏失败:', { error })
+    }
+  }, [])
+
+  // 键盘事件处理
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // 如果焦点在输入框等表单元素上，不处理快捷键
+      const target = event.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return
+      }
+
+      // F键切换全屏
+      if (event.code === 'KeyF' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        event.preventDefault()
+        handleToggleFullscreen()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleToggleFullscreen])
 
   if (loading) {
     return (

@@ -19,7 +19,6 @@ export function usePlayerCommands() {
   const { orchestrator } = usePlayerEngine()
   const subtitles = usePlayerSubtitlesStore((s) => s.subtitles)
   const toggleLoopEnabled = usePlayerStore((s) => s.toggleLoopEnabled)
-  const setFullscreen = usePlayerStore((s) => s.setFullscreen)
 
   // 播放/暂停
   const playPause = useCallback(async () => {
@@ -287,7 +286,6 @@ export function usePlayerCommands() {
     goToNextSubtitle,
 
     // 功能控制
-    toggleLoopEnabled,
-    setFullscreen
+    toggleLoopEnabled
   }
 }

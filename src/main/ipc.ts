@@ -384,6 +384,43 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
     win && win.webContents.toggleDevTools()
   })
 
+  // 全屏相关 IPC 处理器 / Fullscreen-related IPC handlers
+  ipcMain.handle(IpcChannel.Window_IsFullScreen, (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    return win ? win.isFullScreen() : false
+  })
+
+  ipcMain.handle(IpcChannel.Window_EnterFullScreen, (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win && !win.isFullScreen()) {
+      win.setFullScreen(true)
+      // 通知渲染进程全屏状态已改变
+      win.webContents.send(IpcChannel.FullscreenStatusChanged, true)
+      logger.info('Window entered fullscreen')
+    }
+  })
+
+  ipcMain.handle(IpcChannel.Window_ExitFullScreen, (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win && win.isFullScreen()) {
+      win.setFullScreen(false)
+      // 通知渲染进程全屏状态已改变
+      win.webContents.send(IpcChannel.FullscreenStatusChanged, false)
+      logger.info('Window exited fullscreen')
+    }
+  })
+
+  ipcMain.handle(IpcChannel.Window_ToggleFullScreen, (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win) {
+      const isCurrentlyFullscreen = win.isFullScreen()
+      win.setFullScreen(!isCurrentlyFullscreen)
+      // 通知渲染进程全屏状态已改变
+      win.webContents.send(IpcChannel.FullscreenStatusChanged, !isCurrentlyFullscreen)
+      logger.info(`Window fullscreen toggled to: ${!isCurrentlyFullscreen}`)
+    }
+  })
+
   // file
   ipcMain.handle(IpcChannel.File_Open, fileManager.open.bind(fileManager))
   ipcMain.handle(IpcChannel.File_OpenPath, fileManager.openPath.bind(fileManager))
