@@ -1,4 +1,5 @@
 import { loggerService } from '@logger'
+import { getVideoDialogExtensions } from '@shared/config/constant'
 import { Button, Modal, Space } from 'antd'
 import { AlertTriangle, FileSearch, RotateCcw, Trash2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
@@ -85,7 +86,7 @@ function VideoErrorRecovery({
         filters: [
           {
             name: t('player.errorRecovery.fileDialog.videoFiles'),
-            extensions: ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm']
+            extensions: getVideoDialogExtensions()
           },
           { name: t('player.errorRecovery.fileDialog.allFiles'), extensions: ['*'] }
         ]

@@ -1,5 +1,6 @@
 import { loggerService } from '@logger'
 import {
+  getFileExt,
   getFilesDir,
   getFileType,
   getTempDir,
@@ -73,7 +74,7 @@ class FileStorage {
         ])
 
         if (originalHash === storedHash) {
-          const ext = path.extname(file)
+          const ext = getFileExt(file)
           const id = path.basename(file, ext)
           return {
             id,
@@ -96,36 +97,99 @@ class FileStorage {
     _: Electron.IpcMainInvokeEvent,
     options?: OpenDialogOptions
   ): Promise<FileMetadata[] | null> => {
-    const defaultOptions: OpenDialogOptions = {
-      properties: ['openFile']
-    }
-
-    const dialogOptions = { ...defaultOptions, ...options }
-
-    const result = await dialog.showOpenDialog(dialogOptions)
-
-    if (result.canceled || result.filePaths.length === 0) {
-      return null
-    }
-
-    const fileMetadataPromises = result.filePaths.map(async (filePath) => {
-      const stats = fs.statSync(filePath)
-      const ext = path.extname(filePath)
-      const fileType = getFileType(ext)
-
-      return {
-        id: uuidv4(),
-        origin_name: path.basename(filePath),
-        name: path.basename(filePath),
-        path: filePath,
-        created_at: stats.birthtime,
-        size: stats.size,
-        ext: ext,
-        type: fileType
+    try {
+      const defaultOptions: OpenDialogOptions = {
+        properties: ['openFile']
       }
-    })
 
-    return Promise.all(fileMetadataPromises)
+      const dialogOptions = { ...defaultOptions, ...options }
+
+      // 记录平台和对话框配置信息
+      logger.info('打开文件选择对话框', {
+        platform: process.platform,
+        dialogOptions,
+        hasFilters: !!options?.filters?.length,
+        filterCount: options?.filters?.length || 0
+      })
+
+      const result = await dialog.showOpenDialog(dialogOptions)
+
+      if (result.canceled) {
+        logger.info('用户取消了文件选择')
+        return null
+      }
+
+      if (result.filePaths.length === 0) {
+        logger.warn('文件选择对话框返回了空的文件路径列表')
+        return null
+      }
+
+      logger.info('用户选择了文件', {
+        fileCount: result.filePaths.length,
+        filePaths: result.filePaths.map((p) => ({
+          path: p,
+          platform: process.platform,
+          // 在日志中显示原始路径和标准化路径对比
+          normalized: process.platform === 'win32' ? p.replace(/\\/g, '/') : p
+        }))
+      })
+
+      const fileMetadataPromises = result.filePaths.map(async (filePath, index) => {
+        try {
+          logger.info(`处理文件 ${index + 1}/${result.filePaths.length}`, { filePath })
+
+          const stats = fs.statSync(filePath)
+          const ext = getFileExt(filePath)
+          const fileType = getFileType(ext)
+
+          const metadata = {
+            id: uuidv4(),
+            origin_name: path.basename(filePath),
+            name: path.basename(filePath),
+            path: filePath,
+            created_at: stats.birthtime,
+            size: stats.size,
+            ext: ext,
+            type: fileType
+          }
+
+          // 详细的文件信息日志
+          logger.info(`文件信息解析完成`, {
+            filePath,
+            originalExt: path.extname(filePath), // 对比原生方法
+            enhancedExt: ext, // 我们的增强方法
+            fileType,
+            size: `${Math.round(stats.size / 1024)}KB`,
+            platform: process.platform
+          })
+
+          return metadata
+        } catch (error) {
+          logger.error('处理单个文件时出错', {
+            filePath,
+            error: error as Error,
+            platform: process.platform
+          })
+          throw error
+        }
+      })
+
+      const results = await Promise.all(fileMetadataPromises)
+
+      logger.info('文件选择和处理完成', {
+        successCount: results.length,
+        platform: process.platform
+      })
+
+      return results
+    } catch (error) {
+      logger.error('文件选择过程出错', {
+        error: error as Error,
+        platform: process.platform,
+        options
+      })
+      throw error
+    }
   }
 
   public uploadFile = async (
@@ -140,7 +204,7 @@ class FileStorage {
 
     const uuid = uuidv4()
     const origin_name = path.basename(file.path)
-    const ext = path.extname(origin_name).toLowerCase()
+    const ext = getFileExt(origin_name).toLowerCase()
     const destPath = path.join(this.storageDir, uuid + ext)
 
     logger.info(`[FileStorage] Uploading file: ${file.path}`)
@@ -181,7 +245,7 @@ class FileStorage {
     }
 
     const stats = fs.statSync(filePath)
-    const ext = path.extname(filePath)
+    const ext = getFileExt(filePath)
     const fileType = getFileType(ext)
 
     const fileInfo: FileMetadata = {
@@ -285,7 +349,7 @@ class FileStorage {
           }
 
           const stats = fs.statSync(fullPath)
-          const ext = path.extname(name).toLowerCase()
+          const ext = getFileExt(name).toLowerCase()
           if (normalizedExts.length > 0 && !normalizedExts.includes(ext)) continue
 
           const type = getFileType(ext)
@@ -338,7 +402,7 @@ class FileStorage {
     const filePath = path.join(this.storageDir, id)
     const data = await fs.promises.readFile(filePath)
     const base64 = data.toString('base64')
-    const ext = path.extname(filePath).slice(1) == 'jpg' ? 'jpeg' : path.extname(filePath).slice(1)
+    const ext = getFileExt(filePath).slice(1) == 'jpg' ? 'jpeg' : getFileExt(filePath).slice(1)
     const mime = `image/${ext}`
     return {
       mime,
@@ -401,7 +465,7 @@ class FileStorage {
     const filePath = path.join(this.storageDir, id)
     const buffer = await fs.promises.readFile(filePath)
     const base64 = buffer.toString('base64')
-    const mime = `application/${path.extname(filePath).slice(1)}`
+    const mime = `application/${getFileExt(filePath).slice(1)}`
     return { data: base64, mime }
   }
 
@@ -411,7 +475,7 @@ class FileStorage {
   ): Promise<{ data: Buffer; mime: string }> => {
     const filePath = path.join(this.storageDir, id)
     const data = await fs.promises.readFile(filePath)
-    const mime = `image/${path.extname(filePath).slice(1)}`
+    const mime = `image/${getFileExt(filePath).slice(1)}`
     return { data, mime }
   }
 
@@ -587,7 +651,7 @@ class FileStorage {
       }
 
       const uuid = uuidv4()
-      const ext = path.extname(filename)
+      const ext = getFileExt(filename)
       const destPath = path.join(this.storageDir, uuid + ext)
 
       // 将响应内容写入文件
