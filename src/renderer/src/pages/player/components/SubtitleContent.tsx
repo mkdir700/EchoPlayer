@@ -235,26 +235,6 @@ export const SubtitleContent = memo(function SubtitleContent({
     return undefined
   }, [selectionState.startIndex, selectionState.endIndex, handleGlobalClick])
 
-  // === 键盘复制支持 ===
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-      const selection = window.getSelection()
-      const selectedText = selection?.toString()
-
-      if (selectedText) {
-        // 复制到剪贴板
-        navigator.clipboard
-          .writeText(selectedText)
-          .then(() => {
-            logger.info('字幕文本已复制到剪贴板', { length: selectedText.length })
-          })
-          .catch((error) => {
-            logger.error('复制到剪贴板失败', { error })
-          })
-      }
-    }
-  }, [])
-
   // === 渲染分词文本 ===
   const renderTokenizedText = useCallback(
     (tokens: WordToken[]) => {
@@ -366,8 +346,6 @@ export const SubtitleContent = memo(function SubtitleContent({
       ref={containerRef}
       className={className}
       style={style}
-      onKeyDown={handleKeyDown}
-      tabIndex={0} // 使元素可聚焦，支持键盘操作
       role="region"
       data-testid="subtitle-content"
     >
