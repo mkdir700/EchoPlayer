@@ -179,7 +179,8 @@ const shortcutKeys = [
   'subtitle_mode_none',
   'subtitle_mode_original',
   'subtitle_mode_translated',
-  'subtitle_mode_bilingual'
+  'subtitle_mode_bilingual',
+  'copy_subtitle'
 ] as const
 
 const shortcutKeyMap = shortcutKeys.reduce(

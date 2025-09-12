@@ -2,16 +2,99 @@ import { loggerService } from '@logger'
 import { useShortcut } from '@renderer/infrastructure/hooks/useShortcut'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { SubtitleDisplayMode } from '@types'
+import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { usePlayerCommands } from './usePlayerCommands'
 import useSubtitleOverlay from './useSubtitleOverlay'
 
 const logger = loggerService.withContext('TransportBar')
 
+/**
+ * Registers global keyboard shortcuts for player controls and subtitle-related actions.
+ *
+ * Sets up shortcuts for playback (play/pause, seek, volume, loop), subtitle navigation
+ * (previous/next, replay), subtitle display mode toggles (none/original/translated/bilingual),
+ * subtitle panel toggle, cycling favorite playback rates, and copying the current subtitle to the clipboard.
+ *
+ * The copy action selects text according to the current subtitle display mode:
+ * - ORIGINAL: original text
+ * - TRANSLATED: translated text, falling back to original if missing
+ * - BILINGUAL: original and translated joined by a newline
+ * - NONE or unsupported: no copy performed
+ *
+ * Side effects:
+ * - Invokes player command functions and store actions.
+ * - Writes subtitle text to the clipboard via `navigator.clipboard.writeText`.
+ * - Emits a `CustomEvent` named `subtitle-copied` with a localized success or failure message.
+ * - Logs informational and error events via the module logger.
+ */
 export function usePlayerShortcuts() {
+  const { t } = useTranslation()
   const cmd = usePlayerCommands()
-  const { setDisplayMode } = useSubtitleOverlay()
+  const { setDisplayMode, currentSubtitle } = useSubtitleOverlay()
   const { toggleSubtitlePanel, cycleFavoriteRateNext, cycleFavoriteRatePrev } = usePlayerStore()
+  const displayMode = usePlayerStore((s) => s.subtitleOverlay.displayMode)
+
+  // 复制字幕内容处理函数
+  const handleCopySubtitle = useCallback(async () => {
+    try {
+      let textToCopy = ''
+
+      if (currentSubtitle) {
+        // 根据显示模式复制相应的字幕内容
+        switch (displayMode) {
+          case SubtitleDisplayMode.ORIGINAL:
+            textToCopy = currentSubtitle.originalText
+            break
+          case SubtitleDisplayMode.TRANSLATED:
+            textToCopy = currentSubtitle.translatedText || currentSubtitle.originalText
+            break
+          case SubtitleDisplayMode.BILINGUAL: {
+            const texts = [currentSubtitle.originalText, currentSubtitle.translatedText].filter(
+              Boolean
+            )
+            textToCopy = texts.join('\n')
+            break
+          }
+          default:
+            logger.warn('当前显示模式不支持复制')
+            return // NONE 模式不复制
+        }
+        logger.info('复制字幕内容', {
+          mode: displayMode,
+          length: textToCopy.length
+        })
+      } else {
+        logger.warn('没有当前字幕内容')
+        return
+      }
+
+      if (textToCopy) {
+        await navigator.clipboard.writeText(textToCopy)
+
+        // 触发自定义事件显示toast
+        window.dispatchEvent(
+          new CustomEvent('subtitle-copied', {
+            detail: {
+              message: t('player.controls.copy.success')
+            }
+          })
+        )
+      }
+    } catch (error) {
+      logger.error('复制字幕失败', { error })
+
+      // 错误情况下也使用toast显示
+      window.dispatchEvent(
+        new CustomEvent('subtitle-copied', {
+          detail: {
+            message: t('player.controls.copy.failed')
+          }
+        })
+      )
+    }
+  }, [currentSubtitle, displayMode, t])
 
   useShortcut('play_pause', () => {
     cmd.playPause()
@@ -86,5 +169,10 @@ export function usePlayerShortcuts() {
   useShortcut('playback_rate_prev', () => {
     cycleFavoriteRatePrev()
     logger.info('播放速度切换: 上一个常用速度')
+  })
+
+  // 复制字幕内容
+  useShortcut('copy_subtitle', () => {
+    handleCopySubtitle()
   })
 }
