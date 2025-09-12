@@ -7,14 +7,12 @@ import { useCallback } from 'react'
 
 import { usePlayerCommands } from './usePlayerCommands'
 import useSubtitleOverlay from './useSubtitleOverlay'
-import useSubtitleOverlayUI from './useSubtitleOverlayUI'
 
 const logger = loggerService.withContext('TransportBar')
 
 export function usePlayerShortcuts() {
   const cmd = usePlayerCommands()
   const { setDisplayMode, currentSubtitle } = useSubtitleOverlay()
-  const { selectedText } = useSubtitleOverlayUI()
   const { toggleSubtitlePanel, cycleFavoriteRateNext, cycleFavoriteRatePrev } = usePlayerStore()
   const displayMode = usePlayerStore((s) => s.subtitleOverlay.displayMode)
 
@@ -23,65 +21,32 @@ export function usePlayerShortcuts() {
     try {
       let textToCopy = ''
 
-      // 首先尝试使用 selectedText 状态
-      if (selectedText && selectedText.length > 0) {
-        textToCopy = selectedText
-        logger.info('复制选中文本（来自状态）', { length: selectedText.length })
-      } else {
-        // 如果状态中没有选中文本，尝试直接从 DOM 查询选中的 token
-        const subtitleContainer = document.querySelector('[data-testid="subtitle-content"]')
-        const selectedTokens = subtitleContainer?.querySelectorAll('span[data-clickable="true"]')
-
-        if (selectedTokens && selectedTokens.length > 0) {
-          // 查找有选中样式的 token（背景色不透明的）
-          const selectedElements = Array.from(selectedTokens).filter((token) => {
-            const style = window.getComputedStyle(token)
-            const backgroundColor = style.backgroundColor
-            // 检查是否有背景色（选中状态会有背景色）
-            return (
-              backgroundColor &&
-              backgroundColor !== 'rgba(0, 0, 0, 0)' &&
-              backgroundColor !== 'transparent'
+      if (currentSubtitle) {
+        // 根据显示模式复制相应的字幕内容
+        switch (displayMode) {
+          case SubtitleDisplayMode.ORIGINAL:
+            textToCopy = currentSubtitle.originalText
+            break
+          case SubtitleDisplayMode.TRANSLATED:
+            textToCopy = currentSubtitle.translatedText || currentSubtitle.originalText
+            break
+          case SubtitleDisplayMode.BILINGUAL: {
+            const texts = [currentSubtitle.originalText, currentSubtitle.translatedText].filter(
+              Boolean
             )
-          })
-
-          if (selectedElements.length > 0) {
-            textToCopy = selectedElements.map((token) => token.textContent || '').join('')
-            logger.info('复制选中文本（来自DOM）', {
-              length: textToCopy.length,
-              tokenCount: selectedElements.length
-            })
+            textToCopy = texts.join('\n')
+            break
           }
+          default:
+            logger.warn('当前显示模式不支持复制')
+            return // NONE 模式不复制
         }
-
-        // 如果还是没有选中文本，复制当前字幕句子
-        if (!textToCopy && currentSubtitle) {
-          switch (displayMode) {
-            case SubtitleDisplayMode.ORIGINAL:
-              textToCopy = currentSubtitle.originalText
-              break
-            case SubtitleDisplayMode.TRANSLATED:
-              textToCopy = currentSubtitle.translatedText || currentSubtitle.originalText
-              break
-            case SubtitleDisplayMode.BILINGUAL: {
-              const texts = [currentSubtitle.originalText, currentSubtitle.translatedText].filter(
-                Boolean
-              )
-              textToCopy = texts.join('\n')
-              break
-            }
-            default:
-              return // NONE 模式不复制
-          }
-          logger.info('复制当前字幕', {
-            mode: displayMode,
-            length: textToCopy.length
-          })
-        }
-      }
-
-      if (!textToCopy) {
-        logger.warn('没有可复制的字幕内容')
+        logger.info('复制字幕内容', {
+          mode: displayMode,
+          length: textToCopy.length
+        })
+      } else {
+        logger.warn('没有当前字幕内容')
         return
       }
 
@@ -93,10 +58,7 @@ export function usePlayerShortcuts() {
           id: `copy-subtitle-${Date.now()}`,
           type: 'success',
           title: '复制成功',
-          message:
-            selectedText && selectedText.length > 0
-              ? `已复制选中文本到剪贴板 (${selectedText.length} 字符)`
-              : '已复制字幕内容到剪贴板',
+          message: `已复制字幕内容到剪贴板 (${textToCopy.length} 字符)`,
           timestamp: Date.now(),
           source: 'update'
         })
@@ -113,7 +75,7 @@ export function usePlayerShortcuts() {
         source: 'update'
       })
     }
-  }, [selectedText, currentSubtitle, displayMode])
+  }, [currentSubtitle, displayMode])
 
   useShortcut('play_pause', () => {
     cmd.playPause()
