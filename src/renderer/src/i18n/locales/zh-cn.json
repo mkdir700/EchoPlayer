@@ -106,6 +106,10 @@
       "fullscreen": {
         "enter": "全屏",
         "exit": "退出全屏"
+      },
+      "copy": {
+        "success": "已复制",
+        "failed": "复制失败，无法访问剪贴板"
       }
     },
     "subtitles": {
@@ -290,6 +294,7 @@
       "clear_shortcut": "清除快捷键",
       "clear_topic": "清空消息",
       "copy_last_message": "复制上一条消息",
+      "copy_subtitle": "复制字幕",
       "enabled": "启用",
       "escape_fullscreen": "退出全屏",
       "exit_fullscreen": "退出全屏",
