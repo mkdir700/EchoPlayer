@@ -1,5 +1,5 @@
 import { LoopMode } from '@types'
-import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest'
 
 import { PlayerOrchestrator, StateUpdater, VideoController } from '../PlayerOrchestrator'
 
@@ -26,6 +26,10 @@ describe('PlayerOrchestrator - 播放/暂停可靠性测试', () => {
     resumeDelay: 5000,
     volume: 1
   }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
 
   beforeEach(() => {
     // Mock console methods to avoid test output pollution
