@@ -34,33 +34,49 @@ function ffmpegDownloadPlugin() {
         return
       }
 
-      console.log(`Downloading FFmpeg for ${targetPlatform}-${targetArch}...`)
+      console.log(
+        `FFmpeg missing for ${targetPlatform}-${targetArch}, should be downloaded via prebuild`
+      )
 
-      try {
-        await new Promise<void>((resolve, reject) => {
-          const downloadScript = spawn(
-            'tsx',
-            ['scripts/download-ffmpeg.ts', 'platform', targetPlatform, targetArch],
-            {
-              stdio: 'inherit'
-            }
-          )
+      // 在生产构建时，FFmpeg 应该已经通过 prebuild 阶段下载
+      // 如果这里仍然缺失，说明 prebuild 没有正确执行，发出警告但不阻止构建
+      console.warn(`⚠️  FFmpeg not found for ${targetPlatform}-${targetArch}`)
+      console.warn(`   This may cause runtime issues. Please ensure prebuild stage runs correctly.`)
+      console.warn(`   You can manually download with: npm run ffmpeg:download`)
 
-          downloadScript.on('close', (code) => {
-            if (code === 0) {
-              console.log('FFmpeg Downloaded successfully')
-              resolve()
-            } else {
-              reject(new Error(`FFmpeg Download failed with exit code: ${code}`))
-            }
+      // 对于 CI 环境，我们可以尝试通过 npm run 来下载，这更可靠
+      if (process.env.CI) {
+        console.log(`CI environment detected, attempting to download via npm script...`)
+        try {
+          await new Promise<void>((resolve) => {
+            const downloadScript = spawn('npm', ['run', 'ffmpeg:download'], {
+              stdio: 'inherit',
+              shell: true,
+              env: {
+                ...process.env,
+                BUILD_TARGET_PLATFORM: targetPlatform,
+                BUILD_TARGET_ARCH: targetArch
+              }
+            })
+
+            downloadScript.on('close', (code) => {
+              if (code === 0) {
+                console.log('FFmpeg Downloaded successfully via npm script')
+                resolve()
+              } else {
+                console.warn(`FFmpeg download failed with exit code: ${code}, continuing build...`)
+                resolve() // 不阻止构建
+              }
+            })
+
+            downloadScript.on('error', (error) => {
+              console.warn('FFmpeg download failed:', error.message, 'continuing build...')
+              resolve() // 不阻止构建
+            })
           })
-
-          downloadScript.on('error', (error) => {
-            reject(error)
-          })
-        })
-      } catch (error) {
-        console.warn('FFmpeg Download failed', error)
+        } catch (error) {
+          console.warn('FFmpeg Download failed in CI:', error)
+        }
       }
     }
   }
