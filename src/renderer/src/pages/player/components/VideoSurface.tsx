@@ -3,6 +3,7 @@ import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { useCallback, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 
+import { usePlayerCommands } from '../hooks/usePlayerCommands'
 import { usePlayerEngine } from '../hooks/usePlayerEngine'
 import AutoResumeCountdown from './AutoResumeCountdown'
 import SubtitleOverlay from './SubtitleOverlay'
@@ -28,6 +29,13 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
   const pause = usePlayerStore((s) => s.pause)
 
   const { connectVideoElement, getMediaEventHandlers, orchestrator } = usePlayerEngine()
+  const { playPause } = usePlayerCommands()
+
+  // 处理点击播放/暂停
+  const handleSurfaceClick = useCallback(() => {
+    playPause()
+    logger.debug('点击触发播放/暂停')
+  }, [playPause])
 
   // 稳定的 video 元素引用处理
   const handleVideoRef = useCallback(
@@ -194,7 +202,19 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
   }, [])
 
   return (
-    <Surface ref={surfaceRef} role="region" aria-label="video-surface" data-testid="video-surface">
+    <Surface
+      ref={surfaceRef}
+      role="button"
+      data-testid="video-surface"
+      onClick={handleSurfaceClick}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleSurfaceClick()
+        }
+      }}
+    >
       <StyledVideo
         ref={handleVideoRef}
         src={src}
@@ -243,6 +263,7 @@ const Surface = styled.div`
   align-items: center;
   justify-content: center;
   background: #000;
+  cursor: pointer;
 
   /* 为字幕覆盖层提供定位上下文 */
   overflow: hidden;
