@@ -3,7 +3,7 @@ import FileManager from '@renderer/services/FileManager'
 import { VideoLibraryService } from '@renderer/services/VideoLibrary'
 import { ParallelVideoProcessor } from '@renderer/utils/ParallelVideoProcessor'
 import { createPerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
-import { videoExts } from '@shared/config/constant'
+import { getVideoDialogExtensions } from '@shared/config/constant'
 import { message } from 'antd'
 import type { FileMetadata, VideoLibraryRecord } from 'packages/shared/types/database'
 import { useCallback, useState } from 'react'
@@ -176,7 +176,7 @@ export function useVideoFileSelect(
         filters: [
           {
             name: 'Video Files',
-            extensions: videoExts
+            extensions: getVideoDialogExtensions()
           }
         ]
       })
