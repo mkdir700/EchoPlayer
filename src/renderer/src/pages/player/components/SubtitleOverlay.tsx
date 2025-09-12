@@ -11,6 +11,17 @@
  */
 
 import { loggerService } from '@logger'
+import {
+  ANIMATION_DURATION,
+  BORDER_RADIUS,
+  EASING,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  GLASS_EFFECT,
+  SHADOWS,
+  SPACING,
+  Z_INDEX
+} from '@renderer/infrastructure/styles/theme'
 import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import { Tooltip } from 'antd'
@@ -88,7 +99,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       hideToastTimerRef.current = setTimeout(() => {
         setToastVisible(false)
         hideToastTimerRef.current = null
-      }, 2000)
+      }, 800)
     }
 
     window.addEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
@@ -612,20 +623,20 @@ const ToastContainer = styled.div<{ $visible: boolean }>`
   transform: translateX(-50%);
   opacity: ${(props) => (props.$visible ? 1 : 0)};
   visibility: ${(props) => (props.$visible ? 'visible' : 'hidden')};
-  transition: opacity ${(p) => p.theme.motionDurationMid || '300ms'} ease;
-  z-index: 1000;
+  transition: opacity ${ANIMATION_DURATION.SLOW} ${EASING.APPLE};
+  z-index: ${Z_INDEX.MODAL};
   pointer-events: none;
 `
 
 const ToastContent = styled.div`
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, ${GLASS_EFFECT.BACKGROUND_ALPHA.LIGHT});
   color: #ffffff;
-  padding: 8px 16px;
-  border-radius: ${(p) => p.theme.borderRadiusMD || '6px'};
-  font-size: 14px;
-  font-weight: 500;
+  padding: ${SPACING.XS}px ${SPACING.MD}px;
+  border-radius: ${BORDER_RADIUS.SM}px;
+  font-size: ${FONT_SIZES.SM}px;
+  font-weight: ${FONT_WEIGHTS.MEDIUM};
   white-space: nowrap;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(${GLASS_EFFECT.BLUR_STRENGTH.SUBTLE}px);
+  border: 1px solid rgba(255, 255, 255, ${GLASS_EFFECT.BORDER_ALPHA.SUBTLE});
+  box-shadow: ${SHADOWS.SM};
 `

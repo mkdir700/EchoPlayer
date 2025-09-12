@@ -10,6 +10,44 @@
 - 在布局实现上，后续优先使用 flex 布局（尽量避免使用 grid 作为默认方案）。
 - 项目优先使用 antd 组件库，如果组件可以被 antd 复用则优先使用 antd 而不是自定义开发
 
+## 主题变量使用最佳实践
+
+项目启用了 Ant Design 的 CSS 变量模式 (`cssVar: true`)，在 styled-components 中应采用分类使用策略：
+
+### 使用 CSS 变量的场景（主题相关属性）：
+
+- 颜色系统：`var(--ant-color-bg-elevated, fallback)`
+- 阴影效果：`var(--ant-box-shadow-secondary, fallback)`
+- 主题切换时会发生变化的属性
+
+### 使用 JS 变量的场景（设计系统常量）：
+
+- 尺寸间距：`${SPACING.XS}px`、`${BORDER_RADIUS.SM}px`
+- 动画配置：`${ANIMATION_DURATION.SLOW}`、`${EASING.APPLE}`
+- 层级关系：`${Z_INDEX.MODAL}`
+- 字体配置：`${FONT_SIZES.SM}px`、`${FONT_WEIGHTS.MEDIUM}`
+- 毛玻璃效果：`${GLASS_EFFECT.BACKGROUND_ALPHA.LIGHT}`
+
+### 推荐模式：
+
+```typescript
+const StyledComponent = styled.div`
+  /* 主题相关：使用 CSS 变量 */
+  background: var(--ant-color-bg-elevated, rgba(0, 0, 0, ${GLASS_EFFECT.BACKGROUND_ALPHA.LIGHT}));
+  color: var(--ant-color-white, #ffffff);
+  box-shadow: var(--ant-box-shadow-secondary, ${SHADOWS.SM});
+
+  /* 设计系统常量：使用 JS 变量 */
+  padding: ${SPACING.XS}px ${SPACING.MD}px;
+  border-radius: ${BORDER_RADIUS.SM}px;
+  font-size: ${FONT_SIZES.SM}px;
+  transition: opacity ${ANIMATION_DURATION.SLOW} ${EASING.APPLE};
+  z-index: ${Z_INDEX.MODAL};
+`
+```
+
+这种混合模式既保持了类型安全和构建时优化，又支持主题的运行时切换，是当前架构下的最佳实践。
+
 # State Management
 
 - 项目使用 Zustand 作为状态管理库，配合 Immer 中间件支持不可变状态更新，使用自定义的中间件栈包含持久化、DevTools 和订阅选择器功能
