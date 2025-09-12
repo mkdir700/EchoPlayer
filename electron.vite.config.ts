@@ -34,49 +34,50 @@ function ffmpegDownloadPlugin() {
         return
       }
 
-      console.log(
-        `FFmpeg missing for ${targetPlatform}-${targetArch}, should be downloaded via prebuild`
-      )
+      console.log(`Downloading FFmpeg for ${targetPlatform}-${targetArch}...`)
 
-      // 在生产构建时，FFmpeg 应该已经通过 prebuild 阶段下载
-      // 如果这里仍然缺失，说明 prebuild 没有正确执行，发出警告但不阻止构建
-      console.warn(`⚠️  FFmpeg not found for ${targetPlatform}-${targetArch}`)
-      console.warn(`   This may cause runtime issues. Please ensure prebuild stage runs correctly.`)
-      console.warn(`   You can manually download with: npm run ffmpeg:download`)
+      try {
+        await new Promise<void>((resolve, reject) => {
+          // 在不同环境中使用不同的命令来确保兼容性
+          let command: string
+          let args: string[]
 
-      // 对于 CI 环境，我们可以尝试通过 npm run 来下载，这更可靠
-      if (process.env.CI) {
-        console.log(`CI environment detected, attempting to download via npm script...`)
-        try {
-          await new Promise<void>((resolve) => {
-            const downloadScript = spawn('npm', ['run', 'ffmpeg:download'], {
-              stdio: 'inherit',
-              shell: true,
-              env: {
-                ...process.env,
-                BUILD_TARGET_PLATFORM: targetPlatform,
-                BUILD_TARGET_ARCH: targetArch
-              }
-            })
+          if (process.platform === 'win32') {
+            // Windows 环境：使用 npm run 调用脚本，更可靠
+            command = 'npm'
+            args = ['run', 'ffmpeg:download']
+          } else {
+            // Unix 环境：直接使用 tsx
+            command = 'tsx'
+            args = ['scripts/download-ffmpeg.ts', 'platform', targetPlatform, targetArch]
+          }
 
-            downloadScript.on('close', (code) => {
-              if (code === 0) {
-                console.log('FFmpeg Downloaded successfully via npm script')
-                resolve()
-              } else {
-                console.warn(`FFmpeg download failed with exit code: ${code}, continuing build...`)
-                resolve() // 不阻止构建
-              }
-            })
-
-            downloadScript.on('error', (error) => {
-              console.warn('FFmpeg download failed:', error.message, 'continuing build...')
-              resolve() // 不阻止构建
-            })
+          const downloadScript = spawn(command, args, {
+            stdio: 'inherit',
+            shell: process.platform === 'win32',
+            env: {
+              ...process.env,
+              BUILD_TARGET_PLATFORM: targetPlatform,
+              BUILD_TARGET_ARCH: targetArch
+            }
           })
-        } catch (error) {
-          console.warn('FFmpeg Download failed in CI:', error)
-        }
+
+          downloadScript.on('close', (code) => {
+            if (code === 0) {
+              console.log('FFmpeg Downloaded successfully')
+              resolve()
+            } else {
+              reject(new Error(`FFmpeg Download failed with exit code: ${code}`))
+            }
+          })
+
+          downloadScript.on('error', (error) => {
+            reject(error)
+          })
+        })
+      } catch (error) {
+        console.error('FFmpeg Download failed:', error)
+        throw new Error(`Failed to download FFmpeg for ${targetPlatform}-${targetArch}: ${error}`)
       }
     }
   }
