@@ -36,6 +36,9 @@ export function useSubtitleOverlay(): SubtitleOverlay {
   // 字幕引擎
   const { currentSubtitle, currentIndex } = useSubtitleEngine()
 
+  // 当前播放时间
+  const currentTime = usePlayerStore((s) => s.currentTime)
+
   const subtitleOverlayConfig = usePlayerStore((s) => s.subtitleOverlay)
   const setSubtitleOverlay = usePlayerStore((s) => s.setSubtitleOverlay)
 
@@ -54,10 +57,17 @@ export function useSubtitleOverlay(): SubtitleOverlay {
 
   // === 计算是否应该显示 ===
   const shouldShow = useMemo(() => {
-    return (
-      subtitleOverlayConfig.displayMode !== SubtitleDisplayMode.NONE && currentSubtitleData !== null
-    )
-  }, [subtitleOverlayConfig.displayMode, currentSubtitleData])
+    // 基础条件：显示模式不为 NONE 且有字幕数据
+    if (subtitleOverlayConfig.displayMode === SubtitleDisplayMode.NONE || !currentSubtitleData) {
+      return false
+    }
+
+    // 时间边界检查：确保当前播放时间在字幕的时间范围内
+    const isInTimeRange =
+      currentTime >= currentSubtitleData.startTime && currentTime <= currentSubtitleData.endTime
+
+    return isInTimeRange
+  }, [subtitleOverlayConfig.displayMode, currentSubtitleData, currentTime])
 
   // === 计算显示文本 ===
   const displayText = useMemo(() => {
