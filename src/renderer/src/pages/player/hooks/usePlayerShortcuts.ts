@@ -1,9 +1,9 @@
 import { loggerService } from '@logger'
 import { useShortcut } from '@renderer/infrastructure/hooks/useShortcut'
-import { NotificationService } from '@renderer/services/NotificationService'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { SubtitleDisplayMode } from '@types'
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { usePlayerCommands } from './usePlayerCommands'
 import useSubtitleOverlay from './useSubtitleOverlay'
@@ -11,6 +11,7 @@ import useSubtitleOverlay from './useSubtitleOverlay'
 const logger = loggerService.withContext('TransportBar')
 
 export function usePlayerShortcuts() {
+  const { t } = useTranslation()
   const cmd = usePlayerCommands()
   const { setDisplayMode, currentSubtitle } = useSubtitleOverlay()
   const { toggleSubtitlePanel, cycleFavoriteRateNext, cycleFavoriteRatePrev } = usePlayerStore()
@@ -53,29 +54,28 @@ export function usePlayerShortcuts() {
       if (textToCopy) {
         await navigator.clipboard.writeText(textToCopy)
 
-        // 显示成功通知
-        NotificationService.getInstance().send({
-          id: `copy-subtitle-${Date.now()}`,
-          type: 'success',
-          title: '复制成功',
-          message: `已复制字幕内容到剪贴板 (${textToCopy.length} 字符)`,
-          timestamp: Date.now(),
-          source: 'update'
-        })
+        // 触发自定义事件显示toast
+        window.dispatchEvent(
+          new CustomEvent('subtitle-copied', {
+            detail: {
+              message: t('player.controls.copy.success')
+            }
+          })
+        )
       }
     } catch (error) {
       logger.error('复制字幕失败', { error })
 
-      NotificationService.getInstance().send({
-        id: `copy-error-${Date.now()}`,
-        type: 'error',
-        title: '复制失败',
-        message: '无法访问剪贴板',
-        timestamp: Date.now(),
-        source: 'update'
-      })
+      // 错误情况下也使用toast显示
+      window.dispatchEvent(
+        new CustomEvent('subtitle-copied', {
+          detail: {
+            message: t('player.controls.copy.failed')
+          }
+        })
+      )
     }
-  }, [currentSubtitle, displayMode])
+  }, [currentSubtitle, displayMode, t])
 
   useShortcut('play_pause', () => {
     cmd.playPause()

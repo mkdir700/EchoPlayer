@@ -14,7 +14,7 @@ import { loggerService } from '@logger'
 import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import { Tooltip } from 'antd'
-import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
 
@@ -70,6 +70,28 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 
   // === 本地状态 ===
   const overlayRef = useRef<HTMLDivElement>(null)
+  const [toastVisible, setToastVisible] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+
+  // === 复制成功toast监听器 ===
+  useEffect(() => {
+    const handleSubtitleCopied = (event: CustomEvent) => {
+      const { message } = event.detail
+      setToastMessage(message)
+      setToastVisible(true)
+
+      // 2秒后自动隐藏toast
+      setTimeout(() => {
+        setToastVisible(false)
+      }, 2000)
+    }
+
+    window.addEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
+
+    return () => {
+      window.removeEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
+    }
+  }, [])
 
   // === 初始化和容器边界更新 ===
   useEffect(() => {
@@ -434,6 +456,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           data-testid="subtitle-resize-handle"
         />
       </Tooltip>
+
+      <ToastContainer $visible={toastVisible}>
+        <ToastContent>{toastMessage}</ToastContent>
+      </ToastContainer>
     </OverlayContainer>
   )
 })
@@ -568,4 +594,29 @@ const ResizeHandle = styled.div<{ $visible: boolean }>`
     transform: scale(1.2);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
   }
+`
+
+const ToastContainer = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: ${(props) => (props.$visible ? 1 : 0)};
+  visibility: ${(props) => (props.$visible ? 'visible' : 'hidden')};
+  transition: all 0.3s ease;
+  z-index: 1000;
+  pointer-events: none;
+`
+
+const ToastContent = styled.div`
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `
