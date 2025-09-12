@@ -22,9 +22,18 @@ export function usePlayerShortcuts() {
       const selection = window.getSelection()
       const selectedText = selection?.toString().trim()
 
+      // 添加调试信息
+      logger.info('复制字幕调试信息', {
+        hasSelection: !!selection,
+        selectionLength: selectedText?.length || 0,
+        selectedText: selectedText ? selectedText.substring(0, 50) + '...' : 'none',
+        rangeCount: selection?.rangeCount || 0,
+        isCollapsed: selection?.isCollapsed
+      })
+
       let textToCopy = ''
 
-      if (selectedText) {
+      if (selectedText && selectedText.length > 0) {
         // 有选中文本，复制选中内容
         textToCopy = selectedText
         logger.info('复制选中文本', { length: selectedText.length })
