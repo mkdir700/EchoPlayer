@@ -60,13 +60,60 @@ export function getFileName(filePath: string) {
 }
 
 /**
- * Returns the extension of a file path.
+ * Returns the extension of a file path with enhanced Windows compatibility.
  *
  * @param filePath - The path or filename to inspect.
  * @returns The file extension including the leading `.` (e.g. `.txt`), or an empty string if the path has no extension.
  */
-export function getFileExt(filePath: string) {
-  return path.extname(filePath)
+export function getFileExt(filePath: string): string {
+  if (!filePath) {
+    return ''
+  }
+
+  // 标准化路径分隔符，Windows 兼容性处理
+  let normalizedPath = filePath.trim()
+
+  // Windows 平台特殊处理
+  if (process.platform === 'win32') {
+    // 将反斜杠转换为正斜杠
+    normalizedPath = normalizedPath.replace(/\\/g, '/')
+
+    // 处理 Windows 驱动器路径 (如 /C:/path -> C:/path)
+    if (normalizedPath.startsWith('/') && normalizedPath.match(/^\/[A-Za-z]:/)) {
+      normalizedPath = normalizedPath.substring(1)
+    }
+  }
+
+  // 使用 Node.js 标准方法获取扩展名
+  let ext = path.extname(normalizedPath).toLowerCase()
+
+  // 备用方法：如果 path.extname 返回空但文件名包含点
+  if (!ext && normalizedPath.includes('.')) {
+    const parts = normalizedPath.split('.')
+    if (parts.length > 1) {
+      const lastPart = parts[parts.length - 1].toLowerCase()
+      // 确保最后一部分不是空的且不包含路径分隔符
+      if (lastPart && !lastPart.includes('/') && !lastPart.includes('\\')) {
+        ext = '.' + lastPart
+      }
+    }
+  }
+
+  // 清理异常情况：将多个点转换为单个点 (..mp4 -> .mp4)
+  if (ext.length > 1) {
+    const cleanedExt = ext.replace(/^\.+/, '')
+    if (cleanedExt) {
+      ext = '.' + cleanedExt
+    } else {
+      // 如果清理后为空，则返回空字符串
+      ext = ''
+    }
+  } else if (ext === '.') {
+    // 单独的点应该返回空字符串
+    ext = ''
+  }
+
+  return ext
 }
 
 /**
