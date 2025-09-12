@@ -10,6 +10,25 @@ import useSubtitleOverlay from './useSubtitleOverlay'
 
 const logger = loggerService.withContext('TransportBar')
 
+/**
+ * Registers global keyboard shortcuts for player controls and subtitle-related actions.
+ *
+ * Sets up shortcuts for playback (play/pause, seek, volume, loop), subtitle navigation
+ * (previous/next, replay), subtitle display mode toggles (none/original/translated/bilingual),
+ * subtitle panel toggle, cycling favorite playback rates, and copying the current subtitle to the clipboard.
+ *
+ * The copy action selects text according to the current subtitle display mode:
+ * - ORIGINAL: original text
+ * - TRANSLATED: translated text, falling back to original if missing
+ * - BILINGUAL: original and translated joined by a newline
+ * - NONE or unsupported: no copy performed
+ *
+ * Side effects:
+ * - Invokes player command functions and store actions.
+ * - Writes subtitle text to the clipboard via `navigator.clipboard.writeText`.
+ * - Emits a `CustomEvent` named `subtitle-copied` with a localized success or failure message.
+ * - Logs informational and error events via the module logger.
+ */
 export function usePlayerShortcuts() {
   const { t } = useTranslation()
   const cmd = usePlayerCommands()
