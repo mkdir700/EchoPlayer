@@ -21,6 +21,14 @@ export function usePlayerShortcuts() {
   // 复制字幕内容处理函数
   const handleCopySubtitle = useCallback(async () => {
     try {
+      // 添加调试信息
+      logger.info('复制字幕调试', {
+        hasSelectedText: !!selectedText,
+        selectedTextLength: selectedText?.length || 0,
+        selectedTextContent: selectedText || 'empty',
+        hasCurrentSubtitle: !!currentSubtitle
+      })
+
       let textToCopy = ''
 
       if (selectedText && selectedText.length > 0) {
