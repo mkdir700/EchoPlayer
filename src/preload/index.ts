@@ -2,7 +2,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { UpgradeChannel } from '@shared/config/constant'
 import { LogLevel, LogSourceWithContext } from '@shared/config/logger'
 import { IpcChannel } from '@shared/IpcChannel'
-import { FFmpegVideoInfo, Shortcut, ThemeMode } from '@types'
+import { DictionaryResponse, FFmpegVideoInfo, Shortcut, ThemeMode } from '@types'
 import { contextBridge, ipcRenderer, OpenDialogOptions, shell, webUtils } from 'electron'
 import type {
   FileMetadata,
@@ -306,6 +306,12 @@ const api = {
   shell: {
     openExternal: (url: string, options?: Electron.OpenExternalOptions) =>
       shell.openExternal(url, options)
+  },
+
+  // 词典服务 API
+  dictionary: {
+    queryEudic: (word: string, context?: string): Promise<DictionaryResponse> =>
+      ipcRenderer.invoke(IpcChannel.Dictionary_Eudic, word, context)
   },
 
   // 数据库相关 API
