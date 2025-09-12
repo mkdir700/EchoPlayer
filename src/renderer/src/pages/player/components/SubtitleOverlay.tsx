@@ -612,7 +612,7 @@ const ToastContainer = styled.div<{ $visible: boolean }>`
   transform: translateX(-50%);
   opacity: ${(props) => (props.$visible ? 1 : 0)};
   visibility: ${(props) => (props.$visible ? 'visible' : 'hidden')};
-  transition: all 0.3s ease;
+  transition: opacity ${(p) => p.theme.motionDurationMid || '300ms'} ease;
   z-index: 1000;
   pointer-events: none;
 `
@@ -621,7 +621,7 @@ const ToastContent = styled.div`
   background: rgba(0, 0, 0, 0.8);
   color: #ffffff;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: ${(p) => p.theme.borderRadiusMD || '6px'};
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
