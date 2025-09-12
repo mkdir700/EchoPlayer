@@ -93,16 +93,20 @@ jobs:
           }
           EOF
 
-          # 使用临时配置进行版本分析
-          OUTPUT=$(pnpm semantic-release --dry-run -c .releaserc.temp.js 2>&1)
-          echo "$OUTPUT"
+          # 使用临时配置进行版本分析，输出到临时文件
+          pnpm semantic-release --dry-run -c .releaserc.temp.js > semantic_output.txt 2>&1
+
+          # 显示输出内容以便调试
+          echo "=== Semantic Release Output ==="
+          cat semantic_output.txt
+          echo "=== End of Output ==="
 
           # 清理临时文件
           rm -f .releaserc.temp.js
 
-          # 检查是否有新版本需要发布
-          if echo "$OUTPUT" | grep -q "The next release version is"; then
-            NEXT_VERSION=$(echo "$OUTPUT" | grep "The next release version is" | sed 's/.*The next release version is \([0-9.a-z-]*\).*/\1/')
+          # 检查是否有新版本需要发布（从文件中搜索，避免变量长度限制）
+          if grep -q "next release version is" semantic_output.txt; then
+            NEXT_VERSION=$(grep "next release version is" semantic_output.txt | sed 's/.*next release version is \([0-9.a-z-]*\).*/\1/' | head -1)
             echo "✅ Next version: $NEXT_VERSION"
             echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
             echo "should_release=true" >> $GITHUB_OUTPUT
@@ -110,6 +114,9 @@ jobs:
             echo "ℹ️ No new version to release"
             echo "should_release=false" >> $GITHUB_OUTPUT
           fi
+
+          # 清理临时输出文件
+          rm -f semantic_output.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
