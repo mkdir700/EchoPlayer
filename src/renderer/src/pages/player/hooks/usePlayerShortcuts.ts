@@ -21,44 +21,66 @@ export function usePlayerShortcuts() {
   // 复制字幕内容处理函数
   const handleCopySubtitle = useCallback(async () => {
     try {
-      // 添加调试信息
-      logger.info('复制字幕调试', {
-        hasSelectedText: !!selectedText,
-        selectedTextLength: selectedText?.length || 0,
-        selectedTextContent: selectedText || 'empty',
-        hasCurrentSubtitle: !!currentSubtitle
-      })
-
       let textToCopy = ''
 
+      // 首先尝试使用 selectedText 状态
       if (selectedText && selectedText.length > 0) {
-        // 有自定义选中文本，复制选中内容
         textToCopy = selectedText
-        logger.info('复制选中文本', { length: selectedText.length })
-      } else if (currentSubtitle) {
-        // 没有选中，复制当前字幕句子
-        switch (displayMode) {
-          case SubtitleDisplayMode.ORIGINAL:
-            textToCopy = currentSubtitle.originalText
-            break
-          case SubtitleDisplayMode.TRANSLATED:
-            textToCopy = currentSubtitle.translatedText || currentSubtitle.originalText
-            break
-          case SubtitleDisplayMode.BILINGUAL: {
-            const texts = [currentSubtitle.originalText, currentSubtitle.translatedText].filter(
-              Boolean
-            )
-            textToCopy = texts.join('\n')
-            break
-          }
-          default:
-            return // NONE 模式不复制
-        }
-        logger.info('复制当前字幕', {
-          mode: displayMode,
-          length: textToCopy.length
-        })
+        logger.info('复制选中文本（来自状态）', { length: selectedText.length })
       } else {
+        // 如果状态中没有选中文本，尝试直接从 DOM 查询选中的 token
+        const subtitleContainer = document.querySelector('[data-testid="subtitle-content"]')
+        const selectedTokens = subtitleContainer?.querySelectorAll('span[data-clickable="true"]')
+
+        if (selectedTokens && selectedTokens.length > 0) {
+          // 查找有选中样式的 token（背景色不透明的）
+          const selectedElements = Array.from(selectedTokens).filter((token) => {
+            const style = window.getComputedStyle(token)
+            const backgroundColor = style.backgroundColor
+            // 检查是否有背景色（选中状态会有背景色）
+            return (
+              backgroundColor &&
+              backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+              backgroundColor !== 'transparent'
+            )
+          })
+
+          if (selectedElements.length > 0) {
+            textToCopy = selectedElements.map((token) => token.textContent || '').join('')
+            logger.info('复制选中文本（来自DOM）', {
+              length: textToCopy.length,
+              tokenCount: selectedElements.length
+            })
+          }
+        }
+
+        // 如果还是没有选中文本，复制当前字幕句子
+        if (!textToCopy && currentSubtitle) {
+          switch (displayMode) {
+            case SubtitleDisplayMode.ORIGINAL:
+              textToCopy = currentSubtitle.originalText
+              break
+            case SubtitleDisplayMode.TRANSLATED:
+              textToCopy = currentSubtitle.translatedText || currentSubtitle.originalText
+              break
+            case SubtitleDisplayMode.BILINGUAL: {
+              const texts = [currentSubtitle.originalText, currentSubtitle.translatedText].filter(
+                Boolean
+              )
+              textToCopy = texts.join('\n')
+              break
+            }
+            default:
+              return // NONE 模式不复制
+          }
+          logger.info('复制当前字幕', {
+            mode: displayMode,
+            length: textToCopy.length
+          })
+        }
+      }
+
+      if (!textToCopy) {
         logger.warn('没有可复制的字幕内容')
         return
       }
