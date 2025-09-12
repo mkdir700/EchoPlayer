@@ -8,7 +8,19 @@ module.exports = {
     { name: 'alpha', prerelease: true }
   ],
   plugins: [
-    '@semantic-release/commit-analyzer',
+    [
+      '@semantic-release/commit-analyzer',
+      {
+        preset: 'angular',
+        releaseRules: [
+          {
+            type: 'chore',
+            scope: 'release',
+            release: 'patch'
+          }
+        ]
+      }
+    ],
     '@semantic-release/release-notes-generator',
 
     // 更新 changelog 文件
