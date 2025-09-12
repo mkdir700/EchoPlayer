@@ -79,13 +79,15 @@ describe('PlayerOrchestrator - 命令系统测试', () => {
     })
 
     it('should handle requestTogglePlay command when paused', async () => {
-      mockVideoController.isPaused.mockReturnValue(true)
+      // 修复：设置内部上下文状态为暂停，这是新的逻辑依赖
+      orchestrator.updateContext({ paused: true })
       await orchestrator.requestTogglePlay()
       expect(mockVideoController.play).toHaveBeenCalled()
     })
 
     it('should handle requestTogglePlay command when playing', async () => {
-      mockVideoController.isPaused.mockReturnValue(false)
+      // 修复：设置内部上下文状态为播放，这是新的逻辑依赖
+      orchestrator.updateContext({ paused: false })
       await orchestrator.requestTogglePlay()
       expect(mockVideoController.pause).toHaveBeenCalled()
     })

@@ -32,11 +32,25 @@ export function usePlayerCommands() {
       return
     }
 
+    const context = orchestrator.getContext()
+    const isCurrentlyPaused = orchestrator.isPaused()
+
+    logger.debug('playPause command initiated', {
+      contextPaused: context.paused,
+      actuallyPaused: isCurrentlyPaused,
+      currentTime: context.currentTime,
+      timestamp: Date.now()
+    })
+
     try {
       await orchestrator.requestTogglePlay()
-      logger.info('Command: playPause executed')
+      logger.info('Command: playPause executed successfully')
     } catch (error) {
-      logger.error('Failed to execute playPause command:', { error })
+      logger.error('Failed to execute playPause command:', {
+        error,
+        contextPaused: context.paused,
+        actuallyPaused: isCurrentlyPaused
+      })
     }
   }, [orchestrator])
 
