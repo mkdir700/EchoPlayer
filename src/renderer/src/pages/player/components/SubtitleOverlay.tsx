@@ -72,23 +72,32 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const overlayRef = useRef<HTMLDivElement>(null)
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const hideToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // === 复制成功toast监听器 ===
   useEffect(() => {
-    const handleSubtitleCopied = (event: CustomEvent) => {
+    const handleSubtitleCopied = (event: CustomEvent<{ message: string }>) => {
       const { message } = event.detail
       setToastMessage(message)
       setToastVisible(true)
 
-      // 2秒后自动隐藏toast
-      setTimeout(() => {
+      // 2秒后自动隐藏toast（防抖）
+      if (hideToastTimerRef.current) {
+        clearTimeout(hideToastTimerRef.current)
+      }
+      hideToastTimerRef.current = setTimeout(() => {
         setToastVisible(false)
+        hideToastTimerRef.current = null
       }, 2000)
     }
 
     window.addEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
 
     return () => {
+      if (hideToastTimerRef.current) {
+        clearTimeout(hideToastTimerRef.current)
+        hideToastTimerRef.current = null
+      }
       window.removeEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
     }
   }, [])
