@@ -7,34 +7,24 @@ import { useCallback } from 'react'
 
 import { usePlayerCommands } from './usePlayerCommands'
 import useSubtitleOverlay from './useSubtitleOverlay'
+import useSubtitleOverlayUI from './useSubtitleOverlayUI'
 
 const logger = loggerService.withContext('TransportBar')
 
 export function usePlayerShortcuts() {
   const cmd = usePlayerCommands()
   const { setDisplayMode, currentSubtitle } = useSubtitleOverlay()
+  const { selectedText } = useSubtitleOverlayUI()
   const { toggleSubtitlePanel, cycleFavoriteRateNext, cycleFavoriteRatePrev } = usePlayerStore()
   const displayMode = usePlayerStore((s) => s.subtitleOverlay.displayMode)
 
   // 复制字幕内容处理函数
   const handleCopySubtitle = useCallback(async () => {
     try {
-      const selection = window.getSelection()
-      const selectedText = selection?.toString().trim()
-
-      // 添加调试信息
-      logger.info('复制字幕调试信息', {
-        hasSelection: !!selection,
-        selectionLength: selectedText?.length || 0,
-        selectedText: selectedText ? selectedText.substring(0, 50) + '...' : 'none',
-        rangeCount: selection?.rangeCount || 0,
-        isCollapsed: selection?.isCollapsed
-      })
-
       let textToCopy = ''
 
       if (selectedText && selectedText.length > 0) {
-        // 有选中文本，复制选中内容
+        // 有自定义选中文本，复制选中内容
         textToCopy = selectedText
         logger.info('复制选中文本', { length: selectedText.length })
       } else if (currentSubtitle) {
@@ -73,9 +63,10 @@ export function usePlayerShortcuts() {
           id: `copy-subtitle-${Date.now()}`,
           type: 'success',
           title: '复制成功',
-          message: selectedText
-            ? `已复制选中文本到剪贴板 (${selectedText.length} 字符)`
-            : '已复制字幕内容到剪贴板',
+          message:
+            selectedText && selectedText.length > 0
+              ? `已复制选中文本到剪贴板 (${selectedText.length} 字符)`
+              : '已复制字幕内容到剪贴板',
           timestamp: Date.now(),
           source: 'update'
         })
@@ -92,7 +83,7 @@ export function usePlayerShortcuts() {
         source: 'update'
       })
     }
-  }, [currentSubtitle, displayMode])
+  }, [selectedText, currentSubtitle, displayMode])
 
   useShortcut('play_pause', () => {
     cmd.playPause()
