@@ -249,10 +249,48 @@ export class PlayerOrchestrator {
     }
 
     try {
+      // 记录播放前的状态
+      const wasActuallyPaused = this.videoController.isPaused()
+      const wasContextPaused = this.context.paused
+
+      logger.debug('requestPlay initiated', {
+        wasActuallyPaused,
+        wasContextPaused,
+        currentTime: this.context.currentTime
+      })
+
+      // 乐观更新内部状态
+      if (wasContextPaused) {
+        this.updateContext({ paused: false })
+      }
+
       await this.videoController.play()
-      logger.debug('Command: requestPlay executed')
+      logger.debug('Command: requestPlay executed successfully')
+
+      // 延迟验证播放是否真正开始
+      setTimeout(() => {
+        if (this.videoController?.isPaused()) {
+          logger.warn('Video element still paused after play() call, investigating...', {
+            contextPaused: this.context.paused,
+            videoPaused: this.videoController?.isPaused()
+          })
+
+          // 尝试再次播放
+          this.videoController?.play().catch((retryError) => {
+            logger.error('Retry play() also failed:', { retryError })
+            // 回滚乐观更新
+            this.updateContext({ paused: true })
+          })
+        }
+      }, 150)
     } catch (error) {
       logger.error('Failed to execute requestPlay:', { error })
+      // 回滚乐观更新
+      this.updateContext({ paused: true })
+
+      // 尝试强制同步状态
+      this.syncPlaybackState()
+      // 不重新抛出异常，让调用者能正常处理
     }
   }
 
@@ -265,8 +303,47 @@ export class PlayerOrchestrator {
       return
     }
 
-    this.videoController.pause()
-    logger.debug('Command: requestPause executed')
+    try {
+      // 记录暂停前的状态
+      const wasActuallyPaused = this.videoController.isPaused()
+      const wasContextPaused = this.context.paused
+
+      logger.debug('requestPause initiated', {
+        wasActuallyPaused,
+        wasContextPaused,
+        currentTime: this.context.currentTime
+      })
+
+      // 乐观更新内部状态
+      if (!wasContextPaused) {
+        this.updateContext({ paused: true })
+      }
+
+      this.videoController.pause()
+      logger.debug('Command: requestPause executed successfully')
+
+      // 延迟验证暂停是否真正生效
+      setTimeout(() => {
+        if (!this.videoController?.isPaused()) {
+          logger.warn('Video element still playing after pause() call, investigating...', {
+            contextPaused: this.context.paused,
+            videoPaused: this.videoController?.isPaused()
+          })
+
+          // 尝试再次暂停
+          this.videoController?.pause()
+          // 强制同步状态
+          this.syncPlaybackState()
+        }
+      }, 50)
+    } catch (error) {
+      logger.error('Failed to execute requestPause:', { error })
+      // 回滚乐观更新
+      this.updateContext({ paused: false })
+
+      // 尝试强制同步状态
+      this.syncPlaybackState()
+    }
   }
 
   /**
@@ -278,10 +355,34 @@ export class PlayerOrchestrator {
       return
     }
 
-    if (this.videoController.isPaused()) {
-      await this.requestPlay()
-    } else {
-      this.requestPause()
+    // 使用内部上下文状态而非直接查询视频元素，避免状态不同步问题
+    const isPaused = this.context.paused
+
+    try {
+      if (isPaused) {
+        await this.requestPlay()
+        // 验证播放操作是否成功
+        setTimeout(() => {
+          if (this.videoController?.isPaused() && !this.context.paused) {
+            logger.warn('Play command failed to take effect, attempting sync')
+            this.syncPlaybackState()
+          }
+        }, 100)
+      } else {
+        this.requestPause()
+        // 验证暂停操作是否成功
+        setTimeout(() => {
+          if (!this.videoController?.isPaused() && this.context.paused) {
+            logger.warn('Pause command failed to take effect, attempting sync')
+            this.syncPlaybackState()
+          }
+        }, 50)
+      }
+    } catch (error) {
+      logger.error('Failed to toggle play state:', { error, isPaused })
+      // 尝试强制同步状态
+      this.syncPlaybackState()
+      // 不重新抛出异常，让调用者能正常处理
     }
   }
 
@@ -513,6 +614,47 @@ export class PlayerOrchestrator {
   }
 
   // === 私有方法 ===
+
+  /**
+   * 同步播放状态 - 解决内部状态与视频元素状态不一致的问题
+   */
+  private syncPlaybackState(): void {
+    if (!this.videoController) return
+
+    const actualPaused = this.videoController.isPaused()
+    const contextPaused = this.context.paused
+
+    if (actualPaused !== contextPaused) {
+      logger.warn('Playback state mismatch detected, syncing...', {
+        contextPaused,
+        actualPaused,
+        currentTime: this.context.currentTime
+      })
+
+      // 更新内部上下文状态
+      this.updateContext({ paused: actualPaused })
+
+      // 同步到外部状态管理器
+      this.stateUpdater?.setPlaying(!actualPaused)
+
+      // 同步调度器状态
+      if (actualPaused) {
+        if (this.clockScheduler.getState() !== 'paused') {
+          this.clockScheduler.pause()
+          logger.debug('ClockScheduler synced to paused state')
+        }
+      } else {
+        if (this.clockScheduler.getState() !== 'running') {
+          this.clockScheduler.resume()
+          logger.debug('ClockScheduler synced to running state')
+        }
+      }
+
+      logger.debug('Playback state synchronized successfully', {
+        newState: actualPaused ? 'paused' : 'playing'
+      })
+    }
+  }
 
   /**
    * 重置播放器状态（用户主动跳转时）
