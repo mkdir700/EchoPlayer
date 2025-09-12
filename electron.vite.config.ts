@@ -18,21 +18,49 @@ function ffmpegDownloadPlugin() {
       // 只在生产构建时下载 FFmpeg
       if (!isProd) return
 
-      console.log('Downloading FFmpeg...')
+      // 根据构建目标决定下载哪个平台
+      const targetPlatform = process.env.BUILD_TARGET_PLATFORM || process.platform
+      const targetArch = process.env.BUILD_TARGET_ARCH || process.arch
+
+      // 检查是否已存在，避免重复下载
+      const ffmpegPath = path.resolve(
+        'resources/ffmpeg',
+        `${targetPlatform}-${targetArch}`,
+        targetPlatform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
+      )
+
+      if (fs.existsSync(ffmpegPath)) {
+        console.log(`FFmpeg already exists for ${targetPlatform}-${targetArch}`)
+        return
+      }
+
+      console.log(`Downloading FFmpeg for ${targetPlatform}-${targetArch}...`)
 
       try {
-        // 根据构建目标决定下载哪个平台
-        const targetPlatform = process.env.BUILD_TARGET_PLATFORM || process.platform
-        const targetArch = process.env.BUILD_TARGET_ARCH || process.arch
-
         await new Promise<void>((resolve, reject) => {
-          const downloadScript = spawn(
-            'tsx',
-            ['scripts/download-ffmpeg.ts', 'platform', targetPlatform, targetArch],
-            {
-              stdio: 'inherit'
+          // 在不同环境中使用不同的命令来确保兼容性
+          let command: string
+          let args: string[]
+
+          if (process.platform === 'win32') {
+            // Windows 环境：使用 npm run 调用脚本，更可靠
+            command = 'npm'
+            args = ['run', 'ffmpeg:download']
+          } else {
+            // Unix 环境：直接使用 tsx
+            command = 'tsx'
+            args = ['scripts/download-ffmpeg.ts', 'platform', targetPlatform, targetArch]
+          }
+
+          const downloadScript = spawn(command, args, {
+            stdio: 'inherit',
+            shell: process.platform === 'win32',
+            env: {
+              ...process.env,
+              BUILD_TARGET_PLATFORM: targetPlatform,
+              BUILD_TARGET_ARCH: targetArch
             }
-          )
+          })
 
           downloadScript.on('close', (code) => {
             if (code === 0) {
@@ -48,7 +76,8 @@ function ffmpegDownloadPlugin() {
           })
         })
       } catch (error) {
-        console.warn('FFmpeg Download failed', error)
+        console.error('FFmpeg Download failed:', error)
+        throw new Error(`Failed to download FFmpeg for ${targetPlatform}-${targetArch}: ${error}`)
       }
     }
   }
