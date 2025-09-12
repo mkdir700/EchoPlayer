@@ -18,13 +18,25 @@ function ffmpegDownloadPlugin() {
       // 只在生产构建时下载 FFmpeg
       if (!isProd) return
 
-      console.log('Downloading FFmpeg...')
+      // 根据构建目标决定下载哪个平台
+      const targetPlatform = process.env.BUILD_TARGET_PLATFORM || process.platform
+      const targetArch = process.env.BUILD_TARGET_ARCH || process.arch
+
+      // 检查是否已存在，避免重复下载
+      const ffmpegPath = path.resolve(
+        'resources/ffmpeg',
+        `${targetPlatform}-${targetArch}`,
+        targetPlatform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
+      )
+
+      if (fs.existsSync(ffmpegPath)) {
+        console.log(`FFmpeg already exists for ${targetPlatform}-${targetArch}`)
+        return
+      }
+
+      console.log(`Downloading FFmpeg for ${targetPlatform}-${targetArch}...`)
 
       try {
-        // 根据构建目标决定下载哪个平台
-        const targetPlatform = process.env.BUILD_TARGET_PLATFORM || process.platform
-        const targetArch = process.env.BUILD_TARGET_ARCH || process.arch
-
         await new Promise<void>((resolve, reject) => {
           const downloadScript = spawn(
             'tsx',
