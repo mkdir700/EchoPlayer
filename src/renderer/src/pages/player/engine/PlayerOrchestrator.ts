@@ -464,6 +464,20 @@ export class PlayerOrchestrator {
     // 重置播放器状态（清理意图、重置字幕锁定、重载策略）
     this.resetOnUserSeek()
     this.updateContext({ currentTime: cue.startTime, activeCueIndex: index })
+
+    // 锁定字幕状态机，防止 SubtitleSyncStrategy 立即覆盖用户选择
+    this.subtitleLockFSM.lock('user_seek', index)
+
+    // 设置定时器，2秒后自动解锁，允许自动同步策略重新生效
+    this.userSeekTaskId = this.clockScheduler.scheduleAfter(
+      2000, // 2秒延迟
+      () => {
+        this.subtitleLockFSM.unlock('user_seek')
+        this.userSeekTaskId = null
+        logger.debug('用户跳转锁定已自动解除')
+      },
+      'user_seek_unlock'
+    )
     // 标记用户跳转状态，暂时禁用自动保存
     import('@renderer/services/PlayerSettingsSaver').then(
       ({ playerSettingsPersistenceService }) => {
@@ -684,8 +698,6 @@ export class PlayerOrchestrator {
    * 清理未发布的意图、重置字幕锁定状态、重载所有策略
    */
   private resetOnUserSeek(): void {
-    logger.debug('用户跳转，重置播放器状态')
-
     // 清理未发布的意图
     if (this.currentIntents.length > 0) {
       logger.debug(`清理 ${this.currentIntents.length} 个未发布的意图`)
@@ -705,7 +717,7 @@ export class PlayerOrchestrator {
     // 重载策略管理器
     this.strategyManager.reload(currentStrategies)
 
-    logger.debug('播放器状态重置完成')
+    logger.debug('用户跳转，播放器状态重置完成')
   }
 
   private registerBuiltinStrategies(): void {
