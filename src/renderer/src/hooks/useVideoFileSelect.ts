@@ -17,6 +17,8 @@ interface UseVideoFileSelectOptions {
 export interface UseVideoFileSelectReturn {
   selectVideoFile: () => Promise<void>
   isProcessing: boolean
+  showFFmpegPrompt: boolean
+  setShowFFmpegPrompt: (show: boolean) => void
 }
 
 /**
@@ -40,6 +42,7 @@ export function useVideoFileSelect(
 ): UseVideoFileSelectReturn {
   const { onSuccess } = options
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showFFmpegPrompt, setShowFFmpegPrompt] = useState(false)
 
   const processVideoFile = useCallback(
     async (file: FileMetadata) => {
@@ -113,18 +116,22 @@ export function useVideoFileSelect(
             try {
               const ffmpegInfo = await window.api.ffmpeg.getInfo()
               if (ffmpegInfo.needsDownload) {
-                throw new Error(
-                  '视频处理组件未安装。EchoPlayer 需要 FFmpeg 来处理视频文件。\n\n请在设置中下载视频处理组件，或安装系统 FFmpeg。'
-                )
+                // 显示FFmpeg引导对话框而不是直接抛出错误
+                setShowFFmpegPrompt(true)
+                return
               } else if (ffmpegInfo.isSystemFFmpeg) {
                 throw new Error(
                   '视频处理失败。可能是系统 FFmpeg 版本不兼容或视频文件损坏。\n\n建议在设置中下载官方视频处理组件以获得更好的兼容性。'
                 )
               }
             } catch (ffmpegError) {
-              // 如果 FFmpeg 检测本身失败，使用原始错误或提供备用消息
-              if ((ffmpegError as Error).message.includes('视频处理组件')) {
-                throw ffmpegError
+              // 如果 FFmpeg 检测本身失败，检查是否是需要下载的情况
+              if (
+                (ffmpegError as Error).message.includes('视频处理组件') ||
+                (ffmpegError as Error).message.includes('needsDownload')
+              ) {
+                setShowFFmpegPrompt(true)
+                return
               }
             }
 
@@ -216,6 +223,8 @@ export function useVideoFileSelect(
 
   return {
     selectVideoFile,
-    isProcessing
+    isProcessing,
+    showFFmpegPrompt,
+    setShowFFmpegPrompt
   }
 }
