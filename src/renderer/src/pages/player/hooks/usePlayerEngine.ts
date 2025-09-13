@@ -55,6 +55,10 @@ function getOrCreateGlobalStateUpdater(): StateUpdater {
         // TODO: 如果需要，可以在 player store 中添加 ended 状态
         logger.debug('Ended state updated:', { ended })
       },
+      setActiveCueIndex: (index: number) => {
+        usePlayerStore.getState().setActiveCueIndex(index)
+        logger.debug('Active cue index updated:', { index })
+      },
       // UI状态更新处理
       updateUIState: (updates: { openAutoResumeCountdown?: boolean }) => {
         logger.debug('Processing UI state updates:', { updates })
