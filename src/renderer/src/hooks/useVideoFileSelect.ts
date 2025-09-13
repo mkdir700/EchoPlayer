@@ -17,6 +17,8 @@ interface UseVideoFileSelectOptions {
 export interface UseVideoFileSelectReturn {
   selectVideoFile: () => Promise<void>
   isProcessing: boolean
+  showFFmpegPrompt: boolean
+  setShowFFmpegPrompt: (show: boolean) => void
 }
 
 /**
@@ -40,6 +42,7 @@ export function useVideoFileSelect(
 ): UseVideoFileSelectReturn {
   const { onSuccess } = options
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showFFmpegPrompt, setShowFFmpegPrompt] = useState(false)
 
   const processVideoFile = useCallback(
     async (file: FileMetadata) => {
@@ -109,6 +112,30 @@ export function useVideoFileSelect(
           })
 
           if (!videoInfo) {
+            // 检查是否是 FFmpeg 相关问题
+            try {
+              const ffmpegInfo = await window.api.ffmpeg.getInfo()
+              if (ffmpegInfo.needsDownload) {
+                // 显示FFmpeg引导对话框而不是直接抛出错误
+                setShowFFmpegPrompt(true)
+                return
+              } else if (ffmpegInfo.isSystemFFmpeg) {
+                throw new Error(
+                  '视频处理失败。可能是系统 FFmpeg 版本不兼容或视频文件损坏。\n\n建议在设置中下载官方视频处理组件以获得更好的兼容性。'
+                )
+              }
+            } catch (ffmpegError) {
+              // 如果 FFmpeg 检测本身失败，检查是否是需要下载的情况
+              if (
+                (ffmpegError as Error).message.includes('视频处理组件') ||
+                (ffmpegError as Error).message.includes('needsDownload')
+              ) {
+                setShowFFmpegPrompt(true)
+                return
+              }
+            }
+
+            // 如果不是 FFmpeg 问题，使用通用错误消息
             throw new Error('无法获取视频信息，请检查文件是否为有效的视频文件')
           }
 
@@ -196,6 +223,8 @@ export function useVideoFileSelect(
 
   return {
     selectVideoFile,
-    isProcessing
+    isProcessing,
+    showFFmpegPrompt,
+    setShowFFmpegPrompt
   }
 }
