@@ -4,6 +4,7 @@ import { app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 
+import { ffmpegDownloadService } from './FFmpegDownloadService'
 import { loggerService } from './LoggerService'
 
 const logger = loggerService.withContext('FFmpegService')
@@ -183,13 +184,20 @@ class FFmpegService {
 
   // 获取 FFmpeg 可执行文件路径
   public getFFmpegPath(): string {
-    // 1. 优先使用内置的 FFmpeg
+    // 1. 优先使用内置的 FFmpeg（向后兼容）
     const bundledPath = this.getBundledFFmpegPath()
     if (bundledPath) {
       return bundledPath
     }
 
-    // 2. 降级到系统 FFmpeg
+    // 2. 检查动态下载的 FFmpeg
+    if (ffmpegDownloadService.checkFFmpegExists()) {
+      const downloadedPath = ffmpegDownloadService.getFFmpegPath()
+      logger.info('使用动态下载的 FFmpeg', { downloadedPath })
+      return downloadedPath
+    }
+
+    // 3. 降级到系统 FFmpeg
     const platform = process.platform as keyof typeof this.FFMPEG_EXEC_NAMES
     const executable = this.FFMPEG_EXEC_NAMES[platform]?.executable || 'ffmpeg'
 
@@ -202,19 +210,36 @@ class FFmpegService {
     return this.getBundledFFmpegPath() !== null
   }
 
+  // 检查是否正在使用动态下载的 FFmpeg
+  public isUsingDownloadedFFmpeg(): boolean {
+    return !this.isUsingBundledFFmpeg() && ffmpegDownloadService.checkFFmpegExists()
+  }
+
   // 获取 FFmpeg 信息
   public getFFmpegInfo(): {
     path: string
     isBundled: boolean
+    isDownloaded: boolean
+    isSystemFFmpeg: boolean
     platform: string
     arch: string
+    version?: string
+    needsDownload: boolean
   } {
     const bundledPath = this.getBundledFFmpegPath()
+    const isDownloaded = ffmpegDownloadService.checkFFmpegExists()
+    const isBundled = bundledPath !== null
+    const isSystemFFmpeg = !isBundled && !isDownloaded
+
     return {
-      path: bundledPath || this.getFFmpegPath(),
-      isBundled: bundledPath !== null,
+      path: this.getFFmpegPath(),
+      isBundled,
+      isDownloaded,
+      isSystemFFmpeg,
       platform: process.platform,
-      arch: process.arch
+      arch: process.arch,
+      version: ffmpegDownloadService.getFFmpegVersion()?.version,
+      needsDownload: !isBundled && !isDownloaded
     }
   }
 
@@ -502,6 +527,15 @@ class FFmpegService {
   private async executeFFmpegDirect(args: string[], timeout: number): Promise<string> {
     return new Promise((resolve, reject) => {
       const ffmpegPath = this.getFFmpegPath()
+      const ffmpegInfo = this.getFFmpegInfo()
+
+      logger.info('🎬 执行 FFmpeg 命令', {
+        ffmpegPath,
+        args: args.slice(0, 3), // 只显示前3个参数避免日志过长
+        isSystemFFmpeg: ffmpegInfo.isSystemFFmpeg,
+        needsDownload: ffmpegInfo.needsDownload
+      })
+
       const ffmpeg = spawn(ffmpegPath, args)
 
       let output = ''
@@ -541,7 +575,24 @@ class FFmpegService {
       ffmpeg.on('error', (error) => {
         clearTimeout(timeoutHandle)
         if (!hasTimedOut) {
-          reject(error)
+          // 检查是否是 ENOENT 错误（文件不存在）
+          if ((error as any).code === 'ENOENT') {
+            const errorMessage = ffmpegInfo.needsDownload
+              ? `FFmpeg 未找到。您需要下载 FFmpeg 才能处理视频文件。\n\n建议操作：\n1. 打开应用设置\n2. 在 "插件管理" 中下载 FFmpeg\n3. 或手动安装系统 FFmpeg\n\n技术信息：${error.message}`
+              : `FFmpeg 不可用：${error.message}\n\n请检查 FFmpeg 安装或联系技术支持。`
+
+            logger.error('❌ FFmpeg 执行失败 - 文件不存在', {
+              ffmpegPath,
+              needsDownload: ffmpegInfo.needsDownload,
+              isSystemFFmpeg: ffmpegInfo.isSystemFFmpeg,
+              platform: process.platform,
+              error: error.message
+            })
+
+            reject(new Error(errorMessage))
+          } else {
+            reject(error)
+          }
         }
       })
     })
@@ -636,6 +687,55 @@ class FFmpegService {
   }
 
   /**
+   * 自动检测并下载 FFmpeg
+   * 如果没有内置版本且本地也没有下载版本，则触发下载
+   */
+  public async autoDetectAndDownload(): Promise<{
+    available: boolean
+    needsDownload: boolean
+    downloadTriggered: boolean
+  }> {
+    const info = this.getFFmpegInfo()
+
+    // 如果已有可用的 FFmpeg（内置或下载版本），直接返回
+    if (info.isBundled || info.isDownloaded) {
+      return {
+        available: true,
+        needsDownload: false,
+        downloadTriggered: false
+      }
+    }
+
+    // 检查系统 FFmpeg
+    if (await this.checkFFmpegExists()) {
+      return {
+        available: true,
+        needsDownload: false,
+        downloadTriggered: false
+      }
+    }
+
+    // 需要下载
+    logger.info('检测到需要下载 FFmpeg', {
+      platform: process.platform,
+      arch: process.arch
+    })
+
+    return {
+      available: false,
+      needsDownload: true,
+      downloadTriggered: false
+    }
+  }
+
+  /**
+   * 获取动态下载服务实例
+   */
+  public getDownloadService() {
+    return ffmpegDownloadService
+  }
+
+  /**
    * 销毁服务，清理资源
    */
   public async destroy(): Promise<void> {
@@ -649,6 +749,9 @@ class FFmpegService {
 
     // 重置预热状态
     FFmpegService.resetWarmupState()
+
+    // 清理下载服务的临时文件
+    ffmpegDownloadService.cleanupTempFiles()
 
     logger.info('FFmpeg 服务已销毁')
   }
