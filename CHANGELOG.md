@@ -1,3 +1,17 @@
+# [1.0.0-alpha.10](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.9...v1.0.0-alpha.10) (2025-09-13)
+
+### Bug Fixes
+
+- **logger:** optimize logger memory management and reduce high-frequency logging ([#156](https://github.com/mkdir700/EchoPlayer/issues/156)) ([2462964](https://github.com/mkdir700/EchoPlayer/commit/2462964ba1f850bd00c6365aca0211262ec90f79))
+- **subtitle:** resolve overlay pause/seek update delays with immediate state sync ([#153](https://github.com/mkdir700/EchoPlayer/issues/153)) ([cbd9432](https://github.com/mkdir700/EchoPlayer/commit/cbd9432b18df4a2d03229ed89d4b6363f80169cd))
+- **ui:** use system title bar for Windows and Linux platforms ([#158](https://github.com/mkdir700/EchoPlayer/issues/158)) ([0ddb189](https://github.com/mkdir700/EchoPlayer/commit/0ddb1896d2f8eb53acdd23528e0e12b88108c429))
+- **updater:** remove detailed release notes from system update dialog ([#152](https://github.com/mkdir700/EchoPlayer/issues/152)) ([9fea0be](https://github.com/mkdir700/EchoPlayer/commit/9fea0be29f4a15f5c5b8a5a34c98f0df9f2a8d2b))
+
+### Features
+
+- add Windows ARM64 architecture support ([#157](https://github.com/mkdir700/EchoPlayer/issues/157)) ([4106908](https://github.com/mkdir700/EchoPlayer/commit/4106908f7e330945c1ae5ac6ddbd4a56df72a6d9))
+- **ffmpeg:** implement dynamic FFmpeg download system with runtime management ([#155](https://github.com/mkdir700/EchoPlayer/issues/155)) ([2c03521](https://github.com/mkdir700/EchoPlayer/commit/2c03521720c688259df1f7832dd7e3a9a8dea070))
+
 # [1.0.0-alpha.9](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.8...v1.0.0-alpha.9) (2025-09-13)
 
 ### Bug Fixes
