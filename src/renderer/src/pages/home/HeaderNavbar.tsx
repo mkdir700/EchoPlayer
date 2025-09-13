@@ -11,9 +11,14 @@ import VideoAddButton from './VideoAddButton'
 interface Props {
   videoListViewMode: 'grid' | 'list'
   setVideoListViewMode: (mode: 'grid' | 'list') => void
+  onShowFFmpegPrompt?: (show: boolean) => void
 }
 
-const HeaderNavbar: FC<Props> = ({ videoListViewMode, setVideoListViewMode }) => {
+const HeaderNavbar: FC<Props> = ({
+  videoListViewMode,
+  setVideoListViewMode,
+  onShowFFmpegPrompt
+}) => {
   const { t } = useTranslation()
   const { showSearch } = useSearchStore()
 
@@ -28,7 +33,7 @@ const HeaderNavbar: FC<Props> = ({ videoListViewMode, setVideoListViewMode }) =>
   return (
     <Navbar className="home-navbar">
       <NavbarLeft>
-        <VideoAddButton />
+        <VideoAddButton onShowFFmpegPrompt={onShowFFmpegPrompt} />
       </NavbarLeft>
       <NavbarCenter />
       <NavbarRight style={{ gap: 10 }}>
