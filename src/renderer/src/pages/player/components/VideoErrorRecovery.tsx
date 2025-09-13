@@ -166,7 +166,7 @@ function VideoErrorRecovery({
         width={480}
         closable={false}
         maskClosable={false}
-        destroyOnClose
+        destroyOnHidden
       >
         <ModalContent>
           <VideoTitle title={videoTitle}>{videoTitle}</VideoTitle>
