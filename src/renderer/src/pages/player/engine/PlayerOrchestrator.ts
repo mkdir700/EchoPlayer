@@ -418,6 +418,18 @@ export class PlayerOrchestrator {
     // 重置播放器状态（清理意图、重置字幕锁定、重载策略）
     this.resetOnUserSeek()
 
+    // 标记用户跳转状态，暂时禁用自动保存
+    import('@renderer/services/PlayerSettingsSaver').then(
+      ({ playerSettingsPersistenceService }) => {
+        playerSettingsPersistenceService.markUserSeeking()
+      }
+    )
+
+    // 立即更新 store 中的 currentTime，确保 UI 组件能立即响应
+    if (this.stateUpdater) {
+      this.stateUpdater.setCurrentTime(to)
+    }
+
     // 执行跳转
     const clampedTime = Math.max(0, Math.min(this.context.duration || Infinity, to))
     this.videoController.seek(clampedTime)
@@ -453,6 +465,18 @@ export class PlayerOrchestrator {
     this.resetOnUserSeek()
     this.context.currentTime = cue.startTime
     this.context.activeCueIndex = index
+
+    // 标记用户跳转状态，暂时禁用自动保存
+    import('@renderer/services/PlayerSettingsSaver').then(
+      ({ playerSettingsPersistenceService }) => {
+        playerSettingsPersistenceService.markUserSeeking()
+      }
+    )
+
+    // 立即更新 store 中的 currentTime，确保字幕 overlay 能立即响应
+    if (this.stateUpdater) {
+      this.stateUpdater.setCurrentTime(cue.startTime)
+    }
 
     // 执行跳转
     const clampedTime = Math.max(0, Math.min(this.context.duration || Infinity, cue.startTime))
