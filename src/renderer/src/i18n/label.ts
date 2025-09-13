@@ -176,10 +176,6 @@ const shortcutKeys = [
   'toggle_subtitle_panel',
   'playback_rate_next',
   'playback_rate_prev',
-  'subtitle_mode_none',
-  'subtitle_mode_original',
-  'subtitle_mode_translated',
-  'subtitle_mode_bilingual',
   'copy_subtitle'
 ] as const
 

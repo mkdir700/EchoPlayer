@@ -32,7 +32,7 @@ const logger = loggerService.withContext('TransportBar')
 export function usePlayerShortcuts() {
   const { t } = useTranslation()
   const cmd = usePlayerCommands()
-  const { setDisplayMode, currentSubtitle } = useSubtitleOverlay()
+  const { currentSubtitle } = useSubtitleOverlay()
   const { toggleSubtitlePanel, cycleFavoriteRateNext, cycleFavoriteRatePrev } = usePlayerStore()
   const displayMode = usePlayerStore((s) => s.subtitleOverlay.displayMode)
 
@@ -131,27 +131,6 @@ export function usePlayerShortcuts() {
   // 单句循环
   useShortcut('single_loop', () => {
     cmd.toggleLoopEnabled()
-  })
-
-  // 字幕显示模式切换
-  useShortcut('subtitle_mode_none', () => {
-    setDisplayMode(SubtitleDisplayMode.NONE)
-    logger.info('字幕显示模式切换: 隐藏')
-  })
-
-  useShortcut('subtitle_mode_original', () => {
-    setDisplayMode(SubtitleDisplayMode.ORIGINAL)
-    logger.info('字幕显示模式切换: 仅原文')
-  })
-
-  useShortcut('subtitle_mode_translated', () => {
-    setDisplayMode(SubtitleDisplayMode.TRANSLATED)
-    logger.info('字幕显示模式切换: 仅译文')
-  })
-
-  useShortcut('subtitle_mode_bilingual', () => {
-    setDisplayMode(SubtitleDisplayMode.BILINGUAL)
-    logger.info('字幕显示模式切换: 双语显示')
   })
 
   // 字幕面板切换
