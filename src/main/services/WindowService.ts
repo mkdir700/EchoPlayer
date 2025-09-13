@@ -56,6 +56,26 @@ export class WindowService {
       maximize: false
     })
 
+    // 平台特定的标题栏配置
+    const getTitleBarConfig = () => {
+      if (isWin || isLinux) {
+        // Windows 和 Linux 使用系统标题栏
+        return {
+          titleBarStyle: undefined
+          // 不设置 titleBarOverlay 和 trafficLightPosition
+        }
+      } else {
+        // macOS 保持自定义标题栏
+        return {
+          titleBarStyle: 'hidden' as const,
+          titleBarOverlay: nativeTheme.shouldUseDarkColors
+            ? titleBarOverlayDark
+            : titleBarOverlayLight,
+          trafficLightPosition: { x: 8, y: 13 }
+        }
+      }
+    }
+
     this.mainWindow = new BrowserWindow({
       x: mainWindowState.x,
       y: mainWindowState.y,
@@ -68,11 +88,9 @@ export class WindowService {
       transparent: false,
       vibrancy: 'sidebar',
       visualEffectState: 'active',
-      titleBarStyle: 'hidden',
-      titleBarOverlay: nativeTheme.shouldUseDarkColors ? titleBarOverlayDark : titleBarOverlayLight,
+      ...getTitleBarConfig(),
       backgroundColor: isMac ? undefined : nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF',
       darkTheme: nativeTheme.shouldUseDarkColors,
-      trafficLightPosition: { x: 8, y: 13 },
       ...(isLinux ? { icon } : {}),
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
