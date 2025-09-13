@@ -463,9 +463,7 @@ export class PlayerOrchestrator {
 
     // 重置播放器状态（清理意图、重置字幕锁定、重载策略）
     this.resetOnUserSeek()
-    this.context.currentTime = cue.startTime
-    this.context.activeCueIndex = index
-
+    this.updateContext({ currentTime: cue.startTime, activeCueIndex: index })
     // 标记用户跳转状态，暂时禁用自动保存
     import('@renderer/services/PlayerSettingsSaver').then(
       ({ playerSettingsPersistenceService }) => {
