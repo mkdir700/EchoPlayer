@@ -197,9 +197,20 @@ function PlayerPage() {
       try {
         logger.info('开始重新定位视频文件', { videoId, newPath })
 
-        // 更新数据库中的文件路径
-        // 这里需要调用数据库服务来更新文件记录
-        // 暂时先更新本地状态，实际实现需要更新数据库
+        // 1. 获取视频记录以获得文件ID
+        const videoLibService = new VideoLibraryService()
+        const record = await videoLibService.getRecordById(videoId)
+        if (!record) {
+          throw new Error('视频记录不存在')
+        }
+
+        // 2. 更新数据库中的文件路径
+        const updatedFile = await db.files.updateFile(record.fileId, { path: newPath })
+        if (!updatedFile) {
+          throw new Error('更新文件路径失败')
+        }
+
+        // 3. 更新本地状态
         const newFileUrl = toFileUrl(newPath)
         const updatedVideoData = {
           ...videoData,
@@ -209,9 +220,16 @@ function PlayerPage() {
         setVideoData(updatedVideoData)
         setVideoError(null) // 清除错误状态
 
-        logger.info('视频文件路径已更新', { videoId, newPath, newFileUrl })
+        logger.info('视频文件路径已成功更新到数据库', {
+          videoId,
+          fileId: record.fileId,
+          oldPath: updatedFile.path !== newPath ? '已更新' : '未知',
+          newPath,
+          newFileUrl
+        })
       } catch (error) {
         logger.error('重新定位视频文件时出错', { error })
+        // 可以考虑向用户显示错误提示
       }
     },
     [videoData, videoId]
