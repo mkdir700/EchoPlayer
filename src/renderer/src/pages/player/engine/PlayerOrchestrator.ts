@@ -572,7 +572,8 @@ export class PlayerOrchestrator {
 
   onTimeUpdate(currentTime: number): void {
     this.mediaClock.updateTime(currentTime)
-    logger.silly('onTimeUpdate', { currentTime })
+    // 移除高频的 silly 日志，减少内存压力
+    // logger.silly('onTimeUpdate', { currentTime })
   }
 
   onPlay(): void {
@@ -1214,9 +1215,9 @@ export class PlayerOrchestrator {
       }
     }
 
-    // 存储追踪记录（最多 200 条）
+    // 存储追踪记录（减少到最多 50 条，优化内存使用）
     this._traceBuf.push(traceRecord)
-    if (this._traceBuf.length > 200) this._traceBuf.shift()
+    if (this._traceBuf.length > 50) this._traceBuf.shift()
 
     // 根据配置输出日志
     if (this.config.enableDebugLogs) {
