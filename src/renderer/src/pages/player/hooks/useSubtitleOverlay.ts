@@ -62,11 +62,21 @@ export function useSubtitleOverlay(): SubtitleOverlay {
       return false
     }
 
-    // 时间边界检查：确保当前播放时间在字幕的时间范围内
+    // 正常的时间边界检查：确保当前播放时间在字幕的时间范围内
     const isInTimeRange =
       currentTime >= currentSubtitleData.startTime && currentTime <= currentSubtitleData.endTime
 
-    return isInTimeRange
+    // 如果在时间范围内，直接显示
+    if (isInTimeRange) {
+      return true
+    }
+
+    // 智能容差机制：处理用户跳转时的短暂时间不同步问题
+    // 如果当前时间接近字幕开始时间，也应该显示（防止跳转闪烁）
+    const timeDiffToStart = Math.abs(currentTime - currentSubtitleData.startTime)
+    const isNearStart = timeDiffToStart <= 2.0 // 2秒容差，处理跳转延迟
+
+    return isNearStart
   }, [subtitleOverlayConfig.displayMode, currentSubtitleData, currentTime])
 
   // === 计算显示文本 ===
