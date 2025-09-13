@@ -190,7 +190,6 @@ export class IntentStrategyManager {
     for (const strategy of strategiesToReload) {
       try {
         this.registerStrategy(strategy)
-        logger.debug(`重新挂载策略: ${strategy.name}`)
       } catch (error) {
         logger.error(`重新挂载策略 ${strategy.name} 失败:`, { error })
       }

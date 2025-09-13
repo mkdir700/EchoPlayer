@@ -19,6 +19,7 @@ interface SubtitleEngine {
 export function useSubtitleEngine(): SubtitleEngine {
   const subtitles = useSubtitles()
   const currentTime = usePlayerStore((s) => s.currentTime)
+  const storeActiveCueIndex = usePlayerStore((s) => s.activeCueIndex)
 
   // 创建时间索引，用于二分查找优化
   const timeIndex = useMemo(() => {
@@ -78,10 +79,15 @@ export function useSubtitleEngine(): SubtitleEngine {
     }
   }, [findIndexByTime, subtitles])
 
-  // 当前字幕和索引
+  // 当前字幕和索引 - 优先使用 PlayerOrchestrator 的 activeCueIndex，回退到基于时间的计算
   const currentIndex = useMemo(() => {
+    // 如果 PlayerOrchestrator 提供了有效的 activeCueIndex，直接使用
+    if (storeActiveCueIndex >= 0 && storeActiveCueIndex < subtitles.length) {
+      return storeActiveCueIndex
+    }
+    // 否则回退到基于时间的计算
     return findIndexByTime(currentTime)
-  }, [findIndexByTime, currentTime])
+  }, [storeActiveCueIndex, subtitles.length, findIndexByTime, currentTime])
 
   const currentSubtitle = useMemo(() => {
     return currentIndex >= 0 ? subtitles[currentIndex] : null
