@@ -4,6 +4,8 @@
   },
   "common": {
     "cancel": "取消",
+    "disabled": "已关闭",
+    "enabled": "已开启",
     "favorites": "收藏",
     "favorites_developing": "该功能正在开发中",
     "grid_view": "矩阵视图",
@@ -15,21 +17,22 @@
     "search": "搜索",
     "search_no_results": "暂无搜索结果",
     "search_placeholder": "搜索视频...",
-    "enabled": "已开启",
-    "disabled": "已关闭",
     "selectedItems": "已选择 {{count}} 项"
   },
   "docs": {
     "title": "帮助文档"
   },
-  "search": {
-    "searching": "搜索中...",
-    "found_videos": "找到 {{count}} 个视频",
-    "no_videos_found": "未找到相关视频",
-    "search_videos": "搜索视频"
-  },
   "home": {
     "add_video": "新增视频",
+    "delete": {
+      "button_cancel": "取消",
+      "button_ok": "删除",
+      "confirm_content": "确定要删除视频 <strong>\"{{title}}\"</strong> 的观看记录吗？",
+      "confirm_title": "确认删除",
+      "confirm_warning": "此操作将删除该视频的播放历史和进度信息",
+      "error_message": "删除失败，请重试",
+      "success_message": "视频记录删除成功"
+    },
     "no_video": "空空如也",
     "no_video_desc": "支持 MP4、AVI、MKV、MOV 等常见视频格式",
     "processing": "处理中",
@@ -38,51 +41,36 @@
     "viewMode": {
       "grid": "矩阵",
       "list": "列表"
-    },
-    "delete": {
-      "confirm_title": "确认删除",
-      "confirm_content": "确定要删除视频 <strong>\"{{title}}\"</strong> 的观看记录吗？",
-      "confirm_warning": "此操作将删除该视频的播放历史和进度信息",
-      "button_ok": "删除",
-      "button_cancel": "取消",
-      "success_message": "视频记录删除成功",
-      "error_message": "删除失败，请重试"
     }
   },
   "player": {
     "controls": {
       "auto_pause": {
-        "subtitle_end": "在单个字幕结束时暂停",
         "disabled": "字幕未加载",
         "enabled": "自动暂停",
         "resume_delay": "恢复延迟（秒）",
-        "resume_title": "自动恢复播放"
+        "resume_title": "自动恢复播放",
+        "subtitle_end": "在单个字幕结束时暂停"
+      },
+      "copy": {
+        "failed": "复制失败，无法访问剪贴板",
+        "success": "已复制"
+      },
+      "fullscreen": {
+        "enter": "全屏",
+        "exit": "退出全屏"
+      },
+      "loop": {
+        "count": "循环次数",
+        "disabled": "字幕未加载",
+        "enabled": "循环",
+        "mode": {
+          "single": "单句循环"
+        },
+        "title": "循环模式"
       },
       "subtitle": {
-        "display-mode": {
-          "title": "显示模式",
-          "hide": {
-            "label": "隐藏",
-            "tooltip": "隐藏字幕 (Ctrl+1)"
-          },
-          "original": {
-            "label": "原文",
-            "tooltip": "仅显示原文字幕 (Ctrl+2)"
-          },
-          "translation": {
-            "label": "译文",
-            "tooltip": "仅显示译文字幕 (Ctrl+3)"
-          },
-          "bilingual": {
-            "label": "双语",
-            "tooltip": "显示双语字幕 (Ctrl+4)"
-          }
-        },
         "background-type": {
-          "title": "背景样式",
-          "transparent": {
-            "tooltip": "透明背景"
-          },
           "blur": {
             "tooltip": "模糊背景"
           },
@@ -91,90 +79,102 @@
           },
           "solid-gray": {
             "tooltip": "灰色背景"
+          },
+          "title": "背景样式",
+          "transparent": {
+            "tooltip": "透明背景"
+          }
+        },
+        "display-mode": {
+          "bilingual": {
+            "label": "双语",
+            "tooltip": "显示双语字幕 (Ctrl+4)"
+          },
+          "hide": {
+            "label": "隐藏",
+            "tooltip": "隐藏字幕 (Ctrl+1)"
+          },
+          "original": {
+            "label": "原文",
+            "tooltip": "仅显示原文字幕 (Ctrl+2)"
+          },
+          "title": "显示模式",
+          "translation": {
+            "label": "译文",
+            "tooltip": "仅显示译文字幕 (Ctrl+3)"
           }
         }
+      }
+    },
+    "errorRecovery": {
+      "actions": {
+        "backToHome": "返回首页",
+        "relocateFile": "重新选择文件",
+        "removeFromLibrary": "从媒体库移除"
       },
-      "loop": {
-        "count": "循环次数",
-        "mode": {
-          "single": "单句循环"
+      "dialogs": {
+        "relocate": {
+          "confirmText": "我已了解，继续选择",
+          "content": {
+            "note": "⚠️ 选择错误的文件可能导致播放进度、字幕等数据不匹配。",
+            "warning": "请务必选择与当前视频记录对应的原始文件。"
+          },
+          "title": "重新选择文件"
         },
-        "title": "循环模式",
-        "disabled": "字幕未加载",
-        "enabled": "循环"
+        "remove": {
+          "confirmText": "确认移除",
+          "content": {
+            "description": "此操作将从媒体库中永久删除该视频记录，包括：",
+            "items": {
+              "personalSettings": "个人设置和标记",
+              "playbackHistory": "播放进度和历史记录",
+              "subtitleLinks": "已导入的字幕文件关联"
+            },
+            "warning": "⚠️ 此操作不可撤销，但不会删除原视频文件。"
+          },
+          "title": "确认从媒体库移除？"
+        }
       },
-      "fullscreen": {
-        "enter": "全屏",
-        "exit": "退出全屏"
+      "errors": {
+        "decodeError": {
+          "description": "视频文件可能损坏或编码格式不兼容",
+          "title": "视频解码错误"
+        },
+        "fileMissing": {
+          "description": "原视频文件可能已被删除、移动或重命名",
+          "title": "视频文件缺失"
+        },
+        "networkError": {
+          "description": "加载网络视频时发生连接错误",
+          "title": "网络错误"
+        },
+        "unknown": {
+          "description": "视频播放时发生未知错误",
+          "title": "播放错误"
+        },
+        "unsupportedFormat": {
+          "description": "当前视频格式不受支持或文件已损坏",
+          "title": "不支持的视频格式"
+        }
       },
-      "copy": {
-        "success": "已复制",
-        "failed": "复制失败，无法访问剪贴板"
+      "fileDialog": {
+        "allFiles": "所有文件",
+        "videoFiles": "视频文件"
+      },
+      "pathInfo": {
+        "label": "文件路径"
       }
     },
     "subtitles": {
       "hide": "隐藏字幕列表",
       "show": "展开字幕列表"
-    },
-    "errorRecovery": {
-      "errors": {
-        "fileMissing": {
-          "title": "视频文件缺失",
-          "description": "原视频文件可能已被删除、移动或重命名"
-        },
-        "unsupportedFormat": {
-          "title": "不支持的视频格式",
-          "description": "当前视频格式不受支持或文件已损坏"
-        },
-        "decodeError": {
-          "title": "视频解码错误",
-          "description": "视频文件可能损坏或编码格式不兼容"
-        },
-        "networkError": {
-          "title": "网络错误",
-          "description": "加载网络视频时发生连接错误"
-        },
-        "unknown": {
-          "title": "播放错误",
-          "description": "视频播放时发生未知错误"
-        }
-      },
-      "actions": {
-        "relocateFile": "重新选择文件",
-        "backToHome": "返回首页",
-        "removeFromLibrary": "从媒体库移除"
-      },
-      "dialogs": {
-        "relocate": {
-          "title": "重新选择文件",
-          "confirmText": "我已了解，继续选择",
-          "content": {
-            "warning": "请务必选择与当前视频记录对应的原始文件。",
-            "note": "⚠️ 选择错误的文件可能导致播放进度、字幕等数据不匹配。"
-          }
-        },
-        "remove": {
-          "title": "确认从媒体库移除？",
-          "confirmText": "确认移除",
-          "content": {
-            "description": "此操作将从媒体库中永久删除该视频记录，包括：",
-            "items": {
-              "playbackHistory": "播放进度和历史记录",
-              "subtitleLinks": "已导入的字幕文件关联",
-              "personalSettings": "个人设置和标记"
-            },
-            "warning": "⚠️ 此操作不可撤销，但不会删除原视频文件。"
-          }
-        }
-      },
-      "fileDialog": {
-        "videoFiles": "视频文件",
-        "allFiles": "所有文件"
-      },
-      "pathInfo": {
-        "label": "文件路径"
-      }
     }
+  },
+  "search": {
+    "found_videos": "找到 {{count}} 个视频",
+    "no_videos_found": "未找到相关视频",
+    "search_videos": "搜索视频",
+    "searching": "搜索中..."
   },
   "settings": {
     "about": {
@@ -285,6 +285,88 @@
       },
       "title": "播放设置"
     },
+    "plugins": {
+      "ffmpeg": {
+        "actions": {
+          "label": "操作",
+          "refresh": "刷新状态",
+          "warmup": "测试"
+        },
+        "current_path": "当前路径",
+        "description": "FFmpeg 是处理视频文件所必需的核心组件，用于获取视频信息和执行视频处理任务。",
+        "download": {
+          "button": "下载 FFmpeg",
+          "cancel": "取消下载",
+          "cancelled": "下载已取消",
+          "downloading": "下载中",
+          "failed": "下载失败，请检查网络连接后重试",
+          "progress": "下载进度",
+          "size": "下载大小",
+          "success": "下载完成",
+          "warming_up": "正在预热...",
+          "warmup_failed": "预热失败，请检查安装",
+          "warmup_success": "预热成功，FFmpeg 已可用"
+        },
+        "path": {
+          "browse": "浏览",
+          "browse_title": "选择 FFmpeg 可执行文件",
+          "invalid": "路径无效或文件不存在",
+          "label": "路径",
+          "placeholder": "FFmpeg 路径将在下载后自动填入，也可手动指定",
+          "valid": "路径验证成功",
+          "validation_failed": "路径验证失败"
+        },
+        "prompt": {
+          "actions": {
+            "download": "立即下载 FFmpeg",
+            "later": "稍后处理"
+          },
+          "benefits": {
+            "compatibility": {
+              "description": "支持 MP4、AVI、MKV、MOV、WMV 等几乎所有视频格式",
+              "title": "更广泛的格式支持"
+            },
+            "performance": {
+              "description": "优化的解码算法，提供更流畅的播放体验",
+              "title": "更快的处理速度"
+            },
+            "reliability": {
+              "description": "专业级的视频处理能力，减少解析失败和播放错误",
+              "title": "更高的稳定性"
+            },
+            "title": "安装 FFmpeg 的好处："
+          },
+          "effort": {
+            "description": "一键自动下载，约 50MB 大小。无需手动配置，立即可用。",
+            "title": "安装轻松简单"
+          },
+          "subtitle": "EchoPlayer 需要 FFmpeg 来处理这个视频文件",
+          "title": "需要视频处理组件"
+        },
+        "status": {
+          "available": "可用",
+          "custom_path": "自定义路径",
+          "downloading": "下载中",
+          "installed": "已安装",
+          "label": "状态",
+          "loading": "检测中...",
+          "not_installed": "未安装",
+          "system_version": "系统版本",
+          "unknown": "状态未知"
+        },
+        "title": "视频处理组件 (FFmpeg)",
+        "uninstall": {
+          "button": "卸载",
+          "confirm": "确认卸载",
+          "confirm_description": "此操作将删除已下载的 FFmpeg 文件，但不会影响系统安装的版本。",
+          "confirm_title": "确认卸载 FFmpeg？",
+          "failed": "卸载失败，请重试",
+          "success": "FFmpeg 卸载成功"
+        },
+        "version": "版本"
+      },
+      "title": "插件管理"
+    },
     "shortcut": {
       "title": "快捷键设置"
     },
@@ -303,6 +385,8 @@
       "new_topic": "新建话题",
       "next_subtitle": "下一字幕",
       "play_pause": "播放/暂停",
+      "playback_rate_next": "下一个常用速度",
+      "playback_rate_prev": "上一个常用速度",
       "press_shortcut": "按下快捷键",
       "previous_subtitle": "上一字幕",
       "replay_current_subtitle": "重播当前字幕",
@@ -318,8 +402,6 @@
       "show_app": "显示 / 隐藏应用",
       "show_settings": "打开设置",
       "single_loop": "循环播放",
-      "playback_rate_next": "下一个常用速度",
-      "playback_rate_prev": "上一个常用速度",
       "title": "快捷键",
       "toggle_fullscreen": "切换全屏",
       "toggle_new_context": "清除上下文",
