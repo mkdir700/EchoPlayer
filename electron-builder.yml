@@ -60,9 +60,11 @@ win:
     - target: nsis
       arch:
         - x64
+        - arm64
     - target: portable
       arch:
         - x64
+        - arm64
   signtoolOptions:
     sign: scripts/win-sign.js
   verifyUpdateCodeSignature: false
