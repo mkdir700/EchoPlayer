@@ -56,6 +56,7 @@ export interface StateUpdater {
   setMuted(muted: boolean): void
   setSeeking?(seeking: boolean): void
   setEnded?(ended: boolean): void
+  setActiveCueIndex?(index: number): void
   updateUIState(updates: { openAutoResumeCountdown?: boolean }): void
 }
 
@@ -203,6 +204,12 @@ export class PlayerOrchestrator {
    */
   connectStateUpdater(updater: StateUpdater): void {
     this.stateUpdater = updater
+
+    // 立即同步当前的 activeCueIndex 到 store
+    if (updater.setActiveCueIndex) {
+      updater.setActiveCueIndex(this.context.activeCueIndex)
+    }
+
     logger.debug('State updater connected')
   }
 
@@ -219,6 +226,11 @@ export class PlayerOrchestrator {
   updateContext(updates: Partial<PlaybackContext>): void {
     const prevContext = { ...this.context }
     this.context = { ...this.context, ...updates }
+
+    // 同步 activeCueIndex 到 store（如果有变化）
+    if (updates.activeCueIndex !== undefined && this.stateUpdater?.setActiveCueIndex) {
+      this.stateUpdater.setActiveCueIndex(updates.activeCueIndex)
+    }
 
     if (this.config.enableDebugLogs) {
       const changedFields = Object.keys(updates).filter(
@@ -418,6 +430,18 @@ export class PlayerOrchestrator {
     // 重置播放器状态（清理意图、重置字幕锁定、重载策略）
     this.resetOnUserSeek()
 
+    // 标记用户跳转状态，暂时禁用自动保存
+    import('@renderer/services/PlayerSettingsSaver').then(
+      ({ playerSettingsPersistenceService }) => {
+        playerSettingsPersistenceService.markUserSeeking()
+      }
+    )
+
+    // 立即更新 store 中的 currentTime，确保 UI 组件能立即响应
+    if (this.stateUpdater) {
+      this.stateUpdater.setCurrentTime(to)
+    }
+
     // 执行跳转
     const clampedTime = Math.max(0, Math.min(this.context.duration || Infinity, to))
     this.videoController.seek(clampedTime)
@@ -451,8 +475,33 @@ export class PlayerOrchestrator {
 
     // 重置播放器状态（清理意图、重置字幕锁定、重载策略）
     this.resetOnUserSeek()
-    this.context.currentTime = cue.startTime
-    this.context.activeCueIndex = index
+
+    // 立即锁定字幕状态机，防止 SubtitleSyncStrategy 在 updateContext 时覆盖用户选择
+    this.subtitleLockFSM.lock('user_seek', index)
+
+    this.updateContext({ currentTime: cue.startTime, activeCueIndex: index })
+
+    // 设置定时器，2秒后自动解锁，允许自动同步策略重新生效
+    this.userSeekTaskId = this.clockScheduler.scheduleAfter(
+      2000, // 2秒延迟
+      () => {
+        this.subtitleLockFSM.unlock('user_seek')
+        this.userSeekTaskId = null
+        logger.debug('用户跳转锁定已自动解除')
+      },
+      'user_seek_unlock'
+    )
+    // 标记用户跳转状态，暂时禁用自动保存
+    import('@renderer/services/PlayerSettingsSaver').then(
+      ({ playerSettingsPersistenceService }) => {
+        playerSettingsPersistenceService.markUserSeeking()
+      }
+    )
+
+    // 立即更新 store 中的 currentTime，确保字幕 overlay 能立即响应
+    if (this.stateUpdater) {
+      this.stateUpdater.setCurrentTime(cue.startTime)
+    }
 
     // 执行跳转
     const clampedTime = Math.max(0, Math.min(this.context.duration || Infinity, cue.startTime))
@@ -590,6 +639,7 @@ export class PlayerOrchestrator {
   }
 
   onSeeking(): void {
+    this.mediaClock.startSeeking()
     this.stateUpdater?.setSeeking?.(true)
   }
 
@@ -662,8 +712,6 @@ export class PlayerOrchestrator {
    * 清理未发布的意图、重置字幕锁定状态、重载所有策略
    */
   private resetOnUserSeek(): void {
-    logger.debug('用户跳转，重置播放器状态')
-
     // 清理未发布的意图
     if (this.currentIntents.length > 0) {
       logger.debug(`清理 ${this.currentIntents.length} 个未发布的意图`)
@@ -683,7 +731,7 @@ export class PlayerOrchestrator {
     // 重载策略管理器
     this.strategyManager.reload(currentStrategies)
 
-    logger.debug('播放器状态重置完成')
+    logger.debug('用户跳转，播放器状态重置完成')
   }
 
   private registerBuiltinStrategies(): void {
