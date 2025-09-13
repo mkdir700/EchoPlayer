@@ -58,7 +58,9 @@ describe('FFmpegService Integration Tests', () => {
       vi.mocked(fs.existsSync).mockReturnValue(false)
 
       const path = ffmpegService.getFFmpegPath()
-      expect(path).toBe('ffmpeg') // System FFmpeg fallback
+      // System FFmpeg fallback - platform specific executable name
+      const expectedExecutable = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
+      expect(path).toBe(expectedExecutable)
     })
   })
 
