@@ -475,10 +475,11 @@ export class PlayerOrchestrator {
 
     // 重置播放器状态（清理意图、重置字幕锁定、重载策略）
     this.resetOnUserSeek()
-    this.updateContext({ currentTime: cue.startTime, activeCueIndex: index })
 
-    // 锁定字幕状态机，防止 SubtitleSyncStrategy 立即覆盖用户选择
+    // 立即锁定字幕状态机，防止 SubtitleSyncStrategy 在 updateContext 时覆盖用户选择
     this.subtitleLockFSM.lock('user_seek', index)
+
+    this.updateContext({ currentTime: cue.startTime, activeCueIndex: index })
 
     // 设置定时器，2秒后自动解锁，允许自动同步策略重新生效
     this.userSeekTaskId = this.clockScheduler.scheduleAfter(
