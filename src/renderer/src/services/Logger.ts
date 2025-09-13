@@ -8,8 +8,9 @@ const IS_WORKER = typeof window === 'undefined'
 // DO NOT use `constants.ts` here, because the files contains other dependencies that will fail in worker process
 const IS_DEV = IS_WORKER ? false : window.electron?.process?.env?.NODE_ENV === 'development'
 
-const DEFAULT_LEVEL = IS_DEV ? LEVEL.SILLY : LEVEL.INFO
-const MAIN_LOG_LEVEL = LEVEL.WARN
+// 更严格的生产环境日志级别控制
+const DEFAULT_LEVEL = IS_DEV ? LEVEL.DEBUG : LEVEL.WARN // 生产环境默认只记录警告以上
+const MAIN_LOG_LEVEL = IS_DEV ? LEVEL.WARN : LEVEL.ERROR // 生产环境主进程只记录错误
 
 // 日志导出相关接口
 interface LogExportEntry {
@@ -54,9 +55,12 @@ class LoggerService {
   private module: string = ''
   private context: Record<string, any> = {}
 
-  // 日志导出相关
+  // 日志导出相关 - 优化内存管理
   private exportHistory: LogExportEntry[] = []
-  private maxHistorySize: number = 10000
+  private maxHistorySize: number = 1000 // 降低到 1000 条记录，减少内存占用
+  private lastCleanupTime: number = 0
+  private readonly CLEANUP_INTERVAL = 30000 // 30秒清理一次
+  private readonly MEMORY_PRESSURE_THRESHOLD = 500 // 内存压力阈值
 
   private constructor() {
     if (IS_DEV) {
@@ -134,100 +138,82 @@ class LoggerService {
     return newLogger
   }
 
-  // ---- 对象完全序列化方法 ----
-  private deepSerialize(obj: any, visited = new WeakSet()): any {
+  // ---- 轻量化序列化方法 - 优化内存使用 ----
+  private lightSerialize(obj: any, maxDepth = 3, currentDepth = 0): any {
+    // 超过最大深度，简化处理
+    if (currentDepth >= maxDepth) {
+      if (obj === null || obj === undefined) return obj
+      if (typeof obj === 'string') return obj.length > 100 ? obj.slice(0, 100) + '...' : obj
+      if (typeof obj === 'number' || typeof obj === 'boolean') return obj
+      return '[Max Depth Reached]'
+    }
+
     // 处理基本类型
     if (obj === null || typeof obj !== 'object') {
       return obj
     }
 
-    // 防止循环引用
-    if (visited.has(obj)) {
-      return '[Circular Reference]'
-    }
-    visited.add(obj)
-
     try {
       // 处理日期对象
       if (obj instanceof Date) {
-        return { __type: 'Date', value: obj.toISOString() }
+        return obj.toISOString()
       }
 
-      // 处理错误对象
+      // 处理错误对象 - 简化
       if (obj instanceof Error) {
         return {
           __type: 'Error',
           name: obj.name,
           message: obj.message,
-          stack: obj.stack,
-          ...Object.getOwnPropertyNames(obj).reduce((acc, key) => {
-            acc[key] = this.deepSerialize((obj as any)[key], visited)
-            return acc
-          }, {} as any)
+          stack: obj.stack?.split('\n').slice(0, 3).join('\n') // 只保留前3行堆栈
         }
       }
 
-      // 处理函数
+      // 处理函数 - 极简化
       if (typeof obj === 'function') {
-        return {
-          __type: 'Function',
-          name: obj.name,
-          toString: obj.toString()
-        }
+        return `[Function: ${obj.name || 'anonymous'}]`
       }
 
-      // 处理数组
+      // 处理数组 - 限制长度
       if (Array.isArray(obj)) {
-        return obj.map((item) => this.deepSerialize(item, visited))
+        const maxItems = 10
+        if (obj.length > maxItems) {
+          return [
+            ...obj
+              .slice(0, maxItems)
+              .map((item) => this.lightSerialize(item, maxDepth, currentDepth + 1)),
+            `[... ${obj.length - maxItems} more items]`
+          ]
+        }
+        return obj.map((item) => this.lightSerialize(item, maxDepth, currentDepth + 1))
       }
 
-      // 处理普通对象
+      // 处理普通对象 - 只序列化可枚举属性
       const result: any = {}
+      const keys = Object.keys(obj)
+      const maxKeys = 20 // 限制最多序列化20个属性
 
-      // 获取所有属性（包括不可枚举的）
-      const keys = [
-        ...Object.keys(obj),
-        ...Object.getOwnPropertyNames(obj).filter(
-          (key) => key !== 'constructor' && !Object.keys(obj).includes(key)
-        )
-      ]
-
-      for (const key of keys) {
+      for (let i = 0; i < Math.min(keys.length, maxKeys); i++) {
+        const key = keys[i]
         try {
-          const descriptor = Object.getOwnPropertyDescriptor(obj, key)
-          if (descriptor) {
-            if (descriptor.get || descriptor.set) {
-              // 处理 getter/setter
-              result[key] = {
-                __type: 'Property',
-                hasGetter: !!descriptor.get,
-                hasSetter: !!descriptor.set,
-                enumerable: descriptor.enumerable,
-                configurable: descriptor.configurable
-              }
-            } else {
-              // 普通属性
-              result[key] = this.deepSerialize(descriptor.value, visited)
-            }
+          // 跳过可能导致循环引用的属性
+          if (key.includes('parent') || key.includes('owner') || key.includes('target')) {
+            result[key] = '[Skipped - Potential Circular]'
+            continue
           }
+          result[key] = this.lightSerialize(obj[key], maxDepth, currentDepth + 1)
         } catch (error) {
-          result[key] = `[Error accessing property: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }]`
+          result[key] = '[Serialization Error]'
         }
       }
 
-      // 添加原型信息
-      const proto = Object.getPrototypeOf(obj)
-      if (proto && proto !== Object.prototype) {
-        result.__prototype = proto.constructor?.name || '[Unknown Prototype]'
+      if (keys.length > maxKeys) {
+        result['[...]'] = `${keys.length - maxKeys} more properties`
       }
 
       return result
     } catch (error) {
-      return `[Serialization Error: ${error instanceof Error ? error.message : 'Unknown error'}]`
-    } finally {
-      visited.delete(obj)
+      return '[Serialization Error]'
     }
   }
 
@@ -520,7 +506,7 @@ class LoggerService {
 
   // ---- 日志导出方法 ----
   /**
-   * 添加日志到导出历史
+   * 添加日志到导出历史 - 优化内存管理，生产环境禁用
    */
   private addToExportHistory(
     level: LogLevel,
@@ -528,23 +514,111 @@ class LoggerService {
     data: any[],
     caller?: string | null
   ): void {
+    // 生产环境完全禁用导出历史功能，节省内存
+    if (!IS_DEV) {
+      return
+    }
+
+    // 检查是否需要清理
+    this.checkAndCleanupHistory()
+
+    // 对于高频日志，采用采样策略
+    if (this.shouldSkipForSampling(level, message)) {
+      return
+    }
+
     const entry: LogExportEntry = {
       timestamp: new Date().toISOString(),
       level,
       module: this.module,
       window: this.window,
       message,
-      data: data.length > 0 ? data.map((item) => this.deepSerialize(item)) : undefined,
-      context: Object.keys(this.context).length > 0 ? this.deepSerialize(this.context) : undefined,
+      data: data.length > 0 ? data.map((item) => this.lightSerialize(item, 2)) : undefined,
+      context:
+        Object.keys(this.context).length > 0 ? this.lightSerialize(this.context, 2) : undefined,
       caller: caller || undefined
     }
 
     this.exportHistory.push(entry)
 
-    // 限制历史记录数量
+    // 更积极的内存管理
     if (this.exportHistory.length > this.maxHistorySize) {
-      this.exportHistory = this.exportHistory.slice(-this.maxHistorySize)
+      // 保留最近的记录，删除最旧的
+      const keepCount = Math.floor(this.maxHistorySize * 0.8) // 保留80%
+      this.exportHistory.splice(0, this.exportHistory.length - keepCount)
     }
+  }
+
+  /**
+   * 采样策略 - 对高频日志进行采样
+   */
+  private shouldSkipForSampling(level: LogLevel, message: string): boolean {
+    // 对于 SILLY 和 DEBUG 级别的高频消息进行采样
+    if (level === LEVEL.SILLY || level === LEVEL.DEBUG) {
+      // 检查是否为高频消息模式
+      const isHighFrequency =
+        message.includes('time_update') ||
+        message.includes('MediaClock') ||
+        message.includes('throttle') ||
+        message.includes('performance')
+
+      if (isHighFrequency) {
+        // 只保留每10条记录中的1条
+        return Math.random() > 0.1
+      }
+    }
+    return false
+  }
+
+  /**
+   * 检查并清理历史记录
+   */
+  private checkAndCleanupHistory(): void {
+    const now = Date.now()
+
+    // 定期清理
+    if (now - this.lastCleanupTime > this.CLEANUP_INTERVAL) {
+      this.performCleanup()
+      this.lastCleanupTime = now
+    }
+
+    // 内存压力检测
+    if (this.exportHistory.length > this.MEMORY_PRESSURE_THRESHOLD) {
+      this.performEmergencyCleanup()
+    }
+  }
+
+  /**
+   * 执行常规清理
+   */
+  private performCleanup(): void {
+    const oldLength = this.exportHistory.length
+
+    // 清理30分钟前的记录
+    const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000
+    this.exportHistory = this.exportHistory.filter((entry) => {
+      const entryTime = new Date(entry.timestamp).getTime()
+      return entryTime > thirtyMinutesAgo
+    })
+
+    if (oldLength !== this.exportHistory.length) {
+      console.log(`[LoggerService] 清理了 ${oldLength - this.exportHistory.length} 条过期日志记录`)
+    }
+  }
+
+  /**
+   * 执行紧急清理
+   */
+  private performEmergencyCleanup(): void {
+    const oldLength = this.exportHistory.length
+
+    // 只保留最近的记录
+    const keepCount = Math.floor(this.maxHistorySize * 0.5)
+    this.exportHistory.splice(0, this.exportHistory.length - keepCount)
+
+    console.warn(
+      `[LoggerService] 内存压力过大，执行紧急清理，删除了 ${oldLength - this.exportHistory.length} 条记录`
+    )
   }
 
   /**
