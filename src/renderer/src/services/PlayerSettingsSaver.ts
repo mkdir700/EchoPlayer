@@ -103,12 +103,19 @@ export class PlayerSettingsPersistenceService {
   markUserSeeking() {
     this.isUserSeeking = true
 
+    // 取消可能已排队的进度保存任务，避免与用户跳转状态竞争
+    if (this.debounceCurrentTimeTimer) {
+      clearTimeout(this.debounceCurrentTimeTimer)
+      this.debounceCurrentTimeTimer = null
+    }
+
     // 清除之前的定时器
     if (this.userSeekingTimer) {
       clearTimeout(this.userSeekingTimer)
     }
 
-    // 1秒后恢复自动保存（比 debounceCurrentTimeMs 稍长一些）
+    // 在略长于 debounceCurrentTimeMs 的时间后恢复自动保存并立即保存一次
+    const resumeAfterMs = this.debounceCurrentTimeMs + 200
     this.userSeekingTimer = setTimeout(async () => {
       this.isUserSeeking = false
       this.userSeekingTimer = null
@@ -131,7 +138,7 @@ export class PlayerSettingsPersistenceService {
       }
 
       logger.debug('用户跳转状态已恢复，重新启用进度自动保存')
-    }, 1000)
+    }, resumeAfterMs)
 
     logger.debug('已标记用户跳转状态，暂时禁用进度自动保存')
   }
