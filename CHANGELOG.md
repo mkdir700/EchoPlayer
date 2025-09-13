@@ -1,3 +1,10 @@
+# [1.0.0-alpha.11](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.10...v1.0.0-alpha.11) (2025-09-13)
+
+### Bug Fixes
+
+- **player:** persist relocated video file path to database ([#162](https://github.com/mkdir700/EchoPlayer/issues/162)) ([886552a](https://github.com/mkdir700/EchoPlayer/commit/886552a589c9e515ccc6736daab74cd4a6f53d9c))
+- **updater:** resolve pre-release version detection issue ([#161](https://github.com/mkdir700/EchoPlayer/issues/161)) ([37486c1](https://github.com/mkdir700/EchoPlayer/commit/37486c1ead0cf789660c745dc759064a4766e6a6))
+
 # [1.0.0-alpha.10](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.9...v1.0.0-alpha.10) (2025-09-13)
 
 ### Bug Fixes
