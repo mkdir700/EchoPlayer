@@ -48,10 +48,10 @@
     "version:prerelease": "tsx scripts/version-manager.ts prerelease",
     "version:beta": "tsx scripts/version-manager.ts minor beta",
     "version:beta-patch": "tsx scripts/version-manager.ts patch beta",
-    "release": "npm run ffmpeg:download-all && npm run build:release && electron-builder --publish onTagOrDraft",
-    "release:all": "npm run ffmpeg:download-all && npm run build:release && electron-builder --publish always",
-    "release:never": "npm run ffmpeg:download-all && npm run build:release && electron-builder --publish never",
-    "release:draft": "npm run ffmpeg:download-all && npm run build:release && electron-builder --publish onTagOrDraft",
+    "release": "npm run build:release && electron-builder --publish onTagOrDraft",
+    "release:all": "npm run build:release && electron-builder --publish always",
+    "release:never": "npm run build:release && electron-builder --publish never",
+    "release:draft": "npm run build:release && electron-builder --publish onTagOrDraft",
     "migrate": "tsx src/main/db/migration-cli.ts",
     "migrate:up": "npm run migrate up",
     "migrate:down": "npm run migrate down",
@@ -71,9 +71,7 @@
     "ffmpeg:download": "tsx scripts/download-ffmpeg.ts current",
     "ffmpeg:download-all": "tsx scripts/download-ffmpeg.ts all",
     "ffmpeg:clean": "tsx scripts/download-ffmpeg.ts clean",
-    "ffmpeg:test": "tsx scripts/test-ffmpeg-integration.ts",
-    "prebuild": "npm run ffmpeg:download",
-    "prebuild:release": "echo 'FFmpeg already downloaded by release script'"
+    "ffmpeg:test": "tsx scripts/test-ffmpeg-integration.ts"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.1",

@@ -9,13 +9,30 @@ const { Title: AntTitle, Paragraph } = Typography
 
 interface EmptyStateProps {
   onVideoAdded?: () => void
+  onShowFFmpegPrompt?: (show: boolean) => void
 }
 
-export function EmptyState({ onVideoAdded }: EmptyStateProps): React.JSX.Element {
+export function EmptyState({
+  onVideoAdded,
+  onShowFFmpegPrompt
+}: EmptyStateProps): React.JSX.Element {
   const { t } = useTranslation()
-  const { selectVideoFile, isProcessing } = useVideoFileSelect({
-    onSuccess: onVideoAdded
-  })
+  const { selectVideoFile, isProcessing, showFFmpegPrompt, setShowFFmpegPrompt } =
+    useVideoFileSelect({
+      onSuccess: onVideoAdded
+    })
+
+  // 将showFFmpegPrompt状态传递给父组件
+  React.useEffect(() => {
+    onShowFFmpegPrompt?.(showFFmpegPrompt)
+  }, [showFFmpegPrompt, onShowFFmpegPrompt])
+
+  // 当关闭FFmpeg提示时，重置状态
+  React.useEffect(() => {
+    if (!showFFmpegPrompt) {
+      setShowFFmpegPrompt(false)
+    }
+  }, [showFFmpegPrompt, setShowFFmpegPrompt])
 
   return (
     <Container>

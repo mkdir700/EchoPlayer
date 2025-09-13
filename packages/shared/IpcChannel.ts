@@ -77,6 +77,18 @@ export enum IpcChannel {
   Ffmpeg_GetVideoInfo = 'ffmpeg:get-video-info',
   Ffmpeg_Warmup = 'ffmpeg:warmup',
   Ffmpeg_GetWarmupStatus = 'ffmpeg:get-warmup-status',
+  Ffmpeg_GetInfo = 'ffmpeg:get-info',
+  Ffmpeg_AutoDetectAndDownload = 'ffmpeg:auto-detect-and-download',
+
+  // FFmpeg 下载相关 IPC 通道 / FFmpeg download related IPC channels
+  FfmpegDownload_CheckExists = 'ffmpeg-download:check-exists',
+  FfmpegDownload_GetVersion = 'ffmpeg-download:get-version',
+  FfmpegDownload_Download = 'ffmpeg-download:download',
+  FfmpegDownload_GetProgress = 'ffmpeg-download:get-progress',
+  FfmpegDownload_Cancel = 'ffmpeg-download:cancel',
+  FfmpegDownload_Remove = 'ffmpeg-download:remove',
+  FfmpegDownload_GetAllVersions = 'ffmpeg-download:get-all-versions',
+  FfmpegDownload_CleanupTemp = 'ffmpeg-download:cleanup-temp',
 
   // MediaInfo 相关 IPC 通道 / MediaInfo related IPC channels
   MediaInfo_CheckExists = 'mediainfo:check-exists',

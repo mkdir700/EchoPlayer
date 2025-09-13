@@ -1,4 +1,5 @@
 import { loggerService } from '@logger'
+import FFmpegDownloadPrompt from '@renderer/components/FFmpegDownloadPrompt'
 import HomePageVideoService, { type HomePageVideoItem } from '@renderer/services/HomePageVideos'
 import { VideoLibraryService } from '@renderer/services/VideoLibrary'
 import { useSettingsStore } from '@renderer/state/stores/settings.store'
@@ -83,6 +84,7 @@ export function HomePage(): React.JSX.Element {
   } = useVideoListStore()
 
   const [videos, setVideos] = React.useState<HomePageVideoItem[]>([])
+  const [showFFmpegPrompt, setShowFFmpegPrompt] = React.useState(false)
   const navigate = useNavigate()
 
   // 初始化时使用缓存数据
@@ -129,6 +131,14 @@ export function HomePage(): React.JSX.Element {
   const handleVideoAdded = React.useCallback(() => {
     loadVideos()
   }, [loadVideos])
+
+  const handleShowFFmpegPrompt = React.useCallback((show: boolean) => {
+    setShowFFmpegPrompt(show)
+  }, [])
+
+  const handleCloseFFmpegPrompt = React.useCallback(() => {
+    setShowFFmpegPrompt(false)
+  }, [])
 
   // 删除视频记录
   const handleDeleteVideo = React.useCallback(
@@ -178,13 +188,17 @@ export function HomePage(): React.JSX.Element {
       <HeaderNavbar
         videoListViewMode={videoListViewMode}
         setVideoListViewMode={setVideoListViewMode}
+        onShowFFmpegPrompt={handleShowFFmpegPrompt}
       />
       <ContentContainer id="content-container">
         <ContentBody>
           {isLoading && !isInitialized ? (
             <LoadingState />
           ) : videos.length === 0 ? (
-            <EmptyState onVideoAdded={handleVideoAdded} />
+            <EmptyState
+              onVideoAdded={handleVideoAdded}
+              onShowFFmpegPrompt={handleShowFFmpegPrompt}
+            />
           ) : (
             <AnimatePresence mode="wait">
               <motion.div
@@ -270,6 +284,9 @@ export function HomePage(): React.JSX.Element {
           )}
         </ContentBody>
       </ContentContainer>
+
+      {/* FFmpeg下载引导对话框 */}
+      <FFmpegDownloadPrompt open={showFFmpegPrompt} onClose={handleCloseFFmpegPrompt} />
     </Container>
   )
 }
