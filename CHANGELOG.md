@@ -1,3 +1,30 @@
+# [1.0.0-alpha.9](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.8...v1.0.0-alpha.9) (2025-09-13)
+
+### Bug Fixes
+
+- **build:** Fix FFmpeg cross-platform build on macOS for Windows targets ([#145](https://github.com/mkdir700/EchoPlayer/issues/145)) ([e2857e9](https://github.com/mkdir700/EchoPlayer/commit/e2857e96ed6f3780ede4e32a9b457861b58324d8))
+- **ci:** Failed to get next version ([8a94ceb](https://github.com/mkdir700/EchoPlayer/commit/8a94ceb304adcfc598baa0f491326ce19b0361a7))
+- **homepage:** Fix UI desynchronization issue after deleting video records + i18n support ([#120](https://github.com/mkdir700/EchoPlayer/issues/120)) ([7879ef4](https://github.com/mkdir700/EchoPlayer/commit/7879ef442b888d6956a74739c3c0c1c54bb87387))
+- **player:** Fix subtitle navigation when activeCueIndex is -1 ([#119](https://github.com/mkdir700/EchoPlayer/issues/119)) ([b4ad16f](https://github.com/mkdir700/EchoPlayer/commit/b4ad16f2115d324aabd34b08b2a05ca98a3de101))
+- **player:** Fix subtitle overlay dragging to bottom and improve responsive design ([#122](https://github.com/mkdir700/EchoPlayer/issues/122)) ([d563c92](https://github.com/mkdir700/EchoPlayer/commit/d563c924c9471caeeab45a3d2ddd6dda5520fcac))
+- **player:** improve play/pause button reliability ([#141](https://github.com/mkdir700/EchoPlayer/issues/141)) ([805e774](https://github.com/mkdir700/EchoPlayer/commit/805e774cda1855ed7b4bafedc1d95c6f1e75b74a))
+- **player:** Prevent subtitle overlay interactions from triggering video play/pause ([#128](https://github.com/mkdir700/EchoPlayer/issues/128)) ([9730ba1](https://github.com/mkdir700/EchoPlayer/commit/9730ba1184cffe2012dd30e9207a562e88eec140))
+- **subtitle:** prevent overlay showing content during subtitle gaps ([#138](https://github.com/mkdir700/EchoPlayer/issues/138)) ([0eb4697](https://github.com/mkdir700/EchoPlayer/commit/0eb4697b73e2a94ff1b85557d796a38e86d5ff4c))
+- **ui:** Remove white border shadow from modal buttons in dark mode ([#124](https://github.com/mkdir700/EchoPlayer/issues/124)) ([29f70f6](https://github.com/mkdir700/EchoPlayer/commit/29f70f66806f3dc0e3e473a9b3b27867cf67ac0d))
+- **windows:** resolve file extension validation requiring double dots (.mp4 vs ..mp4) ([#126](https://github.com/mkdir700/EchoPlayer/issues/126)) ([eadebcf](https://github.com/mkdir700/EchoPlayer/commit/eadebcfba3c20912c507ed8aea3b7f0ed0e40396)), closes [#118](https://github.com/mkdir700/EchoPlayer/issues/118) [#118](https://github.com/mkdir700/EchoPlayer/issues/118)
+
+### Features
+
+- **dictionary:** expose DictionaryService API in preload and add comprehensive tests ([#143](https://github.com/mkdir700/EchoPlayer/issues/143)) ([70d289d](https://github.com/mkdir700/EchoPlayer/commit/70d289d323c6f429e4cfd80cb1a6a7dc9081c063))
+- implement Ctrl+C subtitle copy with lightweight toast notification ([#140](https://github.com/mkdir700/EchoPlayer/issues/140)) ([22005bb](https://github.com/mkdir700/EchoPlayer/commit/22005bb1a75714fbe5c4e85821fe47a235401a73)), closes [#142](https://github.com/mkdir700/EchoPlayer/issues/142)
+- **performance:** implement video import performance optimization with parallel processing and warmup strategies ([#121](https://github.com/mkdir700/EchoPlayer/issues/121)) ([2c65f5a](https://github.com/mkdir700/EchoPlayer/commit/2c65f5ae92460391302c24f3fb291f386043e7cd))
+- **player:** Implement fullscreen toggle functionality with keyboard shortcuts ([#127](https://github.com/mkdir700/EchoPlayer/issues/127)) ([78d3629](https://github.com/mkdir700/EchoPlayer/commit/78d3629c7d5a14e8bc378967a7f161135c5b5042))
+- **scripts:** optimize FFmpeg download progress display ([#125](https://github.com/mkdir700/EchoPlayer/issues/125)) ([be33316](https://github.com/mkdir700/EchoPlayer/commit/be33316f0a66f7b5b2de64d275d7166f12f50379))
+
+### Reverts
+
+- Revert "ci(sync): add workflow to sync main to beta ([#132](https://github.com/mkdir700/EchoPlayer/issues/132))" ([93ac160](https://github.com/mkdir700/EchoPlayer/commit/93ac16079a190883b4529efeb34c11937ece02bd))
+
 # [1.0.0-alpha.8](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.7...v1.0.0-alpha.8) (2025-09-10)
 
 ### Features
