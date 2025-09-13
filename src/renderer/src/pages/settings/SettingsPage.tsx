@@ -1,5 +1,5 @@
 import { Navbar, NavbarCenter } from '@renderer/components/app/Navbar'
-import { Command, Eye, Info, PlayCircle, Settings2 } from 'lucide-react'
+import { Command, Eye, Info, Monitor, PlayCircle, Settings2 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
@@ -7,6 +7,7 @@ import styled from 'styled-components'
 
 import AboutSettings from './AboutSettings'
 import { AppearanceSettings } from './AppearanceSettings'
+import FFmpegSettings from './FFmpegSettings'
 import GeneralSettings from './GeneralSettings'
 import PlaybackSettings from './PlaybackSettings'
 import ShortcutSettings from './ShortcutSettings'
@@ -51,6 +52,12 @@ export function SettingsPage(): React.JSX.Element {
               {t('settings.playback.title')}
             </MenuItem>
           </MenuItemLink>
+          <MenuItemLink to="/settings/plugins">
+            <MenuItem className={isRoute('/settings/plugins')}>
+              <Monitor size={18} />
+              {t('settings.plugins.title')}
+            </MenuItem>
+          </MenuItemLink>
           <MenuItemLink to="/settings/about">
             <MenuItem className={isRoute('/settings/about')}>
               <Info size={18} />
@@ -64,6 +71,7 @@ export function SettingsPage(): React.JSX.Element {
             <Route path="general" element={<GeneralSettings />} />
             <Route path="shortcut" element={<ShortcutSettings />} />
             <Route path="playback" element={<PlaybackSettings />} />
+            <Route path="plugins" element={<FFmpegSettings />} />
             <Route path="about" element={<AboutSettings />} />
           </Routes>
         </SettingContent>
