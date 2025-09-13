@@ -474,6 +474,51 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(IpcChannel.Ffmpeg_GetWarmupStatus, async () => {
     return FFmpegService.getWarmupStatus()
   })
+  ipcMain.handle(IpcChannel.Ffmpeg_GetInfo, async () => {
+    return ffmpegService.getFFmpegInfo()
+  })
+  ipcMain.handle(IpcChannel.Ffmpeg_AutoDetectAndDownload, async () => {
+    return await ffmpegService.autoDetectAndDownload()
+  })
+
+  // FFmpeg 下载服务
+  const ffmpegDownloadService = ffmpegService.getDownloadService()
+  ipcMain.handle(
+    IpcChannel.FfmpegDownload_CheckExists,
+    async (_, platform?: string, arch?: string) => {
+      return ffmpegDownloadService.checkFFmpegExists(platform as any, arch as any)
+    }
+  )
+  ipcMain.handle(
+    IpcChannel.FfmpegDownload_GetVersion,
+    async (_, platform?: string, arch?: string) => {
+      return ffmpegDownloadService.getFFmpegVersion(platform as any, arch as any)
+    }
+  )
+  ipcMain.handle(
+    IpcChannel.FfmpegDownload_Download,
+    async (_, platform?: string, arch?: string) => {
+      return await ffmpegDownloadService.downloadFFmpeg(platform as any, arch as any)
+    }
+  )
+  ipcMain.handle(
+    IpcChannel.FfmpegDownload_GetProgress,
+    async (_, platform?: string, arch?: string) => {
+      return ffmpegDownloadService.getDownloadProgress(platform as any, arch as any)
+    }
+  )
+  ipcMain.handle(IpcChannel.FfmpegDownload_Cancel, async (_, platform?: string, arch?: string) => {
+    return ffmpegDownloadService.cancelDownload(platform as any, arch as any)
+  })
+  ipcMain.handle(IpcChannel.FfmpegDownload_Remove, async (_, platform?: string, arch?: string) => {
+    return ffmpegDownloadService.removeFFmpeg(platform as any, arch as any)
+  })
+  ipcMain.handle(IpcChannel.FfmpegDownload_GetAllVersions, async () => {
+    return ffmpegDownloadService.getAllSupportedVersions()
+  })
+  ipcMain.handle(IpcChannel.FfmpegDownload_CleanupTemp, async () => {
+    return ffmpegDownloadService.cleanupTempFiles()
+  })
 
   // MediaParser (Remotion)
   ipcMain.handle(IpcChannel.MediaInfo_CheckExists, async () => {

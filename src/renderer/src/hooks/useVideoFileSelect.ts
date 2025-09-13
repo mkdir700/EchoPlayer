@@ -109,6 +109,26 @@ export function useVideoFileSelect(
           })
 
           if (!videoInfo) {
+            // 检查是否是 FFmpeg 相关问题
+            try {
+              const ffmpegInfo = await window.api.ffmpeg.getInfo()
+              if (ffmpegInfo.needsDownload) {
+                throw new Error(
+                  '视频处理组件未安装。EchoPlayer 需要 FFmpeg 来处理视频文件。\n\n请在设置中下载视频处理组件，或安装系统 FFmpeg。'
+                )
+              } else if (ffmpegInfo.isSystemFFmpeg) {
+                throw new Error(
+                  '视频处理失败。可能是系统 FFmpeg 版本不兼容或视频文件损坏。\n\n建议在设置中下载官方视频处理组件以获得更好的兼容性。'
+                )
+              }
+            } catch (ffmpegError) {
+              // 如果 FFmpeg 检测本身失败，使用原始错误或提供备用消息
+              if ((ffmpegError as Error).message.includes('视频处理组件')) {
+                throw ffmpegError
+              }
+            }
+
+            // 如果不是 FFmpeg 问题，使用通用错误消息
             throw new Error('无法获取视频信息，请检查文件是否为有效的视频文件')
           }
 
