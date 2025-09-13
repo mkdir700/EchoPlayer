@@ -1,5 +1,5 @@
 import React from 'react'
-import styled, { keyframes } from 'styled-components'
+import styled, { css, keyframes } from 'styled-components'
 
 interface IndicatorLightProps {
   /**
@@ -57,9 +57,9 @@ const IndicatorLightContainer = styled.div<{
 
   ${(props) =>
     props.$pulsing &&
-    `
-    animation: ${pulse} 2s ease-in-out infinite;
-  `}
+    css`
+      animation: ${pulse} 2s ease-in-out infinite;
+    `}
 `
 
 const colorMap = {
