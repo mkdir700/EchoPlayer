@@ -3,6 +3,7 @@ import { ThemeMode } from '@types'
 import { BrowserWindow, nativeTheme } from 'electron'
 
 import { titleBarOverlayDark, titleBarOverlayLight } from '../config'
+import { isMac } from '../constant'
 import { configManager } from './ConfigManager'
 
 class ThemeService {
@@ -26,7 +27,8 @@ class ThemeService {
 
   themeUpdatadHandler() {
     BrowserWindow.getAllWindows().forEach((win) => {
-      if (win && !win.isDestroyed() && win.setTitleBarOverlay) {
+      // 只对 macOS 应用 titleBarOverlay，因为 Windows 和 Linux 使用系统标题栏
+      if (isMac && win && !win.isDestroyed() && win.setTitleBarOverlay) {
         try {
           win.setTitleBarOverlay(
             nativeTheme.shouldUseDarkColors ? titleBarOverlayDark : titleBarOverlayLight
