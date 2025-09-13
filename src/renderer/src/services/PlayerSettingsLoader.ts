@@ -41,6 +41,7 @@ export class PlayerSettingsService {
       duration: 0,
       paused: true,
       isFullscreen: false,
+      activeCueIndex: -1,
 
       // 从全局设置获取的默认值
       volume: globalSettings.defaultVolume,
@@ -179,6 +180,7 @@ export class PlayerSettingsService {
       duration: 0,
       paused: true,
       isFullscreen: false,
+      activeCueIndex: -1,
 
       // 从数据库恢复的设置
       volume: dbData.volume,
