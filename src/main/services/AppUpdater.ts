@@ -79,7 +79,7 @@ export default class AppUpdater {
     try {
       logger.info('get pre release version from github', channel)
       const responses = await fetch(
-        'https://api.github.com/repos/mkdir700/EchoPlayer/releases?per_page=8',
+        'https://api.github.com/repos/mkdir700/EchoPlayer/releases?per_page=20',
         {
           headers: {
             Accept: 'application/vnd.github+json',
@@ -89,12 +89,25 @@ export default class AppUpdater {
         }
       )
       const data = (await responses.json()) as GithubReleaseInfo[]
-      const release: GithubReleaseInfo | undefined = data.find((item: GithubReleaseInfo) => {
+
+      // 过滤出匹配渠道的预发布版本
+      const matchingReleases = data.filter((item: GithubReleaseInfo) => {
         return item.prerelease && item.tag_name.includes(`-${channel}.`)
       })
 
-      logger.info('release info', release)
-      return release ? release : null
+      if (matchingReleases.length === 0) {
+        logger.info('No matching pre-release found for channel:', channel)
+        return null
+      }
+
+      // 按发布时间排序，获取最新的版本
+      const release = matchingReleases.sort(
+        (a, b) =>
+          new Date(b.published_at || '').getTime() - new Date(a.published_at || '').getTime()
+      )[0]
+
+      logger.info('Latest release info for channel', channel, ':', release)
+      return release
     } catch (error) {
       logger.error('Failed to get latest not draft version from github:', error)
       return null
