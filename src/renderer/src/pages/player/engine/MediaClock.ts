@@ -214,13 +214,16 @@ class EventDeduplicator {
 
     // 使用 TimeMath 进行时间相等性检查
     if (event.type === 'time_update') {
-      // 检查是否为相同时间点（在容差范围内）
+      // 检查是否为相同时间点（在容差范围内） - 减少重复日志
       if (TimeMath.equals(existing.currentTime, event.currentTime)) {
-        logger.debug('Duplicate time_update event (TimeMath.equals)', {
-          existing: existing.currentTime,
-          current: event.currentTime,
-          epsilon: TimeMath.EPS
-        })
+        // 降低重复事件日志频率，只记录采样的重复事件
+        if (Math.random() < 0.05) {
+          logger.debug('Duplicate time_update event (TimeMath.equals - sampled)', {
+            existing: existing.currentTime,
+            current: event.currentTime,
+            epsilon: TimeMath.EPS
+          })
+        }
         return true
       }
 
@@ -232,11 +235,14 @@ class EventDeduplicator {
         const boundaries = [0, existing.currentTime, event.currentTime] // 可能的边界点
         for (const boundary of boundaries) {
           if (TimeMath.detectBoundaryFlutter(this.timeHistory, boundary)) {
-            logger.debug('Boundary flutter detected, treating as duplicate', {
-              boundary,
-              timeHistory: this.timeHistory.slice(0, 3),
-              currentTime: event.currentTime
-            })
+            // 减少边界抖动检测日志频率
+            if (Math.random() < 0.1) {
+              logger.debug('Boundary flutter detected, treating as duplicate (sampled)', {
+                boundary,
+                timeHistory: this.timeHistory.slice(0, 3),
+                currentTime: event.currentTime
+              })
+            }
             return true
           }
         }
@@ -608,9 +614,9 @@ export class MediaClock {
       playbackRate: this.state.playbackRate
     }
 
-    // 在高精度模式下添加额外的调试信息
-    if (this.throttler.getMode() === ThrottleMode.HIGH_PRECISION) {
-      logger.debug('High-precision time update', {
+    // 在高精度模式下添加额外的调试信息 - 降低频率
+    if (this.throttler.getMode() === ThrottleMode.HIGH_PRECISION && Math.random() < 0.1) {
+      logger.debug('High-precision time update (sampled)', {
         previousTime,
         currentTime,
         epsilon,
