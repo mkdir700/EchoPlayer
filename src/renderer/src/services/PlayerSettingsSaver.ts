@@ -38,12 +38,19 @@ export class PlayerSettingsPersistenceService {
   private debounceTimer: NodeJS.Timeout | null = null
   private readonly debounceMs = 1200
 
+  // 用户跳转时暂时禁用自动保存的标志位
+  private isUserSeeking = false
+  private userSeekingTimer: NodeJS.Timeout | null = null
+  private currentVideoId: number | null = null
+
   attach(videoId: number) {
     this.detach()
     if (!videoId || videoId <= 0) {
       logger.warn('attach: 无效 videoId，跳过', { videoId })
       return
     }
+
+    this.currentVideoId = videoId
 
     // 订阅持久化切片变化（手动在回调内比较，避免类型不匹配问题）
     this.unsubscribe = usePlayerStore.subscribe((state, prevState) => {
@@ -77,7 +84,63 @@ export class PlayerSettingsPersistenceService {
       clearTimeout(this.debounceTimer)
       this.debounceTimer = null
     }
+    if (this.debounceCurrentTimeTimer) {
+      clearTimeout(this.debounceCurrentTimeTimer)
+      this.debounceCurrentTimeTimer = null
+    }
+    if (this.userSeekingTimer) {
+      clearTimeout(this.userSeekingTimer)
+      this.userSeekingTimer = null
+    }
     this.lastSaved = null
+    this.isUserSeeking = false
+    this.currentVideoId = null
+  }
+
+  /**
+   * 标记用户正在跳转，暂时禁用 currentTime 的自动保存
+   */
+  markUserSeeking() {
+    this.isUserSeeking = true
+
+    // 取消可能已排队的进度保存任务，避免与用户跳转状态竞争
+    if (this.debounceCurrentTimeTimer) {
+      clearTimeout(this.debounceCurrentTimeTimer)
+      this.debounceCurrentTimeTimer = null
+    }
+
+    // 清除之前的定时器
+    if (this.userSeekingTimer) {
+      clearTimeout(this.userSeekingTimer)
+    }
+
+    // 在略长于 debounceCurrentTimeMs 的时间后恢复自动保存并立即保存一次
+    const resumeAfterMs = this.debounceCurrentTimeMs + 200
+    this.userSeekingTimer = setTimeout(async () => {
+      this.isUserSeeking = false
+      this.userSeekingTimer = null
+
+      // 立即保存一次当前播放进度，确保用户跳转后的位置被记录
+      if (this.currentVideoId) {
+        try {
+          const currentTime = usePlayerStore.getState().currentTime
+          await window.api.db.videoLibrary.updatePlayProgress(this.currentVideoId, currentTime)
+          logger.debug('用户跳转状态已恢复，立即保存当前进度', {
+            videoId: this.currentVideoId,
+            currentTime
+          })
+        } catch (error) {
+          logger.error('用户跳转状态恢复时保存进度失败', {
+            videoId: this.currentVideoId,
+            error
+          })
+        }
+      }
+
+      logger.debug('用户跳转状态已恢复，重新启用进度自动保存')
+    }, resumeAfterMs)
+
+    logger.debug('已标记用户跳转状态，暂时禁用进度自动保存')
   }
 
   private onSliceChanged(videoId: number, slice: PlayerSettings) {
@@ -100,6 +163,12 @@ export class PlayerSettingsPersistenceService {
   }
 
   private onCurrentTimeChanged(videoId: number, currentTime: number) {
+    // 如果用户正在跳转，跳过自动保存
+    if (this.isUserSeeking) {
+      logger.debug('用户正在跳转，跳过进度自动保存', { videoId, currentTime })
+      return
+    }
+
     if (this.debounceCurrentTimeTimer) clearTimeout(this.debounceCurrentTimeTimer)
     this.debounceCurrentTimeTimer = setTimeout(async () => {
       try {
