@@ -166,7 +166,17 @@ vi.mock('../services/FFmpegService', () => ({
     getVideoInfo: vi.fn(),
     transcodeVideo: vi.fn(),
     cancelTranscode: vi.fn(),
-    getFFmpegPath: vi.fn()
+    getFFmpegPath: vi.fn(),
+    getDownloadService: vi.fn(() => ({
+      checkFFmpegExists: vi.fn(),
+      getFFmpegVersion: vi.fn(),
+      downloadFFmpeg: vi.fn(),
+      getDownloadProgress: vi.fn(),
+      cancelDownload: vi.fn(),
+      removeFFmpeg: vi.fn(),
+      getAllSupportedVersions: vi.fn(),
+      cleanupTempFiles: vi.fn()
+    }))
   }))
 }))
 

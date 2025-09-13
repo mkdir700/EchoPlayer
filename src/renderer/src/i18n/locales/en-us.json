@@ -103,6 +103,88 @@
       },
       "title": "Playback Settings"
     },
+    "plugins": {
+      "ffmpeg": {
+        "actions": {
+          "label": "Actions",
+          "refresh": "Refresh Status",
+          "warmup": "Test"
+        },
+        "current_path": "Current Path",
+        "description": "FFmpeg is the essential core component for processing video files, used for extracting video information and performing video processing tasks.",
+        "download": {
+          "button": "Download FFmpeg",
+          "cancel": "Cancel Download",
+          "cancelled": "Download cancelled",
+          "downloading": "Downloading",
+          "failed": "Download failed, please check your network connection and retry",
+          "progress": "Download Progress",
+          "size": "Download Size",
+          "success": "Download completed",
+          "warming_up": "Warming up...",
+          "warmup_failed": "Warmup failed, please check installation",
+          "warmup_success": "Warmup successful, FFmpeg is now available"
+        },
+        "prompt": {
+          "title": "Video Processing Component Required",
+          "subtitle": "EchoPlayer needs FFmpeg to process this video file",
+          "benefits": {
+            "title": "Benefits of installing FFmpeg:",
+            "compatibility": {
+              "title": "Broader Format Support",
+              "description": "Support for almost all video formats including MP4, AVI, MKV, MOV, WMV and more"
+            },
+            "performance": {
+              "title": "Faster Processing Speed",
+              "description": "Optimized decoding algorithms for smoother playback experience"
+            },
+            "reliability": {
+              "title": "Higher Stability",
+              "description": "Professional-grade video processing capabilities, reducing parsing failures and playback errors"
+            }
+          },
+          "effort": {
+            "title": "Easy and Quick Installation",
+            "description": "One-click automatic download, about 50MB, installation completes in 2-3 minutes. No manual configuration needed, ready to use immediately."
+          },
+          "actions": {
+            "download": "Download FFmpeg Now",
+            "later": "Handle Later"
+          }
+        },
+        "path": {
+          "browse": "Browse",
+          "browse_title": "Select FFmpeg Executable",
+          "invalid": "Invalid path or file does not exist",
+          "label": "Path",
+          "placeholder": "FFmpeg path will be auto-filled after download, or specify manually",
+          "valid": "Path validation successful",
+          "validation_failed": "Path validation failed"
+        },
+        "status": {
+          "available": "Available",
+          "custom_path": "Custom Path",
+          "downloading": "Downloading",
+          "installed": "Installed",
+          "label": "Status",
+          "loading": "Detecting...",
+          "not_installed": "Not Installed",
+          "system_version": "System Version",
+          "unknown": "Status Unknown"
+        },
+        "title": "Video Processing Component (FFmpeg)",
+        "uninstall": {
+          "button": "Uninstall",
+          "confirm": "Confirm Uninstall",
+          "confirm_description": "This will remove the downloaded FFmpeg files, but will not affect system-installed versions.",
+          "confirm_title": "Confirm FFmpeg Uninstall?",
+          "failed": "Uninstall failed, please try again",
+          "success": "FFmpeg uninstalled successfully"
+        },
+        "version": "Version"
+      },
+      "title": "Plugin Management"
+    },
     "shortcuts": {
       "action": "operation",
       "actions": "operation",
@@ -117,6 +199,8 @@
       "new_topic": "Create a new topic",
       "next_subtitle": "next subtitle",
       "play_pause": "Play/Pause",
+      "playback_rate_next": "Next favorite rate",
+      "playback_rate_prev": "Previous favorite rate",
       "press_shortcut": "Press the shortcut key",
       "previous_subtitle": "Previous subtitle",
       "reset_defaults": "Reset default shortcuts",
@@ -131,8 +215,6 @@
       "show_app": "Show / Hide App",
       "show_settings": "Open settings",
       "single_loop": "Loop playback",
-      "playback_rate_next": "Next favorite rate",
-      "playback_rate_prev": "Previous favorite rate",
       "title": "Shortcut keys",
       "toggle_fullscreen": "Switch to fullscreen",
       "toggle_new_context": "Clear context",

@@ -182,7 +182,40 @@ const api = {
     getPath: (): Promise<string> => ipcRenderer.invoke(IpcChannel.Ffmpeg_GetPath),
     warmup: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.Ffmpeg_Warmup),
     getWarmupStatus: (): Promise<{ isWarmedUp: boolean; isWarming: boolean }> =>
-      ipcRenderer.invoke(IpcChannel.Ffmpeg_GetWarmupStatus)
+      ipcRenderer.invoke(IpcChannel.Ffmpeg_GetWarmupStatus),
+    getInfo: (): Promise<{
+      path: string
+      isBundled: boolean
+      isDownloaded: boolean
+      isSystemFFmpeg: boolean
+      platform: string
+      arch: string
+      version?: string
+      needsDownload: boolean
+    }> => ipcRenderer.invoke(IpcChannel.Ffmpeg_GetInfo),
+    autoDetectAndDownload: (): Promise<{
+      available: boolean
+      needsDownload: boolean
+      downloadTriggered: boolean
+    }> => ipcRenderer.invoke(IpcChannel.Ffmpeg_AutoDetectAndDownload),
+    // FFmpeg 下载管理
+    download: {
+      checkExists: (platform?: string, arch?: string): Promise<boolean> =>
+        ipcRenderer.invoke(IpcChannel.FfmpegDownload_CheckExists, platform, arch),
+      getVersion: (platform?: string, arch?: string): Promise<string | null> =>
+        ipcRenderer.invoke(IpcChannel.FfmpegDownload_GetVersion, platform, arch),
+      download: (platform?: string, arch?: string): Promise<boolean> =>
+        ipcRenderer.invoke(IpcChannel.FfmpegDownload_Download, platform, arch),
+      getProgress: (platform?: string, arch?: string): Promise<any> =>
+        ipcRenderer.invoke(IpcChannel.FfmpegDownload_GetProgress, platform, arch),
+      cancel: (platform?: string, arch?: string): Promise<void> =>
+        ipcRenderer.invoke(IpcChannel.FfmpegDownload_Cancel, platform, arch),
+      remove: (platform?: string, arch?: string): Promise<boolean> =>
+        ipcRenderer.invoke(IpcChannel.FfmpegDownload_Remove, platform, arch),
+      getAllVersions: (): Promise<any[]> =>
+        ipcRenderer.invoke(IpcChannel.FfmpegDownload_GetAllVersions),
+      cleanupTemp: (): Promise<void> => ipcRenderer.invoke(IpcChannel.FfmpegDownload_CleanupTemp)
+    }
   },
   mediainfo: {
     checkExists: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.MediaInfo_CheckExists),
