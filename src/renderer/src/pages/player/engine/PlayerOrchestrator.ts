@@ -611,6 +611,7 @@ export class PlayerOrchestrator {
   }
 
   onSeeking(): void {
+    this.mediaClock.startSeeking()
     this.stateUpdater?.setSeeking?.(true)
   }
 
