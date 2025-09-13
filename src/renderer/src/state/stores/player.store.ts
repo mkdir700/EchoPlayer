@@ -40,6 +40,7 @@ export interface PlayerState {
   paused: boolean
   volume: number // 0–1
   muted: boolean
+  activeCueIndex: number // 当前活跃的字幕索引，-1 表示没有活跃字幕
 
   /** 播放速度 */
   playbackRate: number
@@ -100,6 +101,7 @@ export interface PlayerActions {
   setVolume: (v: number) => void // 引擎专用：通过 orchestrator.requestSetVolume() 调用
   setMuted: (m: boolean) => void // 引擎专用：通过 orchestrator.requestToggleMute() 调用
   setPlaybackRate: (r: number) => void // 引擎专用：通过 orchestrator.requestSetPlaybackRate() 调用
+  setActiveCueIndex: (index: number) => void // 引擎专用：由 orchestrator 字幕策略自动设置
 
   // === 常用速度控制 ===
   // 组件可调用：用户设置
@@ -150,6 +152,7 @@ const initialState: PlayerState = {
   paused: true,
   volume: 1,
   muted: false,
+  activeCueIndex: -1,
   playbackRate: 1,
   favoriteRates: [1.0], // 默认常用速度
   currentFavoriteIndex: 1, // 默认选择 1.0x
@@ -218,6 +221,7 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
   setMuted: (m) => set((s: Draft<PlayerStore>) => void (s.muted = !!m)),
   setPlaybackRate: (r) =>
     set((s: Draft<PlayerStore>) => void (s.playbackRate = Math.max(0.25, Math.min(3, r)))),
+  setActiveCueIndex: (index) => set((s: Draft<PlayerStore>) => void (s.activeCueIndex = index)),
   setFullscreen: (f) => set((s: Draft<PlayerStore>) => void (s.isFullscreen = !!f)),
 
   // 常用速度控制

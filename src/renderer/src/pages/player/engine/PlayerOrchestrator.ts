@@ -56,6 +56,7 @@ export interface StateUpdater {
   setMuted(muted: boolean): void
   setSeeking?(seeking: boolean): void
   setEnded?(ended: boolean): void
+  setActiveCueIndex?(index: number): void
   updateUIState(updates: { openAutoResumeCountdown?: boolean }): void
 }
 
@@ -203,6 +204,12 @@ export class PlayerOrchestrator {
    */
   connectStateUpdater(updater: StateUpdater): void {
     this.stateUpdater = updater
+
+    // 立即同步当前的 activeCueIndex 到 store
+    if (updater.setActiveCueIndex) {
+      updater.setActiveCueIndex(this.context.activeCueIndex)
+    }
+
     logger.debug('State updater connected')
   }
 
@@ -219,6 +226,11 @@ export class PlayerOrchestrator {
   updateContext(updates: Partial<PlaybackContext>): void {
     const prevContext = { ...this.context }
     this.context = { ...this.context, ...updates }
+
+    // 同步 activeCueIndex 到 store（如果有变化）
+    if (updates.activeCueIndex !== undefined && this.stateUpdater?.setActiveCueIndex) {
+      this.stateUpdater.setActiveCueIndex(updates.activeCueIndex)
+    }
 
     if (this.config.enableDebugLogs) {
       const changedFields = Object.keys(updates).filter(
