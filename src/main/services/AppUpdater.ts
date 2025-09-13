@@ -274,21 +274,13 @@ export default class AppUpdater {
     if (!this.releaseInfo) {
       return
     }
-    // const locale = locales[configManager.getLanguage()]
-    // const { update: updateLocale } = locale.translation
-
-    let detail = this.formatReleaseNotes(this.releaseInfo.releaseNotes)
-    if (detail === '') {
-      detail = 'No release notes'
-    }
 
     dialog
       .showMessageBox({
         type: 'info',
         title: 'Update available',
         icon,
-        message: 'A new version is available. Do you want to download it now?',
-        detail,
+        message: `A new version (${this.releaseInfo.version}) is available. Do you want to install it now?\n\nYou can view the release notes in Settings > About.`,
         buttons: ['Later', 'Install'],
         defaultId: 1,
         cancelId: 0
@@ -301,18 +293,6 @@ export default class AppUpdater {
           mainWindow.webContents.send(IpcChannel.UpdateDownloadedCancelled)
         }
       })
-  }
-
-  private formatReleaseNotes(releaseNotes: string | ReleaseNoteInfo[] | null | undefined): string {
-    if (!releaseNotes) {
-      return ''
-    }
-
-    if (typeof releaseNotes === 'string') {
-      return releaseNotes
-    }
-
-    return releaseNotes.map((note) => note.note).join('\n')
   }
 }
 interface GithubReleaseInfo {
@@ -334,8 +314,4 @@ interface GithubReleaseInfo {
     download_count: number
     created_at: string
   }>
-}
-interface ReleaseNoteInfo {
-  readonly version: string
-  readonly note: string | null
 }
