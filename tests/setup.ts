@@ -184,10 +184,35 @@ Object.defineProperty(window, 'matchMedia', {
 // Mock URL.createObjectURL
 global.URL.createObjectURL = vi.fn(() => 'mocked-url')
 global.URL.revokeObjectURL = vi.fn()
+
 // Polyfill getComputedStyle for components relying on scroll calculations
 window.getComputedStyle = vi.fn().mockImplementation(() => ({
   getPropertyValue: () => '',
   overflowY: 'scroll'
+}))
+
+// Mock ResizeObserver
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn()
+}))
+
+// Mock speechSynthesis for pronunciation feature
+global.speechSynthesis = {
+  speak: vi.fn(),
+  cancel: vi.fn(),
+  pause: vi.fn(),
+  resume: vi.fn(),
+  getVoices: vi.fn(() => [])
+}
+
+global.SpeechSynthesisUtterance = vi.fn().mockImplementation((text) => ({
+  text,
+  lang: 'en-US',
+  rate: 0.8,
+  pitch: 1,
+  volume: 1
 }))
 
 // Setup test environment

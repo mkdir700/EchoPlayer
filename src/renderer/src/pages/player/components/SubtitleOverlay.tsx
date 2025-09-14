@@ -24,7 +24,8 @@ import {
 } from '@renderer/infrastructure/styles/theme'
 import { usePlayerStore } from '@renderer/state'
 import { DictionaryResult, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
-import { Tooltip } from 'antd'
+import { Button, Spin, Tooltip } from 'antd'
+import { Volume2 } from 'lucide-react'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
@@ -85,6 +86,8 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const [toastMessage, setToastMessage] = useState('')
   const [dictionaryData, setDictionaryData] = useState<DictionaryResult | null>(null)
   const [dictionaryVisible, setDictionaryVisible] = useState(false)
+  const [dictionaryLoading, setDictionaryLoading] = useState(false)
+  const [dictionaryError, setDictionaryError] = useState<string | null>(null)
   const [dictionaryPosition, setDictionaryPosition] = useState<{ x: number; y: number } | null>(
     null
   )
@@ -153,27 +156,33 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     window.addEventListener('resize', handleResize)
 
     // 监听全屏模式变化（可能导致容器尺寸变化）
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (
-          entry.target ===
-          (containerRef?.current || document.querySelector('[data-testid="video-surface"]'))
-        ) {
-          handleResize()
-        }
-      }
-    })
+    let observer: ResizeObserver | null = null
 
-    const container =
-      containerRef?.current || document.querySelector('[data-testid="video-surface"]')
-    if (container) {
-      observer.observe(container)
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          if (
+            entry.target ===
+            (containerRef?.current || document.querySelector('[data-testid="video-surface"]'))
+          ) {
+            handleResize()
+          }
+        }
+      })
+
+      const container =
+        containerRef?.current || document.querySelector('[data-testid="video-surface"]')
+      if (container) {
+        observer.observe(container)
+      }
     }
 
     return () => {
       clearTimeout(resizeTimer)
       window.removeEventListener('resize', handleResize)
-      observer.disconnect()
+      if (observer && typeof observer.disconnect === 'function') {
+        observer.disconnect()
+      }
     }
   }, [containerRef, updateContainerBounds, adaptToContainerResize, currentConfig?.isInitialized])
 
@@ -372,40 +381,61 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   )
 
   // === 单词点击处理 ===
-  const handleWordClick = useCallback(
-    async (word: string, token: any, event: React.MouseEvent) => {
-      logger.debug('字幕单词被点击', { word, tokenIndex: token.index })
-      const target = event.currentTarget as HTMLElement
-      const targetRect = target.getBoundingClientRect()
-      const overlayRect = overlayRef.current?.getBoundingClientRect()
-      setDictionaryPosition({
-        x: targetRect.left - (overlayRect?.left ?? 0) + targetRect.width / 2,
-        y: targetRect.top - (overlayRect?.top ?? 0)
-      })
-      try {
-        const result = await window.api.dictionary.queryEudic(word)
-        if (result.success && result.data) {
-          setDictionaryData(result.data)
-          setDictionaryVisible(true)
-        }
-      } catch (error) {
-        logger.error('查询单词失败', { word, error })
+  const handleWordClick = useCallback(async (word: string, token: any, event: React.MouseEvent) => {
+    logger.debug('字幕单词被点击', { word, tokenIndex: token.index })
+
+    // 设置弹窗位置
+    const target = event.currentTarget as HTMLElement
+    const targetRect = target.getBoundingClientRect()
+    const overlayRect = overlayRef.current?.getBoundingClientRect()
+    const positionX = targetRect.left - (overlayRect?.left ?? 0) + targetRect.width / 2
+    const positionY = targetRect.top - (overlayRect?.top ?? 0)
+
+    setDictionaryPosition({ x: positionX, y: positionY })
+    setDictionaryVisible(true)
+    setDictionaryLoading(true)
+    setDictionaryError(null)
+    setDictionaryData(null)
+
+    try {
+      const result = await window.api.dictionary.queryEudic(word)
+      if (result.success && result.data) {
+        setDictionaryData(result.data)
+      } else {
+        setDictionaryError(result.error || '查询失败')
       }
-    },
-    [setDictionaryData, setDictionaryVisible, setDictionaryPosition]
-  )
+    } catch (error) {
+      logger.error('查询单词失败', { word, error })
+      setDictionaryError('网络错误，请稍后重试')
+    } finally {
+      setDictionaryLoading(false)
+    }
+  }, [])
+
+  // === 发音处理 ===
+  const handlePronunciation = useCallback(async (word: string) => {
+    try {
+      // 使用浏览器内置的语音合成
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(word)
+        utterance.lang = 'en-US'
+        utterance.rate = 0.8
+        window.speechSynthesis.speak(utterance)
+      }
+    } catch (error) {
+      logger.error('发音失败', { word, error })
+    }
+  }, [])
 
   // === 通用点击处理（阻止冒泡到VideoSurface） ===
-  const handleClick = useCallback(
-    (event: React.MouseEvent) => {
-      // 阻止所有点击事件冒泡到VideoSurface，防止触发播放/暂停
-      event.stopPropagation()
-      setDictionaryVisible(false)
-      setDictionaryData(null)
-      setDictionaryPosition(null)
-    },
-    [setDictionaryVisible]
-  )
+  const handleClick = useCallback((event: React.MouseEvent) => {
+    // 阻止所有点击事件冒泡到VideoSurface，防止触发播放/暂停
+    event.stopPropagation()
+    setDictionaryVisible(false)
+    setDictionaryData(null)
+    setDictionaryPosition(null)
+    setDictionaryError(null)
+  }, [])
 
   // === 点击外部关闭词典 ===
   useEffect(() => {
@@ -414,6 +444,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       setDictionaryVisible(false)
       setDictionaryData(null)
       setDictionaryPosition(null)
+      setDictionaryError(null)
     }
     document.addEventListener('click', handleOutside)
     return () => document.removeEventListener('click', handleOutside)
@@ -504,21 +535,71 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         />
       </ContentContainer>
 
-      {dictionaryVisible && dictionaryData && dictionaryPosition && (
+      {dictionaryVisible && dictionaryPosition && (
         <DictionaryPopover
           style={{ left: dictionaryPosition.x, top: dictionaryPosition.y }}
           data-testid="dictionary-popover"
+          onClick={(e) => e.stopPropagation()}
         >
-          <strong>{dictionaryData.word}</strong>
-          {dictionaryData.phonetic && <p>{dictionaryData.phonetic}</p>}
-          <ul>
-            {dictionaryData.definitions.map((def, idx) => (
-              <li key={idx}>
-                {def.partOfSpeech && <strong>{def.partOfSpeech} </strong>}
-                {def.meaning}
-              </li>
-            ))}
-          </ul>
+          {dictionaryLoading ? (
+            <LoadingContent>
+              <Spin size="small" />
+              <span>查询中...</span>
+            </LoadingContent>
+          ) : dictionaryError ? (
+            <ErrorContent>
+              <span>查询失败</span>
+              <div>{dictionaryError}</div>
+            </ErrorContent>
+          ) : dictionaryData ? (
+            <>
+              <WordHeader>
+                <WordTitle>{dictionaryData.word}</WordTitle>
+                <PronunciationButton
+                  type="text"
+                  size="small"
+                  icon={<Volume2 size={14} />}
+                  onClick={() => handlePronunciation(dictionaryData.word)}
+                  title="点击发音"
+                />
+              </WordHeader>
+
+              {dictionaryData.phonetic && <PhoneticText>{dictionaryData.phonetic}</PhoneticText>}
+
+              {dictionaryData.definitions.length > 0 && (
+                <>
+                  <Divider $margin={SPACING.XS} />
+                  <DefinitionsList>
+                    {dictionaryData.definitions.slice(0, 6).map((def, idx) => (
+                      <DefinitionItem key={idx}>
+                        {def.partOfSpeech && <PartOfSpeech>{def.partOfSpeech}</PartOfSpeech>}
+                        <MeaningText>{def.meaning}</MeaningText>
+                      </DefinitionItem>
+                    ))}
+                    {dictionaryData.definitions.length > 6 && (
+                      <MoreIndicator>
+                        ... 还有 {dictionaryData.definitions.length - 6} 个释义
+                      </MoreIndicator>
+                    )}
+                  </DefinitionsList>
+                </>
+              )}
+
+              {dictionaryData.translations && dictionaryData.translations.length > 0 && (
+                <>
+                  <Divider $margin={SPACING.XS} />
+                  <TranslationSection>
+                    <SectionTitle>常用翻译</SectionTitle>
+                    <TranslationList>
+                      {dictionaryData.translations.slice(0, 3).map((translation, idx) => (
+                        <TranslationItem key={idx}>{translation}</TranslationItem>
+                      ))}
+                    </TranslationList>
+                  </TranslationSection>
+                </>
+              )}
+            </>
+          ) : null}
         </DictionaryPopover>
       )}
 
@@ -702,23 +783,213 @@ const ToastContent = styled.div`
 
 const DictionaryPopover = styled.div`
   position: absolute;
-  transform: translate(-50%, -100%);
-  background: rgba(0, 0, 0, ${GLASS_EFFECT.BACKGROUND_ALPHA.LIGHT});
-  backdrop-filter: blur(${GLASS_EFFECT.BLUR_STRENGTH.SUBTLE}px);
+  transform: translate(-50%, calc(-100% - ${SPACING.SM}px));
+  background: var(--ant-color-bg-elevated, rgba(0, 0, 0, ${GLASS_EFFECT.BACKGROUND_ALPHA.LIGHT}));
+  backdrop-filter: blur(${GLASS_EFFECT.BLUR_STRENGTH.MEDIUM}px);
   border: 1px solid rgba(255, 255, 255, ${GLASS_EFFECT.BORDER_ALPHA.SUBTLE});
-  border-radius: ${BORDER_RADIUS.SM}px;
-  box-shadow: ${SHADOWS.SM};
-  padding: ${SPACING.SM}px ${SPACING.MD}px;
-  color: #fff;
-  max-width: 240px;
+  border-radius: ${BORDER_RADIUS.LG}px;
+  box-shadow: ${SHADOWS.LG};
+  padding: ${SPACING.MD}px;
+  color: var(--ant-color-white, #ffffff);
+  min-width: 280px;
+  max-width: 360px;
+  max-height: 400px;
+  overflow-y: auto;
   z-index: ${Z_INDEX.TOOLTIP};
 
-  ul {
-    padding-left: ${SPACING.SM}px;
-    margin: 0;
+  /* 渐入动画 */
+  animation: fadeInUp 0.2s ease-out;
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - ${SPACING.SM}px - 8px));
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, calc(-100% - ${SPACING.SM}px));
+    }
   }
 
-  li {
-    margin-bottom: ${SPACING.XS}px;
+  /* 自定义滚动条 */
+  &::-webkit-scrollbar {
+    width: 4px;
   }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  /* 响应式调整 */
+  @media (max-width: 600px) {
+    min-width: 240px;
+    max-width: 90vw;
+    max-height: 300px;
+  }
+`
+
+const LoadingContent = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${SPACING.SM}px;
+  padding: ${SPACING.SM}px 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: ${FONT_SIZES.SM}px;
+
+  .ant-spin {
+    .ant-spin-dot {
+      i {
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+    }
+  }
+`
+
+const ErrorContent = styled.div`
+  color: #ff7875;
+  text-align: center;
+  padding: ${SPACING.SM}px 0;
+
+  span {
+    font-weight: ${FONT_WEIGHTS.MEDIUM};
+    margin-bottom: ${SPACING.XS}px;
+    display: block;
+  }
+
+  div {
+    font-size: ${FONT_SIZES.SM}px;
+    opacity: 0.8;
+  }
+`
+
+const WordHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: ${SPACING.XS}px;
+`
+
+const WordTitle = styled.h3`
+  margin: 0;
+  font-size: ${FONT_SIZES.LG}px;
+  font-weight: ${FONT_WEIGHTS.SEMIBOLD};
+  color: var(--ant-color-white, #ffffff);
+  flex: 1;
+`
+
+const PronunciationButton = styled(Button)`
+  &&& {
+    color: rgba(255, 255, 255, 0.8);
+    border: none;
+    padding: 0 ${SPACING.XS}px;
+    height: 24px;
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+
+    &:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    &:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+`
+
+const PhoneticText = styled.div`
+  color: rgba(255, 255, 255, 0.7);
+  font-size: ${FONT_SIZES.SM}px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  margin-bottom: ${SPACING.SM}px;
+`
+
+const DefinitionsList = styled.div`
+  margin: 0;
+`
+
+const DefinitionItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.XS / 2}px;
+  margin-bottom: ${SPACING.SM}px;
+  padding-bottom: ${SPACING.SM}px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  &:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+`
+
+const PartOfSpeech = styled.span`
+  font-size: ${FONT_SIZES.XS}px;
+  font-weight: ${FONT_WEIGHTS.MEDIUM};
+  color: #52c41a;
+  background: rgba(82, 196, 26, 0.1);
+  padding: 2px ${SPACING.XS}px;
+  border-radius: ${BORDER_RADIUS.SM}px;
+  display: inline-block;
+  margin-bottom: ${SPACING.XS / 2}px;
+`
+
+const MeaningText = styled.div`
+  color: rgba(255, 255, 255, 0.9);
+  font-size: ${FONT_SIZES.SM}px;
+  line-height: 1.5;
+`
+
+const MoreIndicator = styled.div`
+  color: rgba(255, 255, 255, 0.6);
+  font-size: ${FONT_SIZES.XS}px;
+  text-align: center;
+  padding: ${SPACING.XS}px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+`
+
+const TranslationSection = styled.div`
+  margin-top: ${SPACING.SM}px;
+`
+
+const SectionTitle = styled.div`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: ${FONT_SIZES.SM}px;
+  font-weight: ${FONT_WEIGHTS.MEDIUM};
+  margin-bottom: ${SPACING.XS}px;
+`
+
+const TranslationList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${SPACING.XS}px;
+`
+
+const TranslationItem = styled.span`
+  background: rgba(22, 119, 255, 0.15);
+  color: #40a9ff;
+  padding: 2px ${SPACING.XS}px;
+  border-radius: ${BORDER_RADIUS.SM}px;
+  font-size: ${FONT_SIZES.SM}px;
+  border: 1px solid rgba(64, 169, 255, 0.3);
+`
+
+// 自定义 Divider 组件
+const Divider = styled.div<{ $margin: number }>`
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: ${(props) => props.$margin}px 0;
 `
