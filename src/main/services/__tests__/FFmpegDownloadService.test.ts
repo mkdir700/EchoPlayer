@@ -319,7 +319,7 @@ describe('FFmpegDownloadService', () => {
 
       it('should handle timeout properly', async () => {
         // Mock fetch that will be aborted due to timeout
-        vi.mocked(global.fetch).mockImplementation((url, options) => {
+        vi.mocked(global.fetch).mockImplementation((_, options) => {
           return new Promise((resolve, reject) => {
             const signal = options?.signal as AbortSignal
             if (signal) {
