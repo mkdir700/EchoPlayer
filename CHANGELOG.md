@@ -1,3 +1,19 @@
+# [1.0.0-alpha.12](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.11...v1.0.0-alpha.12) (2025-09-14)
+
+### Features
+
+- **ffmpeg:** add China mirror support for FFmpeg downloads ([#164](https://github.com/mkdir700/EchoPlayer/issues/164)) ([f0473df](https://github.com/mkdir700/EchoPlayer/commit/f0473df297116b56d75ce37f7ba7d7ad0ea1f00b))
+
+### BREAKING CHANGES
+
+- **ffmpeg:** Service now defaults to China mirror for
+  better performance in Chinese regions
+
+- fix(test): remove unused parameter in FFmpegDownloadService test
+
+* Fix TypeScript error TS6133 for unused 'url' parameter
+* Replace unused 'url' with underscore in mock implementation
+
 # [1.0.0-alpha.11](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.10...v1.0.0-alpha.11) (2025-09-13)
 
 ### Bug Fixes
