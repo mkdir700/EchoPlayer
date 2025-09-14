@@ -5,6 +5,15 @@ import path from 'path'
 
 import { initAppDataDir } from './utils/init'
 
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN
+if (sentryDsn) {
+  import('@sentry/electron/main')
+    .then(({ init }) =>
+      init({ dsn: sentryDsn, release: app.getVersion(), environment: import.meta.env.MODE })
+    )
+    .catch(() => {})
+}
+
 app.isPackaged && initAppDataDir()
 
 // 在主进程中复制 appData 中某些一直被占用的文件

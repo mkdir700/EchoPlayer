@@ -7,6 +7,7 @@ import { NavigateFunction } from 'react-router-dom'
 
 interface ImportMetaEnv {
   VITE_RENDERER_INTEGRATED_MODEL: string
+  VITE_SENTRY_DSN?: string
 }
 
 interface ImportMeta {
