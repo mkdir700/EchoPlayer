@@ -22,7 +22,7 @@ import {
 import { DictionaryResult } from '@types'
 import { Button, Spin } from 'antd'
 import { Volume2 } from 'lucide-react'
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 
 const logger = loggerService.withContext('DictionaryPopover')
@@ -49,6 +49,63 @@ export const DictionaryPopover = memo(function DictionaryPopover({
   loading,
   error
 }: DictionaryPopoverProps) {
+  const popoverRef = useRef<HTMLDivElement>(null)
+  const [adjustedPosition, setAdjustedPosition] = useState<{ x: number; y: number } | null>(null)
+  const [placement, setPlacement] = useState<
+    'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  >('top')
+
+  // 智能位置计算
+  useEffect(() => {
+    if (!visible || !position || !popoverRef.current) {
+      setAdjustedPosition(null)
+      return
+    }
+
+    const popover = popoverRef.current
+    const popoverRect = popover.getBoundingClientRect()
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+
+    // 弹窗尺寸（考虑默认的 min-width 和可能的内容）
+    const popoverWidth = Math.max(280, popoverRect.width || 280)
+    const popoverHeight = Math.max(200, popoverRect.height || 200)
+
+    let newX = position.x
+    const newY = position.y
+    let newPlacement: typeof placement = 'top'
+
+    // 水平位置调整
+    const halfWidth = popoverWidth / 2
+    const rightOverflow = newX + halfWidth - viewportWidth
+    const leftOverflow = newX - halfWidth
+
+    if (rightOverflow > 0) {
+      // 右侧溢出，向左调整
+      newX = viewportWidth - halfWidth - 10 // 留10px边距
+      newPlacement = newY < popoverHeight + 20 ? 'bottom-right' : 'top-right'
+    } else if (leftOverflow < 0) {
+      // 左侧溢出，向右调整
+      newX = halfWidth + 10 // 留10px边距
+      newPlacement = newY < popoverHeight + 20 ? 'bottom-left' : 'top-left'
+    } else {
+      // 水平居中
+      newPlacement = newY < popoverHeight + 20 ? 'bottom' : 'top'
+    }
+
+    // 垂直位置调整
+    if (newPlacement.startsWith('top') && newY < popoverHeight + 20) {
+      // 上方空间不足，改为下方显示
+      newPlacement = newPlacement.replace('top', 'bottom') as typeof placement
+    } else if (newPlacement.startsWith('bottom') && newY > viewportHeight - popoverHeight - 20) {
+      // 下方空间不足，改为上方显示
+      newPlacement = newPlacement.replace('bottom', 'top') as typeof placement
+    }
+
+    setAdjustedPosition({ x: newX, y: newY })
+    setPlacement(newPlacement)
+  }, [visible, position, data, loading, error])
+
   // 发音处理
   const handlePronunciation = useCallback(async (word: string) => {
     try {
@@ -67,11 +124,15 @@ export const DictionaryPopover = memo(function DictionaryPopover({
     return null
   }
 
+  const finalPosition = adjustedPosition || position
+
   return (
     <PopoverContainer
-      style={{ left: position.x, top: position.y }}
+      ref={popoverRef}
+      style={{ left: finalPosition.x, top: finalPosition.y }}
       data-testid="dictionary-popover"
       onClick={(e) => e.stopPropagation()}
+      $placement={placement}
     >
       {loading ? (
         <LoadingContent>
@@ -137,9 +198,10 @@ export const DictionaryPopover = memo(function DictionaryPopover({
 export default DictionaryPopover
 
 // === 样式组件 ===
-const PopoverContainer = styled.div`
+const PopoverContainer = styled.div<{
+  $placement: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+}>`
   position: absolute;
-  transform: translate(-50%, calc(-100% - ${SPACING.SM}px));
   background: var(--ant-color-bg-elevated, rgba(0, 0, 0, ${GLASS_EFFECT.BACKGROUND_ALPHA.LIGHT}));
   backdrop-filter: blur(${GLASS_EFFECT.BLUR_STRENGTH.MEDIUM}px);
   border: 1px solid rgba(255, 255, 255, ${GLASS_EFFECT.BORDER_ALPHA.SUBTLE});
@@ -153,17 +215,35 @@ const PopoverContainer = styled.div`
   overflow-y: auto;
   z-index: ${Z_INDEX.TOOLTIP};
 
-  /* 渐入动画 */
-  animation: fadeInUp 0.2s ease-out;
+  /* 根据placement调整transform */
+  transform: ${(props) => {
+    switch (props.$placement) {
+      case 'top':
+        return 'translate(-50%, calc(-100% - ${SPACING.SM}px))'
+      case 'bottom':
+        return 'translate(-50%, ${SPACING.SM}px)'
+      case 'top-left':
+        return 'translate(-10px, calc(-100% - ${SPACING.SM}px))'
+      case 'top-right':
+        return 'translate(calc(-100% + 10px), calc(-100% - ${SPACING.SM}px))'
+      case 'bottom-left':
+        return 'translate(-10px, ${SPACING.SM}px)'
+      case 'bottom-right':
+        return 'translate(calc(-100% + 10px), ${SPACING.SM}px)'
+      default:
+        return 'translate(-50%, calc(-100% - ${SPACING.SM}px))'
+    }
+  }};
 
-  @keyframes fadeInUp {
+  /* 渐入动画 */
+  animation: fadeIn 0.2s ease-out;
+
+  @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translate(-50%, calc(-100% - ${SPACING.SM}px - 8px));
     }
     to {
       opacity: 1;
-      transform: translate(-50%, calc(-100% - ${SPACING.SM}px));
     }
   }
 
