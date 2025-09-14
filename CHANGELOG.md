@@ -1,3 +1,30 @@
+# [1.0.0-beta.2](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-09-14)
+
+### Bug Fixes
+
+- **logger:** optimize logger memory management and reduce high-frequency logging ([#156](https://github.com/mkdir700/EchoPlayer/issues/156)) ([64e36a2](https://github.com/mkdir700/EchoPlayer/commit/64e36a282b08349971cd10741c01be194f4e7b55))
+- **player:** persist relocated video file path to database ([#162](https://github.com/mkdir700/EchoPlayer/issues/162)) ([25bc32b](https://github.com/mkdir700/EchoPlayer/commit/25bc32b5eabcef9342dff9f9319036e85052506e))
+- **subtitle:** resolve overlay pause/seek update delays with immediate state sync ([#153](https://github.com/mkdir700/EchoPlayer/issues/153)) ([582168f](https://github.com/mkdir700/EchoPlayer/commit/582168fd12824d3b8dd1629f263bb3b0b87bc0c7))
+- **ui:** use system title bar for Windows and Linux platforms ([#158](https://github.com/mkdir700/EchoPlayer/issues/158)) ([ee435ce](https://github.com/mkdir700/EchoPlayer/commit/ee435ce3439344d625af03e99e83d9967a46374a))
+- **updater:** remove detailed release notes from system update dialog ([#152](https://github.com/mkdir700/EchoPlayer/issues/152)) ([996e76a](https://github.com/mkdir700/EchoPlayer/commit/996e76ad394f4f37f73d7b4366058c04b2d0ac36))
+- **updater:** resolve pre-release version detection issue ([#161](https://github.com/mkdir700/EchoPlayer/issues/161)) ([3d90e67](https://github.com/mkdir700/EchoPlayer/commit/3d90e674821cffb0fe1732bfbd18830fbda9b1e9))
+
+### Features
+
+- add Windows ARM64 architecture support ([#157](https://github.com/mkdir700/EchoPlayer/issues/157)) ([30496b1](https://github.com/mkdir700/EchoPlayer/commit/30496b1bd36ffd3765b075f9081fb876d33ee1b8))
+- **ffmpeg:** add China mirror support for FFmpeg downloads ([#164](https://github.com/mkdir700/EchoPlayer/issues/164)) ([61efdad](https://github.com/mkdir700/EchoPlayer/commit/61efdad12214b5fb1a4fd1344a96c2b496d27749))
+- **ffmpeg:** implement dynamic FFmpeg download system with runtime management ([#155](https://github.com/mkdir700/EchoPlayer/issues/155)) ([95dae5a](https://github.com/mkdir700/EchoPlayer/commit/95dae5a6594348e494a66d29ef85e948d0a8d21a))
+
+### BREAKING CHANGES
+
+- **ffmpeg:** Service now defaults to China mirror for
+  better performance in Chinese regions
+
+- fix(test): remove unused parameter in FFmpegDownloadService test
+
+* Fix TypeScript error TS6133 for unused 'url' parameter
+* Replace unused 'url' with underscore in mock implementation
+
 # 1.0.0-beta.1 (2025-09-13)
 
 ### Bug Fixes
