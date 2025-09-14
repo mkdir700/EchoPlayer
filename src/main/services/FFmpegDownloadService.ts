@@ -103,29 +103,139 @@ const FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
   }
 }
 
-// 镜像源配置 - TODO: 将来实现镜像源切换
-// const MIRROR_SOURCES = {
-//   china: {
-//     github: 'https://ghproxy.com/', // GitHub 代理
-//     evermeet: 'https://cdn.example.cn/ffmpeg/', // 假设的国内镜像
-//     johnvansickle: 'https://cdn.example.cn/ffmpeg/' // 假设的国内镜像
-//   },
-//   global: {
-//     github: '',
-//     evermeet: '',
-//     johnvansickle: ''
-//   }
-// }
+// 中国区专供的 FFmpeg 配置
+const CHINA_FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
+  win32: {
+    x64: {
+      version: '6.1',
+      platform: 'win32',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/win32-x64.zip',
+      size: 60 * 1024 * 1024,
+      extractPath: 'win32-x64/ffmpeg.exe'
+    },
+    arm64: {
+      version: '6.1',
+      platform: 'win32',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/win32-arm64.zip',
+      size: 45 * 1024 * 1024,
+      extractPath: 'win32-arm64/ffmpeg.exe'
+    }
+  },
+  darwin: {
+    x64: {
+      version: '6.1',
+      platform: 'darwin',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/darwin-x64.zip',
+      size: 24 * 1024 * 1024,
+      extractPath: 'darwin-x64/ffmpeg'
+    },
+    arm64: {
+      version: '6.1',
+      platform: 'darwin',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/darwin-arm64.zip',
+      size: 24 * 1024 * 1024,
+      extractPath: 'darwin-arm64/ffmpeg'
+    }
+  },
+  linux: {
+    x64: {
+      version: '6.1',
+      platform: 'linux',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/linux-x64.zip',
+      size: 28 * 1024 * 1024,
+      extractPath: 'linux-x64/ffmpeg'
+    },
+    arm64: {
+      version: '6.1',
+      platform: 'linux',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/linux-arm64.zip',
+      size: 24 * 1024 * 1024,
+      extractPath: 'linux-arm64/ffmpeg'
+    }
+  }
+}
 
 export class FFmpegDownloadService {
   private downloadProgress = new Map<string, DownloadProgress>()
   private downloadController = new Map<string, AbortController>()
   private readonly binariesDir: string
+  private useChinaMirror: boolean = false
+  private regionDetectionPromise: Promise<void> | null = null
 
   constructor() {
     // FFmpeg 存储在 userData/binaries/ffmpeg/ 目录
     this.binariesDir = path.join(app.getPath('userData'), 'binaries', 'ffmpeg')
     this.ensureDir(this.binariesDir)
+    // 异步检测地区并设置镜像源（不阻塞初始化）
+    this.regionDetectionPromise = this.detectRegionAndSetMirror()
+  }
+
+  /**
+   * 通过 IP 地理位置检测用户地区并设置镜像源
+   */
+  private async detectRegionAndSetMirror(): Promise<void> {
+    try {
+      const country = await this.getIpCountry()
+
+      // 中国大陆、香港、澳门、台湾用户都使用中国镜像源
+      const chineseRegions = ['cn', 'hk', 'mo', 'tw']
+      this.useChinaMirror = chineseRegions.includes(country?.toLowerCase() || '')
+
+      logger.info('通过IP检测地区，设置镜像源', {
+        country,
+        useChinaMirror: this.useChinaMirror
+      })
+    } catch (error) {
+      logger.warn('无法检测用户地区，使用默认镜像源', { error })
+      this.useChinaMirror = true // 检测失败时默认使用中国镜像源
+    }
+  }
+
+  /**
+   * 获取用户IP对应的国家代码
+   */
+  private async getIpCountry(): Promise<string> {
+    try {
+      // 使用 AbortController 设置 5 秒超时
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+      const response = await fetch('https://ipinfo.io/json', {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'EchoPlayer-FFmpeg-Downloader/2.0',
+          'Accept-Language': 'en-US,en;q=0.9'
+        }
+      })
+
+      clearTimeout(timeoutId)
+      const data = await response.json()
+      return data.country || 'CN' // 默认返回 CN，这样中国用户即使检测失败也能使用中国镜像源
+    } catch (error) {
+      logger.warn('获取IP地理位置失败，默认使用中国镜像源', { error })
+      return 'CN' // 默认返回 CN
+    }
+  }
+
+  /**
+   * 手动设置镜像源
+   */
+  public setMirrorSource(useChina: boolean): void {
+    this.useChinaMirror = useChina
+    logger.info('手动设置镜像源', { useChinaMirror: this.useChinaMirror })
+  }
+
+  /**
+   * 获取当前使用的镜像源
+   */
+  public getCurrentMirrorSource(): 'china' | 'global' {
+    return this.useChinaMirror ? 'china' : 'global'
   }
 
   /**
@@ -167,6 +277,16 @@ export class FFmpegDownloadService {
     platform = process.platform as Platform,
     arch = process.arch as Arch
   ): FFmpegVersion | null {
+    // 优先使用中国镜像源（如果启用）
+    if (this.useChinaMirror) {
+      const chinaVersion = CHINA_FFMPEG_VERSIONS[platform]?.[arch]
+      if (chinaVersion) {
+        return chinaVersion
+      }
+      logger.warn('中国镜像源不支持当前平台，回退到全球镜像源', { platform, arch })
+    }
+
+    // 回退到全球镜像源
     return FFMPEG_VERSIONS[platform]?.[arch] || null
   }
 
@@ -175,11 +295,31 @@ export class FFmpegDownloadService {
    */
   public getAllSupportedVersions(): FFmpegVersion[] {
     const versions: FFmpegVersion[] = []
-    for (const platformConfigs of Object.values(FFMPEG_VERSIONS)) {
+
+    // 添加当前镜像源的版本
+    const currentVersions = this.useChinaMirror ? CHINA_FFMPEG_VERSIONS : FFMPEG_VERSIONS
+    for (const platformConfigs of Object.values(currentVersions)) {
       for (const version of Object.values(platformConfigs)) {
         versions.push(version)
       }
     }
+
+    return versions
+  }
+
+  /**
+   * 获取指定镜像源的所有支持版本
+   */
+  public getAllVersionsByMirror(mirrorType: 'china' | 'global'): FFmpegVersion[] {
+    const versions: FFmpegVersion[] = []
+    const versionConfigs = mirrorType === 'china' ? CHINA_FFMPEG_VERSIONS : FFMPEG_VERSIONS
+
+    for (const platformConfigs of Object.values(versionConfigs)) {
+      for (const version of Object.values(platformConfigs)) {
+        versions.push(version)
+      }
+    }
+
     return versions
   }
 
@@ -205,14 +345,76 @@ export class FFmpegDownloadService {
       return false
     }
 
+    // 尝试下载（如果中国镜像源失败会自动回退）
+    return await this.downloadFFmpegWithFallback(platform, arch, onProgress)
+  }
+
+  /**
+   * 带回退机制的下载方法
+   */
+  private async downloadFFmpegWithFallback(
+    platform: Platform,
+    arch: Arch,
+    onProgress?: (progress: DownloadProgress) => void
+  ): Promise<boolean> {
+    // 等待地区检测完成（最多等待 10 秒）
+    if (this.regionDetectionPromise) {
+      try {
+        await Promise.race([
+          this.regionDetectionPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('地区检测超时')), 10000))
+        ])
+      } catch (error) {
+        logger.warn('地区检测超时或失败，使用当前镜像源设置', { error })
+      }
+    }
+
+    // 首先尝试当前镜像源
     const version = this.getFFmpegVersion(platform, arch)
     if (!version) {
       logger.error('不支持的平台', { platform, arch })
       return false
     }
 
-    logger.info('开始下载 FFmpeg', { platform, arch, version: version.version })
+    logger.info('开始下载 FFmpeg', {
+      platform,
+      arch,
+      version: version.version,
+      mirrorSource: this.getCurrentMirrorSource(),
+      url: version.url
+    })
 
+    // 尝试下载
+    let success = await this.performDownload(platform, arch, version, onProgress)
+
+    // 如果使用中国镜像源失败，自动回退到全球镜像源
+    if (!success && this.useChinaMirror) {
+      logger.warn('中国镜像源下载失败，尝试回退到全球镜像源', { platform, arch })
+
+      const globalVersion = FFMPEG_VERSIONS[platform]?.[arch]
+      if (globalVersion) {
+        logger.info('使用全球镜像源重新下载', {
+          platform,
+          arch,
+          url: globalVersion.url
+        })
+        success = await this.performDownload(platform, arch, globalVersion, onProgress)
+      }
+    }
+
+    return success
+  }
+
+  /**
+   * 执行实际的下载操作
+   */
+  private async performDownload(
+    platform: Platform,
+    arch: Arch,
+    version: FFmpegVersion,
+    onProgress?: (progress: DownloadProgress) => void
+  ): Promise<boolean> {
+    const key = `${platform}-${arch}`
     const controller = new AbortController()
     this.downloadController.set(key, controller)
 
