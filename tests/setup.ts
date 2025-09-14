@@ -102,6 +102,9 @@ global.window = Object.assign(global.window, {
         delete: vi.fn()
       }
     },
+    dictionary: {
+      queryEudic: vi.fn()
+    },
     recentPlays: {
       getRecentPlays: vi.fn(),
       addRecentPlay: vi.fn(),
@@ -181,6 +184,11 @@ Object.defineProperty(window, 'matchMedia', {
 // Mock URL.createObjectURL
 global.URL.createObjectURL = vi.fn(() => 'mocked-url')
 global.URL.revokeObjectURL = vi.fn()
+// Polyfill getComputedStyle for components relying on scroll calculations
+window.getComputedStyle = vi.fn().mockImplementation(() => ({
+  getPropertyValue: () => '',
+  overflowY: 'scroll'
+}))
 
 // Setup test environment
 beforeEach(() => {

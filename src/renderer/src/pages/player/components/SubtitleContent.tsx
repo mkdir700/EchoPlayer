@@ -28,7 +28,7 @@ export interface SubtitleContentProps {
   /** 选中文本变化回调 */
   onTextSelection?: (selectedText: string) => void
   /** 单词点击回调 */
-  onWordClick?: (word: string, token: WordToken) => void
+  onWordClick?: (word: string, token: WordToken, event: React.MouseEvent) => void
   /** 容器高度（用于响应式字体大小计算） */
   containerHeight?: number
   /** 自定义类名 */
@@ -95,7 +95,7 @@ export const SubtitleContent = memo(function SubtitleContent({
       event.stopPropagation()
 
       if (isClickableToken(token) && onWordClick) {
-        onWordClick(token.text, token)
+        onWordClick(token.text, token, event)
         logger.debug('单词被点击', { word: token.text, index: token.index })
       }
 

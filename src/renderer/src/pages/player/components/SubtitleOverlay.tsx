@@ -23,7 +23,7 @@ import {
   Z_INDEX
 } from '@renderer/infrastructure/styles/theme'
 import { usePlayerStore } from '@renderer/state'
-import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
+import { DictionaryResult, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import { Tooltip } from 'antd'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -83,6 +83,11 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const overlayRef = useRef<HTMLDivElement>(null)
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [dictionaryData, setDictionaryData] = useState<DictionaryResult | null>(null)
+  const [dictionaryVisible, setDictionaryVisible] = useState(false)
+  const [dictionaryPosition, setDictionaryPosition] = useState<{ x: number; y: number } | null>(
+    null
+  )
   const hideToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // === 复制成功toast监听器 ===
@@ -367,16 +372,52 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   )
 
   // === 单词点击处理 ===
-  const handleWordClick = useCallback((word: string, token: any) => {
-    logger.debug('字幕单词被点击', { word, tokenIndex: token.index })
-    // TODO: 实现单词点击的 popup 功能
-  }, [])
+  const handleWordClick = useCallback(
+    async (word: string, token: any, event: React.MouseEvent) => {
+      logger.debug('字幕单词被点击', { word, tokenIndex: token.index })
+      const target = event.currentTarget as HTMLElement
+      const targetRect = target.getBoundingClientRect()
+      const overlayRect = overlayRef.current?.getBoundingClientRect()
+      setDictionaryPosition({
+        x: targetRect.left - (overlayRect?.left ?? 0) + targetRect.width / 2,
+        y: targetRect.top - (overlayRect?.top ?? 0)
+      })
+      try {
+        const result = await window.api.dictionary.queryEudic(word)
+        if (result.success && result.data) {
+          setDictionaryData(result.data)
+          setDictionaryVisible(true)
+        }
+      } catch (error) {
+        logger.error('查询单词失败', { word, error })
+      }
+    },
+    [setDictionaryData, setDictionaryVisible, setDictionaryPosition]
+  )
 
   // === 通用点击处理（阻止冒泡到VideoSurface） ===
-  const handleClick = useCallback((event: React.MouseEvent) => {
-    // 阻止所有点击事件冒泡到VideoSurface，防止触发播放/暂停
-    event.stopPropagation()
-  }, [])
+  const handleClick = useCallback(
+    (event: React.MouseEvent) => {
+      // 阻止所有点击事件冒泡到VideoSurface，防止触发播放/暂停
+      event.stopPropagation()
+      setDictionaryVisible(false)
+      setDictionaryData(null)
+      setDictionaryPosition(null)
+    },
+    [setDictionaryVisible]
+  )
+
+  // === 点击外部关闭词典 ===
+  useEffect(() => {
+    if (!dictionaryVisible) return
+    const handleOutside = () => {
+      setDictionaryVisible(false)
+      setDictionaryData(null)
+      setDictionaryPosition(null)
+    }
+    document.addEventListener('click', handleOutside)
+    return () => document.removeEventListener('click', handleOutside)
+  }, [dictionaryVisible])
 
   // === ResizeHandle 双击扩展处理 ===
   const handleResizeDoubleClick = useCallback(
@@ -462,6 +503,24 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           containerHeight={containerBounds.height}
         />
       </ContentContainer>
+
+      {dictionaryVisible && dictionaryData && dictionaryPosition && (
+        <DictionaryPopover
+          style={{ left: dictionaryPosition.x, top: dictionaryPosition.y }}
+          data-testid="dictionary-popover"
+        >
+          <strong>{dictionaryData.word}</strong>
+          {dictionaryData.phonetic && <p>{dictionaryData.phonetic}</p>}
+          <ul>
+            {dictionaryData.definitions.map((def, idx) => (
+              <li key={idx}>
+                {def.partOfSpeech && <strong>{def.partOfSpeech} </strong>}
+                {def.meaning}
+              </li>
+            ))}
+          </ul>
+        </DictionaryPopover>
+      )}
 
       <Tooltip
         title={t('settings.playback.subtitle.overlay.resizeHandle.tooltip')}
@@ -639,4 +698,27 @@ const ToastContent = styled.div`
   backdrop-filter: blur(${GLASS_EFFECT.BLUR_STRENGTH.SUBTLE}px);
   border: 1px solid rgba(255, 255, 255, ${GLASS_EFFECT.BORDER_ALPHA.SUBTLE});
   box-shadow: ${SHADOWS.SM};
+`
+
+const DictionaryPopover = styled.div`
+  position: absolute;
+  transform: translate(-50%, -100%);
+  background: rgba(0, 0, 0, ${GLASS_EFFECT.BACKGROUND_ALPHA.LIGHT});
+  backdrop-filter: blur(${GLASS_EFFECT.BLUR_STRENGTH.SUBTLE}px);
+  border: 1px solid rgba(255, 255, 255, ${GLASS_EFFECT.BORDER_ALPHA.SUBTLE});
+  border-radius: ${BORDER_RADIUS.SM}px;
+  box-shadow: ${SHADOWS.SM};
+  padding: ${SPACING.SM}px ${SPACING.MD}px;
+  color: #fff;
+  max-width: 240px;
+  z-index: ${Z_INDEX.TOOLTIP};
+
+  ul {
+    padding-left: ${SPACING.SM}px;
+    margin: 0;
+  }
+
+  li {
+    margin-bottom: ${SPACING.XS}px;
+  }
 `
