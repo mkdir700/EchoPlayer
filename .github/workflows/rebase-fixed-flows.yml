@@ -1,0 +1,194 @@
+name: 'PR: Rebase (dev->alpha | alpha->beta, with drop release commits for alpha->beta)'
+
+on:
+  workflow_dispatch:
+    inputs:
+      flow:
+        description: 'choose fixed flow'
+        required: true
+        type: choice
+        options:
+          - dev-to-alpha
+          - alpha-to-beta
+        default: dev-to-alpha
+      auto_merge:
+        description: 'rebase merge after checks (requires auto-merge)'
+        required: true
+        default: 'false'
+        type: choice
+        options: ['true', 'false']
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: rebase-${{ github.event.inputs.flow }}
+  cancel-in-progress: false
+
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+
+    env:
+      RELEASE_MSG_PREFIX: '^chore\\(release\\): '
+      RELEASE_FILES_CSV: 'package.json,pnpm-lock.yaml,CHANGELOG.md'
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set Git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch latest (branches & tags)
+        run: |
+          git remote set-url origin "${{ github.server_url }}/${{ github.repository }}.git"
+          git fetch origin +refs/heads/*:refs/remotes/origin/* --prune --tags
+
+      - name: Resolve SRC/TGT by flow
+        id: flow
+        run: |
+          set -e
+          if [[ "${{ github.event.inputs.flow }}" == "dev-to-alpha" ]]; then
+            echo "src=dev"   >> "$GITHUB_OUTPUT"
+            echo "tgt=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "src=alpha" >> "$GITHUB_OUTPUT"
+            echo "tgt=beta"  >> "$GITHUB_OUTPUT"
+          fi
+          echo "work_branch=chore/rebase-$(cat $GITHUB_OUTPUT | sed -n 's/^src=//p')-onto-$(cat $GITHUB_OUTPUT | sed -n 's/^tgt=//p')" >> "$GITHUB_OUTPUT"
+
+      - name: Validate branches exist
+        run: |
+          SRC="${{ steps.flow.outputs.src }}"
+          TGT="${{ steps.flow.outputs.tgt }}"
+          git show-ref --verify --quiet "refs/remotes/origin/${SRC}"  || { echo "::error::source branch origin/${SRC} missing";  exit 1; }
+          git show-ref --verify --quiet "refs/remotes/origin/${TGT}"  || { echo "::error::target branch origin/${TGT} missing";  exit 1; }
+
+      - name: Create/reset work branch from source
+        run: |
+          git switch -C "${{ steps.flow.outputs.work_branch }}" "origin/${{ steps.flow.outputs.src }}"
+
+      - name: Compute commits to DROP (only for alpha->beta)
+        id: dropcalc
+        shell: bash
+        env:
+          SRC: ${{ steps.flow.outputs.src }}
+          TGT: ${{ steps.flow.outputs.tgt }}
+          RELEASE_MSG_PREFIX: ${{ env.RELEASE_MSG_PREFIX }}
+          RELEASE_FILES_CSV: ${{ env.RELEASE_FILES_CSV }}
+        run: |
+          set -euo pipefail
+          if [[ "$SRC" == "alpha" && "$TGT" == "beta" ]]; then
+            RANGE="origin/${TGT}..origin/${SRC}"
+            IFS=',' read -r -a RELEASE_FILES <<< "$RELEASE_FILES_CSV"
+            only_release_files() {
+              local sha="$1"
+              mapfile -t files < <(git diff-tree --no-commit-id --name-only -r "$sha")
+              [[ "${#files[@]}" -eq 0 ]] && return 0
+              for f in "${files[@]}"; do
+                local ok=1
+                for allow in "${RELEASE_FILES[@]}"; do
+                  if [[ "$f" == "$allow" ]]; then ok=0; break; fi
+                done
+                [[ $ok -ne 0 ]] && return 1
+              done
+              return 0
+            }
+            declare -A DROP=()
+            while read -r sha; do
+              [[ -z "$sha" ]] && continue
+              if git tag --points-at "$sha" >/dev/null 2>&1 && [[ -n "$(git tag --points-at "$sha")" ]]; then
+                DROP["$sha"]=1
+              fi
+            done < <(git rev-list --no-merges "$RANGE")
+            while read -r sha; do
+              [[ -z "$sha" ]] && continue
+              DROP["$sha"]=1
+            done < <(git log --no-merges --pretty=%H --grep="$RELEASE_MSG_PREFIX" $RANGE || true)
+            while read -r sha; do
+              [[ -z "$sha" ]] && continue
+              if only_release_files "$sha"; then
+                DROP["$sha"]=1
+              fi
+            done < <(git rev-list --no-merges "$RANGE")
+            if (( ${#DROP[@]} )); then
+              DROP_LIST=$(printf "%s\n" "${!DROP[@]}" | sort -u | tr '\n' ' ')
+              echo "drop_commits=${DROP_LIST}" >> "$GITHUB_OUTPUT"
+              echo "need drop commits:"
+              for c in ${DROP_LIST}; do
+                printf " - %s  %s\n" "$c" "$(git log -1 --pretty=%s $c)"
+              done
+            else
+              echo "drop_commits=" >> "$GITHUB_OUTPUT"
+              echo "alpha->beta: nothing to drop"
+            fi
+          else
+            echo "drop_commits=" >> "$GITHUB_OUTPUT"
+            echo "not alpha->beta, skip drop"
+          fi
+
+      - name: Rebase source onto target (with optional drop)
+        id: do_rebase
+        shell: bash
+        env:
+          SRC: ${{ steps.flow.outputs.src }}
+          TGT: ${{ steps.flow.outputs.tgt }}
+          DROPS: ${{ steps.dropcalc.outputs.drop_commits }}
+        run: |
+          set -e
+          if [[ -n "${DROPS:-}" ]]; then
+            echo "auto drop release commits"
+            export GIT_SEQUENCE_EDITOR="$(mktemp)"
+            cat > "$GIT_SEQUENCE_EDITOR" <<'EOS'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            todo="$1"
+            while read -r sha; do
+              [[ -z "$sha" ]] && continue
+              sed -i -E "s/^pick[[:space:]]+$sha/drop $sha/" "$todo"
+            done < <(echo "$DROPS")
+            sed -i -E '/^$/d' "$todo"
+            EOS
+            chmod +x "$GIT_SEQUENCE_EDITOR"
+          fi
+          if ! git rebase "origin/${TGT}"; then
+            echo "rebase conflict, aborted"
+            git rebase --abort
+            exit 1
+          fi
+          echo "result=success" >> "$GITHUB_OUTPUT"
+
+      - name: Push work branch (force-with-lease)
+        if: steps.do_rebase.outputs.result == 'success'
+        run: |
+          git push --force-with-lease origin "${{ steps.flow.outputs.work_branch }}"
+
+      - name: Create or update PR -> target
+        if: steps.do_rebase.outputs.result == 'success'
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: 'chore(release): rebase ${{ steps.flow.outputs.src }} onto ${{ steps.flow.outputs.tgt }}'
+          body: |
+            This PR is created/updated by workflow:
+            - rebuild `${{ steps.flow.outputs.work_branch }}` from `origin/${{ steps.flow.outputs.src }}` and rebase onto `origin/${{ steps.flow.outputs.tgt }}`
+            - keep linear history
+            - drop release commits (tags, message prefix, or only release files) for alpha->beta
+            - push additional commits to `${{ steps.flow.outputs.work_branch }}` if needed
+          base: ${{ steps.flow.outputs.tgt }}
+          branch: ${{ steps.flow.outputs.work_branch }}
+          labels: rebase, automated
+          draft: false
+
+      - name: Enable auto-merge (REBASE)
+        if: steps.do_rebase.outputs.result == 'success' && github.event.inputs.auto_merge == 'true'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          pull-request-number: ${{ steps.cpr.outputs['pull-request-number'] }}
+          merge-method: REBASE
