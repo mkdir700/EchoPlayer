@@ -1,0 +1,447 @@
+name: Sync Release to GitCode
+
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to sync (e.g., v1.0.0)'
+        required: true
+        type: string
+      release_name:
+        description: 'Release name'
+        required: false
+        type: string
+      release_body:
+        description: 'Release description/body'
+        required: false
+        type: string
+      prerelease:
+        description: 'Is this a prerelease?'
+        required: false
+        type: boolean
+        default: false
+      draft:
+        description: 'Is this a draft release?'
+        required: false
+        type: boolean
+        default: false
+      test_mode:
+        description: 'Test mode (dry run - no actual sync to GitCode)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  GITCODE_API_BASE: https://gitcode.com/api/v5
+  GITCODE_OWNER: ${{ vars.GITCODE_OWNER || 'mkdir700' }}
+  GITCODE_REPO: EchoPlayer
+
+jobs:
+  sync-to-gitcode:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get release information
+        id: release
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - use inputs
+            echo "🔧 Manual trigger detected, using workflow inputs"
+            echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+            echo "release_name=${{ github.event.inputs.release_name || github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+            echo "release_body<<EOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.inputs.release_body || 'Test release created via manual trigger' }}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
+            echo "draft=${{ github.event.inputs.draft }}" >> $GITHUB_OUTPUT
+            echo "test_mode=${{ github.event.inputs.test_mode }}" >> $GITHUB_OUTPUT
+          else
+            # Automatic trigger - use release event data
+            echo "🚀 Release event detected, using release data"
+            echo "tag_name=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            echo "release_name=${{ github.event.release.name }}" >> $GITHUB_OUTPUT
+            echo "release_body<<EOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.release.body }}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "prerelease=${{ github.event.release.prerelease }}" >> $GITHUB_OUTPUT
+            echo "draft=${{ github.event.release.draft }}" >> $GITHUB_OUTPUT
+            echo "test_mode=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sync repository to GitCode
+        if: steps.release.outputs.test_mode != 'true'
+        run: |
+          echo "🔄 Syncing repository to GitCode using HTTPS..."
+
+          # Configure git with token authentication
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+          # Construct GitCode repository URL with token authentication
+          GITCODE_REPO_URL="https://oauth2:${{ secrets.GITCODE_ACCESS_TOKEN }}@gitcode.com/$GITCODE_OWNER/$GITCODE_REPO.git"
+
+          echo "Repository: $GITCODE_OWNER/$GITCODE_REPO"
+
+          # Add GitCode remote (remove if exists)
+          if git remote | grep -q "gitcode"; then
+            echo "Removing existing gitcode remote"
+            git remote remove gitcode
+          fi
+
+          echo "Adding GitCode remote with HTTPS authentication"
+          git remote add gitcode "$GITCODE_REPO_URL"
+
+          echo "📤 Force pushing branches to GitCode..."
+
+          # Show available branches
+          echo "Available branches:"
+          git branch -a | grep -E "(main|dev|alpha|beta)" || echo "Target branches not found"
+
+          # Force push main branches to GitCode
+          for branch in main dev alpha beta; do
+            if git show-ref --verify --quiet refs/heads/$branch || git show-ref --verify --quiet refs/remotes/origin/$branch; then
+              echo "Pushing branch: $branch"
+              if git show-ref --verify --quiet refs/heads/$branch; then
+                git push --force gitcode $branch:$branch || {
+                  echo "❌ Failed to push local branch $branch"
+                  exit 1
+                }
+              else
+                git push --force gitcode origin/$branch:$branch || {
+                  echo "❌ Failed to push remote branch $branch"
+                  exit 1
+                }
+              fi
+              echo "✅ Successfully pushed branch: $branch"
+            else
+              echo "⚠️ Branch $branch not found, skipping"
+            fi
+          done
+
+          echo "🏷️ Pushing all tags to GitCode..."
+          echo "Available tags (last 10):"
+          git tag | tail -10 || echo "No tags found"
+
+          git push --force gitcode --tags || {
+            echo "❌ Failed to push tags"
+            exit 1
+          }
+
+          echo "✅ Repository sync completed successfully"
+
+      - name: Test mode - Skip repository sync
+        if: steps.release.outputs.test_mode == 'true'
+        run: |
+          echo "🧪 Test mode enabled - skipping repository sync to GitCode"
+          echo "Would sync the following branches: main, dev, alpha, beta"
+          echo "Would force push all tags to GitCode"
+          echo "This would ensure tag ${{ steps.release.outputs.tag_name }} exists before creating release"
+
+      - name: Download release assets
+        id: download-assets
+        run: |
+          mkdir -p ./release-assets
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - fetch release data from GitHub API
+            echo "📦 Fetching release assets for tag: ${{ steps.release.outputs.tag_name }}"
+
+            release_response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ steps.release.outputs.tag_name }}")
+
+            if [ "$(echo "$release_response" | jq -r '.message // empty')" = "Not Found" ]; then
+              echo "⚠️ Release not found for tag: ${{ steps.release.outputs.tag_name }}"
+              assets_json='[]'
+            else
+              assets_json=$(echo "$release_response" | jq '.assets')
+            fi
+          else
+            # Automatic trigger - use event data
+            assets_json='${{ toJson(github.event.release.assets) }}'
+          fi
+
+          echo "Assets to download:"
+          echo "$assets_json" | jq -r '.[] | "\(.name) - \(.browser_download_url)"'
+
+          asset_files=""
+          if [ "$(echo "$assets_json" | jq 'length')" -gt 0 ]; then
+            for asset in $(echo "$assets_json" | jq -r '.[] | @base64'); do
+              name=$(echo "$asset" | base64 --decode | jq -r '.name')
+              url=$(echo "$asset" | base64 --decode | jq -r '.browser_download_url')
+
+              echo "Downloading $name from $url"
+              curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                   -o "./release-assets/$name" "$url"
+
+              if [ -n "$asset_files" ]; then
+                asset_files="$asset_files,"
+              fi
+              asset_files="$asset_files./release-assets/$name"
+            done
+          fi
+
+          echo "asset_files=$asset_files" >> $GITHUB_OUTPUT
+          echo "has_assets=$([ -n "$asset_files" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+
+      - name: Check if release exists on GitCode
+        id: check-release
+        run: |
+          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+            echo "🧪 Test mode enabled - skipping GitCode API check"
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Test mode: Simulating release does not exist on GitCode"
+          else
+            # First check if tag exists using GitCode tags API
+            echo "Checking if tag exists..."
+            tags_response=$(curl -s -w "%{http_code}" \
+              -H "Accept: application/json" \
+              "$GITCODE_API_BASE/repos/$GITCODE_OWNER/$GITCODE_REPO/tags?access_token=${{ secrets.GITCODE_ACCESS_TOKEN }}")
+
+            tags_http_code="${tags_response: -3}"
+            tags_response_body="${tags_response%???}"
+
+            echo "Tags API HTTP Code: $tags_http_code"
+
+            tag_exists=false
+            if [ "$tags_http_code" = "200" ] || [ "$tags_http_code" = "201" ]; then
+              echo "Available tags (first 20):"
+              echo "$tags_response_body" | jq -r '.[] | .name' 2>/dev/null | head -20 || echo "Failed to parse tags"
+
+              # Check if our target tag exists
+              if echo "$tags_response_body" | jq -e --arg tag "${{ steps.release.outputs.tag_name }}" '.[] | select(.name == $tag)' > /dev/null 2>&1; then
+                tag_exists=true
+                echo "✅ Tag ${{ steps.release.outputs.tag_name }} exists on GitCode"
+              else
+                echo "❌ Tag ${{ steps.release.outputs.tag_name }} does not exist on GitCode"
+              fi
+            else
+              echo "❌ Failed to fetch tags from GitCode (HTTP $tags_http_code): $tags_response_body"
+            fi
+
+            # Then check if release exists (only if tag exists)
+            if [ "$tag_exists" = "true" ]; then
+              echo "Checking if release exists..."
+              response=$(curl -s -w "%{http_code}" \
+                -H "Accept: application/json" \
+                "$GITCODE_API_BASE/repos/$GITCODE_OWNER/$GITCODE_REPO/releases/tags/${{ steps.release.outputs.tag_name }}?access_token=${{ secrets.GITCODE_ACCESS_TOKEN }}")
+            else
+              echo "⚠️ Skipping release check since tag does not exist"
+              response="404Not Found"
+            fi
+
+            http_code="${response: -3}"
+            response_body="${response%???}"
+
+            echo "HTTP Code: $http_code"
+            echo "Response: $response_body"
+
+            if [ "$http_code" = "200" ]; then
+              echo "exists=true" >> $GITHUB_OUTPUT
+              echo "Release already exists on GitCode"
+            else
+              echo "exists=false" >> $GITHUB_OUTPUT
+              echo "Release does not exist on GitCode"
+            fi
+          fi
+
+      - name: Create release on GitCode
+        if: steps.check-release.outputs.exists == 'false'
+        id: create-release
+        run: |
+          payload=$(jq -n \
+            --arg tag_name "${{ steps.release.outputs.tag_name }}" \
+            --arg name "${{ steps.release.outputs.release_name }}" \
+            --arg body "${{ steps.release.outputs.release_body }}" \
+            --argjson prerelease "${{ steps.release.outputs.prerelease }}" \
+            --argjson draft "${{ steps.release.outputs.draft }}" \
+            '{
+              tag_name: $tag_name,
+              name: $name,
+              body: $body,
+              prerelease: $prerelease,
+              draft: $draft
+            }')
+
+          echo "Creating release with payload:"
+          echo "$payload" | jq .
+
+          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+            echo "🧪 Test mode enabled - skipping release creation on GitCode"
+            echo "✅ Test mode: Would create release successfully on GitCode"
+            echo "created=true" >> $GITHUB_OUTPUT
+          else
+            response=$(curl -s -w "%{http_code}" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/json" \
+              -d "$payload" \
+              "$GITCODE_API_BASE/repos/$GITCODE_OWNER/$GITCODE_REPO/releases?access_token=${{ secrets.GITCODE_ACCESS_TOKEN }}")
+
+            http_code="${response: -3}"
+            response_body="${response%???}"
+
+            echo "Create Release Response Code: $http_code"
+            echo "Create Release Response: $response_body"
+
+            if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
+              echo "✅ Release created successfully on GitCode (HTTP $http_code)"
+              echo "created=true" >> $GITHUB_OUTPUT
+            else
+              echo "❌ Failed to create release on GitCode (HTTP $http_code)"
+              echo "Response: $response_body"
+              echo "created=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+
+      - name: Update existing release on GitCode
+        if: steps.check-release.outputs.exists == 'true'
+        id: update-release
+        run: |
+          payload=$(jq -n \
+            --arg name "${{ steps.release.outputs.release_name }}" \
+            --arg body "${{ steps.release.outputs.release_body }}" \
+            --argjson prerelease "${{ steps.release.outputs.prerelease }}" \
+            --argjson draft "${{ steps.release.outputs.draft }}" \
+            '{
+              name: $name,
+              body: $body,
+              prerelease: $prerelease,
+              draft: $draft
+            }')
+
+          echo "Updating release with payload:"
+          echo "$payload" | jq .
+
+          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+            echo "🧪 Test mode enabled - skipping release update on GitCode"
+            echo "✅ Test mode: Would update release successfully on GitCode"
+            echo "updated=true" >> $GITHUB_OUTPUT
+          else
+            response=$(curl -s -w "%{http_code}" \
+              -X PATCH \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/json" \
+              -d "$payload" \
+              "$GITCODE_API_BASE/repos/$GITCODE_OWNER/$GITCODE_REPO/releases/${{ steps.release.outputs.tag_name }}?access_token=${{ secrets.GITCODE_ACCESS_TOKEN }}")
+
+            http_code="${response: -3}"
+            response_body="${response%???}"
+
+            echo "Update Release Response Code: $http_code"
+            echo "Update Release Response: $response_body"
+
+            if [ "$http_code" = "200" ]; then
+              echo "✅ Release updated successfully on GitCode"
+              echo "updated=true" >> $GITHUB_OUTPUT
+            else
+              echo "❌ Failed to update release on GitCode"
+              echo "updated=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+
+      - name: Upload assets to GitCode release
+        if: steps.download-assets.outputs.has_assets == 'true'
+        run: |
+          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+            echo "🧪 Test mode enabled - skipping asset upload to GitCode"
+            echo "Would upload the following assets:"
+            IFS=',' read -ra ASSET_FILES <<< "${{ steps.download-assets.outputs.asset_files }}"
+            for asset_file in "${ASSET_FILES[@]}"; do
+              if [ -f "$asset_file" ]; then
+                echo "  - $(basename "$asset_file")"
+              fi
+            done
+            echo "✅ Test mode: Would upload all assets successfully to GitCode"
+          else
+            echo "📦 Uploading assets to GitCode release using JavaScript uploader..."
+            
+            # Make upload script executable
+            chmod +x ./scripts/upload-assets.js
+            
+            # Convert comma-separated asset files to array for JavaScript uploader
+            IFS=',' read -ra ASSET_FILES <<< "${{ steps.download-assets.outputs.asset_files }}"
+            
+            # Upload assets using the JavaScript uploader
+            node ./scripts/upload-assets.js \
+              --token "${{ secrets.GITCODE_ACCESS_TOKEN }}" \
+              --owner "$GITCODE_OWNER" \
+              --repo "$GITCODE_REPO" \
+              --tag "${{ steps.release.outputs.tag_name }}" \
+              --concurrency 3 \
+              --retry 3 \
+              "${ASSET_FILES[@]}"
+              
+            upload_exit_code=$?
+            if [ $upload_exit_code -eq 0 ]; then
+              echo "✅ All assets uploaded successfully to GitCode"
+            else
+              echo "❌ Asset upload failed with exit code: $upload_exit_code"
+              exit 1
+            fi
+          fi
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+            echo "## 🧪 Test Mode - Release Sync Summary" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🚀 Release Sync Summary" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "**Trigger:** ${{ github.event_name == 'workflow_dispatch' && '🔧 Manual' || '🚀 Automatic' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Release:** ${{ steps.release.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Name:** ${{ steps.release.outputs.release_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**GitCode Repository:** $GITCODE_OWNER/$GITCODE_REPO" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+            echo "**Mode:** 🧪 Test Mode (Dry Run)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.check-release.outputs.exists }}" = "true" ]; then
+            if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+              echo "**Action:** Would update existing release ✅" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "**Action:** Updated existing release ✅" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+              echo "**Action:** Would create new release ✅" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "**Action:** Created new release ✅" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          if [ "${{ steps.download-assets.outputs.has_assets }}" = "true" ]; then
+            if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+              echo "**Assets:** Would upload to GitCode ✅" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "**Assets:** Uploaded to GitCode ✅" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "**Assets:** No assets to upload" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+            echo "Test completed successfully! 🧪 No actual changes were made to GitCode." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Release has been successfully synced to GitCode! 🎉" >> $GITHUB_STEP_SUMMARY
+          fi
