@@ -923,8 +923,9 @@ const DefinitionsList = styled.div`
 
 const DefinitionItem = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: ${SPACING.XS / 2}px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: ${SPACING.XS}px;
   margin-bottom: ${SPACING.SM}px;
   padding-bottom: ${SPACING.SM}px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -940,17 +941,22 @@ const PartOfSpeech = styled.span`
   font-size: ${FONT_SIZES.XS}px;
   font-weight: ${FONT_WEIGHTS.MEDIUM};
   color: #52c41a;
-  background: rgba(82, 196, 26, 0.1);
-  padding: 2px ${SPACING.XS}px;
+  background: rgba(82, 196, 26, 0.15);
+  padding: 1px ${SPACING.XS / 1.5}px;
   border-radius: ${BORDER_RADIUS.SM}px;
   display: inline-block;
-  margin-bottom: ${SPACING.XS / 2}px;
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: center;
+  line-height: 1.3;
+  margin-top: 1px; /* 微调垂直对齐 */
 `
 
 const MeaningText = styled.div`
   color: rgba(255, 255, 255, 0.9);
   font-size: ${FONT_SIZES.SM}px;
   line-height: 1.5;
+  flex: 1;
 `
 
 const MoreIndicator = styled.div`
