@@ -5,9 +5,17 @@ export interface DictionaryDefinition {
   examples?: string[]
 }
 
+// 发音信息
+export interface PronunciationInfo {
+  type: 'uk' | 'us' // 英式或美式发音
+  phonetic: string // 音标
+  audioUrl?: string // 音频链接
+  voiceParams?: string // 原始的语音参数
+}
+
 export interface DictionaryResult {
   word: string
-  phonetic?: string
+  pronunciations?: PronunciationInfo[] // 详细发音信息
   definitions: DictionaryDefinition[]
   examples?: string[]
   translations?: string[]
