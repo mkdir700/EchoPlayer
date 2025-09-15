@@ -148,27 +148,33 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     window.addEventListener('resize', handleResize)
 
     // 监听全屏模式变化（可能导致容器尺寸变化）
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (
-          entry.target ===
-          (containerRef?.current || document.querySelector('[data-testid="video-surface"]'))
-        ) {
-          handleResize()
-        }
-      }
-    })
+    let observer: ResizeObserver | null = null
 
-    const container =
-      containerRef?.current || document.querySelector('[data-testid="video-surface"]')
-    if (container) {
-      observer.observe(container)
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          if (
+            entry.target ===
+            (containerRef?.current || document.querySelector('[data-testid="video-surface"]'))
+          ) {
+            handleResize()
+          }
+        }
+      })
+
+      const container =
+        containerRef?.current || document.querySelector('[data-testid="video-surface"]')
+      if (container) {
+        observer.observe(container)
+      }
     }
 
     return () => {
       clearTimeout(resizeTimer)
       window.removeEventListener('resize', handleResize)
-      observer.disconnect()
+      if (observer && typeof observer.disconnect === 'function') {
+        observer.disconnect()
+      }
     }
   }, [containerRef, updateContainerBounds, adaptToContainerResize, currentConfig?.isInitialized])
 
@@ -366,12 +372,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     [setSelectedText]
   )
 
-  // === 单词点击处理 ===
-  const handleWordClick = useCallback((word: string, token: any) => {
-    logger.debug('字幕单词被点击', { word, tokenIndex: token.index })
-    // TODO: 实现单词点击的 popup 功能
-  }, [])
-
   // === 通用点击处理（阻止冒泡到VideoSurface） ===
   const handleClick = useCallback((event: React.MouseEvent) => {
     // 阻止所有点击事件冒泡到VideoSurface，防止触发播放/暂停
@@ -458,7 +458,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           originalText={integration.currentSubtitle?.originalText || ''}
           translatedText={integration.currentSubtitle?.translatedText}
           onTextSelection={handleTextSelection}
-          onWordClick={handleWordClick}
           containerHeight={containerBounds.height}
         />
       </ContentContainer>
