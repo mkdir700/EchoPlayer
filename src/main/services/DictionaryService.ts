@@ -311,13 +311,12 @@ class DictionaryService {
   private parsePronunciations = (html: string): PronunciationInfo[] => {
     const pronunciations: PronunciationInfo[] = []
 
-    // 匹配发音相关的 DOM 结构
-    // 方式1: 查找包含发音信息的完整 <a> 标签
-    const voiceRegex =
+    // 方式1: 查找包含发音信息的完整 <a> 标签（有明确英/美音标识）
+    const voiceWithTypeRegex =
       /<a[^>]*class="voice-js voice-button voice-button-en"[^>]*data-rel="([^"]*)"[^>]*>[\s\S]*?<span class="phontype">([^<]+)<\/span><span class="(?:phonetic|Phonitic)">([^<]+)<\/span>[\s\S]*?<\/a>/gi
 
     let match: RegExpExecArray | null
-    while ((match = voiceRegex.exec(html)) !== null) {
+    while ((match = voiceWithTypeRegex.exec(html)) !== null) {
       const dataRel = match[1] // data-rel 属性值
       const phoneType = match[2].trim() // 英/美
       const phonetic = match[3].trim() // 音标
@@ -326,7 +325,7 @@ class DictionaryService {
       const voiceParams = this.parseVoiceParams(dataRel)
 
       // 确定发音类型
-      const type: 'uk' | 'us' = phoneType === '英' ? 'uk' : 'us'
+      const type: 'uk' | 'us' | null = phoneType === '英' ? 'uk' : 'us'
 
       // 构建音频URL（如果需要的话）
       const audioUrl = voiceParams ? this.buildAudioUrl(voiceParams) : undefined
@@ -339,20 +338,42 @@ class DictionaryService {
       })
     }
 
-    // 方式2: 如果没有找到完整的发音信息，尝试简单的音标提取
+    // 方式2: 查找没有明确英/美音标识但有音频的发音信息
     if (pronunciations.length === 0) {
-      const simplePhoneticRegex = /<span[^>]*class="phonetic"[^>]*>([^<]+)<\/span>/gi
-      let simpleMatch: RegExpExecArray | null
-      while ((simpleMatch = simplePhoneticRegex.exec(html)) !== null) {
-        const phonetic = simpleMatch[1].trim()
+      const voiceWithoutTypeRegex =
+        /<a[^>]*class="voice-js voice-button voice-button-en"[^>]*data-rel="([^"]*)"[^>]*>[\s\S]*?<span class="(?:phonetic|Phonitic)">([^<]+)<\/span>[\s\S]*?<\/a>/gi
+
+      while ((match = voiceWithoutTypeRegex.exec(html)) !== null) {
+        const dataRel = match[1] // data-rel 属性值
+        const phonetic = match[2].trim() // 音标
+
+        // 解析 data-rel 参数
+        const voiceParams = this.parseVoiceParams(dataRel)
+
+        // 构建音频URL（如果需要的话）
+        const audioUrl = voiceParams ? this.buildAudioUrl(voiceParams) : undefined
+
+        pronunciations.push({
+          type: null, // 未知发音类型
+          phonetic,
+          audioUrl,
+          voiceParams: dataRel
+        })
+      }
+    }
+
+    // 方式3: 如果没有找到任何音频发音信息，尝试简单的音标提取
+    if (pronunciations.length === 0) {
+      const simplePhoneticRegex = /<span[^>]*class="(?:phonetic|Phonitic)"[^>]*>([^<]+)<\/span>/gi
+      while ((match = simplePhoneticRegex.exec(html)) !== null) {
+        const phonetic = match[1].trim()
         if (phonetic && phonetic.includes('/')) {
           pronunciations.push({
-            type: 'uk', // 默认为英式
+            type: null, // 未知发音类型
             phonetic,
             audioUrl: undefined,
             voiceParams: undefined
           })
-          break // 只取第一个
         }
       }
     }
