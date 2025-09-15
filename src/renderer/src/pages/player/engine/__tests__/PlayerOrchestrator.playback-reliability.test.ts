@@ -211,17 +211,17 @@ describe('PlayerOrchestrator - 播放/暂停可靠性测试', () => {
       expect(finalContext.paused).toBe(true)
     })
 
-    it('应该在延迟验证中检测播放失败', async () => {
+    it('应该只调用一次play而不进行重试', async () => {
       orchestrator.updateContext({ paused: true })
       mockVideoController.isPaused.mockReturnValue(true) // 播放后仍然是暂停状态
 
       await orchestrator.requestPlay()
 
-      // 等待延迟验证执行
+      // 等待可能的延迟操作
       await new Promise((resolve) => setTimeout(resolve, 200))
 
-      // 应该尝试重试播放
-      expect(mockVideoController.play).toHaveBeenCalledTimes(2) // 一次正常调用，一次重试
+      // 应该只调用一次play，不进行重试（修复后的行为）
+      expect(mockVideoController.play).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -236,17 +236,17 @@ describe('PlayerOrchestrator - 播放/暂停可靠性测试', () => {
       expect(context.paused).toBe(true)
     })
 
-    it('应该在延迟验证中检测暂停失败', async () => {
+    it('应该只调用一次pause而不进行重试', async () => {
       orchestrator.updateContext({ paused: false })
       mockVideoController.isPaused.mockReturnValue(false) // 暂停后仍然是播放状态
 
       orchestrator.requestPause()
 
-      // 等待延迟验证
+      // 等待可能的延迟操作
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      // 应该尝试重试暂停
-      expect(mockVideoController.pause).toHaveBeenCalledTimes(2)
+      // 应该只调用一次pause，不进行重试（修复后的行为）
+      expect(mockVideoController.pause).toHaveBeenCalledTimes(1)
     })
   })
 
