@@ -102,6 +102,9 @@ global.window = Object.assign(global.window, {
         delete: vi.fn()
       }
     },
+    dictionary: {
+      queryEudic: vi.fn()
+    },
     recentPlays: {
       getRecentPlays: vi.fn(),
       addRecentPlay: vi.fn(),
@@ -181,6 +184,93 @@ Object.defineProperty(window, 'matchMedia', {
 // Mock URL.createObjectURL
 global.URL.createObjectURL = vi.fn(() => 'mocked-url')
 global.URL.revokeObjectURL = vi.fn()
+
+// Polyfill getComputedStyle for components relying on scroll calculations
+window.getComputedStyle = vi.fn().mockImplementation(() => {
+  // Return a more complete mock based on the element type
+  const computedStyle = {
+    getPropertyValue: (prop: string) => {
+      const propMap = {
+        'overflow-x': 'visible',
+        'overflow-y': 'visible',
+        overflow: 'visible',
+        position: 'static',
+        'z-index': 'auto',
+        display: 'block'
+      }
+      return propMap[prop] || ''
+    },
+    overflowX: 'visible',
+    overflowY: 'visible',
+    overflow: 'visible',
+    position: 'static',
+    zIndex: 'auto',
+    display: 'block'
+  }
+
+  // Create a proxy to handle any missing properties
+  return new Proxy(computedStyle, {
+    get(target, prop) {
+      if (prop in target) {
+        return target[prop]
+      }
+      // For any other CSS property, return a sensible default
+      if (typeof prop === 'string' && prop.includes('overflow')) {
+        return 'visible'
+      }
+      return ''
+    }
+  })
+})
+
+// Mock document methods for better DOM handling
+const originalQuerySelector = document.querySelector
+document.querySelector = vi.fn().mockImplementation((selector) => {
+  const element = originalQuerySelector.call(document, selector)
+  if (element) return element
+
+  // Return a mock element for cases where selector doesn't match
+  return {
+    style: {},
+    getBoundingClientRect: () => ({
+      top: 0,
+      left: 0,
+      width: 100,
+      height: 100,
+      right: 100,
+      bottom: 100
+    }),
+    offsetParent: document.body,
+    scrollTop: 0,
+    scrollLeft: 0,
+    clientTop: 0,
+    clientLeft: 0
+  }
+})
+
+// Mock ResizeObserver
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn()
+}))
+
+// Mock speechSynthesis for pronunciation feature
+global.speechSynthesis = {
+  speak: vi.fn(),
+  cancel: vi.fn(),
+  pause: vi.fn(),
+  resume: vi.fn(),
+  getVoices: vi.fn(() => [])
+}
+
+global.SpeechSynthesisUtterance = vi.fn().mockImplementation((text) => ({
+  text,
+  lang: 'en-US',
+  rate: 0.8,
+  pitch: 1,
+  volume: 1
+}))
 
 // Setup test environment
 beforeEach(() => {
