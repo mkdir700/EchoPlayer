@@ -198,6 +198,24 @@ export const SubtitleContent = memo(function SubtitleContent({
         error: null
       }
     }))
+
+    // 词典弹窗关闭后，将焦点恢复到容器元素，确保快捷键能正常工作
+    setTimeout(() => {
+      if (containerRef.current) {
+        // 找到可以获得焦点的播放器元素
+        const videoSurface = document.querySelector('[data-testid="video-surface"]') as HTMLElement
+        const subtitleOverlay = document.querySelector(
+          '[data-testid="subtitle-overlay"]'
+        ) as HTMLElement
+
+        // 优先将焦点给到视频表面，其次是字幕覆盖层
+        if (videoSurface) {
+          videoSurface.focus()
+        } else if (subtitleOverlay) {
+          subtitleOverlay.focus()
+        }
+      }
+    }, 100) // 延迟确保弹窗完全关闭后再恢复焦点
   }, [])
 
   // === 划词选中处理 ===
