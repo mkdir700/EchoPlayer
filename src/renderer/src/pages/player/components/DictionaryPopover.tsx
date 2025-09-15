@@ -170,7 +170,7 @@ export const DictionaryPopover = memo(function DictionaryPopover({
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation()
-                    handlePronunciation(data.word, pronunciation.type, pronunciation)
+                    handlePronunciation(data.word, pronunciation.type || 'uk', pronunciation)
                     // 阻止按钮获得焦点，避免影响播放器快捷键
                     ;(e.target as HTMLElement).blur()
                   }}
