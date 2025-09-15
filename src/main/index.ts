@@ -15,11 +15,20 @@ import { isDev, isLinux, isWin, isWSL } from './constant'
 import { registerIpc } from './ipc'
 import { configManager } from './services/ConfigManager'
 import { registerShortcuts } from './services/ShortcutService'
+import { sentryService } from './services/SentryService'
 import { TrayService } from './services/TrayService'
 import { windowService } from './services/WindowService'
 import { initDatabase } from './db/init'
 
 const logger = loggerService.withContext('MainEntry')
+
+// 初始化 Sentry（必须在 app.whenReady() 之前）
+// 同步初始化，确保在 ready 事件前完成
+try {
+  sentryService.init()
+} catch (error) {
+  logger.warn('Failed to initialize Sentry:', { error })
+}
 
 /**
  * Disable hardware acceleration if setting is enabled or in WSL environment
