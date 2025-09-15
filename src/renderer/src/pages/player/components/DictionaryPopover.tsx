@@ -133,7 +133,11 @@ export const DictionaryPopover = memo(function DictionaryPopover({
 
     if (error) {
       return (
-        <ErrorContent onMouseDown={handleContentMouseDown} onClick={handleContentClick}>
+        <ErrorContent
+          onMouseDown={handleContentMouseDown}
+          onClick={handleContentClick}
+          data-testid="dictionary-popover-content"
+        >
           <span>{t('player.dictionary.error')}</span>
           <div>{error}</div>
         </ErrorContent>
@@ -150,7 +154,7 @@ export const DictionaryPopover = memo(function DictionaryPopover({
         onClick={handleContentClick}
         data-testid="dictionary-popover-content"
       >
-        {/* 优先显示详细发音信息，回退到通用音标 */}
+        {/* 显示详细发音信息 */}
         {data.pronunciations && data.pronunciations.length > 0 && (
           <PronunciationContainer>
             {data.pronunciations.map((pronunciation, idx) => (

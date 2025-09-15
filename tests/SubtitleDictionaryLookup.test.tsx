@@ -44,7 +44,16 @@ vi.mock('@renderer/state', () => ({
 }))
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key })
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations = {
+        'player.dictionary.loading': '查询中...',
+        'player.dictionary.error': '查询失败',
+        'player.dictionary.translations': '常用翻译'
+      }
+      return translations[key] || key
+    }
+  })
 }))
 
 // Mock antd Popover to avoid DOM issues in testing
@@ -85,7 +94,10 @@ describe('SubtitleOverlay dictionary lookup', () => {
       success: true,
       data: {
         word: 'hello',
-        phonetic: '/həˈləʊ/',
+        pronunciations: [
+          { type: 'uk', phonetic: '/həˈləʊ/' },
+          { type: 'us', phonetic: '/həˈloʊ/' }
+        ],
         definitions: [
           { partOfSpeech: 'int.', meaning: '你好' },
           { partOfSpeech: 'n.', meaning: '问候；打招呼' }
@@ -168,7 +180,7 @@ describe('SubtitleOverlay dictionary lookup', () => {
     expect(screen.getByText('网络错误')).toBeInTheDocument()
   })
 
-  it('limits displayed definitions to 6 and shows more indicator', async () => {
+  it('displays all definitions without limitation', async () => {
     const mockQuery = vi.fn().mockResolvedValue({
       success: true,
       data: {
@@ -190,10 +202,10 @@ describe('SubtitleOverlay dictionary lookup', () => {
     await waitFor(() => expect(mockQuery).toHaveBeenCalledWith('hello'))
     const popover = await screen.findByTestId('dictionary-popover')
 
-    // 检查只显示前6个释义
+    // 检查显示所有释义
+    expect(popover.textContent).toContain('释义 1')
     expect(popover.textContent).toContain('释义 6')
-    expect(popover.textContent).not.toContain('释义 7')
-    // 检查"还有更多"提示
-    expect(popover.textContent).toContain('还有 4 个释义')
+    expect(popover.textContent).toContain('释义 7')
+    expect(popover.textContent).toContain('释义 10')
   })
 })
