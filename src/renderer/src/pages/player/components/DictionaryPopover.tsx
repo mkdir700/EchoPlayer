@@ -171,6 +171,12 @@ export const DictionaryPopover = memo(function DictionaryPopover({
                   onClick={(e) => {
                     e.stopPropagation()
                     handlePronunciation(data.word, pronunciation.type || 'uk', pronunciation)
+                    // 阻止按钮获得焦点，避免影响播放器快捷键
+                    ;(e.target as HTMLElement).blur()
+                  }}
+                  onMouseDown={(e) => {
+                    // 阻止按钮在点击时获得焦点
+                    e.preventDefault()
                   }}
                   title={`${pronunciation.type === 'uk' ? '英式' : '美式'}发音: ${pronunciation.phonetic}`}
                 >
