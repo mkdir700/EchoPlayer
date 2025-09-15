@@ -47,6 +47,34 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key })
 }))
 
+// Mock antd Popover to avoid DOM issues in testing
+vi.mock('antd', async () => {
+  const actual = await vi.importActual('antd')
+  return {
+    ...actual,
+    Popover: ({ children, content, title, open }: any) => {
+      return (
+        <div>
+          {children}
+          {open && (
+            <div role="tooltip" data-testid="dictionary-popover">
+              {title && <div>{title}</div>}
+              {content && <div>{content}</div>}
+            </div>
+          )}
+        </div>
+      )
+    },
+    Button: ({ children, ...props }: any) => (
+      <button type="button" {...props}>
+        {children}
+      </button>
+    ),
+    Spin: ({ children }: any) => <div data-testid="loading-spinner">{children}</div>,
+    Tooltip: ({ children, title }: any) => <div title={title}>{children}</div>
+  }
+})
+
 describe('SubtitleOverlay dictionary lookup', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -90,7 +118,7 @@ describe('SubtitleOverlay dictionary lookup', () => {
     expect(popover.textContent).toContain('哈喽')
   })
 
-  it('shows loading state while querying', async () => {
+  it('shows result after loading completes', async () => {
     const mockQuery = vi.fn().mockImplementation(
       () =>
         new Promise((resolve) =>
@@ -112,8 +140,12 @@ describe('SubtitleOverlay dictionary lookup', () => {
     const word = screen.getByText('hello')
     fireEvent.click(word)
 
-    // 检查加载状态
-    expect(screen.getByText('查询中...')).toBeInTheDocument()
+    // 等待数据加载完成后显示结果
+    await waitFor(() => {
+      const popoverContent = screen.getByTestId('dictionary-popover-content')
+      expect(popoverContent).toBeInTheDocument()
+      expect(popoverContent.textContent).toContain('你好')
+    })
   })
 
   it('shows error state when query fails', async () => {

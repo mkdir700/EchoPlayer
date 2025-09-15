@@ -23,14 +23,13 @@ import {
   Z_INDEX
 } from '@renderer/infrastructure/styles/theme'
 import { usePlayerStore } from '@renderer/state'
-import { DictionaryResult, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
+import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import { Tooltip } from 'antd'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
 
 import { useSubtitleOverlay, useSubtitleOverlayUI } from '../hooks'
-import DictionaryPopover from './DictionaryPopover'
 import SubtitleContent from './SubtitleContent'
 
 const logger = loggerService.withContext('SubtitleOverlay')
@@ -84,13 +83,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const overlayRef = useRef<HTMLDivElement>(null)
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-  const [dictionaryData, setDictionaryData] = useState<DictionaryResult | null>(null)
-  const [dictionaryVisible, setDictionaryVisible] = useState(false)
-  const [dictionaryLoading, setDictionaryLoading] = useState(false)
-  const [dictionaryError, setDictionaryError] = useState<string | null>(null)
-  const [dictionaryPosition, setDictionaryPosition] = useState<{ x: number; y: number } | null>(
-    null
-  )
   const hideToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // === 复制成功toast监听器 ===
@@ -380,60 +372,11 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     [setSelectedText]
   )
 
-  // === 单词点击处理 ===
-  const handleWordClick = useCallback(async (word: string, token: any, event: React.MouseEvent) => {
-    logger.debug('字幕单词被点击', { word, tokenIndex: token.index })
-
-    // 设置弹窗位置
-    const target = event.currentTarget as HTMLElement
-    const targetRect = target.getBoundingClientRect()
-    const overlayRect = overlayRef.current?.getBoundingClientRect()
-    const positionX = targetRect.left - (overlayRect?.left ?? 0) + targetRect.width / 2
-    const positionY = targetRect.top - (overlayRect?.top ?? 0)
-
-    setDictionaryPosition({ x: positionX, y: positionY })
-    setDictionaryVisible(true)
-    setDictionaryLoading(true)
-    setDictionaryError(null)
-    setDictionaryData(null)
-
-    try {
-      const result = await window.api.dictionary.queryEudic(word)
-      if (result.success && result.data) {
-        setDictionaryData(result.data)
-      } else {
-        setDictionaryError(result.error || '查询失败')
-      }
-    } catch (error) {
-      logger.error('查询单词失败', { word, error })
-      setDictionaryError('网络错误，请稍后重试')
-    } finally {
-      setDictionaryLoading(false)
-    }
-  }, [])
-
   // === 通用点击处理（阻止冒泡到VideoSurface） ===
   const handleClick = useCallback((event: React.MouseEvent) => {
     // 阻止所有点击事件冒泡到VideoSurface，防止触发播放/暂停
     event.stopPropagation()
-    setDictionaryVisible(false)
-    setDictionaryData(null)
-    setDictionaryPosition(null)
-    setDictionaryError(null)
   }, [])
-
-  // === 点击外部关闭词典 ===
-  useEffect(() => {
-    if (!dictionaryVisible) return
-    const handleOutside = () => {
-      setDictionaryVisible(false)
-      setDictionaryData(null)
-      setDictionaryPosition(null)
-      setDictionaryError(null)
-    }
-    document.addEventListener('click', handleOutside)
-    return () => document.removeEventListener('click', handleOutside)
-  }, [dictionaryVisible])
 
   // === ResizeHandle 双击扩展处理 ===
   const handleResizeDoubleClick = useCallback(
@@ -515,18 +458,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           originalText={integration.currentSubtitle?.originalText || ''}
           translatedText={integration.currentSubtitle?.translatedText}
           onTextSelection={handleTextSelection}
-          onWordClick={handleWordClick}
           containerHeight={containerBounds.height}
         />
       </ContentContainer>
-
-      <DictionaryPopover
-        visible={dictionaryVisible}
-        position={dictionaryPosition}
-        data={dictionaryData}
-        loading={dictionaryLoading}
-        error={dictionaryError}
-      />
 
       <Tooltip
         title={t('settings.playback.subtitle.overlay.resizeHandle.tooltip')}
