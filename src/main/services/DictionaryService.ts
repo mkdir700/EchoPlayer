@@ -431,18 +431,14 @@ class DictionaryService {
   }): string | undefined => {
     try {
       // 验证必要参数
-      if (!params.langid || !params.voicename || !params.txt) {
+      if (!params.langid || !params.txt) {
         logger.debug('音频URL构建失败: 缺少必要参数', { params })
         return undefined
       }
 
       // 构建欧陆词典音频API的URL
       const audioApiUrl = 'https://api.frdic.com/api/v2/speech/speakweb'
-      const audioParams = new URLSearchParams({
-        langid: params.langid,
-        voicename: params.voicename,
-        txt: params.txt // txt 参数已经是编码后的
-      })
+      const audioParams = new URLSearchParams(params)
 
       const audioUrl = `${audioApiUrl}?${audioParams.toString()}`
 

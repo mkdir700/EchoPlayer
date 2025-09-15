@@ -157,37 +157,27 @@ export const DictionaryPopover = memo(function DictionaryPopover({
         {/* 显示详细发音信息 */}
         {data.pronunciations && data.pronunciations.length > 0 && (
           <PronunciationContainer>
-            {data.pronunciations.map((pronunciation, idx) => {
-              const getTypeLabel = (type: 'uk' | 'us' | null) => {
-                if (type === 'uk') return '英'
-                if (type === 'us') return '美'
-                return '通用' // 当类型未知时显示"通用"
-              }
-
-              const getTypeTitle = (type: 'uk' | 'us' | null) => {
-                if (type === 'uk') return '英式'
-                if (type === 'us') return '美式'
-                return '通用' // 当类型未知时显示"通用"
-              }
-
-              return (
-                <PronunciationGroup key={idx}>
-                  <PronunciationLabel>{getTypeLabel(pronunciation.type)}</PronunciationLabel>
-                  <PhoneticText>{pronunciation.phonetic}</PhoneticText>
-                  <PronunciationButton
-                    type="text"
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handlePronunciation(data.word, pronunciation.type || 'unknown', pronunciation)
-                    }}
-                    title={`${getTypeTitle(pronunciation.type)}发音: ${pronunciation.phonetic}`}
-                  >
-                    <Volume2 size={12} />
-                  </PronunciationButton>
-                </PronunciationGroup>
-              )
-            })}
+            {data.pronunciations.map((pronunciation, idx) => (
+              <PronunciationGroup key={idx}>
+                {pronunciation.type && (
+                  <PronunciationLabel>
+                    {pronunciation.type === 'uk' ? '英' : '美'}
+                  </PronunciationLabel>
+                )}
+                <PhoneticText>{pronunciation.phonetic}</PhoneticText>
+                <PronunciationButton
+                  type="text"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handlePronunciation(data.word, pronunciation.type || 'uk', pronunciation)
+                  }}
+                  title={`${pronunciation.type === 'uk' ? '英式' : '美式'}发音: ${pronunciation.phonetic}`}
+                >
+                  <Volume2 size={12} />
+                </PronunciationButton>
+              </PronunciationGroup>
+            ))}
           </PronunciationContainer>
         )}
 
