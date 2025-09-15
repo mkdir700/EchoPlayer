@@ -341,6 +341,97 @@ describe('DictionaryService', () => {
         expect(result.data!.examples).toEqual(['I learn English every day.', 'Learning is fun.'])
         expect(result.data!.translations).toEqual(['我每天学习英语。', '学习很有趣。'])
       })
+
+      it('应该正确处理没有区分英美音的发音信息 - crystal 示例', async () => {
+        const mockCrystalHtmlResponse = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8" />
+          </head>
+          <body class="en miniSearchDictBox">
+            <div class="headPhonBox">
+              <div class="singlePhon">
+                <a href="javascript:void(0);" title="发音" class="voice-js voice-button voice-button-en" data-rel="langid=en&amp;txt=QYNY3J5c3RhbHM%3d" data-volume="0.5">
+                  <span class="Phonitic">/'krɪstl/</span>
+                </a>
+              </div>
+              <!--SpellHint-->
+              <div class="spellHint">您是否要查找：<a href="/dicts/search/crystal">crystal</a> </div>
+            </div>
+            <div id="FCchild" class="expDiv">
+              <ol>
+                <li>n. 水晶；晶体</li>
+                <li>adj. 水晶的；透明的</li>
+              </ol>
+            </div>
+          </body>
+          </html>
+        `
+
+        mockFetch.mockResolvedValue({
+          ok: true,
+          text: () => Promise.resolve(mockCrystalHtmlResponse)
+        })
+
+        const result = await dictionaryService.queryEudic(mockEvent, 'crystal')
+
+        expect(result.success).toBe(true)
+        expect(result.data!.word).toBe('crystal')
+        expect(result.data!.pronunciations).toBeDefined()
+        expect(result.data!.pronunciations!.length).toBe(1)
+
+        // 验证发音信息 - 类型应该为 null（未知）
+        const pronunciation = result.data!.pronunciations![0]
+        expect(pronunciation.type).toBe(null) // 未知发音类型
+        expect(pronunciation.phonetic).toBe("/'krɪstl/")
+        expect(pronunciation.voiceParams).toBe('langid=en&amp;txt=QYNY3J5c3RhbHM%3d') // 应该有语音参数
+
+        // 注意：音频URL可能为undefined，因为parseVoiceParams可能无法解析所有必要的参数
+        // 在这个测试案例中，voicename参数缺失，所以audioUrl会是undefined
+        // 这是正常的，因为需要langid、voicename和txt三个参数才能构建音频URL
+
+        expect(result.data!.definitions).toHaveLength(2)
+        expect(result.data!.definitions[0]).toEqual({
+          partOfSpeech: 'n.',
+          meaning: '水晶；晶体'
+        })
+        expect(result.data!.definitions[1]).toEqual({
+          partOfSpeech: 'adj.',
+          meaning: '水晶的；透明的'
+        })
+      })
+
+      it('应该正确处理没有发音信息的普通音标', async () => {
+        const mockSimplePhoneticHtml = `
+          <html>
+          <body>
+            <span class="Phonitic">/ˈsɪmpəl/</span>
+            <div id="FCChild" class="expDiv">
+              <li>adj. 简单的</li>
+            </div>
+          </body>
+          </html>
+        `
+
+        mockFetch.mockResolvedValue({
+          ok: true,
+          text: () => Promise.resolve(mockSimplePhoneticHtml)
+        })
+
+        const result = await dictionaryService.queryEudic(mockEvent, 'simple')
+
+        expect(result.success).toBe(true)
+        expect(result.data!.pronunciations).toBeDefined()
+        expect(result.data!.pronunciations!.length).toBe(1)
+
+        // 验证发音信息 - 类型应该为 null（未知），没有音频
+        const pronunciation = result.data!.pronunciations![0]
+        expect(pronunciation.type).toBe(null) // 未知发音类型
+        expect(pronunciation.phonetic).toBe('/ˈsɪmpəl/')
+        expect(pronunciation.audioUrl).toBeUndefined() // 没有音频URL
+        expect(pronunciation.voiceParams).toBeUndefined()
+      })
     })
 
     describe('❌ 错误处理 - 健壮性测试', () => {
