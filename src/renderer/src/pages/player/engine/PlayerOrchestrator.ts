@@ -278,23 +278,6 @@ export class PlayerOrchestrator {
 
       await this.videoController.play()
       logger.debug('Command: requestPlay executed successfully')
-
-      // 延迟验证播放是否真正开始
-      setTimeout(() => {
-        if (this.videoController?.isPaused()) {
-          logger.warn('Video element still paused after play() call, investigating...', {
-            contextPaused: this.context.paused,
-            videoPaused: this.videoController?.isPaused()
-          })
-
-          // 尝试再次播放
-          this.videoController?.play().catch((retryError) => {
-            logger.error('Retry play() also failed:', { retryError })
-            // 回滚乐观更新
-            this.updateContext({ paused: true })
-          })
-        }
-      }, 150)
     } catch (error) {
       logger.error('Failed to execute requestPlay:', { error })
       // 回滚乐观更新
@@ -333,21 +316,6 @@ export class PlayerOrchestrator {
 
       this.videoController.pause()
       logger.debug('Command: requestPause executed successfully')
-
-      // 延迟验证暂停是否真正生效
-      setTimeout(() => {
-        if (!this.videoController?.isPaused()) {
-          logger.warn('Video element still playing after pause() call, investigating...', {
-            contextPaused: this.context.paused,
-            videoPaused: this.videoController?.isPaused()
-          })
-
-          // 尝试再次暂停
-          this.videoController?.pause()
-          // 强制同步状态
-          this.syncPlaybackState()
-        }
-      }, 50)
     } catch (error) {
       logger.error('Failed to execute requestPause:', { error })
       // 回滚乐观更新
@@ -373,22 +341,8 @@ export class PlayerOrchestrator {
     try {
       if (isPaused) {
         await this.requestPlay()
-        // 验证播放操作是否成功
-        setTimeout(() => {
-          if (this.videoController?.isPaused() && !this.context.paused) {
-            logger.warn('Play command failed to take effect, attempting sync')
-            this.syncPlaybackState()
-          }
-        }, 100)
       } else {
         this.requestPause()
-        // 验证暂停操作是否成功
-        setTimeout(() => {
-          if (!this.videoController?.isPaused() && this.context.paused) {
-            logger.warn('Pause command failed to take effect, attempting sync')
-            this.syncPlaybackState()
-          }
-        }, 50)
       }
     } catch (error) {
       logger.error('Failed to toggle play state:', { error, isPaused })
