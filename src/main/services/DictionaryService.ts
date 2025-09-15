@@ -1,5 +1,10 @@
 import { loggerService } from '@logger'
-import { DictionaryDefinition, DictionaryResponse, DictionaryResult } from '@types'
+import {
+  DictionaryDefinition,
+  DictionaryResponse,
+  DictionaryResult,
+  PronunciationInfo
+} from '@types'
 
 const logger = loggerService.withContext('DictionaryService')
 
@@ -73,16 +78,12 @@ class DictionaryService {
     try {
       const definitions: DictionaryDefinition[] = []
 
-      // 解析音标 - 匹配 class="phonetic" 的内容
-      let phonetic = ''
-      const phoneticMatch = html.match(/<[^>]*class[^>]*phonetic[^>]*>([^<]+)<\/[^>]*>/i)
-      if (phoneticMatch) {
-        phonetic = phoneticMatch[1].trim()
-      }
+      // 解析真人发音信息
+      const pronunciations = this.parsePronunciations(html)
 
       // 解析释义 - 主要目标是 FCChild 中的内容
       const fcChildMatch = html.match(
-        /<div[^>]*id="FCChild"[^>]*class="expDiv"[^>]*>([\s\S]*?)<\/div>/i
+        /<div[^>]*id="FCchild"[^>]*class="expDiv"[^>]*>([\s\S]*?)<\/div>/i
       )
 
       if (fcChildMatch) {
@@ -103,7 +104,7 @@ class DictionaryService {
 
       logger.debug('欧陆词典正则解析结果:', {
         word,
-        phonetic: phonetic || '未找到',
+        pronunciations: pronunciations.length,
         definitions: definitions.length,
         definitionsDetail: definitions,
         examples: examples.length,
@@ -112,7 +113,7 @@ class DictionaryService {
 
       return {
         word,
-        phonetic: phonetic || undefined,
+        pronunciations: pronunciations.length > 0 ? pronunciations : undefined,
         definitions,
         examples: examples.length > 0 ? examples : undefined,
         translations: translations.length > 0 ? translations : undefined
@@ -131,35 +132,69 @@ class DictionaryService {
     definitions: DictionaryDefinition[]
   ): void => {
     // 方法1: 解析列表格式 (<ol><li> 或 <ul><li>)
-    const listItemRegex = /<li[^>]*>([^<]+)<\/li>/gi
+    const listItemRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi
     let match: RegExpExecArray | null
     const foundInList: string[] = []
 
     while ((match = listItemRegex.exec(fcChildContent)) !== null) {
-      const itemText = match[1].trim()
-      if (itemText && itemText.length > 0) {
-        foundInList.push(itemText)
+      const itemContent = match[1].trim()
+      if (itemContent && itemContent.length > 0) {
+        foundInList.push(itemContent)
       }
     }
 
     if (foundInList.length > 0) {
       // 处理列表中的条目
-      foundInList.forEach((itemText) => {
-        const partOfSpeechMatch = itemText.match(/^(\w+\.)\s*(.+)/)
+      foundInList.forEach((itemContent) => {
+        this.parseListItemWithPartOfSpeech(itemContent, definitions)
+      })
+    } else {
+      // 方法2: 解析简单格式 (带有 <i> 标签的词性)
+      this.parseSimpleFormat(fcChildContent, definitions)
+    }
+  }
+
+  /**
+   * 解析列表项中的词性和含义（支持HTML标签包装的词性）
+   */
+  private parseListItemWithPartOfSpeech = (
+    itemContent: string,
+    definitions: DictionaryDefinition[]
+  ): void => {
+    // 首先尝试提取 <i> 标签中的词性
+    const partOfSpeechInTagMatch = itemContent.match(/<i[^>]*>([^<]+)<\/i>\s*(.+)/i)
+
+    if (partOfSpeechInTagMatch) {
+      // 情况1: 词性在 <i> 标签中，如 <i>v.</i> 需要；必须
+      const partOfSpeech = partOfSpeechInTagMatch[1].trim()
+      const meaning = partOfSpeechInTagMatch[2].replace(/<[^>]*>/g, '').trim()
+
+      if (meaning && meaning.length > 0) {
+        definitions.push({
+          partOfSpeech,
+          meaning
+        })
+      }
+    } else {
+      // 移除所有HTML标签，获取纯文本
+      const cleanText = itemContent.replace(/<[^>]*>/g, '').trim()
+
+      if (cleanText && cleanText.length > 0) {
+        // 情况2: 纯文本格式，如 "v. 需要；必须"
+        const partOfSpeechMatch = cleanText.match(/^(\w+\.?\s*\w*\.?)\s+(.+)/)
+
         if (partOfSpeechMatch) {
           definitions.push({
             partOfSpeech: partOfSpeechMatch[1],
             meaning: partOfSpeechMatch[2]
           })
         } else {
+          // 情况3: 没有词性，只有含义
           definitions.push({
-            meaning: itemText
+            meaning: cleanText
           })
         }
-      })
-    } else {
-      // 方法2: 解析简单格式 (带有 <i> 标签的词性)
-      this.parseSimpleFormat(fcChildContent, definitions)
+      }
     }
   }
 
@@ -268,6 +303,139 @@ class DictionaryService {
     }
 
     return translations
+  }
+
+  /**
+   * 解析真人发音信息
+   */
+  private parsePronunciations = (html: string): PronunciationInfo[] => {
+    const pronunciations: PronunciationInfo[] = []
+
+    // 匹配发音相关的 DOM 结构
+    // 方式1: 查找包含发音信息的完整 <a> 标签
+    const voiceRegex =
+      /<a[^>]*class="voice-js voice-button voice-button-en"[^>]*data-rel="([^"]*)"[^>]*>[\s\S]*?<span class="phontype">([^<]+)<\/span><span class="(?:phonetic|Phonitic)">([^<]+)<\/span>[\s\S]*?<\/a>/gi
+
+    let match: RegExpExecArray | null
+    while ((match = voiceRegex.exec(html)) !== null) {
+      const dataRel = match[1] // data-rel 属性值
+      const phoneType = match[2].trim() // 英/美
+      const phonetic = match[3].trim() // 音标
+
+      // 解析 data-rel 参数
+      const voiceParams = this.parseVoiceParams(dataRel)
+
+      // 确定发音类型
+      const type: 'uk' | 'us' = phoneType === '英' ? 'uk' : 'us'
+
+      // 构建音频URL（如果需要的话）
+      const audioUrl = voiceParams ? this.buildAudioUrl(voiceParams) : undefined
+
+      pronunciations.push({
+        type,
+        phonetic,
+        audioUrl,
+        voiceParams: dataRel
+      })
+    }
+
+    // 方式2: 如果没有找到完整的发音信息，尝试简单的音标提取
+    if (pronunciations.length === 0) {
+      const simplePhoneticRegex = /<span[^>]*class="phonetic"[^>]*>([^<]+)<\/span>/gi
+      let simpleMatch: RegExpExecArray | null
+      while ((simpleMatch = simplePhoneticRegex.exec(html)) !== null) {
+        const phonetic = simpleMatch[1].trim()
+        if (phonetic && phonetic.includes('/')) {
+          pronunciations.push({
+            type: 'uk', // 默认为英式
+            phonetic,
+            audioUrl: undefined,
+            voiceParams: undefined
+          })
+          break // 只取第一个
+        }
+      }
+    }
+
+    logger.debug('解析发音信息:', { count: pronunciations.length, pronunciations })
+
+    return pronunciations
+  }
+
+  /**
+   * 解析语音参数
+   */
+  private parseVoiceParams = (
+    dataRel: string
+  ): { langid?: string; voicename?: string; txt?: string } | null => {
+    try {
+      const params: { langid?: string; voicename?: string; txt?: string } = {}
+
+      // 处理HTML实体编码
+      const decodedDataRel = dataRel.replace(/&amp;/g, '&')
+
+      // 解析类似 "langid=en&voicename=en_uk_male&txt=QYNY29tZQ%3d%3d" 的参数
+      const pairs = decodedDataRel.split('&')
+      pairs.forEach((pair) => {
+        const [key, value] = pair.split('=')
+        if (key && value) {
+          switch (key) {
+            case 'langid':
+              params.langid = value
+              break
+            case 'voicename':
+              params.voicename = value
+              break
+            case 'txt':
+              params.txt = decodeURIComponent(value)
+              break
+          }
+        }
+      })
+
+      return params
+    } catch (error) {
+      logger.warn('解析语音参数失败:', { dataRel, error })
+      return null
+    }
+  }
+
+  /**
+   * 构建音频URL
+   */
+  private buildAudioUrl = (params: {
+    langid?: string
+    voicename?: string
+    txt?: string
+  }): string | undefined => {
+    try {
+      // 验证必要参数
+      if (!params.langid || !params.voicename || !params.txt) {
+        logger.debug('音频URL构建失败: 缺少必要参数', { params })
+        return undefined
+      }
+
+      // 构建欧陆词典音频API的URL
+      const audioApiUrl = 'https://api.frdic.com/api/v2/speech/speakweb'
+      const audioParams = new URLSearchParams({
+        langid: params.langid,
+        voicename: params.voicename,
+        txt: params.txt // txt 参数已经是编码后的
+      })
+
+      const audioUrl = `${audioApiUrl}?${audioParams.toString()}`
+
+      logger.debug('构建音频URL成功', {
+        audioUrl,
+        langid: params.langid,
+        voicename: params.voicename
+      })
+
+      return audioUrl
+    } catch (error) {
+      logger.error('构建音频URL时发生错误:', { params, error })
+      return undefined
+    }
   }
 }
 
