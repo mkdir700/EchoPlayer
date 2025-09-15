@@ -159,7 +159,11 @@ export const DictionaryPopover = memo(function DictionaryPopover({
           <PronunciationContainer>
             {data.pronunciations.map((pronunciation, idx) => (
               <PronunciationGroup key={idx}>
-                <PronunciationLabel>{pronunciation.type === 'uk' ? '英' : '美'}</PronunciationLabel>
+                {pronunciation.type && (
+                  <PronunciationLabel>
+                    {pronunciation.type === 'uk' ? '英' : '美'}
+                  </PronunciationLabel>
+                )}
                 <PhoneticText>{pronunciation.phonetic}</PhoneticText>
                 <PronunciationButton
                   type="text"
