@@ -2,7 +2,7 @@ name: Sync Release to GitCode
 
 on:
   release:
-    types: [published, edited]
+    types: [published, prereleased, edited]
   workflow_dispatch:
     inputs:
       tag_name:
@@ -61,9 +61,37 @@ jobs:
             echo "🔧 Manual trigger detected, using workflow inputs"
             echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
             echo "release_name=${{ github.event.inputs.release_name || github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
-            echo "release_body<<EOF" >> $GITHUB_OUTPUT
-            echo "${{ github.event.inputs.release_body || 'Test release created via manual trigger' }}" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            
+            # Handle release body - fetch from GitHub if not provided
+            if [ -z "${{ github.event.inputs.release_body }}" ]; then
+              echo "📄 No release description provided, fetching from GitHub API..."
+              
+              release_response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.event.inputs.tag_name }}")
+              
+              if [ "$(echo "$release_response" | jq -r '.message // empty')" = "Not Found" ]; then
+                echo "⚠️ Release not found for tag: ${{ github.event.inputs.tag_name }}, using default description"
+                github_release_body="Release created via manual trigger for tag ${{ github.event.inputs.tag_name }}"
+              else
+                github_release_body=$(echo "$release_response" | jq -r '.body // empty')
+                if [ -z "$github_release_body" ] || [ "$github_release_body" = "null" ]; then
+                  echo "⚠️ No description found in GitHub release, using default description"
+                  github_release_body="Release created via manual trigger for tag ${{ github.event.inputs.tag_name }}"
+                else
+                  echo "✅ Successfully fetched release description from GitHub"
+                fi
+              fi
+              
+              echo "release_body<<EOF" >> $GITHUB_OUTPUT
+              echo "$github_release_body" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            else
+              echo "📝 Using provided release description"
+              echo "release_body<<EOF" >> $GITHUB_OUTPUT
+              echo "${{ github.event.inputs.release_body }}" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
+            
             echo "prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
             echo "draft=${{ github.event.inputs.draft }}" >> $GITHUB_OUTPUT
             echo "test_mode=${{ github.event.inputs.test_mode }}" >> $GITHUB_OUTPUT
@@ -368,13 +396,13 @@ jobs:
             echo "✅ Test mode: Would upload all assets successfully to GitCode"
           else
             echo "📦 Uploading assets to GitCode release using JavaScript uploader..."
-            
+
             # Make upload script executable
             chmod +x ./scripts/upload-assets.js
-            
+
             # Convert comma-separated asset files to array for JavaScript uploader
             IFS=',' read -ra ASSET_FILES <<< "${{ steps.download-assets.outputs.asset_files }}"
-            
+
             # Upload assets using the JavaScript uploader
             node ./scripts/upload-assets.js \
               --token "${{ secrets.GITCODE_ACCESS_TOKEN }}" \
@@ -384,7 +412,7 @@ jobs:
               --concurrency 3 \
               --retry 3 \
               "${ASSET_FILES[@]}"
-              
+
             upload_exit_code=$?
             if [ $upload_exit_code -eq 0 ]; then
               echo "✅ All assets uploaded successfully to GitCode"
