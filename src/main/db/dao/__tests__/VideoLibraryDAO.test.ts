@@ -12,13 +12,17 @@ describe('VideoLibraryDAO', () => {
   let dao: VideoLibraryDAO
   let mockKysely: any
 
+  // Fixed timestamps to avoid race conditions between Date.now() calls
+  const FIXED_NOW = 1758017326806
+  const FIXED_FIRST_PLAYED_AT = FIXED_NOW - 86400000 // 1 day ago
+
   // Mock data for insertion (uses boolean, will be converted to number by schema)
   const mockVideoRecordFromDBForInsert = {
     fileId: 'test-file-id-1',
     currentTime: 120.5,
     duration: 3600,
-    playedAt: Date.now(),
-    firstPlayedAt: Date.now() - 86400000, // 1 day ago
+    playedAt: FIXED_NOW,
+    firstPlayedAt: FIXED_FIRST_PLAYED_AT,
     playCount: 3,
     isFinished: false, // Boolean for insert
     isFavorite: true, // Boolean for insert
@@ -30,8 +34,8 @@ describe('VideoLibraryDAO', () => {
     fileId: 'test-file-id-1',
     currentTime: 120.5,
     duration: 3600,
-    playedAt: Date.now(),
-    firstPlayedAt: Date.now() - 86400000, // 1 day ago
+    playedAt: FIXED_NOW,
+    firstPlayedAt: FIXED_FIRST_PLAYED_AT,
     playCount: 3,
     isFinished: 0, // Number from DB (0 for false)
     isFavorite: 1, // Number from DB (1 for true)
@@ -43,8 +47,8 @@ describe('VideoLibraryDAO', () => {
     fileId: 'test-file-id-1',
     currentTime: 120.5,
     duration: 3600,
-    playedAt: Date.now(),
-    firstPlayedAt: Date.now() - 86400000, // 1 day ago
+    playedAt: FIXED_NOW,
+    firstPlayedAt: FIXED_FIRST_PLAYED_AT,
     playCount: 3,
     isFinished: false, // Converted to boolean
     isFavorite: true, // Converted to boolean
@@ -155,7 +159,8 @@ describe('VideoLibraryDAO', () => {
 
   describe('getRecentlyPlayed', () => {
     it('应该获取最近播放的视频（默认限制）', async () => {
-      const now = Date.now()
+      // Use fixed timestamps to avoid race conditions
+      const now = FIXED_NOW
       // Mock database returns number format
       const mockDBResults = [
         { id: 1, ...mockVideoRecordFromDBFromDB, playedAt: now },
@@ -262,7 +267,7 @@ describe('VideoLibraryDAO', () => {
     it('应该更新播放进度', async () => {
       const mockResult = { numUpdatedRows: 1 }
       mockKysely.execute.mockResolvedValue(mockResult)
-      const now = Date.now()
+      const now = FIXED_NOW
       vi.spyOn(Date, 'now').mockReturnValue(now)
 
       const result = await dao.updatePlayProgress(1, 150.5)
@@ -279,7 +284,7 @@ describe('VideoLibraryDAO', () => {
     it('应该更新播放进度并设置完成状态', async () => {
       const mockResult = { numUpdatedRows: 1 }
       mockKysely.execute.mockResolvedValue(mockResult)
-      const now = Date.now()
+      const now = FIXED_NOW
       vi.spyOn(Date, 'now').mockReturnValue(now)
 
       const result = await dao.updatePlayProgress(1, 3600, true)
@@ -295,7 +300,7 @@ describe('VideoLibraryDAO', () => {
     it('应该更新播放进度但不改变完成状态', async () => {
       const mockResult = { numUpdatedRows: 1 }
       mockKysely.execute.mockResolvedValue(mockResult)
-      const now = Date.now()
+      const now = FIXED_NOW
       vi.spyOn(Date, 'now').mockReturnValue(now)
 
       const result = await dao.updatePlayProgress(1, 150.5, undefined)
