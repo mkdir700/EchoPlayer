@@ -208,12 +208,6 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
       data-testid="video-surface"
       onClick={handleSurfaceClick}
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          handleSurfaceClick()
-        }
-      }}
     >
       <StyledVideo
         ref={handleVideoRef}
