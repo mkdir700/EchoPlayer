@@ -24,9 +24,12 @@ export const GB = 1024 * MB
 export const defaultLanguage = 'zh-CN'
 
 export enum FeedUrl {
-  PRODUCTION = 'https://releases.echoplayer.cc',
+  PRODUCTION = 'http://release.echoplayer.z2blog.com/api/releases',
   GITHUB_LATEST = 'https://github.com/mkdir700/EchoPlayer/releases/latest/download',
-  PRERELEASE_LOWEST = 'https://github.com/mkdir700/EchoPlayer/releases/download/v0.1.0'
+  PRERELEASE_LOWEST = 'https://github.com/mkdir700/EchoPlayer/releases/download/v0.1.0',
+  // 中国用户特有的预发布渠道 feed URL
+  CN_BETA = 'http://release.echoplayer.z2blog.com/api/beta/releases',
+  CN_ALPHA = 'http://release.echoplayer.z2blog.com/api/alpha/releases'
 }
 
 export enum UpgradeChannel {
