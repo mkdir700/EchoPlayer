@@ -11,9 +11,11 @@
 
 import { loggerService } from '@logger'
 import { isClickableToken, tokenizeText, type WordToken } from '@renderer/utils/textTokenizer'
-import { SubtitleDisplayMode } from '@types'
+import { DictionaryResult, SubtitleDisplayMode } from '@types'
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
+
+import DictionaryPopover from './DictionaryPopover'
 
 const logger = loggerService.withContext('SubtitleContent')
 
@@ -27,8 +29,6 @@ export interface SubtitleContentProps {
   translatedText?: string
   /** 选中文本变化回调 */
   onTextSelection?: (selectedText: string) => void
-  /** 单词点击回调 */
-  onWordClick?: (word: string, token: WordToken) => void
   /** 容器高度（用于响应式字体大小计算） */
   containerHeight?: number
   /** 自定义类名 */
@@ -43,7 +43,6 @@ export const SubtitleContent = memo(function SubtitleContent({
   originalText,
   translatedText,
   onTextSelection,
-  onWordClick,
   containerHeight = 600, // 默认高度
   className,
   style
@@ -84,20 +83,96 @@ export const SubtitleContent = memo(function SubtitleContent({
     hoveredIndex: null
   })
 
+  // 词典状态管理
+  const [dictionaryStates, setDictionaryStates] = useState<{
+    [tokenKey: string]: {
+      visible: boolean
+      loading: boolean
+      data: DictionaryResult | null
+      error: string | null
+    }
+  }>({})
+
   // === 分词处理 ===
   const originalTokens = useMemo(() => tokenizeText(originalText), [originalText])
   // 译文不进行分词处理，保持整句显示
 
-  // === 单词点击处理 ===
-  const handleWordClick = useCallback(
-    (token: WordToken, event: React.MouseEvent) => {
+  // === 词典弹窗处理 ===
+  const handleWordDictionaryClick = useCallback(
+    async (token: WordToken, event: React.MouseEvent) => {
       // 阻止事件冒泡到全局点击处理
       event.stopPropagation()
 
-      if (isClickableToken(token) && onWordClick) {
-        onWordClick(token.text, token)
-        logger.debug('单词被点击', { word: token.text, index: token.index })
+      if (!isClickableToken(token)) return
+
+      const tokenKey = `${token.index}-${token.start}-${token.text}`
+
+      // 关闭其他所有弹窗，只保留当前点击的
+      setDictionaryStates((prev) => {
+        const newStates = Object.keys(prev).reduce(
+          (acc, key) => {
+            acc[key] = { ...prev[key], visible: false }
+            return acc
+          },
+          {} as typeof prev
+        )
+
+        // 设置当前点击词汇的状态 - 先不显示，等数据加载完成后再显示
+        newStates[tokenKey] = {
+          visible: false, // 延迟显示，避免位置偏移
+          loading: true,
+          data: null,
+          error: null
+        }
+        return newStates
+      })
+
+      logger.debug('单词词典查询开始', { word: token.text, tokenKey })
+
+      try {
+        const result = await window.api.dictionary.queryEudic(token.text)
+        if (result.success && result.data) {
+          setDictionaryStates((prev) => ({
+            ...prev,
+            [tokenKey]: {
+              ...prev[tokenKey],
+              visible: true, // 数据加载完成后才显示 popover
+              loading: false,
+              data: result.data || null
+            }
+          }))
+        } else {
+          setDictionaryStates((prev) => ({
+            ...prev,
+            [tokenKey]: {
+              ...prev[tokenKey],
+              visible: true, // 错误时也要显示 popover
+              loading: false,
+              error: result.error || '查询失败'
+            }
+          }))
+        }
+      } catch (error) {
+        logger.error('查询单词失败', { word: token.text, error })
+        setDictionaryStates((prev) => ({
+          ...prev,
+          [tokenKey]: {
+            ...prev[tokenKey],
+            visible: true, // 网络错误时也要显示 popover
+            loading: false,
+            error: '网络错误，请稍后重试'
+          }
+        }))
       }
+    },
+    []
+  )
+
+  // === 单词点击处理 ===
+  const handleWordClick = useCallback(
+    (token: WordToken, event: React.MouseEvent) => {
+      // 词典查询处理
+      handleWordDictionaryClick(token, event)
 
       // 点击单词时清除之前的选中状态
       if (selectionState.startIndex !== null || selectionState.endIndex !== null) {
@@ -109,8 +184,39 @@ export const SubtitleContent = memo(function SubtitleContent({
         }))
       }
     },
-    [onWordClick, selectionState.startIndex, selectionState.endIndex]
+    [handleWordDictionaryClick, selectionState.startIndex, selectionState.endIndex]
   )
+
+  // === 词典弹窗关闭处理 ===
+  const handleDictionaryClose = useCallback((tokenKey: string) => {
+    setDictionaryStates((prev) => ({
+      ...prev,
+      [tokenKey]: {
+        ...prev[tokenKey],
+        visible: false,
+        data: null,
+        error: null
+      }
+    }))
+
+    // 词典弹窗关闭后，将焦点恢复到容器元素，确保快捷键能正常工作
+    setTimeout(() => {
+      if (containerRef.current) {
+        // 找到可以获得焦点的播放器元素
+        const videoSurface = document.querySelector('[data-testid="video-surface"]') as HTMLElement
+        const subtitleOverlay = document.querySelector(
+          '[data-testid="subtitle-overlay"]'
+        ) as HTMLElement
+
+        // 优先将焦点给到视频表面，其次是字幕覆盖层
+        if (videoSurface) {
+          videoSurface.focus()
+        } else if (subtitleOverlay) {
+          subtitleOverlay.focus()
+        }
+      }
+    }, 100) // 延迟确保弹窗完全关闭后再恢复焦点
+  }, [])
 
   // === 划词选中处理 ===
   const handleWordMouseDown = useCallback((token: WordToken, event: React.MouseEvent) => {
@@ -206,7 +312,7 @@ export const SubtitleContent = memo(function SubtitleContent({
     }
   }, [])
 
-  // 字幕切换时重置悬停状态
+  // 字幕切换时重置悬停状态和词典状态
   React.useEffect(() => {
     setSelectionState({
       isSelecting: false,
@@ -214,6 +320,8 @@ export const SubtitleContent = memo(function SubtitleContent({
       endIndex: null,
       hoveredIndex: null
     })
+    // 清空所有词典状态
+    setDictionaryStates({})
   }, [originalText, translatedText, displayMode])
 
   // 绑定全局鼠标事件
@@ -248,8 +356,15 @@ export const SubtitleContent = memo(function SubtitleContent({
               token.index >= Math.min(selectionState.startIndex, selectionState.endIndex) &&
               token.index <= Math.max(selectionState.startIndex, selectionState.endIndex)
             const isHovered = selectionState.hoveredIndex === token.index
+            const tokenKey = `${token.index}-${token.start}-${token.text}`
+            const dictionaryState = dictionaryStates[tokenKey] || {
+              visible: false,
+              loading: false,
+              data: null,
+              error: null
+            }
 
-            return (
+            const wordTokenElement = (
               <WordToken
                 key={`${token.index}-${token.start}`}
                 $isClickable={isClickable}
@@ -265,17 +380,37 @@ export const SubtitleContent = memo(function SubtitleContent({
                 {token.text}
               </WordToken>
             )
+
+            // 只为可点击的词汇添加词典弹窗
+            if (isClickable) {
+              return (
+                <DictionaryPopover
+                  key={tokenKey}
+                  visible={dictionaryState.visible}
+                  data={dictionaryState.data}
+                  loading={dictionaryState.loading}
+                  error={dictionaryState.error}
+                  onClose={() => handleDictionaryClose(tokenKey)}
+                >
+                  {wordTokenElement}
+                </DictionaryPopover>
+              )
+            }
+
+            return wordTokenElement
           })}
         </TokenizedTextContainer>
       )
     },
     [
       selectionState,
+      dictionaryStates,
       handleWordClick,
       handleWordMouseDown,
       handleWordMouseEnter,
       handleWordMouseLeave,
-      handleWordMouseUp
+      handleWordMouseUp,
+      handleDictionaryClose
     ]
   )
 

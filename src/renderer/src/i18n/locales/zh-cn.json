@@ -168,6 +168,13 @@
     "subtitles": {
       "hide": "隐藏字幕列表",
       "show": "展开字幕列表"
+    },
+    "dictionary": {
+      "loading": "查询中...",
+      "error": "查询失败",
+      "pronunciation": "点击发音",
+      "more_definitions": "... 还有 {{count}} 个释义",
+      "translations": "常用翻译"
     }
   },
   "search": {
