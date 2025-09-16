@@ -2,7 +2,7 @@ name: Sync Release to GitCode
 
 on:
   release:
-    types: [published, edited]
+    types: [published, prereleased, edited]
   workflow_dispatch:
     inputs:
       tag_name:
