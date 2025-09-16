@@ -97,8 +97,14 @@ export function usePlayerShortcuts() {
   }, [currentSubtitle, displayMode, t])
 
   useShortcut('play_pause', () => {
+    logger.debug('空格键快捷键触发', {
+      activeElement: document.activeElement?.tagName,
+      activeElementClass: document.activeElement?.className,
+      activeElementId: document.activeElement?.id,
+      timestamp: Date.now()
+    })
     cmd.playPause()
-    logger.info('Shortcut play_pause')
+    logger.info('Shortcut play_pause executed')
   })
 
   // 重播当前字幕
