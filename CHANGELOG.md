@@ -1,3 +1,9 @@
+# [1.0.0-alpha.13](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.12...v1.0.0-alpha.13) (2025-09-16)
+
+### Features
+
+- **telemetry:** integrate Sentry error monitoring across main and renderer processes ([#176](https://github.com/mkdir700/EchoPlayer/issues/176)) ([08bfe30](https://github.com/mkdir700/EchoPlayer/commit/08bfe30f5526d037d7d5e28bb9ebcaf456e18028)), closes [#171](https://github.com/mkdir700/EchoPlayer/issues/171) [#172](https://github.com/mkdir700/EchoPlayer/issues/172) [#173](https://github.com/mkdir700/EchoPlayer/issues/173) [#174](https://github.com/mkdir700/EchoPlayer/issues/174) [#170](https://github.com/mkdir700/EchoPlayer/issues/170) [#175](https://github.com/mkdir700/EchoPlayer/issues/175)
+
 # [1.0.0-alpha.12](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.11...v1.0.0-alpha.12) (2025-09-14)
 
 ### Features

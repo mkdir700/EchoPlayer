@@ -1,6 +1,6 @@
 {
   "name": "echoplayer",
-  "version": "1.0.0-alpha.12",
+  "version": "1.0.0-alpha.13",
   "description": "EchoPlayer is a video player designed for language learners, helping users learn foreign languages efficiently through sentence-by-sentence intensive listening.",
   "main": "./out/main/index.js",
   "author": "echoplayer.cc",
