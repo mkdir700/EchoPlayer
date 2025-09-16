@@ -1,3 +1,19 @@
+# [1.0.0-beta.3](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2025-09-16)
+
+### Bug Fixes
+
+- **dictionary:** support pronunciation extraction without UK/US distinction ([#172](https://github.com/mkdir700/EchoPlayer/issues/172)) ([ca65592](https://github.com/mkdir700/EchoPlayer/commit/ca6559264be7ca77ee35385ebbdb47c3a5101592))
+- **player:** resolve focus loss after dictionary popup interaction ([#173](https://github.com/mkdir700/EchoPlayer/issues/173)) ([35078c5](https://github.com/mkdir700/EchoPlayer/commit/35078c5a5095479623a341f9150cf55e9455fddc))
+- **player:** resolve shortcut pause failure caused by state oscillation ([#174](https://github.com/mkdir700/EchoPlayer/issues/174)) ([6ee774d](https://github.com/mkdir700/EchoPlayer/commit/6ee774df519082d4f2ff7e11379e8c6313f1cd33)), closes [#170](https://github.com/mkdir700/EchoPlayer/issues/170)
+- **player:** resolve spacebar shortcut not working after clicking to pause ([#182](https://github.com/mkdir700/EchoPlayer/issues/182)) ([523313b](https://github.com/mkdir700/EchoPlayer/commit/523313b45b256a667a97ed0ef150396ccc32558e))
+
+### Features
+
+- **player:** comprehensive dictionary popover with pronunciation and theme support ([#171](https://github.com/mkdir700/EchoPlayer/issues/171)) ([53b5c30](https://github.com/mkdir700/EchoPlayer/commit/53b5c30e7cd0df86f966fa699345ae763101f19f))
+- **telemetry:** integrate Sentry error monitoring across main and renderer processes ([#175](https://github.com/mkdir700/EchoPlayer/issues/175)) ([e75f7a8](https://github.com/mkdir700/EchoPlayer/commit/e75f7a84956949b1a8da208639a2b621fb33869a))
+- **updater:** integrate China-specific feed URLs for better update experience ([#177](https://github.com/mkdir700/EchoPlayer/issues/177)) ([e4ba6c6](https://github.com/mkdir700/EchoPlayer/commit/e4ba6c65b5b97e4688f88d9495d293d6aaffcd30))
+- **workflow:** auto-fetch GitHub release description when manual trigger without description ([#179](https://github.com/mkdir700/EchoPlayer/issues/179)) ([ac76b13](https://github.com/mkdir700/EchoPlayer/commit/ac76b13b0f4e7b8720df0a71e337d4b6c38ce224))
+
 # [1.0.0-beta.2](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-09-14)
 
 ### Bug Fixes
