@@ -175,26 +175,45 @@ export default class AppUpdater {
     release: GithubReleaseInfo | null = null
   ) {
     logger.info('Setting feed URL - testPlan:', testPlan)
+
+    // 获取IP地址归属地
+    const ipCountry = await this._getIpCountry()
+    logger.info('Detected IP country:', ipCountry)
+    const isChinaUser = ipCountry.toLowerCase() === 'cn'
+
     if (channel === UpgradeChannel.LATEST) {
       this.autoUpdater.channel = UpgradeChannel.LATEST
-      this.autoUpdater.setFeedURL(FeedUrl.GITHUB_LATEST)
-      logger.info('Using GitHub latest releases for test plan')
+      if (isChinaUser) {
+        this.autoUpdater.setFeedURL(FeedUrl.PRODUCTION)
+        logger.info('Using production releases for CN user')
+      } else {
+        this.autoUpdater.setFeedURL(FeedUrl.GITHUB_LATEST)
+        logger.info('Using GitHub latest releases for test plan')
+      }
       return
     }
 
     if (testPlan && release) {
-      const preReleaseUrl = `https://github.com/mkdir700/EchoPlayer/releases/download/${release.tag_name}`
-      if (preReleaseUrl) {
-        this.autoUpdater.setFeedURL(preReleaseUrl)
+      if (isChinaUser) {
+        // 为中国用户使用对应的预发布渠道
+        const chineseFeedUrl = channel === UpgradeChannel.ALPHA ? FeedUrl.CN_ALPHA : FeedUrl.CN_BETA
+        this.autoUpdater.setFeedURL(chineseFeedUrl)
         this.autoUpdater.channel = channel
-        logger.info(`Using pre-release URL: ${preReleaseUrl} with channel: ${channel}`)
-        return
-      }
+        logger.info(`Using Chinese pre-release URL: ${chineseFeedUrl} with channel: ${channel}`)
+      } else {
+        const preReleaseUrl = `https://github.com/mkdir700/EchoPlayer/releases/download/${release.tag_name}`
+        if (preReleaseUrl) {
+          this.autoUpdater.setFeedURL(preReleaseUrl)
+          this.autoUpdater.channel = channel
+          logger.info(`Using pre-release URL: ${preReleaseUrl} with channel: ${channel}`)
+          return
+        }
 
-      // if no prerelease url, use lowest prerelease version to avoid error
-      logger.warn('No prerelease URL found, falling back to lowest prerelease version')
-      this.autoUpdater.setFeedURL(FeedUrl.PRERELEASE_LOWEST)
-      this.autoUpdater.channel = UpgradeChannel.LATEST
+        // if no prerelease url, use lowest prerelease version to avoid error
+        logger.warn('No prerelease URL found, falling back to lowest prerelease version')
+        this.autoUpdater.setFeedURL(FeedUrl.PRERELEASE_LOWEST)
+        this.autoUpdater.channel = UpgradeChannel.LATEST
+      }
       return
     }
 
@@ -203,7 +222,6 @@ export default class AppUpdater {
     this.autoUpdater.setFeedURL(FeedUrl.PRODUCTION)
     logger.info('Using production feed URL')
 
-    const ipCountry = await this._getIpCountry()
     logger.info('Detected IP country:', ipCountry)
     if (ipCountry.toLowerCase() !== 'cn') {
       this.autoUpdater.setFeedURL(FeedUrl.GITHUB_LATEST)
