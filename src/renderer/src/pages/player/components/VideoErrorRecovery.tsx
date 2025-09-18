@@ -1,4 +1,5 @@
 import { loggerService } from '@logger'
+import type { ExtendedErrorType } from '@renderer/services'
 import { getVideoDialogExtensions } from '@shared/config/constant'
 import { Button, Modal, Space } from 'antd'
 import { AlertTriangle, FileSearch, RotateCcw, Trash2 } from 'lucide-react'
@@ -15,7 +16,7 @@ interface VideoErrorRecoveryProps {
   videoId: number
   videoTitle: string
   originalPath?: string
-  errorType: 'file-missing' | 'unsupported-format' | 'decode-error' | 'network-error' | 'unknown'
+  errorType: ExtendedErrorType
   onFileRelocate?: (newPath: string) => void
   onRemoveFromLibrary?: () => void
 }

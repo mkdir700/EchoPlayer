@@ -1,7 +1,12 @@
 import { loggerService } from '@logger'
 import { Navbar, NavbarCenter, NavbarLeft, NavbarRight } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
-import { VideoLibraryService } from '@renderer/services'
+import {
+  CodecCompatibilityChecker,
+  type ExtendedErrorType,
+  TranscodeService,
+  VideoLibraryService
+} from '@renderer/services'
 import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
 import { playerSettingsPersistenceService } from '@renderer/services/PlayerSettingsSaver'
 import { usePlayerStore } from '@renderer/state'
@@ -22,6 +27,7 @@ import {
   ProgressBar,
   SettingsPopover,
   SubtitleListPanel,
+  TranscodeIndicator,
   VideoErrorRecovery,
   VideoSurface
 } from './components'
@@ -85,7 +91,7 @@ function PlayerPage() {
   const [error, setError] = useState<string | null>(null)
   const [videoError, setVideoError] = useState<{
     message: string
-    type: 'file-missing' | 'unsupported-format' | 'decode-error' | 'network-error' | 'unknown'
+    type: ExtendedErrorType
     originalPath?: string
   } | null>(null)
   // const { pokeInteraction } = usePlayerUI()
@@ -126,11 +132,95 @@ function PlayerPage() {
         // 将 path 转为 file:// URL (Windows-safe)
         const fileUrl = toFileUrl(file.path)
 
-        // 构造页面所需的视频数据
+        // 主动进行编解码器兼容性检测和转码预处理
+        let finalSrc = fileUrl
+
+        try {
+          logger.info('开始编解码器兼容性检测', { filePath: file.path })
+
+          // 检测编解码器兼容性
+          const compatibilityResult = await CodecCompatibilityChecker.checkCompatibility(file.path)
+
+          logger.info('编解码器兼容性检测结果', {
+            compatibilityResult,
+            filePath: file.path
+          })
+
+          // 如果需要转码，在数据加载阶段就进行转码
+          if (compatibilityResult.needsTranscode) {
+            logger.warn('检测到不兼容编解码器，开始预转码处理', {
+              videoCodec: compatibilityResult.detectedCodecs.video,
+              audioCodec: compatibilityResult.detectedCodecs.audio,
+              reasons: compatibilityResult.incompatibilityReasons
+            })
+
+            // 设置转码状态
+            usePlayerStore.getState().setTranscodeStatus('transcoding')
+            usePlayerStore.getState().updateTranscodeInfo({
+              originalSrc: fileUrl,
+              error: undefined,
+              startTime: Date.now()
+            })
+
+            // 调用转码服务
+            const transcodeResult = await TranscodeService.requestTranscode({
+              filePath: file.path,
+              timeSeconds: record.currentTime || 0
+            })
+
+            logger.info('预转码完成', { transcodeResult })
+
+            // 更新转码信息和播放源
+            usePlayerStore.getState().updateTranscodeInfo({
+              hlsSrc: transcodeResult.playlistUrl,
+              windowId: transcodeResult.windowId,
+              assetHash: transcodeResult.assetHash,
+              profileHash: transcodeResult.profileHash,
+              cached: transcodeResult.cached,
+              endTime: Date.now()
+            })
+
+            // 切换到 HLS 播放模式
+            usePlayerStore.getState().switchToHlsSource(transcodeResult.playlistUrl, {
+              windowId: transcodeResult.windowId,
+              assetHash: transcodeResult.assetHash,
+              profileHash: transcodeResult.profileHash,
+              cached: transcodeResult.cached
+            })
+
+            finalSrc = transcodeResult.playlistUrl
+
+            logger.info('预转码流程完成，使用 HLS 播放源', {
+              originalSrc: fileUrl,
+              hlsSrc: finalSrc
+            })
+          } else {
+            logger.info('编解码器兼容，使用原始播放源', { filePath: file.path })
+          }
+        } catch (transcodeError) {
+          logger.error('预转码处理失败，回退到原始播放源', {
+            error:
+              transcodeError instanceof Error ? transcodeError.message : String(transcodeError),
+            filePath: file.path
+          })
+
+          // 转码失败时更新状态但不阻止播放
+          usePlayerStore.getState().setTranscodeStatus('failed')
+          usePlayerStore.getState().updateTranscodeInfo({
+            error:
+              transcodeError instanceof Error ? transcodeError.message : String(transcodeError),
+            endTime: Date.now()
+          })
+
+          // 继续使用原始播放源
+          finalSrc = fileUrl
+        }
+
+        // 构造页面所需的视频数据（使用处理后的播放源）
         const vd = {
           id: record.id!,
           title: file.origin_name || file.name,
-          src: fileUrl,
+          src: finalSrc,
           duration: record.duration
         } as const
         if (!cancelled) setVideoData(vd)
@@ -169,15 +259,7 @@ function PlayerPage() {
   }, [videoId])
 
   const handleVideoError = useCallback(
-    (
-      errorMessage: string,
-      errorType?:
-        | 'file-missing'
-        | 'unsupported-format'
-        | 'decode-error'
-        | 'network-error'
-        | 'unknown'
-    ) => {
+    (errorMessage: string, errorType?: ExtendedErrorType) => {
       logger.error('视频播放错误', { errorMessage, errorType, videoId })
       setVideoError({
         message: errorMessage,
@@ -379,6 +461,9 @@ function PlayerPage() {
           </ContentBody>
           <SettingsPopover />
         </ContentContainer>
+
+        {/* 转码状态指示器 */}
+        <TranscodeIndicator />
 
         {/* 错误恢复 Modal */}
         <VideoErrorRecovery

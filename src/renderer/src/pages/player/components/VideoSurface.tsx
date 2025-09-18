@@ -1,4 +1,9 @@
 import { loggerService } from '@logger'
+import {
+  CodecCompatibilityChecker,
+  type ExtendedErrorType,
+  TranscodeService
+} from '@renderer/services'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { useCallback, useEffect, useRef } from 'react'
 import styled from 'styled-components'
@@ -13,10 +18,7 @@ const logger = loggerService.withContext('VideoSurface')
 interface VideoSurfaceProps {
   src?: string
   onLoadedMetadata?: () => void
-  onError?: (
-    error: string,
-    errorType?: 'file-missing' | 'unsupported-format' | 'decode-error' | 'network-error' | 'unknown'
-  ) => void
+  onError?: (error: string, errorType?: ExtendedErrorType) => void
 }
 
 function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
@@ -28,8 +30,112 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
   const currentTime = usePlayerStore((s) => s.currentTime)
   const pause = usePlayerStore((s) => s.pause)
 
+  // 转码状态管理
+  // const hlsMode = usePlayerStore((s) => s.hlsMode) // TODO: 用于UI状态显示
+  // const transcodeInfo = usePlayerStore((s) => s.transcodeInfo) // TODO: 用于缓存和状态显示
+  const setTranscodeStatus = usePlayerStore((s) => s.setTranscodeStatus)
+  const updateTranscodeInfo = usePlayerStore((s) => s.updateTranscodeInfo)
+  const switchToHlsSource = usePlayerStore((s) => s.switchToHlsSource)
+  // const resetTranscodeInfo = usePlayerStore((s) => s.resetTranscodeInfo) // TODO: 用于清理状态
+
   const { connectVideoElement, getMediaEventHandlers, orchestrator } = usePlayerEngine()
   const { playPause } = usePlayerCommands()
+
+  // 转码处理函数
+  const handleTranscodeRequest = useCallback(
+    async (filePath: string, errorType: ExtendedErrorType) => {
+      logger.info('开始转码处理', { filePath, errorType })
+
+      try {
+        // 设置转码开始状态
+        setTranscodeStatus('transcoding')
+        updateTranscodeInfo({
+          originalSrc: src,
+          error: undefined,
+          startTime: Date.now()
+        })
+
+        // 调用转码服务
+        const transcodeResult = await TranscodeService.requestTranscode({
+          filePath,
+          timeSeconds: currentTime || 0
+        })
+
+        logger.info('转码完成', { transcodeResult })
+
+        // 更新转码信息
+        updateTranscodeInfo({
+          hlsSrc: transcodeResult.playlistUrl,
+          windowId: transcodeResult.windowId,
+          assetHash: transcodeResult.assetHash,
+          profileHash: transcodeResult.profileHash,
+          cached: transcodeResult.cached,
+          endTime: Date.now()
+        })
+
+        // 切换到 HLS 播放源
+        switchToHlsSource(transcodeResult.playlistUrl, {
+          windowId: transcodeResult.windowId,
+          assetHash: transcodeResult.assetHash,
+          profileHash: transcodeResult.profileHash,
+          cached: transcodeResult.cached
+        })
+
+        // 更新视频元素的 src 并通过引擎恢复播放位置
+        const video = videoRef.current
+        if (video) {
+          const playbackPosition = video.currentTime
+          video.src = transcodeResult.playlistUrl
+
+          // 通过播放器引擎恢复播放位置（确保与状态管理一致）
+          video.addEventListener(
+            'loadedmetadata',
+            () => {
+              if (playbackPosition > 0) {
+                // 优先使用播放器引擎来设置时间
+                if (orchestrator && orchestrator.isVideoControllerConnected()) {
+                  orchestrator.requestSeek(playbackPosition)
+                  logger.debug('通过引擎恢复 HLS 播放位置', { position: playbackPosition })
+                } else {
+                  // 备用方案：直接设置
+                  video.currentTime = playbackPosition
+                  logger.debug('直接恢复 HLS 播放位置', { position: playbackPosition })
+                }
+              }
+            },
+            { once: true }
+          )
+
+          logger.debug('视频源已切换到 HLS', {
+            hlsSrc: transcodeResult.playlistUrl,
+            originalPosition: playbackPosition
+          })
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        logger.error('转码失败', { filePath, error: errorMessage })
+
+        // 设置转码失败状态
+        setTranscodeStatus('failed')
+        updateTranscodeInfo({
+          error: errorMessage,
+          endTime: Date.now()
+        })
+
+        // 通知上层处理错误
+        onError?.(errorMessage, errorType)
+      }
+    },
+    [
+      src,
+      currentTime,
+      setTranscodeStatus,
+      updateTranscodeInfo,
+      switchToHlsSource,
+      onError,
+      orchestrator
+    ]
+  )
 
   // 处理点击播放/暂停
   const handleSurfaceClick = useCallback(() => {
@@ -122,19 +228,22 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
     pause()
   }, [pause])
 
-  // 增强的错误处理 - 支持错误类型检测和文件存在性检查
+  // 编解码器感知错误处理 - 作为主动检测的兜底方案
   const handleVideoError = useCallback(async () => {
     const video = videoRef.current
     if (!video || !video.error) return
 
     const error = video.error
     let errorMessage = '视频播放错误'
-    let errorType:
-      | 'file-missing'
-      | 'unsupported-format'
-      | 'decode-error'
-      | 'network-error'
-      | 'unknown' = 'unknown'
+    let errorType: ExtendedErrorType = 'unknown'
+
+    logger.debug('视频错误详情', {
+      code: error.code,
+      message: error.message,
+      src,
+      readyState: video.readyState,
+      networkState: video.networkState
+    })
 
     // 基于MediaError代码进行初步分类
     switch (error.code) {
@@ -151,11 +260,13 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
         errorType = 'decode-error'
         break
       case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-        // 对于"不支持的源"错误，需要进一步检查是文件缺失还是格式不支持
+        // 对于"不支持的源"错误，进行深度编解码器兼容性分析
         if (src && src.startsWith('file://')) {
           try {
             // 从file://URL中提取文件路径
             const filePath = decodeURIComponent(src.replace('file://', ''))
+
+            // 首先检查文件是否存在
             const fileExists = await window.api.fs.checkFileExists(filePath)
 
             if (!fileExists) {
@@ -163,14 +274,44 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
               errorType = 'file-missing'
               logger.info('文件存在性检查：文件不存在', { filePath, src })
             } else {
-              errorMessage = '不支持的视频格式'
-              errorType = 'unsupported-format'
-              logger.info('文件存在性检查：文件存在但格式不支持', { filePath, src })
+              // 文件存在，进行编解码器兼容性检测
+              logger.info('文件存在，开始编解码器兼容性检测', { filePath })
+
+              const compatibilityResult =
+                await CodecCompatibilityChecker.checkCompatibility(filePath)
+
+              logger.info('编解码器兼容性检测结果', {
+                compatibilityResult,
+                filePath
+              })
+
+              // 根据兼容性结果生成精确的错误类型和消息
+              errorType =
+                CodecCompatibilityChecker.getErrorTypeFromCompatibility(compatibilityResult)
+              errorMessage = CodecCompatibilityChecker.generateErrorMessage(compatibilityResult)
+
+              // 如果检测到需要转码，触发自动转码流程
+              if (compatibilityResult.needsTranscode) {
+                logger.warn('检测到不兼容的编解码器，开始自动转码', {
+                  videoCodec: compatibilityResult.detectedCodecs.video,
+                  audioCodec: compatibilityResult.detectedCodecs.audio,
+                  videoSupported: compatibilityResult.videoSupported,
+                  audioSupported: compatibilityResult.audioSupported,
+                  reasons: compatibilityResult.incompatibilityReasons
+                })
+
+                // 触发转码处理，不直接抛出错误
+                handleTranscodeRequest(filePath, errorType)
+                return // 直接返回，不调用 onError
+              }
             }
           } catch (checkError) {
-            logger.error('检查文件存在性时出错', { src, checkError })
-            errorMessage = '无法访问视频文件'
-            errorType = 'file-missing'
+            logger.error('编解码器兼容性检查失败', {
+              src,
+              checkError: checkError instanceof Error ? checkError.message : String(checkError)
+            })
+            errorMessage = '无法检测视频格式兼容性'
+            errorType = 'codec-unsupported'
           }
         } else {
           errorMessage = '不支持的视频格式或路径'
@@ -182,16 +323,16 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
         errorType = 'unknown'
     }
 
-    logger.error('视频错误:', {
-      code: error.code,
-      message: error.message,
+    logger.error('最终视频错误处理结果:', {
+      originalErrorCode: error.code,
+      originalErrorMessage: error.message,
       src,
-      errorType,
-      finalMessage: errorMessage
+      finalErrorType: errorType,
+      finalErrorMessage: errorMessage
     })
 
     onError?.(errorMessage, errorType)
-  }, [onError, src])
+  }, [onError, src, handleTranscodeRequest])
 
   // 组件卸载清理
   useEffect(() => {

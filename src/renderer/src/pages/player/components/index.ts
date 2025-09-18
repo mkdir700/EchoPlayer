@@ -8,6 +8,7 @@ export { default as SettingsPopover } from './SettingsPopover'
 export { default as SubtitleContent } from './SubtitleContent'
 export { default as SubtitleListPanel } from './SubtitleListPanel'
 export { default as SubtitleOverlay } from './SubtitleOverlay'
+export { default as TranscodeIndicator } from './TranscodeIndicator'
 export { default as VideoErrorRecovery } from './VideoErrorRecovery'
 export { default as VideoSurface } from './VideoSurface'
 
