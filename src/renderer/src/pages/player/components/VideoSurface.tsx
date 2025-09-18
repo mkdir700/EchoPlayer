@@ -245,6 +245,36 @@ function VideoSurface({ src, onLoadedMetadata, onError }: VideoSurfaceProps) {
       networkState: video.networkState
     })
 
+    // 检查是否为 HLS 播放错误
+    const isHlsUrl = src && (src.includes('.m3u8') || src.includes('playlist'))
+    if (isHlsUrl) {
+      logger.info('检测到 HLS URL 播放错误', {
+        src,
+        errorCode: error.code,
+        errorMessage: error.message
+      })
+
+      // 检查常见的 HLS 播放器缺失错误
+      if (
+        error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED ||
+        error.code === MediaError.MEDIA_ERR_DECODE ||
+        error.message.includes('DEMUXER_ERROR_COULD_NOT_OPEN') ||
+        error.message.includes('FFmpegDemuxer')
+      ) {
+        errorMessage = 'HLS 播放器尚未就绪，无法播放转码后的视频'
+        errorType = 'hls-player-missing'
+
+        logger.warn('HLS 播放器错误：转码已完成但 HLS 播放器未实现', {
+          src,
+          errorCode: error.code,
+          errorMessage: error.message
+        })
+
+        onError?.(errorMessage, errorType)
+        return
+      }
+    }
+
     // 基于MediaError代码进行初步分类
     switch (error.code) {
       case MediaError.MEDIA_ERR_ABORTED:

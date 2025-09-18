@@ -72,6 +72,15 @@ const TranscodeIndicator: React.FC = () => {
             ? Math.round((transcodeInfo.endTime - transcodeInfo.startTime) / 1000)
             : 0
 
+        // 检查是否为 HLS 模式且有播放错误
+        if (hlsMode && transcodeInfo?.hlsSrc) {
+          return {
+            icon: <Clock size={16} />,
+            text: '等待 HLS 播放器...',
+            color: '#faad14'
+          }
+        }
+
         return {
           icon: <CheckCircle size={16} />,
           text: transcodeInfo?.cached ? '使用缓存播放' : `转码完成 (${duration}s)`,

@@ -34,6 +34,7 @@ export type ExtendedErrorType =
   | 'audio-codec-unsupported'
   | 'video-codec-unsupported'
   | 'codec-unsupported'
+  | 'hls-player-missing' // HLS 播放器未就绪，转码已完成但无法播放
   | 'unknown'
 
 /**
