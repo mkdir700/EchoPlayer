@@ -1,11 +1,11 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import {
-  FastForward,
   Pause as IconPause,
   Play as IconPlay,
-  Rewind,
+  Redo,
   SkipBack,
-  SkipForward
+  SkipForward,
+  Undo
 } from 'lucide-react'
 import styled from 'styled-components'
 
@@ -26,7 +26,7 @@ export default function TransportControls() {
         <SkipBack size={18} />
       </ClusterButton>
       <SeekButton title="后退10秒" aria-label="Seek back 10s" onClick={cmd.seekBackwardByStep}>
-        <Rewind size={18} />
+        <Undo size={18} />
       </SeekButton>
 
       <PlayPauseButton onClick={cmd.playPause} aria-label={paused ? 'Play' : 'Pause'}>
@@ -38,7 +38,7 @@ export default function TransportControls() {
       </PlayPauseButton>
 
       <SeekButton title="快进10秒" aria-label="Seek forward 10s" onClick={cmd.seekForwardByStep}>
-        <FastForward size={18} />
+        <Redo size={18} />
       </SeekButton>
       <ClusterButton title="下一条" aria-label="Next" onClick={cmd.goToNextSubtitle}>
         <SkipForward size={18} />
