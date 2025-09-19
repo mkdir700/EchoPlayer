@@ -113,7 +113,6 @@ export const ControlCircleButton = styled.button`
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  border: 1px solid var(--color-border);
 
   &:hover {
     background: var(--color-hover);
