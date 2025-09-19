@@ -37,12 +37,11 @@ EchoPlayer 是一款专为语言学习者设计的视频播放器，通过**逐�
 
 ## ✨ 功能特性
 
-### 🎯 核心功能
-
 - **逐句播放控制** - 一键跳转到上一句/下一句字幕
 - **自动暂停/恢复** - 每句字幕结束后自动暂停，便于消化理解。延迟自定义时间后恢复播放
 - **单句循环** - 重复播放当前字幕句子，强化练习
 - **多语言字幕** - 同时显示原文和译文，支持双语学习
+- **字幕词典** - 字幕支持查词功能，支持单词翻译和发音播放
 
 ## 🚀 安装
 
@@ -82,9 +81,29 @@ EchoPlayer 是一款专为语言学习者设计的视频播放器，通过**逐�
 ### 核心技术
 
 - **Electron** - 跨平台桌面应用框架
-- **React** - 现代化前端框架
+- **React 19** - 现代化前端框架
 - **TypeScript** - 类型安全的开发体验
 - **Ant Design** - 专业的 UI 组件库
+- **Styled Components** - CSS-in-JS 样式解决方案
+- **Zustand** - 轻量级状态管理库
+- **Immer** - 不可变状态更新
+- **Better SQLite3** - 本地数据库
+- **Kysely** - 类型安全的 SQL 查询构建器
+- **Electron Vite** - 基于 Vite 的 Electron 构建工具
+- **Vite** - 现代化构建工具
+- **SWC** - 高性能 TypeScript/JavaScript 编译器
+- **Vitest** - 单元测试框架
+- **Playwright** - 端到端测试
+- **Testing Library** - React 组件测试
+- **ESLint** - 代码规范检查
+- **Prettier** - 代码格式化
+- **Husky** - Git hooks 管理
+- **Semantic Release** - 自动化版本发布
+- **FFmpeg** - 音视频处理
+- **Remotion Media Parser** - 媒体文件解析
+- **React Player** - 视频播放组件
+- **React i18next** - 国际化解决方案
+- **Sentry** - 错误监控和性能追踪
 
 ## 💻 开发
 
