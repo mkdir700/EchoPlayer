@@ -76,7 +76,7 @@
     "macos-release": "^3.4.0",
     "marked": "^15.0.12",
     "react-hotkeys-hook": "^5.1.0",
-    "react-player": "^2.16.1",
+    "react-player": "3.3.2",
     "react-virtualized": "^9.22.6",
     "zustand": "^5.0.8"
   },
