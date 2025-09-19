@@ -307,7 +307,7 @@ const ContentContainer = styled.div`
 
 const ContentBody = styled.div`
   flex: 1;
-  padding: 24px 32px;
+  padding: 24px 32px 48px 32px;
   overflow-y: auto;
   height: 100%;
   min-height: 0;
