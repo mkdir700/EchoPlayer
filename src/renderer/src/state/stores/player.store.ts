@@ -54,7 +54,7 @@ export interface TranscodeInfo {
   originalSrc?: string
   /** HLS 转码后的播放源 */
   hlsSrc?: string
-  /** 转码窗口 ID */
+  /** 转码窗口 ID （会话模式下为 0） */
   windowId?: number
   /** 资产哈希 */
   assetHash?: string
@@ -62,6 +62,8 @@ export interface TranscodeInfo {
   profileHash?: string
   /** 是否命中缓存 */
   cached?: boolean
+  /** 会话 ID （会话模式下使用） */
+  sessionId?: string
   /** 转码错误信息 */
   error?: string
   /** 转码开始时间 */

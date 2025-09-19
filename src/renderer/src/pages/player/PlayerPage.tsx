@@ -4,7 +4,7 @@ import db from '@renderer/databases'
 import {
   CodecCompatibilityChecker,
   type ExtendedErrorType,
-  TranscodeService,
+  SessionService,
   VideoLibraryService
 } from '@renderer/services'
 import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
@@ -24,12 +24,12 @@ import styled from 'styled-components'
 import { NavbarIcon } from '.'
 import {
   ControllerPanel,
+  PlayerSelector,
   ProgressBar,
   SettingsPopover,
   SubtitleListPanel,
   TranscodeIndicator,
-  VideoErrorRecovery,
-  VideoSurface
+  VideoErrorRecovery
 } from './components'
 import { disposeGlobalOrchestrator } from './hooks/usePlayerEngine'
 import { PlayerPageProvider } from './state/player-page.provider'
@@ -162,33 +162,38 @@ function PlayerPage() {
               startTime: Date.now()
             })
 
-            // 调用转码服务
-            const transcodeResult = await TranscodeService.requestTranscode({
-              filePath: file.path,
-              timeSeconds: record.currentTime || 0
+            // 调用会话服务创建播放会话
+            const sessionResult = await SessionService.createSession({
+              file_path: file.path,
+              initial_time: record.currentTime || 0
             })
 
-            logger.info('预转码完成', { transcodeResult })
+            logger.info('会话创建完成', { sessionResult })
+
+            // TODO:
+            const playListUrl = `http://127.0.0.1:8799${sessionResult.playlist_url}`
 
             // 更新转码信息和播放源
             usePlayerStore.getState().updateTranscodeInfo({
-              hlsSrc: transcodeResult.playlistUrl,
-              windowId: transcodeResult.windowId,
-              assetHash: transcodeResult.assetHash,
-              profileHash: transcodeResult.profileHash,
-              cached: transcodeResult.cached,
+              hlsSrc: playListUrl,
+              windowId: 0, // 会话模式不再使用 windowId
+              assetHash: sessionResult.asset_hash,
+              profileHash: sessionResult.profile_hash,
+              cached: false, // 会话模式由后端管理缓存
+              sessionId: sessionResult.session_id,
               endTime: Date.now()
             })
 
             // 切换到 HLS 播放模式
-            usePlayerStore.getState().switchToHlsSource(transcodeResult.playlistUrl, {
-              windowId: transcodeResult.windowId,
-              assetHash: transcodeResult.assetHash,
-              profileHash: transcodeResult.profileHash,
-              cached: transcodeResult.cached
+            usePlayerStore.getState().switchToHlsSource(playListUrl, {
+              windowId: 0,
+              assetHash: sessionResult.asset_hash,
+              profileHash: sessionResult.profile_hash,
+              cached: false,
+              sessionId: sessionResult.session_id
             })
 
-            finalSrc = transcodeResult.playlistUrl
+            finalSrc = playListUrl
 
             logger.info('预转码流程完成，使用 HLS 播放源', {
               originalSrc: fileUrl,
@@ -430,7 +435,7 @@ function PlayerPage() {
                 <Content>
                   <LeftMain>
                     <VideoStage>
-                      <VideoSurface src={videoData.src} onError={handleVideoError} />
+                      <PlayerSelector src={videoData.src} onError={handleVideoError} />
                     </VideoStage>
                     <ProgressBarArea>
                       <ProgressBar />
