@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "setup": "git submodule update\npnpm i",
+    "run": "pnpm dev"
+  }
+}
