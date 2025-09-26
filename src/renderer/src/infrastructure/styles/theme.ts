@@ -257,62 +257,79 @@ export const COMPONENT_TOKENS = {
     FADE_IN_DURATION: ANIMATION_DURATION.SLOW
   },
 
-  // 进度条组件
+  // Netflix 风格进度条组件
   PROGRESS_BAR: {
-    // 尺寸系统
-    TRACK_HEIGHT_BASE: 4, // 基础轨道高度
-    TRACK_HEIGHT_HOVER: 6, // 悬停轨道高度
-    TRACK_HEIGHT_DRAG: 6, // 拖动轨道高度
+    // Netflix 风格尺寸系统 - 极简主义设计
+    TRACK_HEIGHT_HIDDEN: 1, // 隐藏/默认状态极细轨道
+    TRACK_HEIGHT_BASE: 2, // 基础轨道高度
+    TRACK_HEIGHT_HOVER: 4, // 悬停时轨道高度
+    TRACK_HEIGHT_ACTIVE: 6, // 激活/拖拽时轨道高度
 
-    HANDLE_SIZE_BASE: 8, // 基础手柄尺寸
-    HANDLE_SIZE_HOVER: 12, // 悬停手柄尺寸
-    HANDLE_SIZE_DRAG: 14, // 拖动手柄尺寸
+    // Netflix 风格手柄系统
+    HANDLE_SIZE_BASE: 0, // 默认隐藏手柄
+    HANDLE_SIZE_HOVER: 14, // 悬停时手柄尺寸
+    HANDLE_SIZE_ACTIVE: 16, // 激活时手柄尺寸
 
-    // 边框系统
-    HANDLE_BORDER_BASE: 1, // 基础边框宽度
-    HANDLE_BORDER_HOVER: 1.5, // 悬停边框宽度
-    HANDLE_BORDER_DRAG: 2, // 拖动边框宽度
+    // 缓冲进度轨道
+    BUFFER_HEIGHT: 2, // 缓冲进度高度
+    BUFFER_OPACITY: 0.4, // 缓冲进度透明度
 
-    // 圆角系统
-    TRACK_BORDER_RADIUS: BORDER_RADIUS.SM / 2, // 3px
+    // 应用主题色系统
+    THEME_PRIMARY: 'var(--color-primary, #00b96b)', // 应用主题色
+    THEME_PRIMARY_SOFT: 'var(--color-primary-soft, #00b96b99)', // 半透明主题色
+    THEME_PRIMARY_MUTE: 'var(--color-primary-mute, #00b96b33)', // 静音主题色
+
+    // 渐变系统
+    PROGRESS_GRADIENT: 'var(--color-primary, #00b96b)', // 使用纯色而非渐变，更简洁
+    HANDLE_GRADIENT: 'radial-gradient(circle, #ffffff 0%, #f8f8f8 70%, #e0e0e0 100%)', // 手柄渐变保持白色
 
     // 透明度系统
-    HANDLE_GRADIENT_INNER: 0.9, // 内圈渐变透明度
-    HANDLE_GRADIENT_OUTER: 0.7, // 外圈渐变透明度
-    HANDLE_BORDER_ALPHA: 0.6, // 边框透明度
-    HANDLE_BORDER_ALPHA_HOVER: 0.8, // 悬停边框透明度
+    RAIL_OPACITY_HIDDEN: 0.1, // 隐藏状态轨道透明度
+    RAIL_OPACITY_BASE: 0.2, // 基础轨道透明度
+    RAIL_OPACITY_HOVER: 0.35, // 悬停轨道透明度
 
-    RAIL_OPACITY_BASE: 0.15, // 基础轨道透明度
-    RAIL_OPACITY_HOVER: 0.3, // 悬停轨道透明度
-    RAIL_OPACITY_DRAG: 0.4, // 拖动轨道透明度
+    // 手柄透明度
+    HANDLE_OPACITY_BASE: 0, // 默认隐藏
+    HANDLE_OPACITY_HOVER: 0.95, // 悬停时显示
+    HANDLE_OPACITY_ACTIVE: 1, // 激活时完全显示
 
-    // 阴影系统
-    HANDLE_SHADOW_BLUR_BASE: 4, // 基础光晕模糊半径
-    HANDLE_SHADOW_BLUR_HOVER: 8, // 悬停光晕模糊半径
-    HANDLE_SHADOW_BLUR_DRAG_1: 12, // 拖动光晕模糊半径1
-    HANDLE_SHADOW_BLUR_DRAG_2: 24, // 拖动光晕模糊半径2
+    // 主题色阴影系统
+    HANDLE_SHADOW: '0 2px 8px rgba(0, 0, 0, 0.25)', // 手柄阴影
+    HANDLE_SHADOW_HOVER: '0 4px 16px rgba(0, 0, 0, 0.3)', // 悬停时手柄阴影
+    PROGRESS_GLOW: 'none', // 移除进度条光晕效果
+    PROGRESS_GLOW_HOVER: 'none', // 移除悬停时光晕
 
-    HANDLE_SHADOW_OFFSET: 2, // 阴影偏移
-    HANDLE_SHADOW_ALPHA_BASE: 0.4, // 基础阴影透明度
-    HANDLE_SHADOW_ALPHA_HOVER: 0.6, // 悬停阴影透明度
-    HANDLE_SHADOW_ALPHA_DRAG: 0.8, // 拖动阴影透明度
+    // 动画系统 - Netflix 风格的流畅过渡
+    TRANSITION_FAST: '0.15s cubic-bezier(0.4, 0, 0.2, 1)', // 快速过渡
+    TRANSITION_SMOOTH: '0.25s cubic-bezier(0.25, 0.1, 0.25, 1)', // 平滑过渡
+    TRANSITION_ELASTIC: '0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)', // 弹性过渡
 
-    TRACK_SHADOW_BLUR_HOVER: 8, // 轨道悬停光晕
-    TRACK_SHADOW_BLUR_DRAG: 16, // 轨道拖动光晕
+    // 智能显示系统
+    AUTO_HIDE_DELAY: 2000, // 自动隐藏延迟 (ms)
+    SHOW_ON_HOVER_DELAY: 0, // 悬停显示延迟
+    INTERACTION_AREA_HEIGHT: 20, // 交互区域高度
 
-    // 动画系统
-    TRANSITION_DURATION_BASE: ANIMATION_DURATION.MEDIUM, // 0.2s
-    TRANSITION_DURATION_SLOW: '0.25s', // 慢速动画
-    TRANSITION_EASING: EASING.STANDARD, // cubic-bezier(0.4, 0, 0.2, 1)
+    // 缩放系统 - 更精细的控制
+    HANDLE_SCALE_HIDDEN: 0, // 隐藏状态
+    HANDLE_SCALE_BASE: 0, // 基础状态
+    HANDLE_SCALE_HOVER: 1, // 悬停状态
+    HANDLE_SCALE_ACTIVE: 1.1, // 激活状态
 
-    // 缩放系统
-    HANDLE_SCALE_HIDDEN: 0, // 隐藏时缩放
-    HANDLE_SCALE_BASE: 0.8, // 基础缩放
-    HANDLE_SCALE_HOVER: 1, // 悬停缩放
-    HANDLE_SCALE_DRAG: 1.1, // 拖动缩放
+    // 边框和圆角
+    TRACK_BORDER_RADIUS: 2, // 轨道圆角
+    HANDLE_BORDER_RADIUS: '50%', // 手柄圆角 (圆形)
 
-    // 计算工具函数
-    calculateHandleOffset: (handleSize: number, trackSize: number) => -(handleSize - trackSize) / 2
+    // 预览缩略图区域 (预留)
+    PREVIEW_WIDTH: 160, // 预览缩略图宽度
+    PREVIEW_HEIGHT: 90, // 预览缩略图高度
+    PREVIEW_BORDER_RADIUS: 4, // 预览图圆角
+
+    // 时间显示优化
+    TIME_FONT_SIZE: 12, // 时间文字大小
+    TIME_OPACITY: 0.9, // 时间文字透明度
+
+    // 工具函数
+    calculateHandleOffset: (handleSize: number) => -handleSize / 2
   }
 } as const
 
