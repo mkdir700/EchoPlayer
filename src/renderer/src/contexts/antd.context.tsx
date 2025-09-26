@@ -12,7 +12,7 @@ import ptPT from 'antd/locale/pt_PT'
 import ruRU from 'antd/locale/ru_RU'
 import zhCN from 'antd/locale/zh_CN'
 import zhTW from 'antd/locale/zh_TW'
-import { FC, PropsWithChildren } from 'react'
+import { FC, PropsWithChildren, useEffect, useMemo } from 'react'
 
 import { useTheme } from './theme.context'
 
@@ -34,30 +34,63 @@ export const AntdProvider: FC<PropsWithChildren> = ({ children }) => {
   const borderRadius =
     userTheme.borderRadius === 'small' ? 2 : userTheme.borderRadius === 'medium' ? 4 : 6
 
-  let defaultTheme = appleTheme
+  // 使用 useMemo 优化算法数组和默认主题的计算
+  const { algorithms, defaultTheme } = useMemo(() => {
+    let selectedTheme = appleTheme
+    const algorithmArray: (typeof theme.defaultAlgorithm)[] = []
 
-  const algorithms: (typeof theme.defaultAlgorithm)[] = [] // 生成算法数组 / Generate algorithm array
-  if (settedTheme === ThemeMode.dark) {
-    algorithms.push(theme.darkAlgorithm)
-    defaultTheme = appleDarkTheme
-  }
-  if (compactMode) {
-    algorithms.push(theme.compactAlgorithm)
-  }
-  if (algorithms.length === 0) {
-    algorithms.push(theme.defaultAlgorithm)
-  }
+    if (settedTheme === ThemeMode.dark) {
+      algorithmArray.push(theme.darkAlgorithm)
+      selectedTheme = appleDarkTheme
+    }
+    if (compactMode) {
+      algorithmArray.push(theme.compactAlgorithm)
+    }
+    if (algorithmArray.length === 0) {
+      algorithmArray.push(theme.defaultAlgorithm)
+    }
 
-  if (defaultTheme.token) {
-    defaultTheme.token.borderRadius = borderRadius
-    defaultTheme.token.colorPrimary = userTheme.colorPrimary
-    defaultTheme.token.colorSuccess = userTheme.colorSuccess
-    defaultTheme.token.colorWarning = userTheme.colorWarning
-    defaultTheme.token.colorError = userTheme.colorError
-  }
+    return {
+      algorithms: algorithmArray,
+      defaultTheme: selectedTheme
+    }
+  }, [settedTheme, compactMode])
+
+  // 使用 useMemo 确保主题配置的稳定性，只依赖具体的值而不是整个对象
+  const themeConfig = useMemo(() => {
+    const config = { ...defaultTheme }
+    if (config.token) {
+      config.token = {
+        ...config.token,
+        borderRadius,
+        colorPrimary: userTheme.colorPrimary,
+        colorSuccess: userTheme.colorSuccess,
+        colorWarning: userTheme.colorWarning,
+        colorError: userTheme.colorError
+      }
+    }
+    return config
+  }, [
+    defaultTheme,
+    borderRadius,
+    userTheme.colorPrimary,
+    userTheme.colorSuccess,
+    userTheme.colorWarning,
+    userTheme.colorError
+  ])
+
+  // 确保主题更新时强制重新渲染 ConfigProvider
+  useEffect(() => {
+    logger.info('🎨 [AntdProvider] 主题配置更新:', {
+      colorPrimary: userTheme.colorPrimary,
+      settedTheme,
+      algorithms: algorithms.length,
+      timestamp: Date.now()
+    })
+  }, [userTheme.colorPrimary, settedTheme, algorithms.length])
 
   return (
-    <ConfigProvider locale={getAntdLocale(language)} theme={defaultTheme}>
+    <ConfigProvider locale={getAntdLocale(language)} theme={themeConfig}>
       {children}
     </ConfigProvider>
   )

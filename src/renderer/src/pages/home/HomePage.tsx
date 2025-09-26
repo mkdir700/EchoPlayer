@@ -470,7 +470,7 @@ const ProgressBarContainer = styled.div`
 
 const MotionProgressBar = styled(motion.div)<{ progress: number }>`
   height: 100%;
-  background: linear-gradient(90deg, #007aff 0%, #5ac8fa 100%);
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-soft) 100%);
   position: relative;
 
   &::after {
