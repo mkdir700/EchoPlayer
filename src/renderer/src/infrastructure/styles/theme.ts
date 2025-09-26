@@ -296,8 +296,8 @@ export const COMPONENT_TOKENS = {
     // 主题色阴影系统
     HANDLE_SHADOW: '0 2px 8px rgba(0, 0, 0, 0.25)', // 手柄阴影
     HANDLE_SHADOW_HOVER: '0 4px 16px rgba(0, 0, 0, 0.3)', // 悬停时手柄阴影
-    PROGRESS_GLOW: '0 0 8px rgba(0, 185, 107, 0.4)', // 进度条光晕效果（绿色）
-    PROGRESS_GLOW_HOVER: '0 0 12px rgba(0, 185, 107, 0.6)', // 悬停时光晕
+    PROGRESS_GLOW: 'none', // 移除进度条光晕效果
+    PROGRESS_GLOW_HOVER: 'none', // 移除悬停时光晕
 
     // 动画系统 - Netflix 风格的流畅过渡
     TRANSITION_FAST: '0.15s cubic-bezier(0.4, 0, 0.2, 1)', // 快速过渡
