@@ -1,3 +1,16 @@
+# [1.0.0-alpha.14](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.13...v1.0.0-alpha.14) (2025-09-26)
+
+### Bug Fixes
+
+- **homepage:** improve bottom spacing for card grid ([#194](https://github.com/mkdir700/EchoPlayer/issues/194)) ([4cebbd4](https://github.com/mkdir700/EchoPlayer/commit/4cebbd4c71e45a4da6bf3de63535e5ef0ce763bf))
+- remove green glow effect from progress bar ([#196](https://github.com/mkdir700/EchoPlayer/issues/196)) ([6a758be](https://github.com/mkdir700/EchoPlayer/commit/6a758bef9ac1318e2e8b8dcb5de39d81d21e798e)), closes [#e50914](https://github.com/mkdir700/EchoPlayer/issues/e50914) [#00b96](https://github.com/mkdir700/EchoPlayer/issues/00b96)
+- **theme:** resolve theme color not updating immediately for Switch components and progress bars ([#197](https://github.com/mkdir700/EchoPlayer/issues/197)) ([34f072b](https://github.com/mkdir700/EchoPlayer/commit/34f072b862e384bc6bba3e271f49d87940665351))
+
+### Features
+
+- intro backend for hls player ([a19b68f](https://github.com/mkdir700/EchoPlayer/commit/a19b68fafc1b1187ec9f78ba6be7bfafd141b1c9))
+- **player:** update seek button icons from rewind/fastforward to undo/redo ([#193](https://github.com/mkdir700/EchoPlayer/issues/193)) ([c51eb1a](https://github.com/mkdir700/EchoPlayer/commit/c51eb1af175c79428aad6d2f4613a41034c49583))
+
 # [1.0.0-alpha.13](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0-alpha.12...v1.0.0-alpha.13) (2025-09-16)
 
 ### Bug Fixes
