@@ -16,7 +16,7 @@ function ProgressBar() {
   const duration = usePlayerStore((s) => s.duration)
   const { seekToUser } = usePlayerCommands()
 
-  // Netflix 风格状态管理
+  // 进度条状态管理
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
@@ -28,7 +28,7 @@ function ProgressBar() {
   const hideTimeoutRef = useRef<number | null>(null)
   const dragStartRef = useRef(false)
 
-  // Netflix 风格自动隐藏逻辑
+  // 自动隐藏逻辑
   useEffect(() => {
     if (isHovering || isDragging) {
       setIsVisible(true)
@@ -185,7 +185,6 @@ const ProgressContainer = styled.div<{
 }>`
   position: relative;
   width: 100%;
-  height: ${COMPONENT_TOKENS.PROGRESS_BAR.INTERACTION_AREA_HEIGHT}px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -209,17 +208,11 @@ const BufferTrack = styled.div<{ $progress: number }>`
   top: 50%;
   transform: translateY(-50%);
   width: ${(props) => props.$progress}%;
-  height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HIDDEN}px;
   background: var(--ant-color-text-tertiary, rgba(255, 255, 255, 0.3));
   opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.BUFFER_OPACITY};
   border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
   transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH};
   z-index: 1;
-
-  /* 悬停时与主轨道同步增大 */
-  ${ProgressContainer}:hover & {
-    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
-  }
 
   /* 主题适配 */
   [theme-mode='light'] & {
@@ -274,7 +267,7 @@ const ProgressFill = styled.div<{ $progress: number }>`
   transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH};
   z-index: 3;
 
-  /* Netflix 的经典光晕效果 */
+  /* 主题色光晕效果 */
   box-shadow: ${COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GLOW};
 
   /* 悬停时增大并增强光晕 */

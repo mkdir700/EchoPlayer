@@ -274,14 +274,14 @@ export const COMPONENT_TOKENS = {
     BUFFER_HEIGHT: 2, // 缓冲进度高度
     BUFFER_OPACITY: 0.4, // 缓冲进度透明度
 
-    // Netflix 红色配色系统
-    NETFLIX_RED: '#e50914', // Netflix 标志性红色
-    NETFLIX_RED_HOVER: '#f40612', // 悬停时的亮红色
-    NETFLIX_RED_ACTIVE: '#d40913', // 激活时的深红色
+    // 应用主题色系统
+    THEME_PRIMARY: 'var(--color-primary, #00b96b)', // 应用主题色
+    THEME_PRIMARY_SOFT: 'var(--color-primary-soft, #00b96b99)', // 半透明主题色
+    THEME_PRIMARY_MUTE: 'var(--color-primary-mute, #00b96b33)', // 静音主题色
 
     // 渐变系统
-    PROGRESS_GRADIENT: 'linear-gradient(90deg, #e50914 0%, #f40612 100%)', // 进度条渐变
-    HANDLE_GRADIENT: 'radial-gradient(circle, #ffffff 0%, #f8f8f8 70%, #e0e0e0 100%)', // 手柄渐变
+    PROGRESS_GRADIENT: 'var(--color-primary, #00b96b)', // 使用纯色而非渐变，更简洁
+    HANDLE_GRADIENT: 'radial-gradient(circle, #ffffff 0%, #f8f8f8 70%, #e0e0e0 100%)', // 手柄渐变保持白色
 
     // 透明度系统
     RAIL_OPACITY_HIDDEN: 0.1, // 隐藏状态轨道透明度
@@ -293,11 +293,11 @@ export const COMPONENT_TOKENS = {
     HANDLE_OPACITY_HOVER: 0.95, // 悬停时显示
     HANDLE_OPACITY_ACTIVE: 1, // 激活时完全显示
 
-    // Netflix 风格阴影系统
+    // 主题色阴影系统
     HANDLE_SHADOW: '0 2px 8px rgba(0, 0, 0, 0.25)', // 手柄阴影
     HANDLE_SHADOW_HOVER: '0 4px 16px rgba(0, 0, 0, 0.3)', // 悬停时手柄阴影
-    PROGRESS_GLOW: '0 0 8px rgba(229, 9, 20, 0.4)', // 进度条光晕效果
-    PROGRESS_GLOW_HOVER: '0 0 12px rgba(229, 9, 20, 0.6)', // 悬停时光晕
+    PROGRESS_GLOW: '0 0 8px rgba(0, 185, 107, 0.4)', // 进度条光晕效果（绿色）
+    PROGRESS_GLOW_HOVER: '0 0 12px rgba(0, 185, 107, 0.6)', // 悬停时光晕
 
     // 动画系统 - Netflix 风格的流畅过渡
     TRANSITION_FAST: '0.15s cubic-bezier(0.4, 0, 0.2, 1)', // 快速过渡
