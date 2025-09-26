@@ -609,7 +609,7 @@ const ResizeHandle = styled.div<{ $visible: boolean }>`
   transition: all 200ms ease;
 
   &:hover {
-    background: #007aff;
+    background: var(--color-primary);
     transform: scale(1.2);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
   }
