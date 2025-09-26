@@ -1,364 +1,338 @@
-import { useTheme } from '@renderer/contexts/theme.context'
 import { COMPONENT_TOKENS } from '@renderer/infrastructure/styles/theme'
 import { formatTime } from '@renderer/state/infrastructure/utils'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { PerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
-import { Slider } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
 
 import { usePlayerCommands } from '../hooks/usePlayerCommands'
 
-const formatProgress = (currentTime: number, duration: number): string => {
-  return `${formatTime(currentTime)} / ${formatTime(duration)}`
+const formatTimeOnly = (time: number): string => {
+  return formatTime(time)
 }
 
 function ProgressBar() {
   const currentTime = usePlayerStore((s) => s.currentTime)
   const duration = usePlayerStore((s) => s.duration)
   const { seekToUser } = usePlayerCommands()
-  const { token } = useTheme()
 
-  // 使用 ref 来跟踪是否是第一次 onChange（开始拖拽）
-  const isFirstChange = useRef(true)
-  const dragTimeoutRef = useRef<number | null>(null)
-
-  // 跟踪悬停和拖动状态
+  // 进度条状态管理
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const [previewTime, setPreviewTime] = useState<number | null>(null)
+  const [bufferProgress, setBufferProgress] = useState(0)
 
-  // 清理定时器（组件卸载）
+  // 引用管理
+  const progressBarRef = useRef<HTMLDivElement>(null)
+  const hideTimeoutRef = useRef<number | null>(null)
+  const dragStartRef = useRef(false)
+
+  // 自动隐藏逻辑
   useEffect(() => {
+    if (isHovering || isDragging) {
+      setIsVisible(true)
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
+      }
+    } else {
+      hideTimeoutRef.current = window.setTimeout(() => {
+        setIsVisible(false)
+      }, COMPONENT_TOKENS.PROGRESS_BAR.AUTO_HIDE_DELAY)
+    }
+
     return () => {
-      if (dragTimeoutRef.current) {
-        clearTimeout(dragTimeoutRef.current)
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
       }
     }
-  }, [])
+  }, [isHovering, isDragging])
+
+  // 模拟缓冲进度（实际项目中应从视频元素获取）
+  useEffect(() => {
+    if (duration && currentTime) {
+      // 简单模拟：缓冲进度稍微领先播放进度
+      const simulatedBuffer = Math.min((currentTime + 30) / duration, 1)
+      setBufferProgress(simulatedBuffer)
+    }
+  }, [currentTime, duration])
 
   const handleProgressChange = useCallback(
-    (value: number) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!duration || !progressBarRef.current) return
+
       const m = new PerformanceMonitor('handleProgressChange')
+      const rect = progressBarRef.current.getBoundingClientRect()
+      const clickX = event.clientX - rect.left
+      const progress = Math.max(0, Math.min(1, clickX / rect.width))
+      const newTime = progress * duration
 
-      // 第一次改变时重置循环状态并设置拖动状态
-      if (isFirstChange.current) {
-        isFirstChange.current = false
-        setIsDragging(true)
-      }
-
-      // 清理之前的定时器
-      if (dragTimeoutRef.current) {
-        clearTimeout(dragTimeoutRef.current)
-      }
-
-      // 设置定时器，在拖拽停止后一段时间后重置状态
-      dragTimeoutRef.current = window.setTimeout(() => {
-        isFirstChange.current = true
-      }, 200)
-
-      // 使用用户跳转方法，自动管理循环禁用状态
-      seekToUser(Math.max(0, value))
-
+      seekToUser(newTime)
       m.finish()
     },
-    [seekToUser]
+    [duration, seekToUser]
   )
 
-  // 处理拖拽结束
-  const handleDragEnd = useCallback(() => {
-    // 重置拖拽状态
-    isFirstChange.current = true
-    setIsDragging(false)
+  const handleMouseDown = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (event.button !== 0) return // 只处理左键
 
-    // 清理定时器
-    if (dragTimeoutRef.current) {
-      clearTimeout(dragTimeoutRef.current)
-      dragTimeoutRef.current = null
-    }
-  }, [])
+      setIsDragging(true)
+      dragStartRef.current = true
+      handleProgressChange(event)
 
-  // 处理鼠标进入
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!duration || !progressBarRef.current || !dragStartRef.current) return
+
+        const rect = progressBarRef.current.getBoundingClientRect()
+        const clickX = e.clientX - rect.left
+        const progress = Math.max(0, Math.min(1, clickX / rect.width))
+        const newTime = progress * duration
+
+        seekToUser(newTime)
+      }
+
+      const handleMouseUp = () => {
+        setIsDragging(false)
+        dragStartRef.current = false
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    },
+    [duration, seekToUser, handleProgressChange]
+  )
+
   const handleMouseEnter = useCallback(() => {
     setIsHovering(true)
   }, [])
 
-  // 处理鼠标离开
   const handleMouseLeave = useCallback(() => {
     setIsHovering(false)
+    setPreviewTime(null)
   }, [])
 
-  // Memoize tooltip配置避免每次渲染重建
-  const tooltipConfig = useMemo(
-    () => ({
-      formatter: (value?: number) => formatProgress(value ?? 0, duration ?? 0)
-    }),
-    [duration]
+  const handleMouseMove = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!duration || !progressBarRef.current || isDragging) return
+
+      const rect = progressBarRef.current.getBoundingClientRect()
+      const hoverX = event.clientX - rect.left
+      const progress = Math.max(0, Math.min(1, hoverX / rect.width))
+      const hoverTime = progress * duration
+
+      setPreviewTime(hoverTime)
+    },
+    [duration, isDragging]
   )
 
-  // 约束value值在有效范围内
-  const clampedValue = useMemo(
-    () => Math.min(Math.max(0, currentTime ?? 0), duration ?? 0),
-    [currentTime, duration]
-  )
+  // 计算当前进度百分比
+  const progressPercentage = useMemo(() => {
+    if (!duration || !currentTime) return 0
+    return Math.max(0, Math.min(100, (currentTime / duration) * 100))
+  }, [currentTime, duration])
+
+  // 计算缓冲进度百分比
+  const bufferPercentage = useMemo(() => {
+    return Math.max(0, Math.min(100, bufferProgress * 100))
+  }, [bufferProgress])
+
+  // 预览时间显示
+  const previewTimeDisplay = useMemo(() => {
+    return previewTime !== null ? formatTimeOnly(previewTime) : null
+  }, [previewTime])
 
   return (
-    <SliderWrapper onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <StyledSlider
-        min={0}
-        max={duration || 100}
-        value={clampedValue}
-        onChange={handleProgressChange}
-        onChangeComplete={handleDragEnd}
-        tooltip={tooltipConfig}
-        disabled={!duration}
-        aria-label="Progress"
-        $isHovering={isHovering}
-        $isDragging={isDragging}
-        $token={token}
-      />
-    </SliderWrapper>
+    <ProgressContainer
+      ref={progressBarRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
+      onMouseDown={handleMouseDown}
+      $isVisible={isVisible}
+      $isHovering={isHovering}
+      $isDragging={isDragging}
+    >
+      {/* 缓冲进度条 */}
+      <BufferTrack $progress={bufferPercentage} />
+
+      {/* 主进度轨道 */}
+      <ProgressTrack />
+
+      {/* 已播放进度 */}
+      <ProgressFill $progress={progressPercentage} />
+
+      {/* 手柄 */}
+      <ProgressHandle $progress={progressPercentage} $isVisible={isHovering || isDragging} />
+
+      {/* 时间预览提示 */}
+      {previewTimeDisplay && isHovering && !isDragging && (
+        <TimePreview $show={true}>{previewTimeDisplay}</TimePreview>
+      )}
+    </ProgressContainer>
   )
 }
 
 export default ProgressBar
 
-// 包装容器处理鼠标事件
-const SliderWrapper = styled.div`
-  width: 100%;
-  cursor: pointer;
-`
-
-// 直接样式化 Slider 组件，无容器包装
-const StyledSlider = styled(Slider)<{
+// Netflix 风格进度条容器
+const ProgressContainer = styled.div<{
+  $isVisible: boolean
   $isHovering: boolean
   $isDragging: boolean
-  $token: any
 }>`
-  /* 增加选择器特异性来覆盖 Ant Design 的默认变量 */
-  &.ant-slider {
-    --ant-slider-rail-size: 1px !important; /* 轨道基础尺寸 */
-  }
-
-  /* 重置所有默认margin/padding */
-  margin: 0 !important;
-  padding: 0 !important;
+  position: relative;
   width: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 
-  .ant-slider-horizontal {
-    height: 0px; /* 移除默认高度 */
+  /* 鼠标交互区域 */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
   }
+`
 
-  /* 轨道样式 - 默认状态 - 使用主题令牌 */
-  .ant-slider-rail {
-    background: var(--color-border);
-    opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_BASE};
-    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_BASE}px;
-    transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_DURATION_BASE}
-      ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_EASING};
-  }
+// 缓冲进度条
+const BufferTrack = styled.div<{ $progress: number }>`
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: ${(props) => props.$progress}%;
+  background: var(--ant-color-text-tertiary, rgba(255, 255, 255, 0.3));
+  opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.BUFFER_OPACITY};
+  border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
+  transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH};
+  z-index: 1;
 
-  /* 进度轨道样式 - 已播放部分 - 使用主题令牌 */
-  .ant-slider-track {
-    background: var(--color-primary);
-    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_BASE}px;
-    transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_DURATION_BASE}
-      ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_EASING};
-    box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_BASE}px var(--color-primary);
-    filter: opacity(0.9);
-  }
-
-  /* 手柄样式 - 沉浸式设计，与进度条统一 - 默认隐藏 - 使用主题令牌 */
-  .ant-slider-handle {
-    width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_BASE}px;
-    height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_BASE}px;
-    /* 使用渐变色，从主色到半透明白色 - 透明度来自主题令牌 */
-    background: radial-gradient(
-      circle,
-      var(--color-primary) 0%,
-      rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_INNER}) 70%,
-      rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_OUTER}) 100%
-    );
-    /* 边框使用主题令牌透明度 */
-    border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_BASE}px solid
-      rgba(
-        var(--color-primary-rgb, 59, 130, 246),
-        ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_ALPHA}
-      );
-    /* 使用主题令牌的光晕阴影 */
-    box-shadow:
-      0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_BASE}px
-        rgba(
-          var(--color-primary-rgb, 59, 130, 246),
-          ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_ALPHA_BASE}
-        ),
-      0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_OFFSET}px 8px rgba(0, 0, 0, 0.1);
-    transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_DURATION_SLOW}
-      ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_EASING};
-    /* 默认完全隐藏 - 使用主题令牌缩放 */
-    opacity: 0;
-    transform: scale(${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_HIDDEN});
-    cursor: pointer;
-
-    /* 移除默认的伪元素 */
-    &::after {
-      display: none !important;
-    }
-
-    /* 移除默认的方形边框 */
-    &::before {
-      display: none !important;
-    }
-
-    /* 手柄激活状态 - 使用主题令牌 */
-    &:focus {
-      border-color: var(--color-primary);
-      background: radial-gradient(
-        circle,
-        var(--color-primary) 0%,
-        rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_INNER}) 70%,
-        rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_OUTER}) 100%
-      );
-      box-shadow:
-        0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_BASE + 2}px
-          rgba(var(--color-primary-rgb, 59, 130, 246), 0.5),
-        0 3px 8px rgba(0, 0, 0, 0.15);
-    }
-  }
-
-  /* 基于props的条件样式 - 悬停时显示handler - 使用主题令牌 */
-  ${(props) =>
-    (props.$isHovering || props.$isDragging) &&
-    `
-    .ant-slider-handle {
-      opacity: 1 !important;
-      transform: scale(${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_HOVER}) !important;
-      width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px !important;
-      height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px !important;
-      margin-left: -${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER / 2}px !important;
-      /* 悬停时增强渐变效果 */
-      background: radial-gradient(
-        circle,
-        var(--color-primary) 0%,
-        rgba(255, 255, 255, 0.95) 60%,
-        rgba(255, 255, 255, 0.8) 100%
-      ) !important;
-      border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_HOVER}px solid rgba(var(--color-primary-rgb, 59, 130, 246), ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_ALPHA_HOVER}) !important;
-      /* 增强光晕效果与进度条呼应 */
-      box-shadow:
-        0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_BLUR_HOVER}px rgba(var(--color-primary-rgb, 59, 130, 246), ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW_ALPHA_HOVER}),
-        0 3px 12px rgba(0, 0, 0, 0.15) !important;
-    }
-    .ant-slider-rail {
-      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px !important;
-      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
-      opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_HOVER} !important;
-    }
-    .ant-slider-track {
-      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px !important;
-      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px !important;
-      box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_SHADOW_BLUR_HOVER}px var(--color-primary) !important;
-      filter: opacity(1) !important;
-    }
-  `}
-
-  /* 悬停整个进度条时的效果 - 仅轨道变化，handler通过props控制 - 使用主题令牌 */
-  &:hover {
-    .ant-slider-rail {
-      background: var(--color-border);
-      opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_HOVER};
-      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
-      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
-    }
-
-    .ant-slider-track {
-      height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
-      border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
-      box-shadow: 0 0 ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_SHADOW_BLUR_HOVER}px
-        var(--color-primary);
-      filter: opacity(1);
-    }
-  }
-
-  /* 禁用状态 */
-  &.ant-slider-disabled {
-    .ant-slider-rail {
-      background: var(--color-border);
-      opacity: 0.1;
-    }
-
-    .ant-slider-track {
-      background: var(--color-text-3);
-      box-shadow: none;
-      filter: none;
-    }
-
-    .ant-slider-handle {
-      background: rgba(255, 255, 255, 0.3); /* 禁用时半透明白色 */
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      box-shadow: none;
-      filter: none;
-      border-radius: 50% !important;
-    }
-  }
-
-  /* Tooltip 优化 */
-  + .ant-tooltip {
-    .ant-tooltip-inner {
-      background: var(--color-background-soft);
-      opacity: 0.95;
-      backdrop-filter: blur(8px);
-      border-radius: 4px;
-      font-size: 11px;
-      padding: 4px 8px;
-      color: var(--color-text-1);
-      border: 1px solid var(--color-border);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .ant-tooltip-arrow {
-      &::before {
-        background: var(--color-background-soft);
-        border: 1px solid var(--color-border);
-      }
-    }
-  }
-
-  /* 主题适配 - 确保沉浸式设计在所有主题下都和谐 - 使用主题令牌 */
-  [theme-mode='dark'] & {
-    .ant-slider-handle {
-      /* 暗色主题下的渐变调整 */
-      background: radial-gradient(
-        circle,
-        var(--color-primary) 0%,
-        rgba(255, 255, 255, 0.95) 70%,
-        rgba(255, 255, 255, 0.8) 100%
-      ) !important;
-      border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_BASE}px solid
-        rgba(var(--color-primary-rgb, 59, 130, 246), 0.7) !important;
-      border-radius: 50% !important;
-    }
-  }
-
+  /* 主题适配 */
   [theme-mode='light'] & {
-    .ant-slider-handle {
-      /* 亮色主题下的渐变调整 */
-      background: radial-gradient(
-        circle,
-        var(--color-primary) 0%,
-        rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_INNER}) 70%,
-        rgba(255, 255, 255, ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT_OUTER}) 100%
-      ) !important;
-      border: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_BASE}px solid
-        rgba(
-          var(--color-primary-rgb, 59, 130, 246),
-          ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_ALPHA}
-        ) !important;
-      border-radius: 50% !important;
-    }
+    background: var(--ant-color-text-tertiary, rgba(0, 0, 0, 0.1));
+  }
 
-    .ant-slider-rail {
-      background: var(--color-border);
-      opacity: 0.2;
-    }
+  [theme-mode='dark'] & {
+    background: var(--ant-color-text-tertiary, rgba(255, 255, 255, 0.3));
+  }
+`
+
+// 主进度轨道
+const ProgressTrack = styled.div`
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HIDDEN}px;
+  background: var(--ant-color-border, rgba(255, 255, 255, 0.2));
+  opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_BASE};
+  border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
+  transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH};
+  z-index: 2;
+
+  /* 悬停时增大 */
+  ${ProgressContainer}:hover & {
+    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
+    opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_HOVER};
+  }
+
+  /* 主题适配 */
+  [theme-mode='light'] & {
+    background: var(--ant-color-border, rgba(0, 0, 0, 0.15));
+  }
+
+  [theme-mode='dark'] & {
+    background: var(--ant-color-border, rgba(255, 255, 255, 0.2));
+  }
+`
+
+// 已播放进度填充
+const ProgressFill = styled.div<{ $progress: number }>`
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: ${(props) => props.$progress}%;
+  height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HIDDEN}px;
+  background: ${COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GRADIENT};
+  border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
+  transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH};
+  z-index: 3;
+
+  /* 主题色光晕效果 */
+  box-shadow: ${COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GLOW};
+
+  /* 悬停时增大并增强光晕 */
+  ${ProgressContainer}:hover & {
+    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
+    box-shadow: ${COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GLOW_HOVER};
+  }
+`
+
+// 进度手柄
+const ProgressHandle = styled.div<{
+  $progress: number
+  $isVisible: boolean
+}>`
+  position: absolute;
+  top: 50%;
+  left: ${(props) => props.$progress}%;
+  transform: translate(-50%, -50%);
+  width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px;
+  height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px;
+  background: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_GRADIENT};
+  border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_BORDER_RADIUS};
+  box-shadow: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SHADOW};
+  opacity: ${(props) =>
+    props.$isVisible
+      ? COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_OPACITY_HOVER
+      : COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_OPACITY_BASE};
+  transform: translate(-50%, -50%)
+    scale(
+      ${(props) =>
+        props.$isVisible
+          ? COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_HOVER
+          : COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SCALE_HIDDEN}
+    );
+  transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_ELASTIC};
+  z-index: 4;
+`
+
+// 时间预览提示
+const TimePreview = styled.div<{ $show: boolean }>`
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: ${COMPONENT_TOKENS.PROGRESS_BAR.TIME_FONT_SIZE}px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: ${(props) => (props.$show ? COMPONENT_TOKENS.PROGRESS_BAR.TIME_OPACITY : 0)};
+  transform: translateX(-50%) translateY(${(props) => (props.$show ? 0 : 5)}px);
+  transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_FAST};
+  pointer-events: none;
+  z-index: 5;
+
+  /* 小三角箭头 */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.8);
   }
 `
