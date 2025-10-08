@@ -80,11 +80,19 @@ export class PlayerSettingsService {
         isInitialized: false
       },
 
+      // === 转码状态管理 ===（运行时状态，不持久化）
+      hlsMode: false,
+      transcodeInfo: {
+        status: 'idle'
+      },
+
       // UI 短时态（不持久化）
       isSettingsOpen: false,
       wasPlayingBeforeOpen: false,
       isAutoResumeCountdownOpen: false,
-      subtitlePanelVisible: true
+      subtitlePanelVisible: true,
+      isVideoSeeking: false,
+      isVideoWaiting: false
     }
   }
 
@@ -212,10 +220,19 @@ export class PlayerSettingsService {
       // 字幕覆盖层设置
       subtitleOverlay: subtitleOverlaySettings,
 
+      // === 转码状态管理 ===（运行时状态，不持久化）
+      hlsMode: false,
+      transcodeInfo: {
+        status: 'idle'
+      },
+
       // UI 短时态（不持久化）
       isSettingsOpen: false,
       wasPlayingBeforeOpen: false,
-      isAutoResumeCountdownOpen: false
+      isAutoResumeCountdownOpen: false,
+      subtitlePanelVisible: true,
+      isVideoSeeking: false,
+      isVideoWaiting: false
     }
 
     return playerState

@@ -55,6 +55,7 @@ export interface StateUpdater {
   setVolume(volume: number): void
   setMuted(muted: boolean): void
   setSeeking?(seeking: boolean): void
+  setWaiting?(waiting: boolean): void
   setEnded?(ended: boolean): void
   setActiveCueIndex?(index: number): void
   updateUIState(updates: { openAutoResumeCountdown?: boolean }): void
@@ -600,6 +601,16 @@ export class PlayerOrchestrator {
   onSeeked(currentTime: number): void {
     this.mediaClock.endSeeking(currentTime)
     this.stateUpdater?.setSeeking?.(false)
+  }
+
+  onWaiting(): void {
+    this.stateUpdater?.setWaiting?.(true)
+    logger.debug('视频正在等待数据')
+  }
+
+  onCanPlay(): void {
+    this.stateUpdater?.setWaiting?.(false)
+    logger.debug('视频可以播放，等待结束')
   }
 
   onDurationChange(duration: number): void {

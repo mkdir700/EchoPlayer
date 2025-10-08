@@ -46,10 +46,14 @@ function getOrCreateGlobalStateUpdater(): StateUpdater {
       setPlaybackRate: (rate: number) => usePlayerStore.getState().setPlaybackRate(rate),
       setVolume: (volume: number) => usePlayerStore.getState().setVolume(volume),
       setMuted: (muted: boolean) => usePlayerStore.getState().setMuted(muted),
-      // 新增媒体状态同步（暂时不实现，因为 store 中没有对应字段）
+      // 新增媒体状态同步
       setSeeking: (seeking: boolean) => {
-        // TODO: 如果需要，可以在 player store 中添加 seeking 状态
+        usePlayerStore.getState().setVideoSeeking(seeking)
         logger.debug('Seeking state updated:', { seeking })
+      },
+      setWaiting: (waiting: boolean) => {
+        usePlayerStore.getState().setVideoWaiting(waiting)
+        logger.debug('Waiting state updated:', { waiting })
       },
       setEnded: (ended: boolean) => {
         // TODO: 如果需要，可以在 player store 中添加 ended 状态
@@ -275,6 +279,12 @@ export function usePlayerEngine() {
       onSeeked: (e: Event) => {
         const video = e.target as HTMLVideoElement
         orchestrator.onSeeked(video.currentTime)
+      },
+      onWaiting: () => {
+        orchestrator.onWaiting()
+      },
+      onCanPlay: () => {
+        orchestrator.onCanPlay()
       },
       onDurationChange: (e: Event) => {
         const video = e.target as HTMLVideoElement
