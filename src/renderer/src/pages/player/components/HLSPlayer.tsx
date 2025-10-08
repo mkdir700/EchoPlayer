@@ -186,13 +186,6 @@ function HLSPlayer({ src, onLoadedMetadata, onError }: HLSPlayerProps) {
 
     // 增强的 HLS 错误处理与自动恢复
     hls.on(Hls.Events.ERROR, (_event, data) => {
-      logger.debug('HLS错误事件', {
-        type: data.type,
-        details: data.details,
-        fatal: data.fatal,
-        errorAction: data.errorAction
-      })
-
       if (data.fatal) {
         logger.error('HLS致命错误', { data })
         let message = 'HLS 播放错误'
@@ -217,35 +210,10 @@ function HLSPlayer({ src, onLoadedMetadata, onError }: HLSPlayerProps) {
             break
         }
       } else {
-        // 处理非致命错误，特别是 bufferStalledError
-        if (data.details === 'bufferStalledError') {
-          logger.warn('检测到缓冲停滞错误，尝试恢复', {
-            currentTime: videoRef.current?.currentTime,
-            buffered: videoRef.current?.buffered.length
-          })
-
-          // 尝试多种恢复策略
-          setTimeout(() => {
-            if (videoRef.current && hlsRef.current) {
-              // 策略1: 微调播放位置
-              const currentTime = videoRef.current.currentTime
-              videoRef.current.currentTime = currentTime + 0.1
-
-              // 策略2: 如果微调无效，重新开始加载
-              setTimeout(() => {
-                if (videoRef.current && videoRef.current.paused && hlsRef.current) {
-                  logger.info('微调无效，重新开始加载')
-                  hlsRef.current.startLoad()
-                }
-              }, 500)
-            }
-          }, 100)
-        } else {
-          logger.debug('HLS非致命错误（正常行为）', {
-            type: data.type,
-            details: data.details
-          })
-        }
+        logger.debug('HLS非致命错误（正常行为）', {
+          type: data.type,
+          details: data.details
+        })
       }
     })
 

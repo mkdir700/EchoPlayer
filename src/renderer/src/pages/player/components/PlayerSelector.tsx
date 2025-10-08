@@ -57,12 +57,10 @@ function PlayerSelector({ src, onError }: PlayerSelectorProps) {
 
   // 根据当前播放器类型渲染对应的组件
   if (playerType === 'hls' && hlsSrc) {
-    logger.debug('渲染 HLS 播放器', { hlsSrc })
     return <HLSVideoSurface src={hlsSrc} onError={handleHlsError} />
   }
 
   // 默认渲染原生播放器
-  logger.debug('渲染原生播放器', { src })
   return <VideoSurface src={src} onError={handleNativeError} />
 }
 
