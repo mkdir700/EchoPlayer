@@ -114,12 +114,15 @@ const TranscodeIndicator: React.FC = () => {
     return null
   }
 
-  logger.debug('转码指示器状态', {
-    status: transcodeStatus,
-    visible,
-    hlsMode,
-    transcodeInfo
-  })
+  // 仅在状态变化时记录日志
+  useEffect(() => {
+    logger.debug('转码指示器状态', {
+      status: transcodeStatus,
+      visible,
+      hlsMode,
+      transcodeInfo
+    })
+  }, [transcodeStatus, visible, hlsMode, transcodeInfo])
 
   return (
     <Container $visible={visible} $color={content.color}>
