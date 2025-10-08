@@ -90,7 +90,9 @@ export class PlayerSettingsService {
       isSettingsOpen: false,
       wasPlayingBeforeOpen: false,
       isAutoResumeCountdownOpen: false,
-      subtitlePanelVisible: true
+      subtitlePanelVisible: true,
+      isVideoSeeking: false,
+      isVideoWaiting: false
     }
   }
 
@@ -228,7 +230,9 @@ export class PlayerSettingsService {
       isSettingsOpen: false,
       wasPlayingBeforeOpen: false,
       isAutoResumeCountdownOpen: false,
-      subtitlePanelVisible: true
+      subtitlePanelVisible: true,
+      isVideoSeeking: false,
+      isVideoWaiting: false
     }
 
     return playerState
