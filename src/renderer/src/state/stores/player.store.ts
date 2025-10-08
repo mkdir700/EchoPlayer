@@ -33,6 +33,45 @@ export interface SubtitleOverlayConfig {
   isInitialized: boolean
 }
 
+/**
+ * 转码状态枚举
+ */
+export type TranscodeStatus =
+  | 'idle' // 空闲状态，未进行转码检测
+  | 'detecting' // 正在检测编解码器兼容性
+  | 'transcoding' // 正在转码中
+  | 'completed' // 转码完成
+  | 'failed' // 转码失败
+  | 'cached' // 转码结果已缓存
+
+/**
+ * 转码配置信息
+ */
+export interface TranscodeInfo {
+  /** 转码状态 */
+  status: TranscodeStatus
+  /** 原始视频源 */
+  originalSrc?: string
+  /** HLS 转码后的播放源 */
+  hlsSrc?: string
+  /** 转码窗口 ID （会话模式下为 0） */
+  windowId?: number
+  /** 资产哈希 */
+  assetHash?: string
+  /** 配置哈希 */
+  profileHash?: string
+  /** 是否命中缓存 */
+  cached?: boolean
+  /** 会话 ID （会话模式下使用） */
+  sessionId?: string
+  /** 转码错误信息 */
+  error?: string
+  /** 转码开始时间 */
+  startTime?: number
+  /** 转码完成时间 */
+  endTime?: number
+}
+
 export interface PlayerState {
   // 播放核心状态
   currentTime: number
@@ -50,6 +89,20 @@ export interface PlayerState {
 
   /** 当前常用速度索引（用于循环切换） */
   currentFavoriteIndex: number
+
+  // === 转码状态管理 ===
+  /** 是否启用 HLS 播放模式 */
+  hlsMode: boolean
+
+  /** 转码信息 */
+  transcodeInfo: TranscodeInfo
+
+  // === 视频加载状态 ===
+  /** 视频是否正在 seeking */
+  isVideoSeeking: boolean
+
+  /** 视频是否正在等待数据（waiting） */
+  isVideoWaiting: boolean
 
   // === 循环设置 / Loop Settings ===
   /** 循环播放 */
@@ -142,6 +195,21 @@ export interface PlayerActions {
   // 字幕面板控制
   toggleSubtitlePanel: () => void
   setSubtitlePanelVisible: (visible: boolean) => void
+
+  // === 转码控制 ===
+  // 组件可调用：转码状态管理
+  setHlsMode: (enabled: boolean) => void
+  setTranscodeStatus: (status: TranscodeStatus) => void
+  updateTranscodeInfo: (info: Partial<TranscodeInfo>) => void
+  resetTranscodeInfo: () => void
+  // 引擎专用：播放源切换
+  switchToHlsSource: (hlsSrc: string, transcodeInfo: Partial<TranscodeInfo>) => void
+  switchToOriginalSource: () => void
+
+  // === 视频加载状态控制 ===
+  // 引擎专用：由媒体事件自动设置
+  setVideoSeeking: (seeking: boolean) => void
+  setVideoWaiting: (waiting: boolean) => void
 }
 
 export type PlayerStore = PlayerState & PlayerActions
@@ -157,6 +225,16 @@ const initialState: PlayerState = {
   favoriteRates: [1.0], // 默认常用速度
   currentFavoriteIndex: 1, // 默认选择 1.0x
   isFullscreen: false,
+
+  // === 转码状态管理 ===
+  hlsMode: false,
+  transcodeInfo: {
+    status: 'idle'
+  },
+
+  // === 视频加载状态 ===
+  isVideoSeeking: false,
+  isVideoWaiting: false,
 
   // === 循环设置 / Loop Settings ===
   loopEnabled: false,
@@ -471,6 +549,60 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
   setSubtitlePanelVisible: (visible: boolean) =>
     set((s: Draft<PlayerStore>) => {
       s.subtitlePanelVisible = !!visible
+    }),
+
+  // === 转码控制 ===
+  setHlsMode: (enabled: boolean) =>
+    set((s: Draft<PlayerStore>) => {
+      s.hlsMode = !!enabled
+    }),
+  setTranscodeStatus: (status: TranscodeStatus) =>
+    set((s: Draft<PlayerStore>) => {
+      s.transcodeInfo.status = status
+
+      // 根据状态自动设置时间戳
+      if (status === 'transcoding' && !s.transcodeInfo.startTime) {
+        s.transcodeInfo.startTime = Date.now()
+      } else if ((status === 'completed' || status === 'failed') && !s.transcodeInfo.endTime) {
+        s.transcodeInfo.endTime = Date.now()
+      }
+    }),
+  updateTranscodeInfo: (info: Partial<TranscodeInfo>) =>
+    set((s: Draft<PlayerStore>) => {
+      Object.assign(s.transcodeInfo, info)
+    }),
+  resetTranscodeInfo: () =>
+    set((s: Draft<PlayerStore>) => {
+      s.hlsMode = false
+      s.transcodeInfo = {
+        status: 'idle'
+      }
+    }),
+  switchToHlsSource: (hlsSrc: string, transcodeInfo: Partial<TranscodeInfo>) =>
+    set((s: Draft<PlayerStore>) => {
+      s.hlsMode = true
+      Object.assign(s.transcodeInfo, {
+        ...transcodeInfo,
+        hlsSrc,
+        status: 'completed'
+      })
+    }),
+  switchToOriginalSource: () =>
+    set((s: Draft<PlayerStore>) => {
+      s.hlsMode = false
+      s.transcodeInfo = {
+        status: 'idle'
+      }
+    }),
+
+  // === 视频加载状态控制 ===
+  setVideoSeeking: (seeking: boolean) =>
+    set((s: Draft<PlayerStore>) => {
+      s.isVideoSeeking = seeking
+    }),
+  setVideoWaiting: (waiting: boolean) =>
+    set((s: Draft<PlayerStore>) => {
+      s.isVideoWaiting = waiting
     })
 })
 

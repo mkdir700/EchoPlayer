@@ -64,32 +64,74 @@ class MediaParserService {
         return null
       }
 
+      // 记录完整的原始结果结构以便调试
+      logger.debug('📋 Remotion 原始结果结构', {
+        keys: Object.keys(result),
+        videoCodec: result.videoCodec,
+        audioCodec: result.audioCodec,
+        videoTracks: result.videoTracks,
+        audioTracks: result.audioTracks,
+        dimensions: result.dimensions,
+        tracks: result.tracks,
+        fullResult: JSON.stringify(result, null, 2)
+      })
+
       // 获取时长（秒）
       const duration = result.durationInSeconds || 0
 
       // 获取视频轨道信息
       let videoCodec = 'unknown'
       let resolution = '0x0'
-      let bitrate = '0'
+      const bitrate = '0' // Remotion 不提供比特率信息
 
-      if (result.videoTracks && result.videoTracks.length > 0) {
-        const videoTrack = result.videoTracks[0]
-        videoCodec = videoTrack.codecWithoutConfig || videoTrack.codec || 'unknown'
+      // 1. 优先从 dimensions 获取分辨率
+      if (result.dimensions && result.dimensions.width && result.dimensions.height) {
+        resolution = `${result.dimensions.width}x${result.dimensions.height}`
+      }
 
-        if (videoTrack.width && videoTrack.height) {
-          resolution = `${videoTrack.width}x${videoTrack.height}`
-        }
+      // 2. 优先使用顶级字段 videoCodec
+      if (result.videoCodec) {
+        videoCodec = result.videoCodec
+      }
 
-        if (videoTrack.bitrate) {
-          bitrate = String(videoTrack.bitrate)
+      // 3. 从 tracks 数组中查找视频轨道信息（补充/覆盖）
+      if (result.tracks && result.tracks.length > 0) {
+        const videoTrack = result.tracks.find((track: any) => track.type === 'video')
+        if (videoTrack) {
+          // 如果顶级字段没有 codec，从轨道中获取
+          if (videoCodec === 'unknown') {
+            videoCodec = videoTrack.codecEnum || videoTrack.codec || 'unknown'
+          }
+
+          // 如果 dimensions 没有提供分辨率，从轨道中获取
+          if (resolution === '0x0' && videoTrack.width && videoTrack.height) {
+            resolution = `${videoTrack.width}x${videoTrack.height}`
+          }
+
+          // 注意：Remotion 似乎不提供比特率信息，保持默认值 '0'
         }
       }
 
       // 获取音频编解码器
       let audioCodec = 'unknown'
-      if (result.audioTracks && result.audioTracks.length > 0) {
-        const audioTrack = result.audioTracks[0]
-        audioCodec = audioTrack.codecWithoutConfig || audioTrack.codec || 'unknown'
+      // 优先使用顶级字段 audioCodec
+      if (result.audioCodec) {
+        audioCodec = result.audioCodec
+      } else if (result.tracks && result.tracks.length > 0) {
+        const audioTrack = result.tracks.find((track: any) => track.type === 'audio')
+        if (audioTrack) {
+          audioCodec = audioTrack.codecEnum || audioTrack.codec || 'unknown'
+        }
+      }
+
+      // 如果编解码器信息无效,返回 null 触发 fallback
+      if (videoCodec === 'unknown' && audioCodec === 'unknown') {
+        logger.warn('⚠️ Remotion 未能解析出有效的编解码器信息，将触发 FFmpeg fallback', {
+          duration,
+          videoTracks: result.videoTracks?.length || 0,
+          audioTracks: result.audioTracks?.length || 0
+        })
+        return null
       }
 
       const videoInfo: FFmpegVideoInfo = {
@@ -106,10 +148,12 @@ class MediaParserService {
         audioCodec,
         resolution,
         bitrate: `${bitrate} bps`,
-        原始数据样本: {
+        raw: {
           videoTracks: result.videoTracks?.length || 0,
           audioTracks: result.audioTracks?.length || 0,
-          container: result.container
+          container: result.container,
+          topLevelVideoCodec: result.videoCodec || 'none',
+          topLevelAudioCodec: result.audioCodec || 'none'
         }
       })
 

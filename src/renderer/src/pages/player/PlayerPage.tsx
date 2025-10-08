@@ -1,7 +1,12 @@
 import { loggerService } from '@logger'
 import { Navbar, NavbarCenter, NavbarLeft, NavbarRight } from '@renderer/components/app/Navbar'
 import db from '@renderer/databases'
-import { VideoLibraryService } from '@renderer/services'
+import {
+  CodecCompatibilityChecker,
+  type ExtendedErrorType,
+  SessionService,
+  VideoLibraryService
+} from '@renderer/services'
 import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
 import { playerSettingsPersistenceService } from '@renderer/services/PlayerSettingsSaver'
 import { usePlayerStore } from '@renderer/state'
@@ -11,7 +16,7 @@ import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
 import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
@@ -19,11 +24,11 @@ import styled from 'styled-components'
 import { NavbarIcon } from '.'
 import {
   ControllerPanel,
+  PlayerSelector,
   ProgressBar,
   SettingsPopover,
   SubtitleListPanel,
-  VideoErrorRecovery,
-  VideoSurface
+  VideoErrorRecovery
 } from './components'
 import { disposeGlobalOrchestrator } from './hooks/usePlayerEngine'
 import { PlayerPageProvider } from './state/player-page.provider'
@@ -85,10 +90,13 @@ function PlayerPage() {
   const [error, setError] = useState<string | null>(null)
   const [videoError, setVideoError] = useState<{
     message: string
-    type: 'file-missing' | 'unsupported-format' | 'decode-error' | 'network-error' | 'unknown'
+    type: ExtendedErrorType
     originalPath?: string
   } | null>(null)
   // const { pokeInteraction } = usePlayerUI()
+
+  // 保存转码会话 ID 用于清理
+  const sessionIdRef = useRef<string | null>(null)
 
   // 加载视频数据
   useEffect(() => {
@@ -105,7 +113,8 @@ function PlayerPage() {
       try {
         setError(null)
 
-        // 使用上面已计算的 videoId
+        // 清除之前的 HLS 状态，防止旧的转码信息影响新视频加载
+        usePlayerStore.getState().resetTranscodeInfo()
 
         const videoLibService = new VideoLibraryService()
         const record = await videoLibService.getRecordById(videoId)
@@ -126,11 +135,103 @@ function PlayerPage() {
         // 将 path 转为 file:// URL (Windows-safe)
         const fileUrl = toFileUrl(file.path)
 
-        // 构造页面所需的视频数据
+        // 主动进行编解码器兼容性检测和转码预处理
+        let finalSrc = fileUrl
+
+        try {
+          logger.info('开始编解码器兼容性检测', { filePath: file.path })
+
+          // 检测编解码器兼容性
+          const compatibilityResult = await CodecCompatibilityChecker.checkCompatibility(file.path)
+
+          logger.info('编解码器兼容性检测结果', {
+            compatibilityResult,
+            filePath: file.path
+          })
+
+          // 如果需要转码，在数据加载阶段就进行转码
+          if (compatibilityResult.needsTranscode) {
+            logger.warn('检测到不兼容编解码器，开始预转码处理', {
+              videoCodec: compatibilityResult.detectedCodecs.video,
+              audioCodec: compatibilityResult.detectedCodecs.audio,
+              reasons: compatibilityResult.incompatibilityReasons
+            })
+
+            // 设置转码状态
+            usePlayerStore.getState().setTranscodeStatus('transcoding')
+            usePlayerStore.getState().updateTranscodeInfo({
+              originalSrc: fileUrl,
+              error: undefined,
+              startTime: Date.now()
+            })
+
+            // 调用会话服务创建播放会话
+            const sessionResult = await SessionService.createSession({
+              file_path: file.path,
+              initial_time: record.currentTime || 0
+            })
+
+            logger.info('会话创建完成', { sessionResult })
+
+            // 保存会话 ID 用于后续清理
+            sessionIdRef.current = sessionResult.session_id
+
+            // TODO: 暂时写死，等待 backend 集成
+            const playListUrl = `http://127.0.0.1:8799${sessionResult.playlist_url}`
+
+            // 更新转码信息和播放源
+            usePlayerStore.getState().updateTranscodeInfo({
+              hlsSrc: playListUrl,
+              windowId: 0, // 会话模式不再使用 windowId
+              assetHash: sessionResult.asset_hash,
+              profileHash: sessionResult.profile_hash,
+              cached: false, // 会话模式由后端管理缓存
+              sessionId: sessionResult.session_id,
+              endTime: Date.now()
+            })
+
+            // 切换到 HLS 播放模式
+            usePlayerStore.getState().switchToHlsSource(playListUrl, {
+              windowId: 0,
+              assetHash: sessionResult.asset_hash,
+              profileHash: sessionResult.profile_hash,
+              cached: false,
+              sessionId: sessionResult.session_id
+            })
+
+            finalSrc = playListUrl
+
+            logger.info('预转码流程完成，使用 HLS 播放源', {
+              originalSrc: fileUrl,
+              hlsSrc: finalSrc
+            })
+          } else {
+            logger.info('编解码器兼容，使用原始播放源', { filePath: file.path })
+          }
+        } catch (transcodeError) {
+          logger.error('预转码处理失败，回退到原始播放源', {
+            error:
+              transcodeError instanceof Error ? transcodeError.message : String(transcodeError),
+            filePath: file.path
+          })
+
+          // 转码失败时更新状态但不阻止播放
+          usePlayerStore.getState().setTranscodeStatus('failed')
+          usePlayerStore.getState().updateTranscodeInfo({
+            error:
+              transcodeError instanceof Error ? transcodeError.message : String(transcodeError),
+            endTime: Date.now()
+          })
+
+          // 继续使用原始播放源
+          finalSrc = fileUrl
+        }
+
+        // 构造页面所需的视频数据（使用处理后的播放源）
         const vd = {
           id: record.id!,
           title: file.origin_name || file.name,
-          src: fileUrl,
+          src: finalSrc,
           duration: record.duration
         } as const
         if (!cancelled) setVideoData(vd)
@@ -158,6 +259,24 @@ function PlayerPage() {
       usePlayerSessionStore.getState().clear()
       playerSettingsPersistenceService.detach()
 
+      // 清理 HLS 转码状态，确保下次加载视频时不会受到影响
+      usePlayerStore.getState().resetTranscodeInfo()
+
+      // 清理转码会话资源
+      const currentSessionId = sessionIdRef.current
+      if (currentSessionId) {
+        SessionService.deleteSession(currentSessionId)
+          .then(() => {
+            logger.debug('转码会话已清理', { sessionId: currentSessionId })
+          })
+          .catch((error) => {
+            logger.error('清理转码会话时出错:', { error, sessionId: currentSessionId })
+          })
+          .finally(() => {
+            sessionIdRef.current = null
+          })
+      }
+
       // 清理播放器编排器资源
       try {
         disposeGlobalOrchestrator()
@@ -169,15 +288,7 @@ function PlayerPage() {
   }, [videoId])
 
   const handleVideoError = useCallback(
-    (
-      errorMessage: string,
-      errorType?:
-        | 'file-missing'
-        | 'unsupported-format'
-        | 'decode-error'
-        | 'network-error'
-        | 'unknown'
-    ) => {
+    (errorMessage: string, errorType?: ExtendedErrorType) => {
       logger.error('视频播放错误', { errorMessage, errorType, videoId })
       setVideoError({
         message: errorMessage,
@@ -348,7 +459,7 @@ function PlayerPage() {
                 <Content>
                   <LeftMain>
                     <VideoStage>
-                      <VideoSurface src={videoData.src} onError={handleVideoError} />
+                      <PlayerSelector src={videoData.src} onError={handleVideoError} />
                     </VideoStage>
                     <ProgressBarArea>
                       <ProgressBar />
