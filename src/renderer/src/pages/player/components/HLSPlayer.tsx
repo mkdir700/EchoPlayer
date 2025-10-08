@@ -267,6 +267,8 @@ function HLSPlayer({ src, onLoadedMetadata, onError }: HLSPlayerProps) {
         onTimeUpdate={(e) => mediaEventHandlers.onTimeUpdate(e.nativeEvent)}
         onSeeking={() => mediaEventHandlers.onSeeking()}
         onSeeked={(e) => mediaEventHandlers.onSeeked(e.nativeEvent)}
+        onWaiting={() => mediaEventHandlers.onWaiting()}
+        onCanPlay={() => mediaEventHandlers.onCanPlay()}
         onDurationChange={(e) => mediaEventHandlers.onDurationChange(e.nativeEvent)}
         onRateChange={(e) => mediaEventHandlers.onRateChange(e.nativeEvent)}
         onLoadedMetadata={handleLoadedMetadata}

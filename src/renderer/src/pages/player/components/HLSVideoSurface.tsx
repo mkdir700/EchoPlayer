@@ -7,6 +7,7 @@ import { usePlayerCommands } from '../hooks/usePlayerCommands'
 import AutoResumeCountdown from './AutoResumeCountdown'
 import HLSPlayer from './HLSPlayer'
 import SubtitleOverlay from './SubtitleOverlay'
+import TranscodeLoadingIndicator from './TranscodeLoadingIndicator'
 
 const logger = loggerService.withContext('HLSVideoSurface')
 
@@ -50,6 +51,9 @@ function HLSVideoSurface({ src, onError }: HLSVideoSurfaceProps) {
       tabIndex={0}
     >
       <HLSPlayer src={src} onError={handleVideoError} />
+
+      {/* 转码加载指示器 - 在 seek 到未转码时间点时显示 */}
+      <TranscodeLoadingIndicator />
 
       {/* 字幕覆盖层 - 传递容器引用以进行边界计算 */}
       <SubtitleOverlay containerRef={surfaceRef} />

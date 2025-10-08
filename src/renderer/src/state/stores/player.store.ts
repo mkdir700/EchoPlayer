@@ -97,6 +97,13 @@ export interface PlayerState {
   /** 转码信息 */
   transcodeInfo: TranscodeInfo
 
+  // === 视频加载状态 ===
+  /** 视频是否正在 seeking */
+  isVideoSeeking: boolean
+
+  /** 视频是否正在等待数据（waiting） */
+  isVideoWaiting: boolean
+
   // === 循环设置 / Loop Settings ===
   /** 循环播放 */
   loopEnabled: boolean
@@ -198,6 +205,11 @@ export interface PlayerActions {
   // 引擎专用：播放源切换
   switchToHlsSource: (hlsSrc: string, transcodeInfo: Partial<TranscodeInfo>) => void
   switchToOriginalSource: () => void
+
+  // === 视频加载状态控制 ===
+  // 引擎专用：由媒体事件自动设置
+  setVideoSeeking: (seeking: boolean) => void
+  setVideoWaiting: (waiting: boolean) => void
 }
 
 export type PlayerStore = PlayerState & PlayerActions
@@ -219,6 +231,10 @@ const initialState: PlayerState = {
   transcodeInfo: {
     status: 'idle'
   },
+
+  // === 视频加载状态 ===
+  isVideoSeeking: false,
+  isVideoWaiting: false,
 
   // === 循环设置 / Loop Settings ===
   loopEnabled: false,
@@ -577,6 +593,16 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
       s.transcodeInfo = {
         status: 'idle'
       }
+    }),
+
+  // === 视频加载状态控制 ===
+  setVideoSeeking: (seeking: boolean) =>
+    set((s: Draft<PlayerStore>) => {
+      s.isVideoSeeking = seeking
+    }),
+  setVideoWaiting: (waiting: boolean) =>
+    set((s: Draft<PlayerStore>) => {
+      s.isVideoWaiting = waiting
     })
 })
 
