@@ -1,4 +1,8 @@
+import { loggerService } from '@logger'
+import { isWin } from '@renderer/infrastructure/constants/platform'
 import { KB, MB } from '@shared/config/constant'
+
+const logger = loggerService.withContext('file-utils')
 
 /**
  * 从文件路径中提取目录路径。
@@ -73,4 +77,42 @@ export function removeSpecialCharactersForFileName(str: string): string {
     .replace(/[<>:"/\\|?*.]/g, '_')
     .replace(/[\r\n]+/g, ' ')
     .trim()
+}
+
+/**
+ * 将 file:// URL 转换为本地文件路径
+ * 注意：HTTP URL 不是有效的本地文件路径，会返回空字符串
+ * @param {string} fileUrl file:// URL 或本地路径
+ * @returns {string} 本地文件路径
+ */
+export function fileUrlToPath(fileUrl: string): string {
+  if (!fileUrl) return ''
+
+  // 如果是 HTTP/HTTPS URL，不是本地文件路径
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    logger.warn('尝试将 HTTP URL 转换为本地路径', { fileUrl })
+    return ''
+  }
+
+  // 如果已经是本地路径，直接返回
+  if (!fileUrl.startsWith('file://')) {
+    return fileUrl
+  }
+
+  // 移除 file:// 前缀
+  let path = fileUrl.slice(7) // 移除 'file://'
+
+  // 在 Windows 下，路径可能是 /C:/... 格式，需要移除开头的 /
+  if (isWin && /^\/[A-Za-z]:/.test(path)) {
+    path = path.slice(1)
+  }
+
+  // URL 解码，处理空格等特殊字符
+  try {
+    path = decodeURIComponent(path)
+  } catch (error) {
+    logger.warn('URL 解码失败，使用原始路径', { path, error })
+  }
+
+  return path
 }

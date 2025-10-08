@@ -1,4 +1,5 @@
 import { loggerService } from '@logger'
+import type { ExtendedErrorType } from '@renderer/services'
 import { getVideoDialogExtensions } from '@shared/config/constant'
 import { Button, Modal, Space } from 'antd'
 import { AlertTriangle, FileSearch, RotateCcw, Trash2 } from 'lucide-react'
@@ -15,7 +16,7 @@ interface VideoErrorRecoveryProps {
   videoId: number
   videoTitle: string
   originalPath?: string
-  errorType: 'file-missing' | 'unsupported-format' | 'decode-error' | 'network-error' | 'unknown'
+  errorType: ExtendedErrorType
   onFileRelocate?: (newPath: string) => void
   onRemoveFromLibrary?: () => void
 }
@@ -58,6 +59,12 @@ function VideoErrorRecovery({
         return {
           title: t('player.errorRecovery.errors.networkError.title'),
           description: t('player.errorRecovery.errors.networkError.description')
+        }
+      case 'hls-player-missing':
+        return {
+          title: 'HLS 播放器未就绪',
+          description:
+            '视频已成功转码，但当前版本尚未集成 HLS 播放器。HLS 播放器正在开发中，将在后续版本提供支持。'
         }
       default:
         return {
@@ -172,7 +179,16 @@ function VideoErrorRecovery({
           <VideoTitle title={videoTitle}>{videoTitle}</VideoTitle>
           <ErrorDescription>{errorInfo.description}</ErrorDescription>
 
-          {originalPath && (
+          {errorType === 'hls-player-missing' && (
+            <HlsStatusInfo>
+              <StatusLabel>转码状态</StatusLabel>
+              <StatusValue>✅ 视频转码已完成，HLS 文件已生成</StatusValue>
+              <StatusValue>⏳ 等待 HLS 播放器实现</StatusValue>
+              <StatusNote>注：原始视频文件仍然可以在文件管理器中正常播放。</StatusNote>
+            </HlsStatusInfo>
+          )}
+
+          {originalPath && errorType !== 'hls-player-missing' && (
             <PathInfo>
               <PathLabel>{t('player.errorRecovery.pathInfo.label')}</PathLabel>
               <PathValue title={originalPath}>{originalPath}</PathValue>
@@ -293,4 +309,42 @@ const PathValue = styled.div`
   padding: 10px 12px;
   border-radius: 6px;
   border: 1px solid var(--color-border);
+`
+
+const HlsStatusInfo = styled.div`
+  background: var(--color-background-soft);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  border: 1px solid var(--color-border-soft);
+`
+
+const StatusLabel = styled.div`
+  font-size: 12px;
+  color: var(--color-text-3);
+  margin-bottom: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`
+
+const StatusValue = styled.div`
+  font-size: 14px;
+  color: var(--color-text-2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &:last-of-type {
+    margin-bottom: 12px;
+  }
+`
+
+const StatusNote = styled.div`
+  font-size: 12px;
+  color: var(--color-text-3);
+  font-style: italic;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
 `

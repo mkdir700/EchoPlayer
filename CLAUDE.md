@@ -85,3 +85,8 @@ const StyledComponent = styled.div`
 ## Issues & Solutions
 
 1. DictionaryPopover 组件主题兼容性问题已修复：将硬编码的深色主题颜色（白色文字、深色背景）替换为 Ant Design CSS 变量（如 `var(--ant-color-text)`、`var(--ant-color-bg-elevated)`），实现浅色和深色主题的自动适配，包括文字颜色、背景色、边框、滚动条和交互状态的完整主题化。
+
+## Task Master AI Instructions
+
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md
