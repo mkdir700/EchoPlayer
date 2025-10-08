@@ -51,6 +51,84 @@ export default defineConfig({
             }
           }
         }
+      },
+      {
+        name: 'copy-media-server',
+        generateBundle() {
+          // 复制 backend 到 resources/media-server
+          const srcDir = path.resolve('backend')
+          const destDir = path.resolve('resources/media-server')
+
+          // 检查源目录是否存在
+          if (!fs.existsSync(srcDir)) {
+            console.warn('⚠️  backend 目录不存在，跳过复制')
+            return
+          }
+
+          // 需要排除的文件和目录
+          const excludePatterns = [
+            '__pycache__',
+            '.pyc',
+            '.pyo',
+            '.pyd',
+            '.venv',
+            'venv',
+            'env',
+            '.git',
+            '.gitignore',
+            'cache',
+            '.vscode',
+            '.idea',
+            '.egg-info',
+            'dist',
+            'build',
+            '.pytest_cache',
+            '.mypy_cache',
+            '.ruff_cache',
+            'uv.lock',
+            '.DS_Store',
+            'assets'
+          ]
+
+          // 检查是否应排除
+          const shouldExclude = (filePath: string): boolean => {
+            const basename = path.basename(filePath)
+            return excludePatterns.some((pattern) => {
+              if (pattern.startsWith('.') && !pattern.includes('_')) {
+                return basename.endsWith(pattern) || basename === pattern
+              }
+              return basename.includes(pattern)
+            })
+          }
+
+          // 递归复制目录
+          const copyDir = (src: string, dest: string) => {
+            if (!fs.existsSync(dest)) {
+              fs.mkdirSync(dest, { recursive: true })
+            }
+
+            const entries = fs.readdirSync(src, { withFileTypes: true })
+
+            for (const entry of entries) {
+              const srcPath = path.join(src, entry.name)
+              const destPath = path.join(dest, entry.name)
+
+              if (shouldExclude(srcPath)) {
+                continue
+              }
+
+              if (entry.isDirectory()) {
+                copyDir(srcPath, destPath)
+              } else if (entry.isFile()) {
+                fs.copyFileSync(srcPath, destPath)
+              }
+            }
+          }
+
+          // 执行复制
+          console.log('📦 复制 Media Server 到 resources/media-server/')
+          copyDir(srcDir, destDir)
+        }
       }
     ],
     resolve: {
