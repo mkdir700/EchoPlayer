@@ -16,7 +16,7 @@ import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
 import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
@@ -96,6 +96,9 @@ function PlayerPage() {
   } | null>(null)
   // const { pokeInteraction } = usePlayerUI()
 
+  // 保存转码会话 ID 用于清理
+  const sessionIdRef = useRef<string | null>(null)
+
   // 加载视频数据
   useEffect(() => {
     let cancelled = false
@@ -170,7 +173,10 @@ function PlayerPage() {
 
             logger.info('会话创建完成', { sessionResult })
 
-            // TODO:
+            // 保存会话 ID 用于后续清理
+            sessionIdRef.current = sessionResult.session_id
+
+            // TODO: 暂时写死，等待 backend 集成
             const playListUrl = `http://127.0.0.1:8799${sessionResult.playlist_url}`
 
             // 更新转码信息和播放源
@@ -252,6 +258,21 @@ function PlayerPage() {
       // 页面卸载时清理会话态
       usePlayerSessionStore.getState().clear()
       playerSettingsPersistenceService.detach()
+
+      // 清理转码会话资源
+      const currentSessionId = sessionIdRef.current
+      if (currentSessionId) {
+        SessionService.deleteSession(currentSessionId)
+          .then(() => {
+            logger.debug('转码会话已清理', { sessionId: currentSessionId })
+          })
+          .catch((error) => {
+            logger.error('清理转码会话时出错:', { error, sessionId: currentSessionId })
+          })
+          .finally(() => {
+            sessionIdRef.current = null
+          })
+      }
 
       // 清理播放器编排器资源
       try {
