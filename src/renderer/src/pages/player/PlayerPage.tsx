@@ -28,7 +28,6 @@ import {
   ProgressBar,
   SettingsPopover,
   SubtitleListPanel,
-  TranscodeIndicator,
   VideoErrorRecovery
 } from './components'
 import { disposeGlobalOrchestrator } from './hooks/usePlayerEngine'
@@ -491,9 +490,6 @@ function PlayerPage() {
           </ContentBody>
           <SettingsPopover />
         </ContentContainer>
-
-        {/* 转码状态指示器 */}
-        <TranscodeIndicator />
 
         {/* 错误恢复 Modal */}
         <VideoErrorRecovery
