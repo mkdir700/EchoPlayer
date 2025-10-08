@@ -114,7 +114,8 @@ function PlayerPage() {
       try {
         setError(null)
 
-        // 使用上面已计算的 videoId
+        // 清除之前的 HLS 状态，防止旧的转码信息影响新视频加载
+        usePlayerStore.getState().resetTranscodeInfo()
 
         const videoLibService = new VideoLibraryService()
         const record = await videoLibService.getRecordById(videoId)
@@ -258,6 +259,9 @@ function PlayerPage() {
       // 页面卸载时清理会话态
       usePlayerSessionStore.getState().clear()
       playerSettingsPersistenceService.detach()
+
+      // 清理 HLS 转码状态，确保下次加载视频时不会受到影响
+      usePlayerStore.getState().resetTranscodeInfo()
 
       // 清理转码会话资源
       const currentSessionId = sessionIdRef.current
