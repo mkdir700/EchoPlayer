@@ -53,17 +53,17 @@ describe('FFmpegDownloadService', () => {
   describe('getFFmpegPath', () => {
     it('should return correct path for Windows x64', () => {
       const result = service.getFFmpegPath('win32', 'x64')
-      expect(result).toMatch(/6\.1-win32-x64[\\/]ffmpeg\.exe$/)
+      expect(result).toMatch(/latest-win32-x64[\\/]ffmpeg\.exe$/)
     })
 
     it('should return correct path for macOS arm64', () => {
       const result = service.getFFmpegPath('darwin', 'arm64')
-      expect(result).toMatch(/6\.1-darwin-arm64[\\/]ffmpeg$/)
+      expect(result).toMatch(/latest-darwin-arm64[\\/]ffmpeg$/)
     })
 
     it('should return correct path for Linux x64', () => {
       const result = service.getFFmpegPath('linux', 'x64')
-      expect(result).toMatch(/6\.1-linux-x64[\\/]ffmpeg$/)
+      expect(result).toMatch(/latest-linux-x64[\\/]ffmpeg$/)
     })
 
     it('should throw error for unsupported platform', () => {
@@ -232,7 +232,7 @@ describe('FFmpegDownloadService', () => {
 
   describe('download progress tracking', () => {
     it('should track download progress correctly', () => {
-      const progress = service.getDownloadProgress('win32', 'x64')
+      const progress = service.getDownloadProgress('ffmpeg', 'win32', 'x64')
       expect(progress).toBeNull() // No download in progress
 
       // Note: Testing actual download would require mocking HTTPS and file operations
@@ -241,10 +241,10 @@ describe('FFmpegDownloadService', () => {
 
     it('should handle download cancellation', () => {
       // Start with no download in progress
-      expect(service.getDownloadProgress('win32', 'x64')).toBeNull()
+      expect(service.getDownloadProgress('ffmpeg', 'win32', 'x64')).toBeNull()
 
       // Cancel should not throw even if no download is active
-      expect(() => service.cancelDownload('win32', 'x64')).not.toThrow()
+      expect(() => service.cancelDownload('ffmpeg', 'win32', 'x64')).not.toThrow()
     })
   })
 

@@ -14,6 +14,8 @@ import installExtension, { REDUX_DEVTOOLS } from 'electron-devtools-installer'
 import { isDev, isLinux, isWin, isWSL } from './constant'
 import { registerIpc } from './ipc'
 import { configManager } from './services/ConfigManager'
+import { mediaServerService } from './services/MediaServerService'
+import { pythonVenvService } from './services/PythonVenvService'
 import { registerShortcuts } from './services/ShortcutService'
 import { sentryService } from './services/SentryService'
 import { TrayService } from './services/TrayService'
@@ -140,6 +142,24 @@ if (!app.requestSingleInstanceLock()) {
     registerIpc(mainWindow, app)
 
     replaceDevtoolsFont(mainWindow)
+
+    // 自动启动 Media Server (如果环境已安装)
+    try {
+      const venvInfo = await pythonVenvService.checkVenvInfo()
+      if (venvInfo.exists) {
+        logger.info('检测到 Media Server 环境已安装,尝试自动启动...')
+        const startResult = await mediaServerService.start()
+        if (startResult) {
+          logger.info('Media Server 自动启动成功')
+        } else {
+          logger.warn('Media Server 自动启动失败')
+        }
+      } else {
+        logger.info('Media Server 环境未安装,跳过自动启动')
+      }
+    } catch (error) {
+      logger.error('Media Server 自动启动异常:', { error })
+    }
 
     // Setup deep link for AppImage on Linux
     // await setupAppImageDeepLink()

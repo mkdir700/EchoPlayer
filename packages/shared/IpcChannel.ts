@@ -90,6 +90,44 @@ export enum IpcChannel {
   FfmpegDownload_GetAllVersions = 'ffmpeg-download:get-all-versions',
   FfmpegDownload_CleanupTemp = 'ffmpeg-download:cleanup-temp',
 
+  // FFprobe 相关 IPC 通道 / FFprobe related IPC channels
+  Ffprobe_GetPath = 'ffprobe:get-path',
+  Ffprobe_CheckExists = 'ffprobe:check-exists',
+  Ffprobe_GetVersion = 'ffprobe:get-version',
+  Ffprobe_GetInfo = 'ffprobe:get-info',
+
+  // FFprobe 下载相关 IPC 通道 / FFprobe download related IPC channels
+  FfprobeDownload_CheckExists = 'ffprobe-download:check-exists',
+  FfprobeDownload_GetVersion = 'ffprobe-download:get-version',
+  FfprobeDownload_Download = 'ffprobe-download:download',
+  FfprobeDownload_GetProgress = 'ffprobe-download:get-progress',
+  FfprobeDownload_Cancel = 'ffprobe-download:cancel',
+  FfprobeDownload_Remove = 'ffprobe-download:remove',
+
+  // UV 相关 IPC 通道 / UV related IPC channels
+  UV_CheckInstallation = 'uv:check-installation',
+  UV_Download = 'uv:download',
+  UV_GetProgress = 'uv:get-progress',
+  UV_CancelDownload = 'uv:cancel-download',
+  UV_GetInfo = 'uv:get-info',
+
+  // Python 环境相关 IPC 通道 / Python environment related IPC channels
+  PythonVenv_CheckInfo = 'python-venv:check-info',
+  PythonVenv_Initialize = 'python-venv:initialize',
+  PythonVenv_ReinstallDependencies = 'python-venv:reinstall-dependencies',
+  PythonVenv_Remove = 'python-venv:remove',
+  PythonVenv_GetProgress = 'python-venv:get-progress',
+  PythonVenv_GetMediaServerPath = 'python-venv:get-media-server-path',
+
+  // Media Server 相关 IPC 通道 / Media Server related IPC channels
+  MediaServer_Start = 'media-server:start',
+  MediaServer_Stop = 'media-server:stop',
+  MediaServer_Restart = 'media-server:restart',
+  MediaServer_GetInfo = 'media-server:get-info',
+  MediaServer_GetPort = 'media-server:get-port',
+  MediaServer_CheckHealth = 'media-server:check-health',
+  MediaServer_PortChanged = 'media-server:port-changed', // 端口变更事件
+
   // MediaInfo 相关 IPC 通道 / MediaInfo related IPC channels
   MediaInfo_CheckExists = 'mediainfo:check-exists',
   MediaInfo_GetVersion = 'mediainfo:get-version',
