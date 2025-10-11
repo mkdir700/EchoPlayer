@@ -1,3 +1,19 @@
+# [1.1.0-alpha.1](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0...v1.1.0-alpha.1) (2025-10-11)
+
+### Bug Fixes
+
+- **homepage:** improve bottom spacing for card grid ([#194](https://github.com/mkdir700/EchoPlayer/issues/194)) ([801b6cd](https://github.com/mkdir700/EchoPlayer/commit/801b6cd6ec6b409d5a7e9173a536212e7af64760))
+- remove green glow effect from progress bar ([#196](https://github.com/mkdir700/EchoPlayer/issues/196)) ([abc6f3e](https://github.com/mkdir700/EchoPlayer/commit/abc6f3edb00c4a7000940b03fb2fe9ce5dfb26ea)), closes [#e50914](https://github.com/mkdir700/EchoPlayer/issues/e50914) [#00b96](https://github.com/mkdir700/EchoPlayer/issues/00b96)
+- **semantic-release:** enhance version increment rules for prerelease branches ([#199](https://github.com/mkdir700/EchoPlayer/issues/199)) ([5d1e533](https://github.com/mkdir700/EchoPlayer/commit/5d1e5339589e9366776acefeed3633327c978c14))
+- **theme:** resolve theme color not updating immediately for Switch components and progress bars ([#197](https://github.com/mkdir700/EchoPlayer/issues/197)) ([eed9ea2](https://github.com/mkdir700/EchoPlayer/commit/eed9ea2354f386d1f86f0ce17ce5bd1f74502da8))
+
+### Features
+
+- integrate session-backed HLS playback flow ([#200](https://github.com/mkdir700/EchoPlayer/issues/200)) ([ee972d1](https://github.com/mkdir700/EchoPlayer/commit/ee972d170d0f29c6a9bc34cd12b55dbbc100d2ec))
+- intro backend for hls player ([2d34e7b](https://github.com/mkdir700/EchoPlayer/commit/2d34e7bc2ca3c289544698678e961d6505ecd7ee))
+- optimize media-server build output to resources directory ([#201](https://github.com/mkdir700/EchoPlayer/issues/201)) ([1b8c28e](https://github.com/mkdir700/EchoPlayer/commit/1b8c28e3e265ab9b9bf7d5bb1122c6fe221e998d))
+- **player:** update seek button icons from rewind/fastforward to undo/redo ([#193](https://github.com/mkdir700/EchoPlayer/issues/193)) ([1612c43](https://github.com/mkdir700/EchoPlayer/commit/1612c438cdf4585b43bc7827a5d41adcf6e9ebe3))
+
 # 1.0.0 (2025-09-17)
 
 ### Bug Fixes
