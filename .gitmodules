@@ -1,3 +1,6 @@
 [submodule "backend"]
 	path = backend
 	url = https://github.com/mkdir700/echoplayer-backend.git
+[submodule "docs"]
+	path = docs
+	url = https://github.com/mkdir700/mintlify-docs.git
