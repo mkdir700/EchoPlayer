@@ -171,13 +171,13 @@ pnpm test:ui
 
 ## 📄 许可证
 
-本项目基于 [Apache License 2.0](LICENSE) 开源许可证发布。
+本项目基于 [AGPL-3.0](LICENSE) 开源许可证发布。
 
 ## 🙏 致谢
 
 | 项目名                                                 | 简介                             |
 | ------------------------------------------------------ | -------------------------------- |
-| [EchoPlayer](https://github.com/CherryHQ/EchoPlayer)   | 一款为创造而生的 AI 助手         |
+| [CherryStudio](https://github.com/CherryHQ/cherry-studio)   | 一款为创造而生的 AI 助手         |
 | [DashPlayer](https://github.com/solidSpoon/DashPlayer) | 为英语学习者量身打造的视频播放器 |
 
 ---
