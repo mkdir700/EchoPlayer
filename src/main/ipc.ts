@@ -25,9 +25,12 @@ import FFmpegService from './services/FFmpegService'
 import FileStorage from './services/FileStorage'
 import { loggerService } from './services/LoggerService'
 import MediaParserService from './services/MediaParserService'
+import { mediaServerService } from './services/MediaServerService'
 import NotificationService from './services/NotificationService'
+import { pythonVenvService } from './services/PythonVenvService'
 import { registerShortcuts, unregisterAllShortcuts } from './services/ShortcutService'
 import { themeService } from './services/ThemeService'
+import { uvBootstrapperService } from './services/UvBootstrapperService'
 import { calculateDirectorySize, getResourcePath } from './utils'
 import { getCacheDir, getConfigDir, getFilesDir, hasWritePermission } from './utils/file'
 import { updateAppDataConfig } from './utils/init'
@@ -518,6 +521,135 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   })
   ipcMain.handle(IpcChannel.FfmpegDownload_CleanupTemp, async () => {
     return ffmpegDownloadService.cleanupTempFiles()
+  })
+
+  // FFprobe
+  ipcMain.handle(IpcChannel.Ffprobe_CheckExists, async () => {
+    return ffmpegDownloadService.checkFFprobeExists()
+  })
+  ipcMain.handle(IpcChannel.Ffprobe_GetVersion, async () => {
+    return ffmpegDownloadService.getFFprobeVersion()
+  })
+  ipcMain.handle(IpcChannel.Ffprobe_GetPath, async () => {
+    return ffmpegDownloadService.getFFprobePath()
+  })
+  ipcMain.handle(IpcChannel.Ffprobe_GetInfo, async () => {
+    const platform = process.platform as any
+    const arch = process.arch as any
+    const path = ffmpegDownloadService.getFFprobePath(platform, arch)
+    const isDownloaded = ffmpegDownloadService.checkFFprobeExists(platform, arch)
+    const version = ffmpegDownloadService.getFFprobeVersion(platform, arch)
+    const needsDownload = !isDownloaded
+
+    return {
+      path,
+      isBundled: false,
+      isDownloaded,
+      isSystemFFprobe: false,
+      platform,
+      arch,
+      version: version?.version,
+      needsDownload
+    }
+  })
+
+  // FFprobe 下载服务
+  ipcMain.handle(
+    IpcChannel.FfprobeDownload_CheckExists,
+    async (_, platform?: string, arch?: string) => {
+      return ffmpegDownloadService.checkFFprobeExists(platform as any, arch as any)
+    }
+  )
+  ipcMain.handle(
+    IpcChannel.FfprobeDownload_GetVersion,
+    async (_, platform?: string, arch?: string) => {
+      return ffmpegDownloadService.getFFprobeVersion(platform as any, arch as any)
+    }
+  )
+  ipcMain.handle(
+    IpcChannel.FfprobeDownload_Download,
+    async (_, platform?: string, arch?: string) => {
+      return await ffmpegDownloadService.downloadFFprobe(platform as any, arch as any)
+    }
+  )
+  ipcMain.handle(
+    IpcChannel.FfprobeDownload_GetProgress,
+    async (_, platform?: string, arch?: string) => {
+      return ffmpegDownloadService.getDownloadProgress('ffprobe', platform as any, arch as any)
+    }
+  )
+  ipcMain.handle(IpcChannel.FfprobeDownload_Cancel, async (_, platform?: string, arch?: string) => {
+    return ffmpegDownloadService.cancelDownload('ffprobe', platform as any, arch as any)
+  })
+  ipcMain.handle(IpcChannel.FfprobeDownload_Remove, async (_, platform?: string, arch?: string) => {
+    return ffmpegDownloadService.removeFFprobe(platform as any, arch as any)
+  })
+
+  // UV Bootstrapper
+  ipcMain.handle(IpcChannel.UV_CheckInstallation, async () => {
+    return await uvBootstrapperService.checkUvInstallation()
+  })
+  ipcMain.handle(IpcChannel.UV_Download, async (_, platform?: string, arch?: string) => {
+    return await uvBootstrapperService.downloadUv(platform as any, arch as any)
+  })
+  ipcMain.handle(IpcChannel.UV_GetProgress, async (_, platform?: string, arch?: string) => {
+    return uvBootstrapperService.getDownloadProgress(platform as any, arch as any)
+  })
+  ipcMain.handle(IpcChannel.UV_CancelDownload, async (_, platform?: string, arch?: string) => {
+    uvBootstrapperService.cancelDownload(platform as any, arch as any)
+  })
+  ipcMain.handle(IpcChannel.UV_GetInfo, async () => {
+    const installation = await uvBootstrapperService.checkUvInstallation()
+    return installation
+  })
+
+  // Python Venv
+  ipcMain.handle(IpcChannel.PythonVenv_CheckInfo, async () => {
+    return await pythonVenvService.checkVenvInfo()
+  })
+  ipcMain.handle(IpcChannel.PythonVenv_Initialize, async (_, pythonVersion?: string) => {
+    return await pythonVenvService.initializeEnvironment(undefined, pythonVersion)
+  })
+  ipcMain.handle(IpcChannel.PythonVenv_ReinstallDependencies, async () => {
+    return await pythonVenvService.reinstallDependencies()
+  })
+  ipcMain.handle(IpcChannel.PythonVenv_Remove, async () => {
+    return await pythonVenvService.removeVenv()
+  })
+  ipcMain.handle(IpcChannel.PythonVenv_GetProgress, async () => {
+    return pythonVenvService.getInstallProgress()
+  })
+  ipcMain.handle(IpcChannel.PythonVenv_GetMediaServerPath, async () => {
+    return pythonVenvService.getMediaServerPath()
+  })
+
+  // Media Server
+  ipcMain.handle(
+    IpcChannel.MediaServer_Start,
+    async (
+      _,
+      config?: { port?: number; host?: string; logLevel?: 'debug' | 'info' | 'warning' | 'error' }
+    ) => {
+      return await mediaServerService.start(config)
+    }
+  )
+  ipcMain.handle(IpcChannel.MediaServer_Stop, async () => {
+    return await mediaServerService.stop()
+  })
+  ipcMain.handle(
+    IpcChannel.MediaServer_Restart,
+    async (
+      _,
+      config?: { port?: number; host?: string; logLevel?: 'debug' | 'info' | 'warning' | 'error' }
+    ) => {
+      return await mediaServerService.restart(config)
+    }
+  )
+  ipcMain.handle(IpcChannel.MediaServer_GetInfo, async () => {
+    return mediaServerService.getInfo()
+  })
+  ipcMain.handle(IpcChannel.MediaServer_GetPort, async () => {
+    return mediaServerService.getPort()
   })
 
   // MediaParser (Remotion)

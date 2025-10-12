@@ -1,46 +1,80 @@
 import { IpcChannel } from '@shared/IpcChannel'
-import { BrowserWindow, ipcMain } from 'electron'
+import type { App as ElectronApp, BrowserWindow } from 'electron'
+import { ipcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { registerIpc } from '../ipc'
 
-// Mock dependencies
-vi.mock('electron', () => ({
-  BrowserWindow: {
-    getAllWindows: vi.fn(() => []),
-    fromWebContents: vi.fn()
-  },
-  ipcMain: {
-    handle: vi.fn(),
-    removeHandler: vi.fn()
-  },
-  dialog: {
-    showOpenDialog: vi.fn()
-  },
-  session: {
-    defaultSession: {
-      clearCache: vi.fn(),
-      clearStorageData: vi.fn(),
-      flushStorageData: vi.fn(),
-      cookies: { flushStore: vi.fn() },
-      closeAllConnections: vi.fn()
+const electronModuleMock = vi.hoisted(() => {
+  const appMock = {
+    getVersion: vi.fn(() => '1.0.0'),
+    isPackaged: true,
+    getAppPath: vi.fn(() => '/app'),
+    getPath: vi.fn((type: string) => `/${type}`),
+    setPath: vi.fn(),
+    relaunch: vi.fn(),
+    exit: vi.fn(),
+    isQuitting: false,
+    whenReady: vi.fn(() => Promise.resolve()),
+    on: vi.fn(),
+    once: vi.fn(),
+    removeListener: vi.fn(),
+    setLoginItemSettings: vi.fn(),
+    getLocale: vi.fn(() => 'en-US'),
+    isReady: vi.fn(() => true),
+    requestSingleInstanceLock: vi.fn(() => true),
+    releaseSingleInstanceLock: vi.fn(),
+    getName: vi.fn(() => 'Echolab'),
+    hide: vi.fn(),
+    quit: vi.fn(),
+    dock: {
+      show: vi.fn(),
+      hide: vi.fn()
+    }
+  } as unknown as ElectronApp
+
+  return {
+    BrowserWindow: {
+      getAllWindows: vi.fn(() => []),
+      fromWebContents: vi.fn()
     },
-    fromPartition: vi.fn(() => ({
-      clearCache: vi.fn(),
-      clearStorageData: vi.fn()
-    }))
-  },
-  shell: {
-    openExternal: vi.fn(),
-    showItemInFolder: vi.fn()
-  },
-  systemPreferences: {
-    isTrustedAccessibilityClient: vi.fn()
-  },
-  webContents: {
-    getAllWebContents: vi.fn(() => [])
+    ipcMain: {
+      handle: vi.fn(),
+      removeHandler: vi.fn()
+    },
+    app: appMock,
+    dialog: {
+      showOpenDialog: vi.fn()
+    },
+    session: {
+      defaultSession: {
+        clearCache: vi.fn(),
+        clearStorageData: vi.fn(),
+        flushStorageData: vi.fn(),
+        cookies: { flushStore: vi.fn() },
+        closeAllConnections: vi.fn()
+      },
+      fromPartition: vi.fn(() => ({
+        clearCache: vi.fn(),
+        clearStorageData: vi.fn()
+      }))
+    },
+    shell: {
+      openExternal: vi.fn(),
+      showItemInFolder: vi.fn()
+    },
+    systemPreferences: {
+      isTrustedAccessibilityClient: vi.fn()
+    },
+    webContents: {
+      getAllWebContents: vi.fn(() => [])
+    }
   }
-}))
+})
+
+vi.mock('electron', () => electronModuleMock)
+
+const getMockedApp = () => electronModuleMock.app as ElectronApp
 
 vi.mock('../db/dao', () => ({
   db: {
@@ -210,23 +244,14 @@ vi.mock('../constant', () => ({
 
 describe('IPC Database Handlers', () => {
   const mockMainWindow = {} as BrowserWindow
-  const mockApp = {
-    getVersion: vi.fn(() => '1.0.0'),
-    isPackaged: true,
-    getAppPath: vi.fn(() => '/app'),
-    getPath: vi.fn((type: string) => `/${type}`),
-    setPath: vi.fn(),
-    relaunch: vi.fn(),
-    exit: vi.fn(),
-    on: vi.fn(),
-    removeListener: vi.fn()
-  } as unknown as Electron.App
+  let mockApp: ElectronApp
 
   type IpcHandler = (...args: any[]) => any
   let ipcHandlers: Map<string, IpcHandler>
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockApp = getMockedApp()
     ipcHandlers = new Map()
 
     // Mock ipcMain.handle to capture handlers

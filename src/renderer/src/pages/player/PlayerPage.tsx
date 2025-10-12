@@ -176,8 +176,8 @@ function PlayerPage() {
             // 保存会话 ID 用于后续清理
             sessionIdRef.current = sessionResult.session_id
 
-            // TODO: 暂时写死，等待 backend 集成
-            const playListUrl = `http://127.0.0.1:8799${sessionResult.playlist_url}`
+            // 构建完整的播放列表 URL
+            const playListUrl = await SessionService.getPlaylistUrl(sessionResult.session_id)
 
             // 更新转码信息和播放源
             usePlayerStore.getState().updateTranscodeInfo({

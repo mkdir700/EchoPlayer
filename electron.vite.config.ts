@@ -66,39 +66,43 @@ export default defineConfig({
           }
 
           // 需要排除的文件和目录
-          const excludePatterns = [
-            '__pycache__',
-            '.pyc',
-            '.pyo',
-            '.pyd',
-            '.venv',
-            'venv',
-            'env',
-            '.git',
-            '.gitignore',
-            'cache',
-            '.vscode',
-            '.idea',
-            '.egg-info',
-            'dist',
-            'build',
-            '.pytest_cache',
-            '.mypy_cache',
-            '.ruff_cache',
-            'uv.lock',
-            '.DS_Store',
-            'assets'
+          const excludeDirPatterns = [
+            /^__pycache__$/,
+            /^\.venv$/,
+            /^venv$/,
+            /^env$/,
+            /^\.git$/,
+            /^\.gitignore$/,
+            /^\.vscode$/,
+            /^\.idea$/,
+            /^\.pytest_cache$/,
+            /^\.mypy_cache$/,
+            /^\.ruff_cache$/,
+            /^cache$/,
+            /^dist$/,
+            /^build$/,
+            /^assets$/,
+            /\.egg-info$/
           ]
+          const excludeFileNames = new Set(['uv.lock', '.gitignore', '.DS_Store'])
+          const excludeFileSuffixes = ['.pyc', '.pyo', '.pyd']
 
           // 检查是否应排除
-          const shouldExclude = (filePath: string): boolean => {
-            const basename = path.basename(filePath)
-            return excludePatterns.some((pattern) => {
-              if (pattern.startsWith('.') && !pattern.includes('_')) {
-                return basename.endsWith(pattern) || basename === pattern
+          const shouldExclude = (entry: fs.Dirent): boolean => {
+            const { name } = entry
+
+            if (entry.isDirectory()) {
+              return excludeDirPatterns.some((pattern) => pattern.test(name))
+            }
+
+            if (entry.isFile()) {
+              if (excludeFileNames.has(name)) {
+                return true
               }
-              return basename.includes(pattern)
-            })
+              return excludeFileSuffixes.some((suffix) => name.endsWith(suffix))
+            }
+
+            return false
           }
 
           // 递归复制目录
@@ -113,7 +117,7 @@ export default defineConfig({
               const srcPath = path.join(src, entry.name)
               const destPath = path.join(dest, entry.name)
 
-              if (shouldExclude(srcPath)) {
+              if (shouldExclude(entry)) {
                 continue
               }
 
