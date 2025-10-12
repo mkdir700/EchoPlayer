@@ -53,17 +53,17 @@ describe('FFmpegDownloadService', () => {
   describe('getFFmpegPath', () => {
     it('should return correct path for Windows x64', () => {
       const result = service.getFFmpegPath('win32', 'x64')
-      expect(result).toMatch(/6\.1-win32-x64[\\/]ffmpeg\.exe$/)
+      expect(result).toMatch(/latest-win32-x64[\\/]ffmpeg\.exe$/)
     })
 
     it('should return correct path for macOS arm64', () => {
       const result = service.getFFmpegPath('darwin', 'arm64')
-      expect(result).toMatch(/6\.1-darwin-arm64[\\/]ffmpeg$/)
+      expect(result).toMatch(/latest-darwin-arm64[\\/]ffmpeg$/)
     })
 
     it('should return correct path for Linux x64', () => {
       const result = service.getFFmpegPath('linux', 'x64')
-      expect(result).toMatch(/6\.1-linux-x64[\\/]ffmpeg$/)
+      expect(result).toMatch(/latest-linux-x64[\\/]ffmpeg$/)
     })
 
     it('should throw error for unsupported platform', () => {
@@ -109,7 +109,7 @@ describe('FFmpegDownloadService', () => {
 
       const winVersion = service.getFFmpegVersion('win32', 'x64')
       expect(winVersion).toMatchObject({
-        version: '6.1',
+        version: 'latest',
         platform: 'win32',
         arch: 'x64',
         url: expect.stringContaining('ffmpeg-master-latest-win64-gpl.zip')
@@ -117,10 +117,10 @@ describe('FFmpegDownloadService', () => {
 
       const macVersion = service.getFFmpegVersion('darwin', 'arm64')
       expect(macVersion).toMatchObject({
-        version: '6.1',
+        version: 'latest',
         platform: 'darwin',
         arch: 'arm64',
-        url: expect.stringContaining('ffmpeg-6.1.zip')
+        url: expect.stringContaining('ffmpeg-8.0.zip')
       })
     })
 
@@ -183,7 +183,7 @@ describe('FFmpegDownloadService', () => {
 
       const result = service.removeFFmpeg('win32', 'x64')
       expect(result).toBe(true)
-      expect(fs.rmSync).toHaveBeenCalledWith(expect.stringMatching(/6\.1-win32-x64$/), {
+      expect(fs.rmSync).toHaveBeenCalledWith(expect.stringMatching(/latest-win32-x64$/), {
         recursive: true,
         force: true
       })
@@ -232,7 +232,7 @@ describe('FFmpegDownloadService', () => {
 
   describe('download progress tracking', () => {
     it('should track download progress correctly', () => {
-      const progress = service.getDownloadProgress('win32', 'x64')
+      const progress = service.getDownloadProgress('ffmpeg', 'win32', 'x64')
       expect(progress).toBeNull() // No download in progress
 
       // Note: Testing actual download would require mocking HTTPS and file operations
@@ -241,10 +241,10 @@ describe('FFmpegDownloadService', () => {
 
     it('should handle download cancellation', () => {
       // Start with no download in progress
-      expect(service.getDownloadProgress('win32', 'x64')).toBeNull()
+      expect(service.getDownloadProgress('ffmpeg', 'win32', 'x64')).toBeNull()
 
       // Cancel should not throw even if no download is active
-      expect(() => service.cancelDownload('win32', 'x64')).not.toThrow()
+      expect(() => service.cancelDownload('ffmpeg', 'win32', 'x64')).not.toThrow()
     })
   })
 
@@ -359,7 +359,7 @@ describe('FFmpegDownloadService', () => {
         expect(darwinVersion).toMatchObject({
           platform: 'darwin',
           arch: 'arm64',
-          url: 'https://evermeet.cx/ffmpeg/ffmpeg-6.1.zip',
+          url: 'https://evermeet.cx/ffmpeg/ffmpeg-8.0.zip',
           extractPath: 'ffmpeg'
         })
       })

@@ -1,3 +1,4 @@
+import { Arch, Platform } from '@shared/types/system'
 import { spawn } from 'child_process'
 // import * as crypto from 'crypto' // TODO: 将来用于 SHA256 校验
 import { app } from 'electron'
@@ -8,10 +9,6 @@ import * as path from 'path'
 import { loggerService } from './LoggerService'
 
 const logger = loggerService.withContext('FFmpegDownloadService')
-
-// 支持的平台类型
-export type Platform = 'win32' | 'darwin' | 'linux'
-export type Arch = 'x64' | 'arm64'
 
 // FFmpeg 版本配置接口
 export interface FFmpegVersion {
@@ -49,7 +46,7 @@ export enum DownloadStatus {
 const FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
   win32: {
     x64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'win32',
       arch: 'x64',
       url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip',
@@ -57,7 +54,7 @@ const FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
       extractPath: 'ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe'
     },
     arm64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'win32',
       arch: 'arm64',
       url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-winarm64-gpl.zip',
@@ -67,25 +64,25 @@ const FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
   },
   darwin: {
     x64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'darwin',
       arch: 'x64',
-      url: 'https://evermeet.cx/ffmpeg/ffmpeg-6.1.zip',
+      url: 'https://evermeet.cx/ffmpeg/ffmpeg-8.0.zip',
       size: 67 * 1024 * 1024, // 约 67MB
       extractPath: 'ffmpeg'
     },
     arm64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'darwin',
       arch: 'arm64',
-      url: 'https://evermeet.cx/ffmpeg/ffmpeg-6.1.zip',
+      url: 'https://evermeet.cx/ffmpeg/ffmpeg-8.0.zip',
       size: 67 * 1024 * 1024, // 约 67MB
       extractPath: 'ffmpeg'
     }
   },
   linux: {
     x64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'linux',
       arch: 'x64',
       url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz',
@@ -93,7 +90,7 @@ const FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
       extractPath: 'ffmpeg-*-amd64-static/ffmpeg'
     },
     arm64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'linux',
       arch: 'arm64',
       url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz',
@@ -103,11 +100,69 @@ const FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
   }
 }
 
+// FFprobe 配置（与 FFmpeg 使用相同的包，只是提取不同的可执行文件）
+const FFPROBE_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
+  win32: {
+    x64: {
+      version: 'latest',
+      platform: 'win32',
+      arch: 'x64',
+      url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip',
+      size: 89 * 1024 * 1024,
+      extractPath: 'ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe'
+    },
+    arm64: {
+      version: 'latest',
+      platform: 'win32',
+      arch: 'arm64',
+      url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-winarm64-gpl.zip',
+      size: 85 * 1024 * 1024,
+      extractPath: 'ffmpeg-master-latest-winarm64-gpl/bin/ffprobe.exe'
+    }
+  },
+  darwin: {
+    x64: {
+      version: 'latest',
+      platform: 'darwin',
+      arch: 'x64',
+      url: 'https://evermeet.cx/ffprobe/ffprobe-8.0.zip',
+      size: 65 * 1024 * 1024,
+      extractPath: 'ffprobe'
+    },
+    arm64: {
+      version: 'latest',
+      platform: 'darwin',
+      arch: 'arm64',
+      url: 'https://evermeet.cx/ffprobe/ffprobe-8.0.zip',
+      size: 65 * 1024 * 1024,
+      extractPath: 'ffprobe'
+    }
+  },
+  linux: {
+    x64: {
+      version: 'latest',
+      platform: 'linux',
+      arch: 'x64',
+      url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz',
+      size: 35 * 1024 * 1024,
+      extractPath: 'ffmpeg-*-amd64-static/ffprobe'
+    },
+    arm64: {
+      version: 'latest',
+      platform: 'linux',
+      arch: 'arm64',
+      url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz',
+      size: 33 * 1024 * 1024,
+      extractPath: 'ffmpeg-*-arm64-static/ffprobe'
+    }
+  }
+}
+
 // 中国区专供的 FFmpeg 配置
 const CHINA_FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
   win32: {
     x64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'win32',
       arch: 'x64',
       url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/win32-x64.zip',
@@ -115,7 +170,7 @@ const CHINA_FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
       extractPath: 'win32-x64/ffmpeg.exe'
     },
     arm64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'win32',
       arch: 'arm64',
       url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/win32-arm64.zip',
@@ -125,7 +180,7 @@ const CHINA_FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
   },
   darwin: {
     x64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'darwin',
       arch: 'x64',
       url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/darwin-x64.zip',
@@ -133,7 +188,7 @@ const CHINA_FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
       extractPath: 'darwin-x64/ffmpeg'
     },
     arm64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'darwin',
       arch: 'arm64',
       url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/darwin-arm64.zip',
@@ -143,7 +198,7 @@ const CHINA_FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
   },
   linux: {
     x64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'linux',
       arch: 'x64',
       url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/linux-x64.zip',
@@ -151,7 +206,7 @@ const CHINA_FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
       extractPath: 'linux-x64/ffmpeg'
     },
     arm64: {
-      version: '6.1',
+      version: 'latest',
       platform: 'linux',
       arch: 'arm64',
       url: 'https://gitcode.com/mkdir700/echoplayer-ffmpeg/releases/download/v0.0.0/linux-arm64.zip',
@@ -161,17 +216,80 @@ const CHINA_FFMPEG_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
   }
 }
 
+// 中国区专供的 FFprobe 配置
+const CHINA_FFPROBE_VERSIONS: Record<Platform, Record<Arch, FFmpegVersion>> = {
+  win32: {
+    x64: {
+      version: 'latest',
+      platform: 'win32',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffprobe/releases/download/v0.0.0/win32-x64.zip',
+      size: 60 * 1024 * 1024,
+      extractPath: 'win32-x64/ffprobe.exe'
+    },
+    arm64: {
+      version: 'latest',
+      platform: 'win32',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffprobe/releases/download/v0.0.0/win32-arm64.zip',
+      size: 45 * 1024 * 1024,
+      extractPath: 'win32-arm64/ffprobe.exe'
+    }
+  },
+  darwin: {
+    x64: {
+      version: 'latest',
+      platform: 'darwin',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffprobe/releases/download/v0.0.0/darwin-x64.zip',
+      size: 24 * 1024 * 1024,
+      extractPath: 'darwin-x64/ffprobe'
+    },
+    arm64: {
+      version: 'latest',
+      platform: 'darwin',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffprobe/releases/download/v0.0.0/darwin-arm64.zip',
+      size: 24 * 1024 * 1024,
+      extractPath: 'darwin-arm64/ffprobe'
+    }
+  },
+  linux: {
+    x64: {
+      version: 'latest',
+      platform: 'linux',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffprobe/releases/download/v0.0.0/linux-x64.zip',
+      size: 28 * 1024 * 1024,
+      extractPath: 'linux-x64/ffprobe'
+    },
+    arm64: {
+      version: 'latest',
+      platform: 'linux',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-ffprobe/releases/download/v0.0.0/linux-arm64.zip',
+      size: 24 * 1024 * 1024,
+      extractPath: 'linux-arm64/ffprobe'
+    }
+  }
+}
+
 export class FFmpegDownloadService {
   private downloadProgress = new Map<string, DownloadProgress>()
   private downloadController = new Map<string, AbortController>()
-  private readonly binariesDir: string
+  private readonly ffmpegBinariesDir: string
+  private readonly ffprobeBinariesDir: string
   private useChinaMirror: boolean = false
   private regionDetectionPromise: Promise<void> | null = null
 
   constructor() {
-    // FFmpeg 存储在 userData/binaries/ffmpeg/ 目录
-    this.binariesDir = path.join(app.getPath('userData'), 'binaries', 'ffmpeg')
-    this.ensureDir(this.binariesDir)
+    const baseBinariesDir = path.join(app.getPath('userData'), 'binaries')
+    this.ffmpegBinariesDir = path.join(baseBinariesDir, 'ffmpeg')
+    this.ffprobeBinariesDir = path.join(baseBinariesDir, 'ffprobe')
+
+    this.ensureDir(baseBinariesDir)
+    this.ensureDir(this.ffmpegBinariesDir)
+    this.ensureDir(this.ffprobeBinariesDir)
     // 异步检测地区并设置镜像源（不阻塞初始化）
     this.regionDetectionPromise = this.detectRegionAndSetMirror()
   }
@@ -252,7 +370,24 @@ export class FFmpegDownloadService {
 
     const platformDir = `${version.version}-${platform}-${arch}`
     const executableName = platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
-    return path.join(this.binariesDir, platformDir, executableName)
+    return path.join(this.ffmpegBinariesDir, platformDir, executableName)
+  }
+
+  /**
+   * 获取 FFprobe 在本地的存储路径
+   */
+  public getFFprobePath(
+    platform = process.platform as Platform,
+    arch = process.arch as Arch
+  ): string {
+    const version = this.getFFprobeVersion(platform, arch)
+    if (!version) {
+      throw new Error(`不支持的平台: ${platform}-${arch}`)
+    }
+
+    const platformDir = `${version.version}-${platform}-${arch}`
+    const executableName = platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'
+    return path.join(this.ffprobeBinariesDir, platformDir, executableName)
   }
 
   /**
@@ -265,6 +400,21 @@ export class FFmpegDownloadService {
     try {
       const ffmpegPath = this.getFFmpegPath(platform, arch)
       return fs.existsSync(ffmpegPath) && fs.statSync(ffmpegPath).isFile()
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * 检查 FFprobe 是否已下载
+   */
+  public checkFFprobeExists(
+    platform = process.platform as Platform,
+    arch = process.arch as Arch
+  ): boolean {
+    try {
+      const ffprobePath = this.getFFprobePath(platform, arch)
+      return fs.existsSync(ffprobePath) && fs.statSync(ffprobePath).isFile()
     } catch {
       return false
     }
@@ -288,6 +438,26 @@ export class FFmpegDownloadService {
 
     // 回退到全球镜像源
     return FFMPEG_VERSIONS[platform]?.[arch] || null
+  }
+
+  /**
+   * 获取 FFprobe 版本配置
+   */
+  public getFFprobeVersion(
+    platform = process.platform as Platform,
+    arch = process.arch as Arch
+  ): FFmpegVersion | null {
+    // 优先使用中国镜像源（如果启用）
+    if (this.useChinaMirror) {
+      const chinaVersion = CHINA_FFPROBE_VERSIONS[platform]?.[arch]
+      if (chinaVersion) {
+        return chinaVersion
+      }
+      logger.warn('中国镜像源不支持当前平台，回退到全球镜像源', { platform, arch })
+    }
+
+    // 回退到全球镜像源
+    return FFPROBE_VERSIONS[platform]?.[arch] || null
   }
 
   /**
@@ -331,7 +501,7 @@ export class FFmpegDownloadService {
     arch = process.arch as Arch,
     onProgress?: (progress: DownloadProgress) => void
   ): Promise<boolean> {
-    const key = `${platform}-${arch}`
+    const key = `ffmpeg-${platform}-${arch}`
 
     // 检查是否已存在
     if (this.checkFFmpegExists(platform, arch)) {
@@ -346,13 +516,40 @@ export class FFmpegDownloadService {
     }
 
     // 尝试下载（如果中国镜像源失败会自动回退）
-    return await this.downloadFFmpegWithFallback(platform, arch, onProgress)
+    return await this.downloadBinaryWithFallback('ffmpeg', platform, arch, onProgress)
   }
 
   /**
-   * 带回退机制的下载方法
+   * 开始下载 FFprobe
    */
-  private async downloadFFmpegWithFallback(
+  public async downloadFFprobe(
+    platform = process.platform as Platform,
+    arch = process.arch as Arch,
+    onProgress?: (progress: DownloadProgress) => void
+  ): Promise<boolean> {
+    const key = `ffprobe-${platform}-${arch}`
+
+    // 检查是否已存在
+    if (this.checkFFprobeExists(platform, arch)) {
+      logger.info('FFprobe 已存在，跳过下载', { platform, arch })
+      return true
+    }
+
+    // 检查是否正在下载
+    if (this.downloadProgress.has(key)) {
+      logger.warn('FFprobe 正在下载中', { platform, arch })
+      return false
+    }
+
+    // 尝试下载（如果中国镜像源失败会自动回退）
+    return await this.downloadBinaryWithFallback('ffprobe', platform, arch, onProgress)
+  }
+
+  /**
+   * 带回退机制的下载方法（统一处理 ffmpeg 和 ffprobe）
+   */
+  private async downloadBinaryWithFallback(
+    binaryType: 'ffmpeg' | 'ffprobe',
     platform: Platform,
     arch: Arch,
     onProgress?: (progress: DownloadProgress) => void
@@ -370,13 +567,16 @@ export class FFmpegDownloadService {
     }
 
     // 首先尝试当前镜像源
-    const version = this.getFFmpegVersion(platform, arch)
+    const version =
+      binaryType === 'ffmpeg'
+        ? this.getFFmpegVersion(platform, arch)
+        : this.getFFprobeVersion(platform, arch)
     if (!version) {
-      logger.error('不支持的平台', { platform, arch })
+      logger.error('不支持的平台', { platform, arch, binaryType })
       return false
     }
 
-    logger.info('开始下载 FFmpeg', {
+    logger.info(`开始下载 ${binaryType}`, {
       platform,
       arch,
       version: version.version,
@@ -385,20 +585,24 @@ export class FFmpegDownloadService {
     })
 
     // 尝试下载
-    let success = await this.performDownload(platform, arch, version, onProgress)
+    let success = await this.performDownload(binaryType, platform, arch, version, onProgress)
 
     // 如果使用中国镜像源失败，自动回退到全球镜像源
     if (!success && this.useChinaMirror) {
-      logger.warn('中国镜像源下载失败，尝试回退到全球镜像源', { platform, arch })
+      logger.warn(`中国镜像源下载失败，尝试回退到全球镜像源`, { platform, arch, binaryType })
 
-      const globalVersion = FFMPEG_VERSIONS[platform]?.[arch]
+      const globalVersion =
+        binaryType === 'ffmpeg'
+          ? FFMPEG_VERSIONS[platform]?.[arch]
+          : FFPROBE_VERSIONS[platform]?.[arch]
       if (globalVersion) {
         logger.info('使用全球镜像源重新下载', {
           platform,
           arch,
+          binaryType,
           url: globalVersion.url
         })
-        success = await this.performDownload(platform, arch, globalVersion, onProgress)
+        success = await this.performDownload(binaryType, platform, arch, globalVersion, onProgress)
       }
     }
 
@@ -409,12 +613,13 @@ export class FFmpegDownloadService {
    * 执行实际的下载操作
    */
   private async performDownload(
+    binaryType: 'ffmpeg' | 'ffprobe',
     platform: Platform,
     arch: Arch,
     version: FFmpegVersion,
     onProgress?: (progress: DownloadProgress) => void
   ): Promise<boolean> {
-    const key = `${platform}-${arch}`
+    const key = `${binaryType}-${platform}-${arch}`
     const controller = new AbortController()
     this.downloadController.set(key, controller)
 
@@ -432,8 +637,9 @@ export class FFmpegDownloadService {
     try {
       // 创建目标目录
       const platformDir = `${version.version}-${platform}-${arch}`
-      const targetDir = path.join(this.binariesDir, platformDir)
-      const tempDir = path.join(this.binariesDir, '.temp', key)
+      const baseDir = this.getBinariesDir(binaryType)
+      const targetDir = path.join(baseDir, platformDir)
+      const tempDir = path.join(baseDir, '.temp', key)
 
       this.ensureDir(targetDir)
       this.ensureDir(tempDir)
@@ -462,7 +668,8 @@ export class FFmpegDownloadService {
       await this.extractFile(downloadPath, tempDir)
 
       // 移动到目标位置
-      const executableName = platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
+      const executableName =
+        platform === 'win32' ? (binaryType === 'ffmpeg' ? 'ffmpeg.exe' : 'ffprobe.exe') : binaryType
       const finalPath = path.join(targetDir, executableName)
 
       let extractedPath: string
@@ -487,7 +694,7 @@ export class FFmpegDownloadService {
       progress.percent = 100
       onProgress?.(progress)
 
-      logger.info('FFmpeg 下载完成', { platform, arch, finalPath })
+      logger.info(`${binaryType} 下载完成`, { platform, arch, finalPath, binaryType })
 
       // 清理临时文件
       this.cleanupTempDir(tempDir)
@@ -497,9 +704,10 @@ export class FFmpegDownloadService {
       progress.status = 'error'
       onProgress?.(progress)
 
-      logger.error('FFmpeg 下载失败', {
+      logger.error(`${binaryType} 下载失败`, {
         platform,
         arch,
+        binaryType,
         error: error instanceof Error ? error.message : String(error)
       })
 
@@ -514,14 +722,15 @@ export class FFmpegDownloadService {
    * 取消下载
    */
   public cancelDownload(
+    binaryType: 'ffmpeg' | 'ffprobe',
     platform = process.platform as Platform,
     arch = process.arch as Arch
   ): void {
-    const key = `${platform}-${arch}`
+    const key = `${binaryType}-${platform}-${arch}`
     const controller = this.downloadController.get(key)
     if (controller) {
       controller.abort()
-      logger.info('取消 FFmpeg 下载', { platform, arch })
+      logger.info(`取消 ${binaryType} 下载`, { platform, arch, binaryType })
     }
   }
 
@@ -529,10 +738,11 @@ export class FFmpegDownloadService {
    * 获取下载进度
    */
   public getDownloadProgress(
+    binaryType: 'ffmpeg' | 'ffprobe',
     platform = process.platform as Platform,
     arch = process.arch as Arch
   ): DownloadProgress | null {
-    const key = `${platform}-${arch}`
+    const key = `${binaryType}-${platform}-${arch}`
     return this.downloadProgress.get(key) || null
   }
 
@@ -548,7 +758,7 @@ export class FFmpegDownloadService {
       if (!version) return false
 
       const platformDir = `${version.version}-${platform}-${arch}`
-      const targetDir = path.join(this.binariesDir, platformDir)
+      const targetDir = path.join(this.ffmpegBinariesDir, platformDir)
 
       if (fs.existsSync(targetDir)) {
         fs.rmSync(targetDir, { recursive: true, force: true })
@@ -568,13 +778,56 @@ export class FFmpegDownloadService {
   }
 
   /**
+   * 删除已下载的 FFprobe
+   */
+  public removeFFprobe(
+    platform = process.platform as Platform,
+    arch = process.arch as Arch
+  ): boolean {
+    try {
+      const version = this.getFFprobeVersion(platform, arch)
+      if (!version) return false
+
+      const platformDir = `${version.version}-${platform}-${arch}`
+      const targetDir = path.join(this.ffprobeBinariesDir, platformDir)
+
+      if (fs.existsSync(targetDir)) {
+        fs.rmSync(targetDir, { recursive: true, force: true })
+        logger.info('删除 FFprobe 成功', { platform, arch })
+        return true
+      }
+
+      return false
+    } catch (error) {
+      logger.error('删除 FFprobe 失败', {
+        platform,
+        arch,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return false
+    }
+  }
+
+  /**
    * 清理所有临时文件
    */
   public cleanupTempFiles(): void {
-    const tempDir = path.join(this.binariesDir, '.temp')
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true })
-      logger.info('清理临时文件完成')
+    const tempDirs = [
+      { dir: path.join(this.ffmpegBinariesDir, '.temp'), binaryType: 'ffmpeg' as const },
+      { dir: path.join(this.ffprobeBinariesDir, '.temp'), binaryType: 'ffprobe' as const }
+    ]
+
+    let cleaned = false
+    for (const { dir, binaryType } of tempDirs) {
+      if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true, force: true })
+        logger.info('清理临时文件完成', { binaryType })
+        cleaned = true
+      }
+    }
+
+    if (!cleaned) {
+      logger.info('未找到临时文件可清理')
     }
   }
 
@@ -584,6 +837,10 @@ export class FFmpegDownloadService {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true })
     }
+  }
+
+  private getBinariesDir(binaryType: 'ffmpeg' | 'ffprobe'): string {
+    return binaryType === 'ffmpeg' ? this.ffmpegBinariesDir : this.ffprobeBinariesDir
   }
 
   private async downloadFile(

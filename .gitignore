@@ -50,5 +50,7 @@ docs/.vitepress/cache/deps
 dist-test
 
 resources/ffmpeg/
+resources/ffprobe/
 resources/media-server
 .ffmpeg-cache
+.ffprobe-cache
