@@ -11,6 +11,31 @@
   "docs": {
     "title": "Documentation"
   },
+  "player": {
+    "mediaServerPrompt": {
+      "title": "Video Format Incompatible",
+      "subtitle": "Current video format is not supported",
+      "benefits": {
+        "title": "Installing Media Server can resolve this issue",
+        "compatibility": {
+          "title": "Perfect Compatibility",
+          "description": "Supports all common video formats, including HD and Blu-ray videos"
+        },
+        "transcoding": {
+          "title": "Real-time Transcoding",
+          "description": "Automatic background transcoding, no waiting required, ready to use"
+        },
+        "easySetup": {
+          "title": "One-click Installation",
+          "description": "Automated installation process, no manual configuration needed"
+        }
+      },
+      "actions": {
+        "install": "Install Now",
+        "later": "Maybe Later"
+      }
+    }
+  },
   "settings": {
     "about": {
       "checkUpdate": {
