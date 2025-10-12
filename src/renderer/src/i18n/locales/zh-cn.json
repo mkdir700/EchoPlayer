@@ -169,6 +169,29 @@
       "hide": "隐藏字幕列表",
       "show": "展开字幕列表"
     },
+    "mediaServerPrompt": {
+      "title": "视频格式不兼容",
+      "subtitle": "检测到当前视频格式不受支持",
+      "benefits": {
+        "title": "安装 Media Server 可以解决此问题",
+        "compatibility": {
+          "title": "完美兼容",
+          "description": "支持所有常见视频格式，包括高清和蓝光视频"
+        },
+        "transcoding": {
+          "title": "实时转码",
+          "description": "后台自动转码，无需等待，即开即用"
+        },
+        "easySetup": {
+          "title": "一键安装",
+          "description": "自动化安装流程，无需手动配置"
+        }
+      },
+      "actions": {
+        "install": "立即安装",
+        "later": "稍后再说"
+      }
+    },
     "dictionary": {
       "loading": "查询中...",
       "error": "查询失败",
@@ -302,7 +325,7 @@
         "current_path": "当前路径",
         "description": "FFmpeg 是处理视频文件所必需的核心组件，用于获取视频信息和执行视频处理任务。",
         "download": {
-          "button": "下载 FFmpeg",
+          "button": "安装",
           "cancel": "取消下载",
           "cancelled": "下载已取消",
           "downloading": "下载中",
@@ -378,6 +401,7 @@
         },
         "description": "FFprobe 用于读取音视频元数据和流信息，帮助 EchoPlayer 验证文件状态并完成兼容性检测。",
         "download": {
+          "install": "安装",
           "cancel": "取消下载",
           "cancelled": "下载已取消",
           "downloading": "下载中",
