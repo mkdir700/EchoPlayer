@@ -12,7 +12,7 @@ import {
 import type { InstallProgress, MediaServerInfo, PythonVenvInfo } from '@shared/types'
 import { Button, message, Popconfirm } from 'antd'
 import { CheckCircle, Download, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import styled, { css, keyframes } from 'styled-components'
 
 import {
@@ -35,11 +35,10 @@ interface MediaServerSectionProps {
 }
 
 const MediaServerSection = ({
-  ref,
-  onDependencyReady,
-  triggerInstall,
-  onInstallTriggered
+  ref: forwardedRef,
+  ...props
 }: MediaServerSectionProps & { ref?: React.RefObject<HTMLDivElement | null> }) => {
+  const { onDependencyReady, triggerInstall, onInstallTriggered } = props
   const { theme } = useTheme()
 
   const [serverInfo, setServerInfo] = useState<MediaServerInfo | null>(null)
@@ -53,7 +52,7 @@ const MediaServerSection = ({
   const containerRef = useRef<HTMLDivElement>(null)
 
   // 暴露 ref 给父组件
-  useImperativeHandle(ref, () => containerRef.current as HTMLDivElement)
+  useImperativeHandle(forwardedRef, () => containerRef.current as HTMLDivElement)
 
   const updateInstallProgress = useCallback(
     (progress: InstallProgress | null) => {
@@ -514,6 +513,8 @@ const MediaServerSection = ({
   )
 }
 
+MediaServerSection.displayName = 'MediaServerSection'
+
 // 高亮动画 keyframes
 const highlightPulse = keyframes`
   0%, 100% {
@@ -534,7 +535,7 @@ const HighlightWrapper = styled.div<{ $isHighlighted: boolean }>`
     $isHighlighted &&
     css`
       animation: ${highlightPulse} 1s ease-in-out 2;
-      background: rgba(22, 119, 255, 0.05);
+      background: color-mix(in srgb, var(--ant-color-primary) 5%, transparent);
       border: 2px solid var(--ant-color-primary);
     `}
 `
