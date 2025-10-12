@@ -609,7 +609,17 @@ describe('UvBootstrapperService', () => {
         const mockFinalResponse = {
           statusCode: 200,
           headers: { 'content-length': '12582912' },
-          pipe: vi.fn()
+          pipe: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              // 模拟数据分块传输
+              setTimeout(() => callback(Buffer.alloc(1024)), 10)
+            } else if (event === 'end') {
+              setTimeout(() => callback(), 20)
+            }
+            return mockFinalResponse
+          }),
+          destroy: vi.fn()
         }
 
         let callCount = 0
@@ -675,7 +685,16 @@ describe('UvBootstrapperService', () => {
         const mockResponse = {
           statusCode: 200,
           headers: { 'content-length': '12582912' },
-          pipe: vi.fn()
+          pipe: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setTimeout(() => callback(Buffer.alloc(1024)), 10)
+            } else if (event === 'end') {
+              setTimeout(() => callback(), 20)
+            }
+            return mockResponse
+          }),
+          destroy: vi.fn()
         }
 
         httpsGetSpy.mockImplementation((_url, _options, callback) => {
@@ -724,7 +743,16 @@ describe('UvBootstrapperService', () => {
         const mockResponse = {
           statusCode: 200,
           headers: { 'content-length': '12582912' },
-          pipe: vi.fn()
+          pipe: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setTimeout(() => callback(Buffer.alloc(1024)), 10)
+            } else if (event === 'end') {
+              setTimeout(() => callback(), 20)
+            }
+            return mockResponse
+          }),
+          destroy: vi.fn()
         }
 
         httpsGetSpy.mockImplementation((_url, _options, callback) => {
@@ -758,7 +786,16 @@ describe('UvBootstrapperService', () => {
         const mockResponse = {
           statusCode: 200,
           headers: { 'content-length': '12582912' },
-          pipe: vi.fn()
+          pipe: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setTimeout(() => callback(Buffer.alloc(1024)), 10)
+            } else if (event === 'end') {
+              setTimeout(() => callback(), 20)
+            }
+            return mockResponse
+          }),
+          destroy: vi.fn()
         }
 
         httpsGetSpy.mockImplementation((_url, _options, callback) => {
@@ -891,6 +928,14 @@ describe('UvBootstrapperService', () => {
           statusCode: 200,
           headers: { 'content-length': '12582912' },
           pipe: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setTimeout(() => callback(Buffer.alloc(1024)), 10)
+            } else if (event === 'end') {
+              setTimeout(() => callback(), 20)
+            }
+            return mockResponse
+          }),
           destroy: vi.fn()
         }
 
@@ -916,10 +961,16 @@ describe('UvBootstrapperService', () => {
         const mockResponse = {
           statusCode: 200,
           headers: { 'content-length': '12582912' },
-          // on: vi.fn(function (event) {
-          //   return this
-          // }),
-          pipe: vi.fn()
+          pipe: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setTimeout(() => callback(Buffer.alloc(1024)), 10)
+            } else if (event === 'end') {
+              setTimeout(() => callback(), 20)
+            }
+            return mockResponse
+          }),
+          destroy: vi.fn()
         }
 
         httpsGetSpy.mockImplementation((_url, _options, callback) => {

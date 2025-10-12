@@ -109,7 +109,7 @@ describe('FFmpegDownloadService', () => {
 
       const winVersion = service.getFFmpegVersion('win32', 'x64')
       expect(winVersion).toMatchObject({
-        version: '6.1',
+        version: 'latest',
         platform: 'win32',
         arch: 'x64',
         url: expect.stringContaining('ffmpeg-master-latest-win64-gpl.zip')
@@ -117,10 +117,10 @@ describe('FFmpegDownloadService', () => {
 
       const macVersion = service.getFFmpegVersion('darwin', 'arm64')
       expect(macVersion).toMatchObject({
-        version: '6.1',
+        version: 'latest',
         platform: 'darwin',
         arch: 'arm64',
-        url: expect.stringContaining('ffmpeg-6.1.zip')
+        url: expect.stringContaining('ffmpeg-8.0.zip')
       })
     })
 
@@ -183,7 +183,7 @@ describe('FFmpegDownloadService', () => {
 
       const result = service.removeFFmpeg('win32', 'x64')
       expect(result).toBe(true)
-      expect(fs.rmSync).toHaveBeenCalledWith(expect.stringMatching(/6\.1-win32-x64$/), {
+      expect(fs.rmSync).toHaveBeenCalledWith(expect.stringMatching(/latest-win32-x64$/), {
         recursive: true,
         force: true
       })
@@ -359,7 +359,7 @@ describe('FFmpegDownloadService', () => {
         expect(darwinVersion).toMatchObject({
           platform: 'darwin',
           arch: 'arm64',
-          url: 'https://evermeet.cx/ffmpeg/ffmpeg-6.1.zip',
+          url: 'https://evermeet.cx/ffmpeg/ffmpeg-8.0.zip',
           extractPath: 'ffmpeg'
         })
       })
