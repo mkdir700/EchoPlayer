@@ -223,6 +223,9 @@ export class PythonVenvService {
     onProgress?: (progress: InstallProgress) => void,
     pythonVersion?: string
   ): Promise<boolean> {
+    // 在新安装开始时清空旧的进度状态
+    this.installProgress = null
+
     try {
       logger.info('开始初始化 Python 环境', { pythonVersion })
 
@@ -308,8 +311,6 @@ export class PythonVenvService {
       })
 
       return false
-    } finally {
-      this.installProgress = null
     }
   }
 
