@@ -419,6 +419,9 @@ function PlayerPage() {
       <Container>
         <LoadingContainer>
           <LoadingText>加载中...</LoadingText>
+          <LoadingBarContainer>
+            <LoadingBarProgress />
+          </LoadingBarContainer>
         </LoadingContainer>
       </Container>
     )
@@ -562,14 +565,48 @@ const ContentBody = styled.div`
 
 const LoadingContainer = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
+  gap: 16px;
 `
 
 const LoadingText = styled.div`
   font-size: 16px;
   color: var(--color-text-2, #bbb);
+`
+
+const LoadingBarContainer = styled.div`
+  width: 240px;
+  height: 4px;
+  background: var(--ant-color-fill-quaternary, rgba(255, 255, 255, 0.08));
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+`
+
+const LoadingBarProgress = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: var(--ant-color-primary, #1677ff);
+  border-radius: 2px;
+  animation: loadingSlide 1.5s ease-in-out infinite;
+
+  @keyframes loadingSlide {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(250%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
 `
 
 const ErrorContainer = styled.div`
