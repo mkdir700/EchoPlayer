@@ -217,6 +217,36 @@ const api = {
       cleanupTemp: (): Promise<void> => ipcRenderer.invoke(IpcChannel.FfmpegDownload_CleanupTemp)
     }
   },
+  ffprobe: {
+    checkExists: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.Ffprobe_CheckExists),
+    getVersion: (): Promise<string | null> => ipcRenderer.invoke(IpcChannel.Ffprobe_GetVersion),
+    getPath: (): Promise<string> => ipcRenderer.invoke(IpcChannel.Ffprobe_GetPath),
+    getInfo: (): Promise<{
+      path: string
+      isBundled: boolean
+      isDownloaded: boolean
+      isSystemFFprobe: boolean
+      platform: string
+      arch: string
+      version?: string
+      needsDownload: boolean
+    }> => ipcRenderer.invoke(IpcChannel.Ffprobe_GetInfo),
+    // FFprobe 下载管理
+    download: {
+      checkExists: (platform?: string, arch?: string): Promise<boolean> =>
+        ipcRenderer.invoke(IpcChannel.FfprobeDownload_CheckExists, platform, arch),
+      getVersion: (platform?: string, arch?: string): Promise<string | null> =>
+        ipcRenderer.invoke(IpcChannel.FfprobeDownload_GetVersion, platform, arch),
+      download: (platform?: string, arch?: string): Promise<boolean> =>
+        ipcRenderer.invoke(IpcChannel.FfprobeDownload_Download, platform, arch),
+      getProgress: (platform?: string, arch?: string): Promise<any> =>
+        ipcRenderer.invoke(IpcChannel.FfprobeDownload_GetProgress, platform, arch),
+      cancel: (platform?: string, arch?: string): Promise<void> =>
+        ipcRenderer.invoke(IpcChannel.FfprobeDownload_Cancel, platform, arch),
+      remove: (platform?: string, arch?: string): Promise<boolean> =>
+        ipcRenderer.invoke(IpcChannel.FfprobeDownload_Remove, platform, arch)
+    }
+  },
   mediainfo: {
     checkExists: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.MediaInfo_CheckExists),
     getVersion: (): Promise<string | null> => ipcRenderer.invoke(IpcChannel.MediaInfo_GetVersion),
@@ -237,6 +267,72 @@ const api = {
         strategy,
         timeoutMs
       )
+  },
+  uv: {
+    checkInstallation: (): Promise<{
+      exists: boolean
+      path?: string
+      version?: string
+      isSystem: boolean
+      isDownloaded: boolean
+    }> => ipcRenderer.invoke(IpcChannel.UV_CheckInstallation),
+    download: (platform?: string, arch?: string): Promise<boolean> =>
+      ipcRenderer.invoke(IpcChannel.UV_Download, platform, arch),
+    getProgress: (platform?: string, arch?: string): Promise<any> =>
+      ipcRenderer.invoke(IpcChannel.UV_GetProgress, platform, arch),
+    cancelDownload: (platform?: string, arch?: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannel.UV_CancelDownload, platform, arch),
+    getInfo: (): Promise<{
+      exists: boolean
+      path?: string
+      version?: string
+      isSystem: boolean
+      isDownloaded: boolean
+    }> => ipcRenderer.invoke(IpcChannel.UV_GetInfo)
+  },
+  pythonVenv: {
+    checkInfo: (): Promise<{
+      exists: boolean
+      venvPath?: string
+      pythonPath?: string
+      pythonVersion?: string
+      hasProjectConfig: boolean
+      hasLockfile: boolean
+    }> => ipcRenderer.invoke(IpcChannel.PythonVenv_CheckInfo),
+    initialize: (pythonVersion?: string): Promise<boolean> =>
+      ipcRenderer.invoke(IpcChannel.PythonVenv_Initialize, pythonVersion),
+    reinstallDependencies: (): Promise<boolean> =>
+      ipcRenderer.invoke(IpcChannel.PythonVenv_ReinstallDependencies),
+    remove: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.PythonVenv_Remove),
+    getProgress: (): Promise<{
+      stage: 'init' | 'venv' | 'deps' | 'completed' | 'error'
+      message: string
+      percent: number
+    } | null> => ipcRenderer.invoke(IpcChannel.PythonVenv_GetProgress),
+    getMediaServerPath: (): Promise<string> =>
+      ipcRenderer.invoke(IpcChannel.PythonVenv_GetMediaServerPath)
+  },
+  mediaServer: {
+    start: (config?: {
+      port?: number
+      host?: string
+      logLevel?: 'debug' | 'info' | 'warning' | 'error'
+    }): Promise<boolean> => ipcRenderer.invoke(IpcChannel.MediaServer_Start, config),
+    stop: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.MediaServer_Stop),
+    restart: (config?: {
+      port?: number
+      host?: string
+      logLevel?: 'debug' | 'info' | 'warning' | 'error'
+    }): Promise<boolean> => ipcRenderer.invoke(IpcChannel.MediaServer_Restart, config),
+    getInfo: (): Promise<{
+      status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error'
+      pid?: number
+      port?: number
+      startTime?: number
+      uptime?: number
+      error?: string
+    }> => ipcRenderer.invoke(IpcChannel.MediaServer_GetInfo),
+    getPort: (): Promise<number | null> => ipcRenderer.invoke(IpcChannel.MediaServer_GetPort)
   },
   fs: {
     checkFileExists: (filePath: string): Promise<boolean> =>
