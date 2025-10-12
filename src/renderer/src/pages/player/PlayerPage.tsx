@@ -15,6 +15,7 @@ import { IpcChannel } from '@shared/IpcChannel'
 import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
+import { MediaServerRecommendationPrompt } from '@renderer/components/MediaServerRecommendationPrompt'
 import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -93,6 +94,7 @@ function PlayerPage() {
     type: ExtendedErrorType
     originalPath?: string
   } | null>(null)
+  const [showMediaServerPrompt, setShowMediaServerPrompt] = useState(false)
   // const { pokeInteraction } = usePlayerUI()
 
   // 保存转码会话 ID 用于清理
@@ -157,54 +159,74 @@ function PlayerPage() {
               reasons: compatibilityResult.incompatibilityReasons
             })
 
-            // 设置转码状态
-            usePlayerStore.getState().setTranscodeStatus('transcoding')
-            usePlayerStore.getState().updateTranscodeInfo({
-              originalSrc: fileUrl,
-              error: undefined,
-              startTime: Date.now()
-            })
+            // 检查 Media Server 是否已安装
+            try {
+              const venvInfo = await window.api.pythonVenv.checkInfo()
+              if (!venvInfo.exists) {
+                logger.warn('Media Server 未安装，显示推荐安装弹窗')
+                setShowMediaServerPrompt(true)
+                // 继续使用原始播放源，让用户决定是否安装
+                finalSrc = fileUrl
+                // 跳过转码流程
+                logger.info('跳过转码流程，等待用户安装 Media Server')
+              } else {
+                // Media Server 已安装，继续转码流程
+                // 设置转码状态
+                usePlayerStore.getState().setTranscodeStatus('transcoding')
+                usePlayerStore.getState().updateTranscodeInfo({
+                  originalSrc: fileUrl,
+                  error: undefined,
+                  startTime: Date.now()
+                })
 
-            // 调用会话服务创建播放会话
-            const sessionResult = await SessionService.createSession({
-              file_path: file.path,
-              initial_time: record.currentTime || 0
-            })
+                // 调用会话服务创建播放会话
+                const sessionResult = await SessionService.createSession({
+                  file_path: file.path,
+                  initial_time: record.currentTime || 0
+                })
 
-            logger.info('会话创建完成', { sessionResult })
+                logger.info('会话创建完成', { sessionResult })
 
-            // 保存会话 ID 用于后续清理
-            sessionIdRef.current = sessionResult.session_id
+                // 保存会话 ID 用于后续清理
+                sessionIdRef.current = sessionResult.session_id
 
-            // 构建完整的播放列表 URL
-            const playListUrl = await SessionService.getPlaylistUrl(sessionResult.session_id)
+                // 构建完整的播放列表 URL
+                const playListUrl = await SessionService.getPlaylistUrl(sessionResult.session_id)
 
-            // 更新转码信息和播放源
-            usePlayerStore.getState().updateTranscodeInfo({
-              hlsSrc: playListUrl,
-              windowId: 0, // 会话模式不再使用 windowId
-              assetHash: sessionResult.asset_hash,
-              profileHash: sessionResult.profile_hash,
-              cached: false, // 会话模式由后端管理缓存
-              sessionId: sessionResult.session_id,
-              endTime: Date.now()
-            })
+                // 更新转码信息和播放源
+                usePlayerStore.getState().updateTranscodeInfo({
+                  hlsSrc: playListUrl,
+                  windowId: 0, // 会话模式不再使用 windowId
+                  assetHash: sessionResult.asset_hash,
+                  profileHash: sessionResult.profile_hash,
+                  cached: false, // 会话模式由后端管理缓存
+                  sessionId: sessionResult.session_id,
+                  endTime: Date.now()
+                })
 
-            // 切换到 HLS 播放模式
-            usePlayerStore.getState().switchToHlsSource(playListUrl, {
-              windowId: 0,
-              assetHash: sessionResult.asset_hash,
-              profileHash: sessionResult.profile_hash,
-              cached: false,
-              sessionId: sessionResult.session_id
-            })
+                // 切换到 HLS 播放模式
+                usePlayerStore.getState().switchToHlsSource(playListUrl, {
+                  windowId: 0,
+                  assetHash: sessionResult.asset_hash,
+                  profileHash: sessionResult.profile_hash,
+                  cached: false,
+                  sessionId: sessionResult.session_id
+                })
 
-            finalSrc = playListUrl
+                finalSrc = playListUrl
 
-            logger.info('预转码流程完成，使用 HLS 播放源', {
-              originalSrc: fileUrl,
-              hlsSrc: finalSrc
-            })
+                logger.info('预转码流程完成，使用 HLS 播放源', {
+                  originalSrc: fileUrl,
+                  hlsSrc: finalSrc
+                })
+              }
+            } catch (checkError) {
+              logger.error('检查 Media Server 状态失败，显示推荐安装弹窗', {
+                error: checkError instanceof Error ? checkError.message : String(checkError)
+              })
+              setShowMediaServerPrompt(true)
+              finalSrc = fileUrl
+            }
           } else {
             logger.info('编解码器兼容，使用原始播放源', { filePath: file.path })
           }
@@ -501,6 +523,12 @@ function PlayerPage() {
           errorType={videoError?.type || 'unknown'}
           onFileRelocate={handleFileRelocate}
           onRemoveFromLibrary={handleRemoveFromLibrary}
+        />
+
+        {/* Media Server 推荐安装弹窗 */}
+        <MediaServerRecommendationPrompt
+          open={showMediaServerPrompt}
+          onClose={() => setShowMediaServerPrompt(false)}
         />
       </Container>
     </PlayerPageProvider>
