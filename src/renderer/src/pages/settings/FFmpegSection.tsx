@@ -419,7 +419,7 @@ const FFmpegSection: FC<FFmpegSectionProps> = ({ refreshKey = 0 }) => {
                   ? t('settings.plugins.ffmpeg.download.success')
                   : isDownloading
                     ? `${t('settings.plugins.ffmpeg.download.downloading')} ${downloadProgressPercent.toFixed(0)}%`
-                    : '安装'}
+                    : t('settings.plugins.ffmpeg.download.button')}
               </DownloadButtonText>
               {isDownloading && <DownloadProgressBar $progress={downloadProgressPercent} />}
             </DownloadButton>
