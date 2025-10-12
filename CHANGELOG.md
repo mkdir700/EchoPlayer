@@ -1,3 +1,11 @@
+# [1.1.0-alpha.2](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.1...v1.1.0-alpha.2) (2025-10-12)
+
+### Features
+
+- **media-server:** implement runtime runtime management system ([#204](https://github.com/mkdir700/EchoPlayer/issues/204)) ([2d179f5](https://github.com/mkdir700/EchoPlayer/commit/2d179f55180b7a79b07f960ebe7003665faabf9b))
+- **player:** add animated loading progress bar to PlayerPage ([#206](https://github.com/mkdir700/EchoPlayer/issues/206)) ([53f7393](https://github.com/mkdir700/EchoPlayer/commit/53f7393b8c7abba9b5c84985766bcd8c01dfa366))
+- **player:** add media server recommendation prompt for incompatible videos ([#205](https://github.com/mkdir700/EchoPlayer/issues/205)) ([12b4434](https://github.com/mkdir700/EchoPlayer/commit/12b4434d259b86d309fafab3c57c2c7a58e6f6fb))
+
 # [1.1.0-alpha.1](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0...v1.1.0-alpha.1) (2025-10-11)
 
 ### Bug Fixes
