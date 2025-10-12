@@ -64,6 +64,7 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
   const [installProgress, setInstallProgressState] = useState<InstallProgress | null>(null)
   const [showSuccessState, setShowSuccessState] = useState(false)
   const isCompletionHandledRef = useRef(false)
+  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const updateInstallProgress = useCallback(
     (progress: InstallProgress | null) => {
@@ -149,12 +150,19 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
             setShowSuccessState(true)
             message.success('Media Server 环境安装成功')
 
+            // 清理之前的 timeout（如果存在）
+            if (successTimeoutRef.current) {
+              clearTimeout(successTimeoutRef.current)
+              successTimeoutRef.current = null
+            }
+
             // 2秒后恢复正常状态
-            setTimeout(() => {
+            successTimeoutRef.current = setTimeout(() => {
               setIsInstalling(false)
               setShowSuccessState(false)
               setVenvInfo(currentVenvInfo)
               updateInstallProgress(null)
+              successTimeoutRef.current = null
             }, 2000)
           }
         } catch (error) {
@@ -167,12 +175,22 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
       if (progressInterval) {
         clearInterval(progressInterval)
       }
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current)
+        successTimeoutRef.current = null
+      }
     }
   }, [isInstalling, updateInstallProgress])
 
   // 安装 Media Server 环境
   const handleInstall = useCallback(async () => {
     try {
+      // 清理之前的 timeout（如果存在）
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current)
+        successTimeoutRef.current = null
+      }
+
       isCompletionHandledRef.current = false
       setIsInstalling(true)
       updateInstallProgress({ stage: 'init', message: '正在检查依赖...', percent: 0 })
@@ -291,6 +309,12 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
         // 不抛出错误，因为安装已成功
       }
     } catch (error) {
+      // 清理 timeout
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current)
+        successTimeoutRef.current = null
+      }
+
       setIsInstalling(false)
       updateInstallProgress(null)
       message.error(
