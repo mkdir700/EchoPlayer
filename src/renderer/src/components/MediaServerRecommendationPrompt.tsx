@@ -133,8 +133,8 @@ const IconWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: ${SPACING.XXL}px;
+  height: ${SPACING.XXL}px;
   background: linear-gradient(135deg, var(--ant-color-warning), var(--ant-color-error));
   border-radius: ${BORDER_RADIUS.LG}px;
   color: white;
@@ -187,13 +187,13 @@ const BenefitIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: ${SPACING.XL}px;
+  height: ${SPACING.XL}px;
   background: var(--ant-color-primary);
   border-radius: ${BORDER_RADIUS.BASE}px;
   color: white;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: ${SPACING.XXS}px;
 `
 
 const BenefitContent = styled.div`
