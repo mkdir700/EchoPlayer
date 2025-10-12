@@ -9,6 +9,7 @@ import {
   FONT_WEIGHTS,
   SPACING
 } from '@renderer/infrastructure/styles/theme'
+import type { InstallProgress, MediaServerInfo, PythonVenvInfo } from '@shared/types'
 import { Button, message, Popconfirm } from 'antd'
 import { CheckCircle, Download, Trash2 } from 'lucide-react'
 import { FC, useCallback, useEffect, useRef, useState } from 'react'
@@ -31,35 +32,11 @@ interface MediaServerSectionProps {
   onDependencyReady?: (dependency: DependencyType) => void
 }
 
-interface MediaServerInfo {
-  status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error'
-  pid?: number
-  port?: number
-  startTime?: number
-  uptime?: number
-  error?: string
-}
-
-interface VenvInfo {
-  exists: boolean
-  venvPath?: string
-  pythonPath?: string
-  pythonVersion?: string
-  hasProjectConfig: boolean
-  hasLockfile: boolean
-}
-
-interface InstallProgress {
-  stage: 'init' | 'venv' | 'deps' | 'completed' | 'error'
-  message: string
-  percent: number
-}
-
 const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) => {
   const { theme } = useTheme()
 
   const [serverInfo, setServerInfo] = useState<MediaServerInfo | null>(null)
-  const [venvInfo, setVenvInfo] = useState<VenvInfo | null>(null)
+  const [venvInfo, setVenvInfo] = useState<PythonVenvInfo | null>(null)
   const [isInstalling, setIsInstalling] = useState(false)
   const [installProgress, setInstallProgressState] = useState<InstallProgress | null>(null)
   const [showSuccessState, setShowSuccessState] = useState(false)

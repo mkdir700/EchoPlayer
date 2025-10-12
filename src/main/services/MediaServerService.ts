@@ -1,4 +1,5 @@
 import { IpcChannel } from '@shared/IpcChannel'
+import type { MediaServerInfo, MediaServerStatus } from '@shared/types'
 import { ChildProcess, spawn } from 'child_process'
 import { app, BrowserWindow } from 'electron'
 import { createServer } from 'net'
@@ -12,28 +13,6 @@ import { pythonVenvService } from './PythonVenvService'
 import { uvBootstrapperService } from './UvBootstrapperService'
 
 const logger = loggerService.withContext('MediaServerService')
-
-/**
- * Media Server 状态
- */
-export type MediaServerStatus =
-  | 'stopped' // 已停止
-  | 'starting' // 正在启动
-  | 'running' // 运行中
-  | 'stopping' // 正在停止
-  | 'error' // 错误
-
-/**
- * Media Server 信息
- */
-export interface MediaServerInfo {
-  status: MediaServerStatus
-  pid?: number
-  port?: number
-  startTime?: number
-  uptime?: number
-  error?: string
-}
 
 /**
  * Media Server 配置

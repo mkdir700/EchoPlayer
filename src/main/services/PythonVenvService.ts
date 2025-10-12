@@ -1,3 +1,4 @@
+import type { InstallProgress, PythonVenvInfo } from '@shared/types'
 import { app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -6,27 +7,6 @@ import { loggerService } from './LoggerService'
 import { uvBootstrapperService } from './UvBootstrapperService'
 
 const logger = loggerService.withContext('PythonVenvService')
-
-/**
- * Python 虚拟环境状态
- */
-export interface PythonVenvInfo {
-  exists: boolean
-  venvPath?: string
-  pythonPath?: string
-  pythonVersion?: string
-  hasProjectConfig: boolean
-  hasLockfile: boolean
-}
-
-/**
- * 环境安装进度
- */
-export interface InstallProgress {
-  stage: 'init' | 'venv' | 'deps' | 'completed' | 'error'
-  message: string
-  percent: number
-}
 
 /**
  * Python 虚拟环境管理服务
