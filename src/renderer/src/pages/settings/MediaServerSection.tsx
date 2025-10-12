@@ -517,10 +517,10 @@ const MediaServerSection = ({
 // 高亮动画 keyframes
 const highlightPulse = keyframes`
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(22, 119, 255, 0);
+    box-shadow: 0 0 0 0 var(--ant-color-primary-bg);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(22, 119, 255, 0.3);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--ant-color-primary) 30%, transparent);
   }
 `
 
