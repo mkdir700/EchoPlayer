@@ -1,6 +1,22 @@
 import { loggerService } from '@logger'
+import { IpcChannel } from '@shared/IpcChannel'
 
 const logger = loggerService.withContext('SessionService')
+
+// 监听 Media Server 端口变更事件
+if (typeof window !== 'undefined' && window.electron?.ipcRenderer) {
+  window.electron.ipcRenderer.on(
+    IpcChannel.MediaServer_PortChanged,
+    (_event: any, newPort: number | null) => {
+      if (newPort === null) {
+        logger.info('收到 Media Server 停止通知，清空端口缓存')
+      } else {
+        logger.info('收到 Media Server 端口变更通知', { newPort })
+      }
+      SessionService.resetPort()
+    }
+  )
+}
 
 /**
  * 会话创建请求参数
@@ -109,8 +125,8 @@ export class SessionError extends Error {
  * 与后端会话 API 集成，提供跨窗口连续播放功能
  */
 export class SessionService {
-  /** 后端 API 基础 URL */
-  private static readonly API_BASE_URL = 'http://localhost:8799/api/v1/session'
+  /** 后端 API 端口（动态获取） */
+  private static mediaServerPort: number | null = null
 
   /** 请求超时时间（毫秒） */
   private static readonly REQUEST_TIMEOUT = 30000
@@ -123,6 +139,45 @@ export class SessionService {
 
   /** 活跃的会话请求缓存，用于去重 */
   private static readonly activeRequests = new Map<string, Promise<any>>()
+
+  /**
+   * 获取后端 API 基础 URL
+   */
+  private static async getApiBaseUrl(): Promise<string> {
+    // 如果尚未获取端口，先获取一次
+    if (this.mediaServerPort === null) {
+      try {
+        this.mediaServerPort = await window.api.mediaServer.getPort()
+        if (this.mediaServerPort === null) {
+          throw new Error('Media Server 未运行或端口未分配')
+        }
+        logger.debug('获取 Media Server 端口', { port: this.mediaServerPort })
+      } catch (error) {
+        logger.error('获取 Media Server 端口失败', { error })
+        throw new SessionError('无法获取 Media Server 端口，请确保服务已启动')
+      }
+    }
+
+    return `http://127.0.0.1:${this.mediaServerPort}/api/v1/session`
+  }
+
+  /**
+   * 重置端口缓存（用于 Media Server 重启时）
+   */
+  public static resetPort(): void {
+    logger.debug('重置 Media Server 端口缓存')
+    this.mediaServerPort = null
+  }
+
+  /**
+   * 构建完整的播放列表 URL
+   * @param sessionId 会话ID
+   * @returns 完整的播放列表 URL
+   */
+  public static async getPlaylistUrl(sessionId: string): Promise<string> {
+    const apiBaseUrl = await this.getApiBaseUrl()
+    return `${apiBaseUrl}/${sessionId}/playlist.m3u8`
+  }
 
   /**
    * 生成请求的唯一键，用于去重
@@ -150,7 +205,8 @@ export class SessionService {
    * 发起 HTTP 请求的基础方法
    */
   private static async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.API_BASE_URL}${endpoint}`
+    const apiBaseUrl = await this.getApiBaseUrl()
+    const url = `${apiBaseUrl}${endpoint}`
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT)
@@ -310,7 +366,8 @@ export class SessionService {
     logger.debug('获取会话播放列表', { sessionId })
 
     try {
-      const response = await fetch(`${this.API_BASE_URL}/${sessionId}/playlist.m3u8`, {
+      const apiBaseUrl = await this.getApiBaseUrl()
+      const response = await fetch(`${apiBaseUrl}/${sessionId}/playlist.m3u8`, {
         headers: {
           Accept: 'application/vnd.apple.mpegurl'
         }

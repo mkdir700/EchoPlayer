@@ -13,59 +13,59 @@ interface PlatformConfig {
   skipExtraction?: boolean // 跳过解压（对于单文件下载）
 }
 
-interface FFmpegDownloadConfig {
+interface FFprobeDownloadConfig {
   [platform: string]: {
     [arch: string]: PlatformConfig
   }
 }
 
-// FFmpeg 下载配置 - 使用 GPL 版本获得完整功能
-const FFMPEG_CONFIG: FFmpegDownloadConfig = {
+// FFprobe 下载配置 - 使用 GPL 版本获得完整功能
+const FFPROBE_CONFIG: FFprobeDownloadConfig = {
   win32: {
     x64: {
       url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip',
-      executable: 'ffmpeg.exe',
-      extractPath: 'ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe'
+      executable: 'ffprobe.exe',
+      extractPath: 'ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe'
     },
     arm64: {
       url: 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-winarm64-gpl.zip',
-      executable: 'ffmpeg.exe',
-      extractPath: 'ffmpeg-master-latest-winarm64-gpl/bin/ffmpeg.exe'
+      executable: 'ffprobe.exe',
+      extractPath: 'ffmpeg-master-latest-winarm64-gpl/bin/ffprobe.exe'
     }
   },
   darwin: {
     x64: {
-      url: 'https://evermeet.cx/ffmpeg/ffmpeg-8.0.zip',
-      executable: 'ffmpeg',
-      extractPath: 'ffmpeg'
+      url: 'https://evermeet.cx/ffprobe/ffprobe-8.0.zip',
+      executable: 'ffprobe',
+      extractPath: 'ffprobe'
     },
     arm64: {
-      url: 'https://evermeet.cx/ffmpeg/ffmpeg-8.0.zip', // 通用二进制文件
-      executable: 'ffmpeg',
-      extractPath: 'ffmpeg'
+      url: 'https://evermeet.cx/ffprobe/ffprobe-8.0.zip', // 通用二进制文件
+      executable: 'ffprobe',
+      extractPath: 'ffprobe'
     }
   },
   linux: {
     x64: {
       url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz',
-      executable: 'ffmpeg',
-      extractPath: 'ffmpeg-*-amd64-static/ffmpeg'
+      executable: 'ffprobe',
+      extractPath: 'ffmpeg-*-amd64-static/ffprobe'
     },
     arm64: {
       url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz',
-      executable: 'ffmpeg',
-      extractPath: 'ffmpeg-*-arm64-static/ffmpeg'
+      executable: 'ffprobe',
+      extractPath: 'ffmpeg-*-arm64-static/ffprobe'
     }
   }
 }
 
-class FFmpegDownloader {
+class FFprobeDownloader {
   private readonly outputDir: string
   private readonly cacheDir: string
 
-  constructor(outputDir: string = 'resources/ffmpeg') {
+  constructor(outputDir: string = 'resources/ffprobe') {
     this.outputDir = path.resolve(outputDir)
-    this.cacheDir = path.resolve('.ffmpeg-cache')
+    this.cacheDir = path.resolve('.ffprobe-cache')
   }
 
   // 确保目录存在
@@ -84,7 +84,7 @@ class FFmpegDownloader {
 
   // 获取缓存文件路径
   private getCachePath(platform: string, arch: string): string {
-    const config = FFMPEG_CONFIG[platform]?.[arch]
+    const config = FFPROBE_CONFIG[platform]?.[arch]
     if (!config) throw new Error(`不支持的平台: ${platform}-${arch}`)
 
     const filename = path.basename(config.url)
@@ -112,7 +112,7 @@ class FFmpegDownloader {
           currentUrl,
           {
             headers: {
-              'User-Agent': 'EchoPlayer-FFmpeg-Downloader/1.0'
+              'User-Agent': 'EchoPlayer-FFprobe-Downloader/1.0'
             },
             timeout: 30000
           },
@@ -247,14 +247,14 @@ class FFmpegDownloader {
     }
   }
 
-  // 下载并安装 FFmpeg
-  public async downloadFFmpeg(platform?: string, arch?: string): Promise<void> {
+  // 下载并安装 FFprobe
+  public async downloadFFprobe(platform?: string, arch?: string): Promise<void> {
     const targetPlatform = platform || process.platform
     const targetArch = arch || process.arch
 
-    console.log(`开始下载 FFmpeg ${targetPlatform}-${targetArch}...`)
+    console.log(`开始下载 FFprobe ${targetPlatform}-${targetArch}...`)
 
-    const config = FFMPEG_CONFIG[targetPlatform]?.[targetArch]
+    const config = FFPROBE_CONFIG[targetPlatform]?.[targetArch]
     if (!config) {
       throw new Error(`不支持的平台: ${targetPlatform}-${targetArch}`)
     }
@@ -268,7 +268,7 @@ class FFmpegDownloader {
 
     // 检查是否已存在
     if (fs.existsSync(finalBinaryPath)) {
-      console.log(`FFmpeg 已存在: ${finalBinaryPath}`)
+      console.log(`FFprobe 已存在: ${finalBinaryPath}`)
       return
     }
 
@@ -329,7 +329,7 @@ class FFmpegDownloader {
         fs.chmodSync(finalBinaryPath, 0o755)
       }
 
-      console.log(`FFmpeg 安装完成: ${finalBinaryPath}`)
+      console.log(`FFprobe 安装完成: ${finalBinaryPath}`)
 
       // 清理临时目录
       fs.rmSync(tempExtractDir, { recursive: true, force: true })
@@ -344,12 +344,12 @@ class FFmpegDownloader {
 
   // 下载所有支持的平台
   public async downloadAllPlatforms(): Promise<void> {
-    console.log('开始下载所有平台的 FFmpeg...')
+    console.log('开始下载所有平台的 FFprobe...')
 
-    for (const [platform, archConfigs] of Object.entries(FFMPEG_CONFIG)) {
+    for (const [platform, archConfigs] of Object.entries(FFPROBE_CONFIG)) {
       for (const arch of Object.keys(archConfigs)) {
         try {
-          await this.downloadFFmpeg(platform, arch)
+          await this.downloadFFprobe(platform, arch)
         } catch (error) {
           console.error(`下载 ${platform}-${arch} 失败:`, error)
         }
@@ -361,7 +361,7 @@ class FFmpegDownloader {
 
   // 仅下载当前平台
   public async downloadCurrentPlatform(): Promise<void> {
-    await this.downloadFFmpeg()
+    await this.downloadFFprobe()
   }
 
   // 清理缓存
@@ -378,7 +378,7 @@ async function main() {
   const args = process.argv.slice(2)
   let command = args[0]
 
-  const downloader = new FFmpegDownloader()
+  const downloader = new FFprobeDownloader()
 
   try {
     // 优先检查环境变量，如果设置了构建目标则使用目标平台
@@ -386,7 +386,7 @@ async function main() {
       console.log(
         `检测到构建目标平台: ${process.env.BUILD_TARGET_PLATFORM}-${process.env.BUILD_TARGET_ARCH || process.arch}`
       )
-      await downloader.downloadFFmpeg(
+      await downloader.downloadFFprobe(
         process.env.BUILD_TARGET_PLATFORM,
         process.env.BUILD_TARGET_ARCH || process.arch
       )
@@ -412,22 +412,22 @@ async function main() {
         const platform = args[1]
         const arch = args[2]
         if (!platform || !arch) {
-          console.error('用法: tsx download-ffmpeg.ts platform <platform> <arch>')
+          console.error('用法: tsx download-ffprobe.ts platform <platform> <arch>')
           process.exit(1)
         }
-        await downloader.downloadFFmpeg(platform, arch)
+        await downloader.downloadFFprobe(platform, arch)
         break
       }
       default:
         console.log(`
 使用方法:
-  tsx scripts/download-ffmpeg.ts [command]
+  tsx scripts/download-ffprobe.ts [command]
 
 命令:
-  current   - 下载当前平台的 FFmpeg (默认)
-  all       - 下载所有支持平台的 FFmpeg
+  current   - 下载当前平台的 FFprobe (默认)
+  all       - 下载所有支持平台的 FFprobe
   clean     - 清理下载缓存
-  platform <platform> <arch> - 下载指定平台的 FFmpeg
+  platform <platform> <arch> - 下载指定平台的 FFprobe
 
 支持的平台:
   win32: x64, arm64
@@ -450,4 +450,4 @@ if (require.main === module) {
   main()
 }
 
-export { FFmpegDownloader }
+export { FFprobeDownloader }

@@ -7,9 +7,9 @@ import styled from 'styled-components'
 
 import AboutSettings from './AboutSettings'
 import { AppearanceSettings } from './AppearanceSettings'
-import FFmpegSettings from './FFmpegSettings'
 import GeneralSettings from './GeneralSettings'
 import PlaybackSettings from './PlaybackSettings'
+import PluginsSettings from './PluginsSettings'
 import ShortcutSettings from './ShortcutSettings'
 
 /**
@@ -71,7 +71,7 @@ export function SettingsPage(): React.JSX.Element {
             <Route path="general" element={<GeneralSettings />} />
             <Route path="shortcut" element={<ShortcutSettings />} />
             <Route path="playback" element={<PlaybackSettings />} />
-            <Route path="plugins" element={<FFmpegSettings />} />
+            <Route path="plugins" element={<PluginsSettings />} />
             <Route path="about" element={<AboutSettings />} />
           </Routes>
         </SettingContent>

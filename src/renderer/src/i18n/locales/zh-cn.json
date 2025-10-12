@@ -372,6 +372,47 @@
         },
         "version": "版本"
       },
+      "ffprobe": {
+        "actions": {
+          "label": "操作"
+        },
+        "description": "FFprobe 用于读取音视频元数据和流信息，帮助 EchoPlayer 验证文件状态并完成兼容性检测。",
+        "download": {
+          "cancel": "取消下载",
+          "cancelled": "下载已取消",
+          "downloading": "下载中",
+          "failed": "下载失败，请重试",
+          "success": "下载完成"
+        },
+        "path": {
+          "browse": "浏览",
+          "browse_title": "选择 FFprobe 可执行文件",
+          "invalid": "路径无效或文件不存在",
+          "label": "路径",
+          "placeholder": "FFprobe 路径将在下载后自动填入，也可手动指定",
+          "valid": "路径验证成功",
+          "validation_failed": "路径验证失败"
+        },
+        "status": {
+          "downloading": "下载中...",
+          "installed": "已安装",
+          "label": "状态",
+          "loading": "检测中...",
+          "not_installed": "未安装",
+          "system_version": "系统版本",
+          "unknown": "状态未知"
+        },
+        "title": "媒体分析组件 (FFprobe)",
+        "uninstall": {
+          "button": "卸载",
+          "confirm": "确认卸载",
+          "confirm_description": "此操作将删除已下载的 FFprobe 文件，但不会影响系统安装的版本。",
+          "confirm_title": "确认卸载 FFprobe？",
+          "failed": "卸载失败，请重试",
+          "success": "FFprobe 卸载成功"
+        },
+        "version": "版本"
+      },
       "title": "插件管理"
     },
     "shortcut": {
