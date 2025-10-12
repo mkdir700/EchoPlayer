@@ -1,3 +1,4 @@
+import { Arch, Platform } from '@shared/types/system'
 import { spawn } from 'child_process'
 // import * as crypto from 'crypto' // TODO: 将来用于 SHA256 校验
 import { app } from 'electron'
@@ -8,10 +9,6 @@ import * as path from 'path'
 import { loggerService } from './LoggerService'
 
 const logger = loggerService.withContext('FFmpegDownloadService')
-
-// 支持的平台类型
-export type Platform = 'win32' | 'darwin' | 'linux'
-export type Arch = 'x64' | 'arm64'
 
 // FFmpeg 版本配置接口
 export interface FFmpegVersion {

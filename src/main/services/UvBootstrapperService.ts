@@ -1,3 +1,4 @@
+import { Arch, Platform } from '@shared/types/system'
 import { spawn } from 'child_process'
 import { app } from 'electron'
 import * as fs from 'fs'
@@ -6,10 +7,6 @@ import * as path from 'path'
 import { loggerService } from './LoggerService'
 
 const logger = loggerService.withContext('UvBootstrapperService')
-
-// 支持的平台类型
-export type Platform = 'win32' | 'darwin' | 'linux'
-export type Arch = 'x64' | 'arm64'
 
 // uv 版本配置接口
 export interface UvVersion {
