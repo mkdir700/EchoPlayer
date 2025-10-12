@@ -339,9 +339,17 @@ export class MediaServerService {
       this.process.on('exit', (code, signal) => {
         logger.warn('Media Server 进程退出', { code, signal })
 
+        const previousPort = this.port
+
         this.status = 'stopped'
         this.process = null
         this.startTime = null
+        this.port = null
+
+        // 通知前端端口已失效
+        if (previousPort !== null) {
+          this.notifyPortChanged(null)
+        }
 
         // 如果是异常退出，尝试重启
         if (code !== 0 && this.restartAttempts < this.MAX_RESTART_ATTEMPTS) {
@@ -451,9 +459,19 @@ export class MediaServerService {
         // 监听退出
         this.process.once('exit', () => {
           clearTimeout(forceKillTimer)
+
+          const previousPort = this.port
+
           this.status = 'stopped'
           this.process = null
           this.startTime = null
+          this.port = null
+
+          // 通知前端端口已失效
+          if (previousPort !== null) {
+            this.notifyPortChanged(null)
+          }
+
           logger.info('Media Server 已停止', { pid })
           resolve(true)
         })
@@ -594,7 +612,7 @@ export class MediaServerService {
   /**
    * 通知所有渲染进程端口已变更
    */
-  private notifyPortChanged(port: number): void {
+  private notifyPortChanged(port: number | null): void {
     const windows = BrowserWindow.getAllWindows()
     windows.forEach((window) => {
       window.webContents.send(IpcChannel.MediaServer_PortChanged, port)

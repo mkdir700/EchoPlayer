@@ -7,8 +7,12 @@ const logger = loggerService.withContext('SessionService')
 if (typeof window !== 'undefined' && window.electron?.ipcRenderer) {
   window.electron.ipcRenderer.on(
     IpcChannel.MediaServer_PortChanged,
-    (_event: any, newPort: number) => {
-      logger.info('收到 Media Server 端口变更通知', { newPort })
+    (_event: any, newPort: number | null) => {
+      if (newPort === null) {
+        logger.info('收到 Media Server 停止通知，清空端口缓存')
+      } else {
+        logger.info('收到 Media Server 端口变更通知', { newPort })
+      }
       SessionService.resetPort()
     }
   )
