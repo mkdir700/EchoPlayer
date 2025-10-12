@@ -295,18 +295,22 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
         percent: 95
       })
 
+      // 先设置状态为"启动中"，避免用户看到"已停止"状态
+      setServerInfo({ status: 'starting' })
+
       try {
         const startResult = await window.api.mediaServer.start()
         if (startResult) {
           logger.info('Media Server 启动成功')
-          // 刷新服务器状态
-          await fetchServerInfo()
         } else {
           logger.warn('Media Server 启动失败，但环境安装成功')
         }
       } catch (startError) {
         logger.error('启动 Media Server 失败，但环境安装成功:', { error: startError })
         // 不抛出错误，因为安装已成功
+      } finally {
+        // 无论启动成功与否，都刷新服务器状态以显示最新状态
+        await fetchServerInfo()
       }
     } catch (error) {
       // 清理 timeout
