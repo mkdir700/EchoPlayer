@@ -375,7 +375,7 @@ const FFprobeSection: FC<FFprobeSectionProps> = ({ refreshKey = 0 }) => {
                   ? t('settings.plugins.ffprobe.download.success')
                   : isDownloading
                     ? `${t('settings.plugins.ffprobe.download.downloading')} ${downloadProgressPercent.toFixed(0)}%`
-                    : '安装'}
+                    : t('settings.plugins.ffprobe.download.install')}
               </DownloadButtonText>
               {isDownloading && <DownloadProgressBar $progress={downloadProgressPercent} />}
             </DownloadButton>
