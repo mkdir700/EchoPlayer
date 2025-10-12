@@ -12,8 +12,8 @@ import {
 import type { InstallProgress, MediaServerInfo, PythonVenvInfo } from '@shared/types'
 import { Button, message, Popconfirm } from 'antd'
 import { CheckCircle, Download, Trash2 } from 'lucide-react'
-import { FC, useCallback, useEffect, useRef, useState } from 'react'
-import styled from 'styled-components'
+import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import styled, { css, keyframes } from 'styled-components'
 
 import {
   SettingDescription,
@@ -30,9 +30,15 @@ type DependencyType = 'ffmpeg' | 'ffprobe'
 
 interface MediaServerSectionProps {
   onDependencyReady?: (dependency: DependencyType) => void
+  triggerInstall?: boolean
+  onInstallTriggered?: () => void
 }
 
-const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) => {
+const MediaServerSection = ({
+  ref: forwardedRef,
+  ...props
+}: MediaServerSectionProps & { ref?: React.RefObject<HTMLDivElement | null> }) => {
+  const { onDependencyReady, triggerInstall, onInstallTriggered } = props
   const { theme } = useTheme()
 
   const [serverInfo, setServerInfo] = useState<MediaServerInfo | null>(null)
@@ -40,8 +46,13 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
   const [isInstalling, setIsInstalling] = useState(false)
   const [installProgress, setInstallProgressState] = useState<InstallProgress | null>(null)
   const [showSuccessState, setShowSuccessState] = useState(false)
+  const [isHighlighted, setIsHighlighted] = useState(false)
   const isCompletionHandledRef = useRef(false)
   const successTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // 暴露 ref 给父组件
+  useImperativeHandle(forwardedRef, () => containerRef.current as HTMLDivElement)
 
   const updateInstallProgress = useCallback(
     (progress: InstallProgress | null) => {
@@ -99,6 +110,28 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
     fetchServerInfo()
     fetchVenvInfo()
   }, [fetchServerInfo, fetchVenvInfo])
+
+  // 处理触发安装
+  useEffect(() => {
+    if (triggerInstall && venvInfo && !venvInfo.exists && !isInstalling) {
+      logger.info('自动触发 Media Server 安装')
+
+      // 先显示高亮动画
+      setIsHighlighted(true)
+      setTimeout(() => {
+        setIsHighlighted(false)
+      }, 2000)
+
+      // 延迟触发安装，让用户看到高亮效果
+      setTimeout(() => {
+        handleInstall()
+      }, 500)
+
+      // 通知父组件已经处理了触发
+      onInstallTriggered?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerInstall, venvInfo, isInstalling, onInstallTriggered])
 
   // 安装进度轮询
   useEffect(() => {
@@ -391,70 +424,71 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
   const installProgressPercent = installProgress?.percent || 0
 
   return (
-    <SettingGroup theme={theme}>
-      <SettingTitle>Media Server</SettingTitle>
-      <SettingDescription>
-        视频转码和媒体处理服务，提供 HLS 流媒体和视频格式转换功能
-      </SettingDescription>
-      <SettingDivider />
+    <HighlightWrapper ref={containerRef} $isHighlighted={isHighlighted}>
+      <SettingGroup theme={theme}>
+        <SettingTitle>Media Server</SettingTitle>
+        <SettingDescription>
+          视频转码和媒体处理服务，提供 HLS 流媒体和视频格式转换功能
+        </SettingDescription>
+        <SettingDivider />
 
-      {/* 状态显示 */}
-      <SettingRow>
-        <SettingRowTitle>服务状态</SettingRowTitle>
-        <StatusContainer>
-          <span>{statusInfo.text}</span>
-          <IndicatorLight color={statusInfo.color} pulsing={statusInfo.pulsing} />
-        </StatusContainer>
-      </SettingRow>
+        {/* 状态显示 */}
+        <SettingRow>
+          <SettingRowTitle>服务状态</SettingRowTitle>
+          <StatusContainer>
+            <span>{statusInfo.text}</span>
+            <IndicatorLight color={statusInfo.color} pulsing={statusInfo.pulsing} />
+          </StatusContainer>
+        </SettingRow>
 
-      {/* 操作按钮 - 简化为只显示安装/卸载 */}
-      <SettingDivider />
-      <SettingRow>
-        <SettingRowTitle>操作</SettingRowTitle>
-        <ActionButtonContainer>
-          {venvInfo === null ? (
-            // 加载中状态，不显示按钮避免闪烁
-            <Button loading disabled>
-              检查中...
-            </Button>
-          ) : !venvInfo.exists ? (
-            <InstallButton
-              type="primary"
-              icon={showSuccessState ? <CheckCircle size={14} /> : <Download size={14} />}
-              onClick={handleInstall}
-              disabled={isInstalling || showSuccessState}
-              $isInstalling={isInstalling}
-              $installProgress={installProgressPercent}
-              $showSuccessState={showSuccessState}
-            >
-              <ButtonText>
-                {showSuccessState
-                  ? '安装成功'
-                  : isInstalling
-                    ? `安装中 ${installProgressPercent.toFixed(0)}%`
-                    : '安装'}
-              </ButtonText>
-              {isInstalling && <ProgressBar $progress={installProgressPercent} />}
-            </InstallButton>
-          ) : (
-            <Popconfirm
-              title="确认卸载"
-              description="这将卸载媒体服务，部分视频格式将不能完美支持。"
-              onConfirm={handleUninstall}
-              okText="确认"
-              cancelText="取消"
-              okType="danger"
-            >
-              <Button danger icon={<Trash2 size={14} />}>
-                卸载
+        {/* 操作按钮 - 简化为只显示安装/卸载 */}
+        <SettingDivider />
+        <SettingRow>
+          <SettingRowTitle>操作</SettingRowTitle>
+          <ActionButtonContainer>
+            {venvInfo === null ? (
+              // 加载中状态，不显示按钮避免闪烁
+              <Button loading disabled>
+                检查中...
               </Button>
-            </Popconfirm>
-          )}
-        </ActionButtonContainer>
-      </SettingRow>
+            ) : !venvInfo.exists ? (
+              <InstallButton
+                type="primary"
+                icon={showSuccessState ? <CheckCircle size={14} /> : <Download size={14} />}
+                onClick={handleInstall}
+                disabled={isInstalling || showSuccessState}
+                $isInstalling={isInstalling}
+                $installProgress={installProgressPercent}
+                $showSuccessState={showSuccessState}
+              >
+                <ButtonText>
+                  {showSuccessState
+                    ? '安装成功'
+                    : isInstalling
+                      ? `安装中 ${installProgressPercent.toFixed(0)}%`
+                      : '安装'}
+                </ButtonText>
+                {isInstalling && <ProgressBar $progress={installProgressPercent} />}
+              </InstallButton>
+            ) : (
+              <Popconfirm
+                title="确认卸载"
+                description="这将卸载媒体服务，部分视频格式将不能完美支持。"
+                onConfirm={handleUninstall}
+                okText="确认"
+                cancelText="取消"
+                okType="danger"
+              >
+                <Button danger icon={<Trash2 size={14} />}>
+                  卸载
+                </Button>
+              </Popconfirm>
+            )}
+          </ActionButtonContainer>
+        </SettingRow>
 
-      {/* 错误信息 */}
-      {/* {serverInfo?.error && (
+        {/* 错误信息 */}
+        {/* {serverInfo?.error && (
         <>
           <SettingDivider />
           <SettingRow>
@@ -464,8 +498,8 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
         </>
       )} */}
 
-      {/* 安装进度信息 */}
-      {/* {installProgress && isInstalling && (
+        {/* 安装进度信息 */}
+        {/* {installProgress && isInstalling && (
         <>
           <SettingDivider />
           <SettingRow>
@@ -474,9 +508,37 @@ const MediaServerSection: FC<MediaServerSectionProps> = ({ onDependencyReady }) 
           </SettingRow>
         </>
       )} */}
-    </SettingGroup>
+      </SettingGroup>
+    </HighlightWrapper>
   )
 }
+
+MediaServerSection.displayName = 'MediaServerSection'
+
+// 高亮动画 keyframes
+const highlightPulse = keyframes`
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--ant-color-primary-bg);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--ant-color-primary) 30%, transparent);
+  }
+`
+
+// 高亮包装器
+const HighlightWrapper = styled.div<{ $isHighlighted: boolean }>`
+  position: relative;
+  border-radius: ${BORDER_RADIUS.LG}px;
+  transition: all ${ANIMATION_DURATION.MEDIUM} ${EASING.APPLE};
+
+  ${({ $isHighlighted }) =>
+    $isHighlighted &&
+    css`
+      animation: ${highlightPulse} 1s ease-in-out 2;
+      background: color-mix(in srgb, var(--ant-color-primary) 5%, transparent);
+      border: 2px solid var(--ant-color-primary);
+    `}
+`
 
 // 样式组件
 const StatusContainer = styled.div`
