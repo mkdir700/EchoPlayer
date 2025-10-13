@@ -466,12 +466,12 @@ export class UvBootstrapperService {
 
     this.downloadProgress.set(key, progress)
 
+    const platformDir = `${version.version}-${platform}-${arch}`
+    const targetDir = path.join(this.binariesDir, platformDir)
+    const tempDir = path.join(this.binariesDir, '.temp', key)
+
     try {
       // 创建目标目录
-      const platformDir = `${version.version}-${platform}-${arch}`
-      const targetDir = path.join(this.binariesDir, platformDir)
-      const tempDir = path.join(this.binariesDir, '.temp', key)
-
       this.ensureDir(targetDir)
       this.ensureDir(tempDir)
 
@@ -550,9 +550,6 @@ export class UvBootstrapperService {
 
       logger.info('uv 下载完成', { platform, arch, finalPath })
 
-      // 清理临时文件
-      this.cleanupTempDir(tempDir)
-
       // 清除缓存以便重新检测
       UvBootstrapperService.clearUvCache(platform, arch)
 
@@ -571,6 +568,7 @@ export class UvBootstrapperService {
     } finally {
       this.downloadProgress.delete(key)
       this.downloadController.delete(key)
+      this.cleanupTempDir(tempDir)
     }
   }
 
