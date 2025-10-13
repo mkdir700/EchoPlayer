@@ -417,7 +417,7 @@ const FFprobeSection: FC<FFprobeSectionProps> = ({ refreshKey = 0 }) => {
 const StatusContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: ${SPACING.XS}px;
   font-size: 14px;
 `
 
@@ -544,7 +544,7 @@ const CancelButton = styled(Button)`
 
 const PathInputContainer = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${SPACING.XS}px;
   align-items: center;
 
   .ant-input {

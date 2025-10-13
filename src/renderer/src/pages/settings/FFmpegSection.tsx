@@ -468,8 +468,8 @@ const FFmpegSection: FC<FFmpegSectionProps> = ({ refreshKey = 0 }) => {
 const StatusContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: ${SPACING.XS}px;
+  font-size: ${FONT_SIZES.SM}px;
 `
 
 // 下载按钮容器
