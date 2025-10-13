@@ -651,6 +651,9 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(IpcChannel.MediaServer_GetPort, async () => {
     return mediaServerService.getPort()
   })
+  ipcMain.handle(IpcChannel.MediaServer_CleanupCachesForFile, async (_, filePath: string) => {
+    return await mediaServerService.cleanupCachesForFile(filePath)
+  })
 
   // MediaParser (Remotion)
   ipcMain.handle(IpcChannel.MediaInfo_CheckExists, async () => {

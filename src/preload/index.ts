@@ -332,7 +332,9 @@ const api = {
       uptime?: number
       error?: string
     }> => ipcRenderer.invoke(IpcChannel.MediaServer_GetInfo),
-    getPort: (): Promise<number | null> => ipcRenderer.invoke(IpcChannel.MediaServer_GetPort)
+    getPort: (): Promise<number | null> => ipcRenderer.invoke(IpcChannel.MediaServer_GetPort),
+    cleanupCachesForFile: (filePath: string) =>
+      ipcRenderer.invoke(IpcChannel.MediaServer_CleanupCachesForFile, filePath)
   },
   fs: {
     checkFileExists: (filePath: string): Promise<boolean> =>
