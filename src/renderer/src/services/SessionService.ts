@@ -106,6 +106,33 @@ export interface SessionDeleteResponse {
 }
 
 /**
+ * 音频进度信息
+ */
+export interface AudioProgressInfo {
+  status: string
+  progress_percent: number
+  processed_time: number
+  total_duration: number
+  transcode_speed: number
+  eta_seconds: number
+  error_message: string | null
+}
+
+/**
+ * 会话进度响应
+ */
+export interface SessionProgressResponse {
+  session_id: string
+  status: string
+  progress_percent: number
+  progress_stage: string
+  error_message: string | null
+  is_ready: boolean
+  playlist_url: string | null
+  audio_progress: AudioProgressInfo | null
+}
+
+/**
  * 会话错误类型
  */
 export class SessionError extends Error {
@@ -511,6 +538,42 @@ export class SessionService {
       return response
     } catch (error) {
       logger.error('会话删除失败', {
+        sessionId,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      throw error
+    }
+  }
+
+  /**
+   * 获取会话创建进度
+   *
+   * @param sessionId 会话ID
+   * @returns 会话进度响应
+   */
+  public static async getSessionProgress(sessionId: string): Promise<SessionProgressResponse> {
+    logger.debug('获取会话进度', { sessionId })
+
+    try {
+      const response = await this.makeRequest<SessionProgressResponse>(`/${sessionId}/progress`)
+
+      logger.debug('会话进度获取成功', {
+        sessionId,
+        status: response.status,
+        progress: response.progress_percent,
+        stage: response.progress_stage,
+        isReady: response.is_ready
+      })
+
+      return response
+    } catch (error) {
+      // 如果是 HTTP 425 (Too Early)，这是正常的进行中状态，不记录为错误
+      if (error instanceof SessionError && error.statusCode === 425) {
+        logger.debug('会话尚未就绪 (HTTP 425)', { sessionId })
+        throw error
+      }
+
+      logger.error('获取会话进度失败', {
         sessionId,
         error: error instanceof Error ? error.message : String(error)
       })
