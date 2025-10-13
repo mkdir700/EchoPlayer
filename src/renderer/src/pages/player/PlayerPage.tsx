@@ -17,6 +17,13 @@ import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
 import { MediaServerRecommendationPrompt } from '@renderer/components/MediaServerRecommendationPrompt'
+import {
+  ANIMATION_DURATION,
+  COMPONENT_TOKENS,
+  EASING,
+  FONT_SIZES,
+  SPACING
+} from '@renderer/infrastructure/styles/theme'
 import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -306,6 +313,9 @@ function PlayerPage() {
                     cached: false,
                     sessionId: sessionResult.session_id
                   })
+                  if (!cancelled) {
+                    usePlayerStore.getState().setTranscodeStatus('completed')
+                  }
 
                   finalSrc = playListUrl
 
@@ -735,11 +745,13 @@ const LoadingBarProgress = styled.div`
   }
 `
 
+const DETERMINATE_BAR_WIDTH = SPACING.XXL * 5
+
 const DeterminateBarTrack = styled.div`
-  width: 240px;
-  height: 4px;
+  width: ${DETERMINATE_BAR_WIDTH}px;
+  height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
   background: var(--ant-color-fill-quaternary, rgba(255, 255, 255, 0.08));
-  border-radius: 2px;
+  border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
   overflow: hidden;
 `
 
@@ -747,18 +759,18 @@ const DeterminateBarFill = styled.div<{ $percent: number }>`
   height: 100%;
   width: ${({ $percent }) => `${$percent}%`};
   background: var(--ant-color-primary, #1677ff);
-  border-radius: 2px;
-  transition: width 0.4s ease;
+  border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
+  transition: width ${ANIMATION_DURATION.SLOW} ${EASING.STANDARD};
 `
 
 const ProgressStageText = styled.div`
-  font-size: 16px;
+  font-size: ${FONT_SIZES.BASE}px;
   color: var(--color-text-1, #ddd);
   text-align: center;
 `
 
 const ProgressPercentText = styled.div`
-  font-size: 14px;
+  font-size: ${FONT_SIZES.SM}px;
   color: var(--color-text-2, #bbb);
 `
 
