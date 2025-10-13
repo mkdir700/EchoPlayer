@@ -1,5 +1,5 @@
 import { usePlayerStore } from '@renderer/state/stores/player.store'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import VideoStatusIndicator from './VideoStatusIndicator'
 
@@ -13,9 +13,16 @@ function VolumeIndicator() {
   const muted = usePlayerStore((s) => s.muted)
 
   const [showIndicator, setShowIndicator] = useState(false)
+  const isInitialMount = useRef(true)
 
   // 监听音量变化，显示指示器并在 1 秒后自动隐藏
   useEffect(() => {
+    // 跳过初次渲染
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
     setShowIndicator(true)
 
     const timer = setTimeout(() => {
