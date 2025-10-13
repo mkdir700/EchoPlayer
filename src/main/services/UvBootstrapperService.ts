@@ -430,7 +430,7 @@ export class UvBootstrapperService {
     }
 
     // 检查是否正在下载
-    if (this.downloadProgress.has(key)) {
+    if (this.downloadProgress.has(key) || this.downloadController.has(key)) {
       logger.warn('uv 正在下载中', { platform, arch })
       return false
     }
