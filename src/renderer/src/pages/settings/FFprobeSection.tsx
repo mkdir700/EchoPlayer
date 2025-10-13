@@ -424,7 +424,7 @@ const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   gap: ${SPACING.XS}px;
-  font-size: 14px;
+  font-size: ${FONT_SIZES.SM}px;
 `
 
 // 下载按钮容器
