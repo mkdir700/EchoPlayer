@@ -126,6 +126,7 @@ export enum IpcChannel {
   MediaServer_GetInfo = 'media-server:get-info',
   MediaServer_GetPort = 'media-server:get-port',
   MediaServer_CheckHealth = 'media-server:check-health',
+  MediaServer_CleanupCachesForFile = 'media-server:cleanup-caches-for-file',
   MediaServer_PortChanged = 'media-server:port-changed', // 端口变更事件
 
   // MediaInfo 相关 IPC 通道 / MediaInfo related IPC channels
