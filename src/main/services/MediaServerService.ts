@@ -538,8 +538,12 @@ export class MediaServerService {
     const resolvedPath = path.resolve(filePath)
     try {
       await stat(resolvedPath)
-    } catch {
-      throw new Error(`文件不存在: ${resolvedPath}`)
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code
+      if (code === 'ENOENT') {
+        throw new Error(`文件不存在: ${resolvedPath}`)
+      }
+      throw err
     }
 
     const assetHash = await this.calculateAssetHash(resolvedPath)
