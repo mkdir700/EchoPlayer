@@ -376,7 +376,8 @@ export class CodecCompatibilityChecker {
         }
       }
 
-      const { videoCodec, audioCodec } = videoInfo
+      const videoCodec = videoInfo.videoCodec?.trim()
+      const audioCodec = videoInfo.audioCodec?.trim()
 
       logger.debug('检测到的编解码器信息', {
         videoCodec,
@@ -386,20 +387,24 @@ export class CodecCompatibilityChecker {
       })
 
       // 检查视频编解码器兼容性
-      const videoSupported = this.checkVideoCodecSupport(videoCodec)
+      const videoSupported = videoCodec ? this.checkVideoCodecSupport(videoCodec) : false
 
       // 检查音频编解码器兼容性
-      const audioSupported = this.checkAudioCodecSupport(audioCodec)
+      const audioSupported = audioCodec ? this.checkAudioCodecSupport(audioCodec) : false
 
       // 确定是否需要转码
       const needsTranscode = !videoSupported || !audioSupported
 
       // 生成不兼容原因列表
       const incompatibilityReasons: string[] = []
-      if (!videoSupported) {
+      if (!videoCodec) {
+        incompatibilityReasons.push('video-codec-missing')
+      } else if (!videoSupported) {
         incompatibilityReasons.push(`video-codec-unsupported: ${videoCodec}`)
       }
-      if (!audioSupported) {
+      if (!audioCodec) {
+        incompatibilityReasons.push('audio-codec-missing')
+      } else if (!audioSupported) {
         incompatibilityReasons.push(`audio-codec-unsupported: ${audioCodec}`)
       }
 
