@@ -423,15 +423,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     return null
   }
 
-  logger.debug('渲染 SubtitleOverlay', {
-    displayMode,
-    position,
-    size,
-    isDragging,
-    isResizing,
-    showBoundaries
-  })
-
   return (
     <OverlayContainer
       ref={overlayRef}

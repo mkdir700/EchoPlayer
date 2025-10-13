@@ -4,6 +4,7 @@ import db from '@renderer/databases'
 import {
   CodecCompatibilityChecker,
   type ExtendedErrorType,
+  SessionError,
   SessionService,
   VideoLibraryService
 } from '@renderer/services'
@@ -16,6 +17,13 @@ import { Layout, Tooltip } from 'antd'
 
 const { Content, Sider } = Layout
 import { MediaServerRecommendationPrompt } from '@renderer/components/MediaServerRecommendationPrompt'
+import {
+  ANIMATION_DURATION,
+  COMPONENT_TOKENS,
+  EASING,
+  FONT_SIZES,
+  SPACING
+} from '@renderer/infrastructure/styles/theme'
 import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -95,6 +103,12 @@ function PlayerPage() {
     originalPath?: string
   } | null>(null)
   const [showMediaServerPrompt, setShowMediaServerPrompt] = useState(false)
+  const [waitingForSessionReady, setWaitingForSessionReady] = useState(false)
+  const [sessionProgress, setSessionProgress] = useState<{
+    percent: number
+    stage: string
+    status: string
+  } | null>(null)
   // const { pokeInteraction } = usePlayerUI()
 
   // 保存转码会话 ID 用于清理
@@ -103,8 +117,64 @@ function PlayerPage() {
   // 加载视频数据
   useEffect(() => {
     let cancelled = false
+    const pollIntervalMs = 2000
+
+    const waitForSessionReady = async (sessionId: string) => {
+      while (!cancelled) {
+        try {
+          const progress = await SessionService.getSessionProgress(sessionId)
+          if (cancelled) {
+            break
+          }
+
+          setSessionProgress((prev) => {
+            const stage = progress.progress_stage?.trim() || prev?.stage || '处理中...'
+            const rawPercent =
+              typeof progress.progress_percent === 'number'
+                ? progress.progress_percent
+                : Number(progress.progress_percent)
+            const percent = Number.isFinite(rawPercent) ? rawPercent : (prev?.percent ?? 0)
+            return {
+              percent,
+              stage,
+              status: progress.status
+            }
+          })
+
+          if (progress.is_ready) {
+            setSessionProgress((prev) => ({
+              percent: 100,
+              stage: progress.progress_stage?.trim() || prev?.stage || '就绪',
+              status: progress.status
+            }))
+            return progress
+          }
+        } catch (progressError) {
+          if (
+            progressError instanceof SessionError &&
+            progressError.statusCode &&
+            progressError.statusCode === 425
+          ) {
+            // 会话尚未返回进度，等待下一轮
+          } else {
+            throw progressError
+          }
+        }
+
+        if (cancelled) {
+          break
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
+      }
+
+      throw new Error('会话进度轮询已取消')
+    }
+
     const loadData = async () => {
       setLoading(true)
+      setWaitingForSessionReady(false)
+      setSessionProgress(null)
       if (!videoId) {
         setError('无效的视频 ID')
         setVideoData(null)
@@ -189,36 +259,83 @@ function PlayerPage() {
 
                 // 保存会话 ID 用于后续清理
                 sessionIdRef.current = sessionResult.session_id
-
-                // 构建完整的播放列表 URL
-                const playListUrl = await SessionService.getPlaylistUrl(sessionResult.session_id)
-
-                // 更新转码信息和播放源
-                usePlayerStore.getState().updateTranscodeInfo({
-                  hlsSrc: playListUrl,
-                  windowId: 0, // 会话模式不再使用 windowId
-                  assetHash: sessionResult.asset_hash,
-                  profileHash: sessionResult.profile_hash,
-                  cached: false, // 会话模式由后端管理缓存
-                  sessionId: sessionResult.session_id,
-                  endTime: Date.now()
+                setWaitingForSessionReady(true)
+                setSessionProgress({
+                  percent: 0,
+                  stage: '正在创建转码会话...',
+                  status: 'initializing'
                 })
 
-                // 切换到 HLS 播放模式
-                usePlayerStore.getState().switchToHlsSource(playListUrl, {
-                  windowId: 0,
-                  assetHash: sessionResult.asset_hash,
-                  profileHash: sessionResult.profile_hash,
-                  cached: false,
-                  sessionId: sessionResult.session_id
-                })
+                try {
+                  const readyProgress = await waitForSessionReady(sessionResult.session_id)
 
-                finalSrc = playListUrl
+                  if (cancelled) {
+                    return
+                  }
 
-                logger.info('预转码流程完成，使用 HLS 播放源', {
-                  originalSrc: fileUrl,
-                  hlsSrc: finalSrc
-                })
+                  const fallbackPlaylistUrl = await SessionService.getPlaylistUrl(
+                    sessionResult.session_id
+                  )
+                  let playListUrl = fallbackPlaylistUrl
+
+                  if (readyProgress.playlist_url) {
+                    try {
+                      playListUrl = new URL(
+                        readyProgress.playlist_url,
+                        fallbackPlaylistUrl
+                      ).toString()
+                    } catch (urlError) {
+                      logger.warn('解析会话进度返回的播放列表 URL 失败，将使用默认值', {
+                        sessionId: sessionResult.session_id,
+                        playlistUrl: readyProgress.playlist_url,
+                        error: urlError instanceof Error ? urlError.message : String(urlError)
+                      })
+                      playListUrl = fallbackPlaylistUrl
+                    }
+                  }
+
+                  // 更新转码信息和播放源
+                  usePlayerStore.getState().updateTranscodeInfo({
+                    hlsSrc: playListUrl,
+                    windowId: 0, // 会话模式不再使用 windowId
+                    assetHash: sessionResult.asset_hash,
+                    profileHash: sessionResult.profile_hash,
+                    cached: false, // 会话模式由后端管理缓存
+                    sessionId: sessionResult.session_id,
+                    endTime: Date.now()
+                  })
+
+                  // 切换到 HLS 播放模式
+                  usePlayerStore.getState().switchToHlsSource(playListUrl, {
+                    windowId: 0,
+                    assetHash: sessionResult.asset_hash,
+                    profileHash: sessionResult.profile_hash,
+                    cached: false,
+                    sessionId: sessionResult.session_id
+                  })
+                  if (!cancelled) {
+                    usePlayerStore.getState().setTranscodeStatus('completed')
+                  }
+
+                  finalSrc = playListUrl
+
+                  logger.info('预转码流程完成，使用 HLS 播放源', {
+                    originalSrc: fileUrl,
+                    hlsSrc: finalSrc
+                  })
+                } catch (progressError) {
+                  if (!cancelled) {
+                    const message =
+                      progressError instanceof Error ? progressError.message : '获取会话进度失败'
+                    logger.error('会话进度轮询失败，转码流程终止', {
+                      error: message,
+                      sessionId: sessionResult.session_id
+                    })
+                    setError(message || '获取会话进度失败')
+                    usePlayerStore.getState().setTranscodeStatus('failed')
+                  }
+                  return
+                }
               }
             } catch (checkError) {
               logger.error('检查 Media Server 状态失败，显示推荐安装弹窗', {
@@ -270,7 +387,10 @@ function PlayerPage() {
         logger.error(`加载视频数据失败: ${err}`)
         setError(err instanceof Error ? err.message : '加载失败')
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setWaitingForSessionReady(false)
+          setLoading(false)
+        }
       }
     }
 
@@ -415,13 +535,29 @@ function PlayerPage() {
   }, [handleToggleFullscreen])
 
   if (loading) {
+    const progressPercent = Math.max(0, Math.min(100, Math.round(sessionProgress?.percent ?? 0)))
+
     return (
       <Container>
         <LoadingContainer>
-          <LoadingText>加载中...</LoadingText>
-          <LoadingBarContainer>
-            <LoadingBarProgress />
-          </LoadingBarContainer>
+          {waitingForSessionReady ? (
+            <>
+              <ProgressStageText>
+                {sessionProgress?.stage || '正在创建转码会话...'}
+              </ProgressStageText>
+              <DeterminateBarTrack>
+                <DeterminateBarFill $percent={progressPercent} />
+              </DeterminateBarTrack>
+              <ProgressPercentText>{progressPercent}%</ProgressPercentText>
+            </>
+          ) : (
+            <>
+              <LoadingText>加载中...</LoadingText>
+              <LoadingBarContainer>
+                <LoadingBarProgress />
+              </LoadingBarContainer>
+            </>
+          )}
         </LoadingContainer>
       </Container>
     )
@@ -607,6 +743,35 @@ const LoadingBarProgress = styled.div`
       transform: translateX(-100%);
     }
   }
+`
+
+const DETERMINATE_BAR_WIDTH = SPACING.XXL * 5
+
+const DeterminateBarTrack = styled.div`
+  width: ${DETERMINATE_BAR_WIDTH}px;
+  height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
+  background: var(--ant-color-fill-quaternary, rgba(255, 255, 255, 0.08));
+  border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
+  overflow: hidden;
+`
+
+const DeterminateBarFill = styled.div<{ $percent: number }>`
+  height: 100%;
+  width: ${({ $percent }) => `${$percent}%`};
+  background: var(--ant-color-primary, #1677ff);
+  border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
+  transition: width ${ANIMATION_DURATION.SLOW} ${EASING.STANDARD};
+`
+
+const ProgressStageText = styled.div`
+  font-size: ${FONT_SIZES.BASE}px;
+  color: var(--color-text-1, #ddd);
+  text-align: center;
+`
+
+const ProgressPercentText = styled.div`
+  font-size: ${FONT_SIZES.SM}px;
+  color: var(--color-text-2, #bbb);
 `
 
 const ErrorContainer = styled.div`
