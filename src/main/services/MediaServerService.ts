@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto'
-import fs from 'node:fs'
 import { open, rm, stat } from 'node:fs/promises'
 
 import { IpcChannel } from '@shared/IpcChannel'
@@ -537,7 +536,9 @@ export class MediaServerService {
    */
   public async cleanupCachesForFile(filePath: string): Promise<TranscodeCacheCleanupResult> {
     const resolvedPath = path.resolve(filePath)
-    if (!fs.existsSync(resolvedPath)) {
+    try {
+      await stat(resolvedPath)
+    } catch {
       throw new Error(`文件不存在: ${resolvedPath}`)
     }
 
@@ -608,10 +609,6 @@ export class MediaServerService {
     dirPath: string
   ): Promise<{ removed: boolean; error?: string }> {
     try {
-      if (!fs.existsSync(dirPath)) {
-        return { removed: false }
-      }
-
       await rm(dirPath, { recursive: true, force: true })
       logger.info('已删除转码缓存目录', { dirPath })
       return { removed: true }
