@@ -131,6 +131,7 @@ const FFprobeSection: FC<FFprobeSectionProps> = ({ refreshKey = 0 }) => {
         } catch (error) {
           logger.error('获取下载进度失败:', { error })
         }
+        return () => {}
       }, 2000)
     }
 
