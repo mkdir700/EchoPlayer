@@ -47,7 +47,16 @@ export default function PlaybackRateControl() {
   // 处理左键点击：循环切换常用速度
   const handleLeftClick = () => {
     if (favoriteRates.length > 0) {
+      // 计算下一个常用速度
+      const currentIndex = usePlayerStore.getState().currentFavoriteIndex
+      const nextIndex = (currentIndex + 1) % favoriteRates.length
+      const nextRate = favoriteRates[nextIndex]
+
+      // 先更新 store 状态
       cycleFavoriteRate()
+
+      // 再通过 orchestrator 应用到视频
+      setSpeed(nextRate)
     } else {
       // 如果没有常用速度，使用默认逻辑（打开菜单）
       toggleMenu()
