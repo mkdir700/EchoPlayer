@@ -117,13 +117,16 @@ const FFprobeSection: FC<FFprobeSectionProps> = ({ refreshKey = 0 }) => {
             message.success(t('settings.plugins.ffprobe.download.success'))
 
             // 2秒后恢复正常状态
-            setTimeout(() => {
+            const successTimeout = setTimeout(() => {
               setIsDownloading(false)
               setShowSuccessState(false)
               setFFprobeStatus(currentStatus)
               // 更新 FFprobe 路径为下载后的路径
               setFFprobePath(currentStatus.path)
             }, 2000)
+
+            // 清理定时器
+            return () => clearTimeout(successTimeout)
           }
         } catch (error) {
           logger.error('获取下载进度失败:', { error })
