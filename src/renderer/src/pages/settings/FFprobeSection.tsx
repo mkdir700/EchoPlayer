@@ -64,6 +64,7 @@ const FFprobeSection: FC<FFprobeSectionProps> = ({ refreshKey = 0 }) => {
   const [showSuccessState, setShowSuccessState] = useState(false)
   const isCancellingRef = useRef(false)
   const isCompletionHandledRef = useRef(false)
+  const successTimeoutRef = useRef<number | null>(null)
   const [isValidatingPath, setIsValidatingPath] = useState(false)
 
   // 获取 FFprobe 状态
@@ -117,25 +118,29 @@ const FFprobeSection: FC<FFprobeSectionProps> = ({ refreshKey = 0 }) => {
             message.success(t('settings.plugins.ffprobe.download.success'))
 
             // 2秒后恢复正常状态
-            const successTimeout = setTimeout(() => {
+            if (successTimeoutRef.current) {
+              clearTimeout(successTimeoutRef.current)
+            }
+            successTimeoutRef.current = window.setTimeout(() => {
               setIsDownloading(false)
               setShowSuccessState(false)
               setFFprobeStatus(currentStatus)
               // 更新 FFprobe 路径为下载后的路径
               setFFprobePath(currentStatus.path)
+              successTimeoutRef.current = null
             }, 2000)
-
-            // 清理定时器
-            return () => clearTimeout(successTimeout)
           }
         } catch (error) {
           logger.error('获取下载进度失败:', { error })
         }
-        return () => {}
       }, 2000)
     }
 
     return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current)
+        successTimeoutRef.current = null
+      }
       if (progressInterval) {
         clearInterval(progressInterval)
       }
