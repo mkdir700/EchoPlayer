@@ -1,10 +1,7 @@
-import { loggerService } from '@logger'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { useMemo } from 'react'
 
 import VideoStatusIndicator from './VideoStatusIndicator'
-
-const logger = loggerService.withContext('TranscodeLoadingIndicator')
 
 /**
  * 转码加载指示器组件
@@ -31,15 +28,6 @@ function TranscodeLoadingIndicator() {
 
     return false
   }, [hlsMode, transcodeStatus, isVideoSeeking, isVideoWaiting])
-
-  // 日志记录状态变化
-  if (showLoading) {
-    logger.debug('显示转码加载指示器', {
-      transcodeStatus,
-      isVideoSeeking,
-      isVideoWaiting
-    })
-  }
 
   return <VideoStatusIndicator show={showLoading} config={{ type: 'loading' }} />
 }
