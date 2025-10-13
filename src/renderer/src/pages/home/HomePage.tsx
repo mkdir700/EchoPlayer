@@ -1,5 +1,6 @@
 import { loggerService } from '@logger'
 import FFmpegDownloadPrompt from '@renderer/components/FFmpegDownloadPrompt'
+import FileManager from '@renderer/services/FileManager'
 import HomePageVideoService, { type HomePageVideoItem } from '@renderer/services/HomePageVideos'
 import { VideoLibraryService } from '@renderer/services/VideoLibrary'
 import { useSettingsStore } from '@renderer/state/stores/settings.store'
@@ -164,6 +165,21 @@ export function HomePage(): React.JSX.Element {
         onOk: async () => {
           try {
             const videoLibraryService = new VideoLibraryService()
+            let filePath: string | null = null
+
+            try {
+              const record = await videoLibraryService.getRecordById(video.id)
+              if (record?.fileId) {
+                const fileInfo = await FileManager.getFile(record.fileId)
+                filePath = fileInfo?.path ?? null
+              }
+            } catch (lookupError) {
+              logger.warn('获取视频文件信息失败，跳过转码缓存清理', {
+                error: lookupError,
+                videoId: video.id
+              })
+            }
+
             await videoLibraryService.deleteRecord(video.id)
 
             // 从本地状态中移除该视频
@@ -173,6 +189,22 @@ export function HomePage(): React.JSX.Element {
             setCachedVideos(cachedVideos.filter((v) => v.id !== video.id))
 
             message.success(t('home.delete.success_message'))
+
+            if (filePath) {
+              void window.api.mediaServer
+                .cleanupCachesForFile(filePath)
+                .then((result) => {
+                  logger.info('已清理转码缓存', { result, videoId: video.id })
+                })
+                .catch((cleanupError) => {
+                  logger.warn('清理转码缓存失败', {
+                    error:
+                      cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+                    filePath,
+                    videoId: video.id
+                  })
+                })
+            }
           } catch (error) {
             logger.error('删除视频记录失败', { error })
             message.error(t('home.delete.error_message'))
