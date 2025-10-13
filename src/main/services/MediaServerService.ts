@@ -1,3 +1,7 @@
+import { createHash } from 'node:crypto'
+import fs from 'node:fs'
+import { open, rm, stat } from 'node:fs/promises'
+
 import { IpcChannel } from '@shared/IpcChannel'
 import type { MediaServerInfo, MediaServerStatus } from '@shared/types'
 import { ChildProcess, spawn } from 'child_process'
@@ -52,6 +56,20 @@ export interface MediaServerConfig {
   enableHybridMode?: boolean // 启用混合转码模式
   audioPreprocessorConcurrent?: number // 音频预处理器并发数
   audioTrackTtlHours?: number // 音频轨道 TTL（小时）
+}
+
+export interface TranscodeCacheCleanupResult {
+  assetHash: string
+  hls: {
+    path: string
+    removed: boolean
+    error?: string
+  }
+  audio: {
+    path: string
+    removed: boolean
+    error?: string
+  }
 }
 
 /**
@@ -511,6 +529,97 @@ export class MediaServerService {
    */
   public getPort(): number | null {
     return this.port
+  }
+
+  /**
+   * 清理指定文件对应的转码缓存
+   * @param filePath 原始视频文件路径
+   */
+  public async cleanupCachesForFile(filePath: string): Promise<TranscodeCacheCleanupResult> {
+    const resolvedPath = path.resolve(filePath)
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(`文件不存在: ${resolvedPath}`)
+    }
+
+    const assetHash = await this.calculateAssetHash(resolvedPath)
+    const dataPath = getDataPath()
+    const mediaServerCachePath = path.join(dataPath, 'MediaServerCache')
+    const hlsDir = path.join(mediaServerCachePath, 'hls-segments', assetHash)
+    const audioDir = path.join(mediaServerCachePath, 'audio-cache', assetHash)
+
+    logger.info('清理转码缓存', {
+      filePath: resolvedPath,
+      assetHash,
+      hlsDir,
+      audioDir
+    })
+
+    const hlsResult = await this.removeDirectoryIfExists(hlsDir)
+    const audioResult = await this.removeDirectoryIfExists(audioDir)
+
+    return {
+      assetHash,
+      hls: {
+        path: hlsDir,
+        ...hlsResult
+      },
+      audio: {
+        path: audioDir,
+        ...audioResult
+      }
+    }
+  }
+
+  private async calculateAssetHash(filePath: string): Promise<string> {
+    const resolvedPath = path.resolve(filePath)
+    const fileStat = await stat(resolvedPath)
+    const hash = createHash('sha256')
+
+    hash.update(resolvedPath)
+    hash.update(fileStat.size.toString())
+    hash.update(Math.floor(fileStat.mtimeMs / 1000).toString())
+
+    const sampleSize = 8 * 1024 * 1024
+    const fileSize = Number(fileStat.size)
+    const fileHandle = await open(resolvedPath, 'r')
+
+    try {
+      if (fileSize <= sampleSize * 2) {
+        const buffer = Buffer.alloc(fileSize)
+        const { bytesRead } = await fileHandle.read(buffer, 0, buffer.length, 0)
+        hash.update(buffer.subarray(0, bytesRead))
+      } else {
+        const headBuffer = Buffer.alloc(sampleSize)
+        await fileHandle.read(headBuffer, 0, sampleSize, 0)
+        hash.update(headBuffer)
+
+        const tailBuffer = Buffer.alloc(sampleSize)
+        await fileHandle.read(tailBuffer, 0, sampleSize, fileSize - sampleSize)
+        hash.update(tailBuffer)
+      }
+    } finally {
+      await fileHandle.close()
+    }
+
+    return hash.digest('hex').slice(0, 16)
+  }
+
+  private async removeDirectoryIfExists(
+    dirPath: string
+  ): Promise<{ removed: boolean; error?: string }> {
+    try {
+      if (!fs.existsSync(dirPath)) {
+        return { removed: false }
+      }
+
+      await rm(dirPath, { recursive: true, force: true })
+      logger.info('已删除转码缓存目录', { dirPath })
+      return { removed: true }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      logger.warn('删除转码缓存目录失败', { dirPath, error: message })
+      return { removed: false, error: message }
+    }
   }
 
   /**
