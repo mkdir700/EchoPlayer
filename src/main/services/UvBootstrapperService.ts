@@ -413,11 +413,20 @@ export class UvBootstrapperService {
   ): Promise<boolean> {
     const key = `${platform}-${arch}`
 
-    // 检查是否已存在
-    const installation = await this.checkUvInstallation()
-    if (installation.exists && installation.isDownloaded) {
-      logger.info('uv 已存在，跳过下载', { platform, arch, path: installation.path })
+    // 检查目标平台的缓存二进制
+    const downloadedPath = this.getDownloadedUvPath(platform, arch)
+    if (downloadedPath) {
+      logger.info('uv 已存在，跳过下载', { platform, arch, path: downloadedPath })
       return true
+    }
+
+    // 仅当请求的平台与当前进程一致时，才额外使用缓存的系统检测结果
+    if (platform === process.platform && arch === process.arch) {
+      const installation = await this.checkUvInstallation()
+      if (installation.exists && installation.isDownloaded) {
+        logger.info('uv 已存在，跳过下载', { platform, arch, path: installation.path })
+        return true
+      }
     }
 
     // 检查是否正在下载
