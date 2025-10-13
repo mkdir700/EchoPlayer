@@ -73,6 +73,7 @@ const FFmpegSection: FC<FFmpegSectionProps> = ({ refreshKey = 0 }) => {
   const [showSuccessState, setShowSuccessState] = useState(false)
   const isCancellingRef = useRef(false)
   const isCompletionHandledRef = useRef(false)
+  const completionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [isValidatingPath, setIsValidatingPath] = useState(false)
 
   // 获取 FFmpeg 状态
@@ -149,7 +150,10 @@ const FFmpegSection: FC<FFmpegSectionProps> = ({ refreshKey = 0 }) => {
             message.success(t('settings.plugins.ffmpeg.download.success'))
 
             // 2秒后恢复正常状态
-            setTimeout(() => {
+            if (completionTimeoutRef.current) {
+              clearTimeout(completionTimeoutRef.current)
+            }
+            completionTimeoutRef.current = setTimeout(() => {
               setIsDownloading(false)
               setShowSuccessState(false)
               setFFmpegStatus(currentStatus)
@@ -157,6 +161,7 @@ const FFmpegSection: FC<FFmpegSectionProps> = ({ refreshKey = 0 }) => {
               setFFmpegPath(currentStatus.path)
               // 自动开始预热
               handleWarmup()
+              completionTimeoutRef.current = null
             }, 2000)
           }
         } catch (error) {
@@ -168,6 +173,10 @@ const FFmpegSection: FC<FFmpegSectionProps> = ({ refreshKey = 0 }) => {
     return () => {
       if (progressInterval) {
         clearInterval(progressInterval)
+      }
+      if (completionTimeoutRef.current) {
+        clearTimeout(completionTimeoutRef.current)
+        completionTimeoutRef.current = null
       }
     }
   }, [handleWarmup, isDownloading, t])
