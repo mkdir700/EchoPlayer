@@ -75,7 +75,7 @@ jobs:
         shell: bash
         run: |
           echo "Build artifacts:"
-          find dist -type f -name "*" | head -20
+          find dist -type f -name "*" | sed -n '1,20p'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -148,7 +148,7 @@ jobs:
         shell: bash
         run: |
           echo "Build artifacts:"
-          find dist -type f -name "*" | head -20
+          find dist -type f -name "*" | sed -n '1,20p'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -221,7 +221,7 @@ jobs:
         shell: bash
         run: |
           echo "Build artifacts:"
-          find dist -type f -name "*" | head -20
+          find dist -type f -name "*" | sed -n '1,20p'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
