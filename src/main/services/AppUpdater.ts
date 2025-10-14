@@ -13,7 +13,7 @@ import {
 } from 'electron-updater'
 import path from 'path'
 
-import icon from '../../../build/icon.png?asset'
+import icon from '../../../build/icons/png/1024x1024.png?asset'
 import { configManager } from './ConfigManager'
 
 export default class AppUpdater {

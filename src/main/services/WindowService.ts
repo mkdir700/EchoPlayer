@@ -10,7 +10,7 @@ import { app, BrowserWindow, nativeTheme, screen, shell } from 'electron'
 import windowStateKeeper from 'electron-window-state'
 import { join } from 'path'
 
-import icon from '../../../build/icon.png?asset'
+import icon from '../../../build/icons/png/1024x1024.png?asset'
 import { titleBarOverlayDark, titleBarOverlayLight } from '../config'
 import { configManager } from './ConfigManager'
 
