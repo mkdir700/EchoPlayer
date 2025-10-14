@@ -15,6 +15,7 @@ import path from 'path'
 
 import icon from '../../../build/icons/png/1024x1024.png?asset'
 import { configManager } from './ConfigManager'
+import { regionDetectionService } from './RegionDetectionService'
 
 export default class AppUpdater {
   autoUpdater: _AppUpdater = autoUpdater
@@ -114,30 +115,6 @@ export default class AppUpdater {
     }
   }
 
-  private async _getIpCountry() {
-    try {
-      // add timeout using AbortController
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-      const ipinfo = await fetch('https://ipinfo.io/json', {
-        signal: controller.signal,
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9'
-        }
-      })
-
-      clearTimeout(timeoutId)
-      const data = await ipinfo.json()
-      return data.country || 'US'
-    } catch (error) {
-      logger.error('Failed to get ipinfo:', error)
-      return 'US'
-    }
-  }
-
   public setAutoUpdate(isActive: boolean) {
     autoUpdater.autoDownload = isActive
     autoUpdater.autoInstallOnAppQuit = isActive
@@ -177,9 +154,9 @@ export default class AppUpdater {
     logger.info('Setting feed URL - testPlan:', testPlan)
 
     // 获取IP地址归属地
-    const ipCountry = await this._getIpCountry()
+    const ipCountry = await regionDetectionService.getCountry()
     logger.info('Detected IP country:', ipCountry)
-    const isChinaUser = ipCountry.toLowerCase() === 'cn'
+    const isChinaUser = regionDetectionService.isChinaCountry(ipCountry)
 
     if (channel === UpgradeChannel.LATEST) {
       this.autoUpdater.channel = UpgradeChannel.LATEST
