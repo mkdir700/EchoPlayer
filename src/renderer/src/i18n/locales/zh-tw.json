@@ -60,6 +60,7 @@
       "title": "快捷鍵",
       "toggle_fullscreen": "切換全屏",
       "toggle_new_context": "清除上下文",
+      "toggle_auto_pause": "切換自動暫停",
       "toggle_show_assistants": "切換助手顯示",
       "toggle_show_topics": "切換話題顯示",
       "toggle_subtitle_panel": "切換字幕面板",
