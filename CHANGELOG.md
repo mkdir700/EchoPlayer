@@ -1,3 +1,13 @@
+# [1.1.0-alpha.5](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.4...v1.1.0-alpha.5) (2025-10-14)
+
+### Bug Fixes
+
+- **workflow:** update artifact listing command for better compatibility ([093aeb0](https://github.com/mkdir700/EchoPlayer/commit/093aeb08026e21f366995db6d15a6c961595aa01))
+
+### Reverts
+
+- "fix(build): adjust resource handling for media-server in packaging" ([d57d94c](https://github.com/mkdir700/EchoPlayer/commit/d57d94c30a8a195ac9ca4b57d8496e40cda04a16))
+
 # [1.1.0-alpha.4](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.3...v1.1.0-alpha.4) (2025-10-14)
 
 ### Bug Fixes
