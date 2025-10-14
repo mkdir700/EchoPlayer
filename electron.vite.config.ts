@@ -55,13 +55,13 @@ export default defineConfig({
       {
         name: 'copy-media-server',
         generateBundle() {
-          // 复制 backend 到 resources/media-server
-          const srcDir = path.resolve('backend')
+          // 复制 media-server 到 resources/media-server
+          const srcDir = path.resolve('media-server')
           const destDir = path.resolve('resources/media-server')
 
           // 检查源目录是否存在
           if (!fs.existsSync(srcDir)) {
-            console.warn('⚠️  backend 目录不存在，跳过复制')
+            console.warn('⚠️  media-server 目录不存在，跳过复制')
             return
           }
 

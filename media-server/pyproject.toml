@@ -1,0 +1,160 @@
+[project]
+name = "echo-player-backend"
+version = "0.1.0"
+description = "EchoPlayer Backend Service"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "ffmpeg-python>=0.2.0",
+    "pydantic>=2.0.0",
+    "python-multipart>=0.0.6",
+    "psutil>=5.9.0",
+    "aiofiles>=24.1.0",
+    "pydantic-settings>=2.11.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "httpx>=0.25.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/app"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",
+    "ruff>=0.13.0",
+]
+
+[tool.ruff]
+# Python 版本
+target-version = "py312"
+
+# 代码行长度
+line-length = 88
+
+# 源码目录
+src = ["src"]
+
+# 排除目录
+extend-exclude = [".git", ".venv", "__pycache__", "build", "dist", "*.egg-info"]
+
+[tool.ruff.lint]
+# 启用的规则集
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "UP",    # pyupgrade
+    "SIM",   # flake8-simplify
+    "TCH",   # flake8-type-checking
+    "A",     # flake8-builtins
+    "LOG",   # flake8-logging
+    "G",     # flake8-logging-format
+    "PIE",   # flake8-pie
+    "T20",   # flake8-print
+    "PT",    # flake8-pytest-style
+    "Q",     # flake8-quotes
+    "RET",   # flake8-return
+    "ARG",   # flake8-unused-arguments
+    "PL",    # pylint
+    "FLY",   # flynt
+    "ASYNC", # flake8-async
+    "S",     # flake8-bandit (security)
+    "TRY",   # tryceratops
+    "PERF",  # perflint
+    "FURB",  # refurb
+]
+
+# 忽略的规则
+ignore = [
+    "E501",    # 行过长 (由 line-length 控制)
+    "B008",    # 函数参数中的可变默认值 (FastAPI 依赖注入常用)
+    "S101",    # assert 语句 (测试中常用)
+    "PLR0913", # 函数参数过多 (有时必要)
+    "PLR2004", # 魔法数字 (配置值可能需要)
+    "TRY003",  # 异常消息过长
+    "T201",    # print 语句 (开发时可能需要)
+    "G004",    # f-string 在日志中 (可读性更好)
+    "S603",    # subprocess 调用 (FFmpeg 需要)
+    "S607",    # shell=True (某些场景需要)
+    "S108",    # 临时文件路径 (RAM磁盘优化需要)
+    "S307",    # eval 使用 (FFmpeg 帧率计算需要)
+    "S605",    # shell 进程启动 (硬件检测需要)
+    "TRY301",  # 函数内抛出异常 (FastAPI 错误处理模式)
+    "TRY300",  # try-else 建议 (简单场景可忽略)
+    "TRY400",  # logger.error vs logger.exception (有时不需要堆栈跟踪)
+    "TRY401",  # 日志详细信息 (调试时有用)
+    "B904",    # 异常链 (某些场景下可选)
+    "E722",    # 裸露异常捕获 (FFmpeg 进程处理需要)
+    "S110",    # try-except-pass (进程清理时可接受)
+    "PLW2901",
+]
+
+# 每个文件的最大复杂度
+mccabe = { max-complexity = 12 }
+
+[tool.ruff.lint.isort]
+# import 排序配置
+known-first-party = ["app"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+split-on-trailing-comma = true
+
+[tool.ruff.lint.flake8-quotes]
+# 字符串引号风格
+inline-quotes = "double"
+multiline-quotes = "double"
+
+[tool.ruff.lint.pylint]
+# Pylint 配置
+max-args = 8
+max-returns = 6
+max-branches = 15
+max-statements = 60
+
+[tool.ruff.lint.flake8-type-checking]
+# 类型检查配置
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
+[tool.ruff.lint.per-file-ignores]
+# 特定文件的忽略规则
+"tests/**/*.py" = [
+    "S101",    # assert 语句在测试中是必需的
+    "PLR2004", # 魔法数字在测试中可接受
+    "ARG001",  # 未使用的函数参数 (测试夹具)
+]
+"src/app/settings.py" = [
+    "PLR2004", # 配置文件中的魔法数字可接受
+]
+"run.py" = [
+    "T201", # 启动脚本中的 print 语句
+]
+"src/app/main.py" = [
+    "T201", # 主模块中的 print 语句
+]
+
+[tool.ruff.format]
+# 代码格式化配置
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
