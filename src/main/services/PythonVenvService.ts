@@ -19,12 +19,12 @@ export class PythonVenvService {
 
   constructor() {
     // 根据环境判断 media-server 路径
-    // 开发环境: backend/
+    // 开发环境: media-server/
     // 生产环境: resources/media-server/
     const isDev = !app.isPackaged
 
     if (isDev) {
-      this.mediaServerCandidates = [path.join(process.cwd(), 'backend')]
+      this.mediaServerCandidates = [path.join(process.cwd(), 'media-server')]
     } else {
       const resourcesRoot = process.resourcesPath || app.getAppPath()
 
@@ -55,7 +55,7 @@ export class PythonVenvService {
     const candidates =
       this.mediaServerCandidates.length > 0
         ? this.mediaServerCandidates
-        : [path.join(process.cwd(), 'backend')]
+        : [path.join(process.cwd(), 'media-server')]
 
     for (const candidate of candidates) {
       try {
