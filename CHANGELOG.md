@@ -1,3 +1,13 @@
+# [1.1.0-alpha.7](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.6...v1.1.0-alpha.7) (2025-10-14)
+
+### Bug Fixes
+
+- **AppUpdater, FFmpegDownloadService:** update default mirror source to global ([52c2999](https://github.com/mkdir700/EchoPlayer/commit/52c299983cee09333078d65669dfa93d38eb9b7f))
+
+### Features
+
+- **RegionDetection:** integrate region detection service for IP-based country identification ([9881bc6](https://github.com/mkdir700/EchoPlayer/commit/9881bc6b32dccf52599149bc186fdcca80d19a00))
+
 # [1.1.0-alpha.6](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.5...v1.1.0-alpha.6) (2025-10-14)
 
 # [1.1.0-alpha.5](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.4...v1.1.0-alpha.5) (2025-10-14)
