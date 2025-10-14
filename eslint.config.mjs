@@ -122,6 +122,7 @@ export default defineConfig([
       'build/**',
       'dist/**',
       'out/**',
+      'media-server/**',
       'local/**',
       '.yarn/**',
       '.gitignore',
