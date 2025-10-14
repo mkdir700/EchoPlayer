@@ -1,3 +1,13 @@
+# [1.1.0-alpha.4](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.3...v1.1.0-alpha.4) (2025-10-14)
+
+### Bug Fixes
+
+- **build:** adjust resource handling for media-server in packaging ([505e5b8](https://github.com/mkdir700/EchoPlayer/commit/505e5b8653b66dffe3f241f657c2f7a7a26fd2fe))
+
+### Features
+
+- **player:** add toggle auto-pause functionality ([a14886e](https://github.com/mkdir700/EchoPlayer/commit/a14886e22924234dfeca24a71d0efe3bb37a9910))
+
 # [1.1.0-alpha.3](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.2...v1.1.0-alpha.3) (2025-10-13)
 
 ### Bug Fixes
