@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>会话调试工具</title>
+    <link rel="preload" href="./hls.min.js" as="script" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .log-pre {
+        background: #1e293b !important;
+        color: #f1f5f9 !important;
+        font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace !important;
+        line-height: 1.4 !important;
+      }
+      .log-success {
+        background: #ecfdf5 !important;
+        border-left: 3px solid #10b981 !important;
+      }
+      .log-error {
+        background: #fef2f2 !important;
+        border-left: 3px solid #ef4444 !important;
+      }
+    </style>
+    <script defer src="./hls.min.js"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-900 font-sans p-4">
+    <h1 class="text-2xl font-semibold mb-4">EchoPlayer 会话调试控制台</h1>
+
+    <!-- 主网格布局 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" style="height: calc(100vh - 120px);">
+      <!-- 左栏：配置和创建 -->
+      <div class="space-y-4 overflow-y-auto">
+        <!-- 环境设置 -->
+        <section
+          class="bg-white border border-gray-300 rounded-lg p-4 shadow-sm"
+        >
+          <h2 class="text-lg font-medium mb-3">环境设置</h2>
+          <div class="space-y-3">
+            <label class="block text-sm">
+              <span class="mb-1 block">API 基础地址</span>
+              <input
+                id="apiBase"
+                placeholder="http://localhost:8799/api/v1"
+                class="w-full text-sm px-2.5 py-2 rounded-md border border-slate-300"
+              />
+            </label>
+            <label class="block text-sm">
+              <span class="mb-1 block">默认视频文件路径</span>
+              <div class="relative">
+                <input
+                  id="defaultFile"
+                  placeholder="/path/to/video/file.mp4"
+                  class="w-full text-sm px-2.5 py-2 rounded-md border border-slate-300"
+                  list="fileHistoryList"
+                />
+                <datalist id="fileHistoryList">
+                  <!-- History options will be populated by JavaScript -->
+                </datalist>
+              </div>
+            </label>
+            <button
+              id="checkHealth"
+              class="w-full text-sm px-2.5 py-2 rounded-md border border-slate-700 bg-slate-700 text-white font-semibold cursor-pointer hover:bg-slate-600 transition-colors"
+            >
+              检查服务器状态
+            </button>
+          </div>
+        </section>
+
+        <!-- 缓存管理 -->
+        <section
+          class="bg-white border border-gray-300 rounded-lg p-4 shadow-sm"
+        >
+          <h2 class="text-lg font-medium mb-3">缓存管理</h2>
+          <div class="space-y-3">
+            <label class="block text-sm">
+              <span class="mb-1 block">文件路径</span>
+              <input
+                id="cacheFilePath"
+                placeholder="/path/to/video/file.mp4"
+                class="w-full text-sm px-2.5 py-2 rounded-md border border-slate-300"
+              />
+            </label>
+            <button
+              id="clearFileCache"
+              class="w-full text-sm px-2.5 py-2 rounded-md border border-orange-600 bg-orange-600 text-white font-semibold cursor-pointer hover:bg-orange-700 transition-colors"
+            >
+              清空文件缓存
+            </button>
+          </div>
+        </section>
+
+        <!-- 创建会话 -->
+        <section
+          class="bg-white border border-gray-300 rounded-lg p-4 shadow-sm"
+        >
+          <h2 class="text-lg font-medium mb-3">创建会话</h2>
+          <div class="space-y-3">
+            <label class="block text-sm">
+              <span class="mb-1 block">视频文件路径</span>
+              <input
+                id="filePath"
+                required
+                class="w-full text-sm px-2.5 py-2 rounded-md border border-slate-300"
+              />
+            </label>
+            <label class="block text-sm">
+              <span class="mb-1 block">初始时间 (秒)</span>
+              <input
+                id="initialTime"
+                type="number"
+                min="0"
+                step="0.1"
+                value="0"
+                class="w-full text-sm px-2.5 py-2 rounded-md border border-slate-300"
+              />
+            </label>
+
+            <!-- 高级选项 -->
+            <details class="border border-gray-200 rounded p-2">
+              <summary class="cursor-pointer text-sm font-medium">
+                高级选项
+              </summary>
+              <div class="space-y-2 mt-2">
+                <label class="block text-xs">
+                  <span class="mb-1 block">视频编码器 (video_codec)</span>
+                  <input
+                    id="videoCodec"
+                    placeholder="例如: libx264"
+                    class="w-full text-xs px-2 py-1.5 rounded border border-slate-300"
+                  />
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="block text-xs">
+                    <span class="mb-1 block">编码预设</span>
+                    <input
+                      id="videoPreset"
+                      placeholder="veryfast"
+                      class="w-full text-xs px-2 py-1.5 rounded border border-slate-300"
+                    />
+                  </label>
+                  <label class="block text-xs">
+                    <span class="mb-1 block">视频码率</span>
+                    <input
+                      id="videoBitrate"
+                      placeholder="2500k"
+                      class="w-full text-xs px-2 py-1.5 rounded border border-slate-300"
+                    />
+                  </label>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="block text-xs">
+                    <span class="mb-1 block">分片时长</span>
+                    <input
+                      id="hlsTime"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      class="w-full text-xs px-2 py-1.5 rounded border border-slate-300"
+                    />
+                  </label>
+                  <label class="block text-xs">
+                    <span class="mb-1 block">窗口时长</span>
+                    <input
+                      id="windowDuration"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      class="w-full text-xs px-2 py-1.5 rounded border border-slate-300"
+                    />
+                  </label>
+                </div>
+              </div>
+            </details>
+
+            <button
+              id="createSession"
+              class="w-full text-sm px-2.5 py-2 rounded-md border border-blue-600 bg-blue-600 text-white font-semibold cursor-pointer hover:bg-blue-700 transition-colors"
+            >
+              创建并播放
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- 中栏：会话控制和播放器 -->
+      <div class="space-y-4 overflow-y-auto">
+        <!-- 会话控制 -->
+        <section
+          class="bg-white border border-gray-300 rounded-lg p-4 shadow-sm"
+        >
+          <h2 class="text-lg font-medium mb-3">会话控制</h2>
+          <p id="currentSession" class="text-sm mb-3 p-2 bg-gray-50 rounded">
+            当前会话: 未创建
+          </p>
+          <div id="sessionProgressContainer" class="mb-3 space-y-2">
+            <div class="flex justify-between text-xs text-slate-600">
+              <span>会话进度</span>
+              <span id="sessionProgressLabel">未开始</span>
+            </div>
+            <div class="h-2 w-full bg-slate-200 rounded">
+              <div
+                id="sessionProgressBar"
+                class="h-2 bg-blue-600 rounded transition-all duration-300 ease-out"
+                style="width: 0%"
+              ></div>
+            </div>
+            <p id="sessionProgressStage" class="text-xs text-slate-600">
+              等待会话创建
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <!-- 会话信息按钮组 -->
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                id="refreshInfo"
+                class="text-xs px-2 py-1.5 rounded border border-slate-700 bg-slate-700 text-white font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors"
+                disabled
+              >
+                会话信息
+              </button>
+              <button
+                id="refreshPlaylist"
+                class="text-xs px-2 py-1.5 rounded border border-slate-700 bg-slate-700 text-white font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors"
+                disabled
+              >
+                播放列表
+              </button>
+              <button
+                id="refreshPlaylistInfo"
+                class="text-xs px-2 py-1.5 rounded border border-slate-700 bg-slate-700 text-white font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600 transition-colors"
+                disabled
+              >
+                列表详情
+              </button>
+              <button
+                id="listSessions"
+                class="text-xs px-2 py-1.5 rounded border border-slate-700 bg-slate-700 text-white font-medium cursor-pointer hover:bg-slate-600 transition-colors"
+              >
+                所有会话
+              </button>
+            </div>
+
+            <button
+              id="getStats"
+              class="w-full text-xs px-2 py-1.5 rounded border border-slate-700 bg-slate-700 text-white font-medium cursor-pointer hover:bg-slate-600 transition-colors"
+            >
+              会话统计
+            </button>
+
+            <!-- Seek 控制 -->
+            <div class="grid grid-cols-2 gap-2 items-end">
+              <label class="block text-xs">
+                <span class="mb-1 block">Seek (秒)</span>
+                <input
+                  id="seekTime"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  class="w-full text-xs px-2 py-1.5 rounded border border-slate-300"
+                />
+              </label>
+              <button
+                id="seekButton"
+                class="text-xs px-2 py-1.5 rounded border border-blue-600 bg-blue-600 text-white font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                disabled
+              >
+                执行 Seek
+              </button>
+            </div>
+
+            <!-- 时间上报控制 -->
+            <div class="grid grid-cols-2 gap-2 items-end">
+              <label class="block text-xs">
+                <span class="mb-1 block">播放时间 (秒)</span>
+                <input
+                  id="reportTime"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  class="w-full text-xs px-2 py-1.5 rounded border border-slate-300"
+                />
+              </label>
+              <button
+                id="reportButton"
+                class="text-xs px-2 py-1.5 rounded border border-blue-600 bg-blue-600 text-white font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                disabled
+              >
+                更新时间
+              </button>
+            </div>
+
+            <button
+              id="deleteSession"
+              class="w-full text-sm px-2.5 py-2 rounded-md border border-red-600 bg-red-600 text-white font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
+              disabled
+            >
+              删除会话
+            </button>
+          </div>
+        </section>
+
+        <!-- 播放器 -->
+        <section
+          class="bg-white border border-gray-300 rounded-lg p-4 shadow-sm"
+        >
+          <h2 class="text-lg font-medium mb-3">播放器</h2>
+          <video
+            id="video"
+            controls
+            class="w-full max-h-[250px] bg-slate-900 rounded-md"
+          ></video>
+          <p id="playerStatus" class="text-sm mt-2 p-2 bg-gray-50 rounded">
+            播放器尚未加载播放列表
+          </p>
+
+          <!-- 播放器控制按钮 -->
+          <div class="mt-3 space-y-2">
+            <!-- Seek 控制 -->
+            <div class="flex gap-2 items-end">
+              <label class="block text-xs flex-1">
+                <span class="mb-1 block">Seek 到时间 (秒)</span>
+                <input
+                  id="playerSeekTime"
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="w-full text-xs px-2 py-1.5 rounded border border-slate-300"
+                />
+              </label>
+              <button
+                id="playerSeekButton"
+                class="text-xs px-3 py-1.5 rounded border border-blue-600 bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700 transition-colors"
+              >
+                Seek
+              </button>
+            </div>
+
+            <!-- 12*n-2 序列导航 -->
+            <div class="flex gap-2">
+              <button
+                id="prevSequenceButton"
+                class="flex-1 text-xs px-2 py-1.5 rounded border border-purple-600 bg-purple-600 text-white font-medium cursor-pointer hover:bg-purple-700 transition-colors"
+              >
+                ← 上一个 (12n-2)
+              </button>
+              <button
+                id="nextSequenceButton"
+                class="flex-1 text-xs px-2 py-1.5 rounded border border-purple-600 bg-purple-600 text-white font-medium cursor-pointer hover:bg-purple-700 transition-colors"
+              >
+                下一个 (12n-2) →
+              </button>
+            </div>
+
+          </div>
+        </section>
+      </div>
+
+      <!-- 右栏：调试日志（占满高度） -->
+      <div class="lg:col-span-2 xl:col-span-1">
+        <section
+          class="bg-white border border-gray-300 rounded-lg p-4 shadow-sm h-full flex flex-col"
+        >
+          <h2 class="text-lg font-medium mb-3">调试日志</h2>
+          <div
+            id="log"
+            class="flex-1 border border-gray-300 rounded-md p-3 bg-white overflow-y-auto"
+          ></div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const apiBaseInput = document.getElementById("apiBase");
+      const defaultFileInput = document.getElementById("defaultFile");
+      const filePathInput = document.getElementById("filePath");
+      const initialTimeInput = document.getElementById("initialTime");
+      const videoCodecInput = document.getElementById("videoCodec");
+      const videoPresetInput = document.getElementById("videoPreset");
+      const videoBitrateInput = document.getElementById("videoBitrate");
+      const hlsTimeInput = document.getElementById("hlsTime");
+      const windowDurationInput = document.getElementById("windowDuration");
+      const createButton = document.getElementById("createSession");
+      const checkHealthButton = document.getElementById("checkHealth");
+      const cacheFilePathInput = document.getElementById("cacheFilePath");
+      const clearFileCacheButton = document.getElementById("clearFileCache");
+      const refreshInfoButton = document.getElementById("refreshInfo");
+      const refreshPlaylistButton = document.getElementById("refreshPlaylist");
+      const refreshPlaylistInfoButton = document.getElementById(
+        "refreshPlaylistInfo"
+      );
+      const listSessionsButton = document.getElementById("listSessions");
+      const getStatsButton = document.getElementById("getStats");
+      const seekInput = document.getElementById("seekTime");
+      const seekButton = document.getElementById("seekButton");
+      const reportInput = document.getElementById("reportTime");
+      const reportButton = document.getElementById("reportButton");
+      const deleteButton = document.getElementById("deleteSession");
+      const currentSessionLabel = document.getElementById("currentSession");
+      const sessionProgressBar = document.getElementById("sessionProgressBar");
+      const sessionProgressLabel = document.getElementById("sessionProgressLabel");
+      const sessionProgressStage = document.getElementById("sessionProgressStage");
+      const videoElement = document.getElementById("video");
+      const playerStatus = document.getElementById("playerStatus");
+      const logContainer = document.getElementById("log");
+      const playerSeekInput = document.getElementById("playerSeekTime");
+      const playerSeekButton = document.getElementById("playerSeekButton");
+      const prevSequenceButton = document.getElementById("prevSequenceButton");
+      const nextSequenceButton = document.getElementById("nextSequenceButton");
+
+      let currentSessionId = null;
+      let currentPlaylistUrl = null;
+      let hlsPlayer = null;
+      let progressPollTimer = null;
+      let lastProgressSnapshot = null;
+
+      // localStorage keys for persistent storage
+      const STORAGE_KEYS = {
+        DEFAULT_FILE: 'echoplayer_default_file',
+        FILE_HISTORY: 'echoplayer_file_history',
+        API_BASE: 'echoplayer_api_base'
+      };
+
+      function defaultApiBase() {
+        const origin = window.location.origin;
+        const fallback = "http://127.0.0.1:8799";
+        const base = origin && origin !== "null" ? origin : fallback;
+        return `${base.replace(/\/$/, "")}/api/v1`;
+      }
+
+      // localStorage helper functions
+      function saveToStorage(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (error) {
+          console.error('Failed to save to localStorage:', error);
+        }
+      }
+
+      function getFromStorage(key, defaultValue = '') {
+        try {
+          return localStorage.getItem(key) || defaultValue;
+        } catch (error) {
+          console.error('Failed to read from localStorage:', error);
+          return defaultValue;
+        }
+      }
+
+      function saveFileHistory(filePath) {
+        if (!filePath.trim()) return;
+
+        try {
+          const history = JSON.parse(getFromStorage(STORAGE_KEYS.FILE_HISTORY, '[]'));
+
+          // Remove if already exists to avoid duplicates
+          const filtered = history.filter(item => item.path !== filePath);
+
+          // Add to beginning of array
+          filtered.unshift({
+            path: filePath,
+            timestamp: new Date().toISOString()
+          });
+
+          // Keep only last 10 items
+          const limited = filtered.slice(0, 10);
+
+          saveToStorage(STORAGE_KEYS.FILE_HISTORY, JSON.stringify(limited));
+        } catch (error) {
+          console.error('Failed to save file history:', error);
+        }
+      }
+
+      function getFileHistory() {
+        try {
+          return JSON.parse(getFromStorage(STORAGE_KEYS.FILE_HISTORY, '[]'));
+        } catch (error) {
+          console.error('Failed to get file history:', error);
+          return [];
+        }
+      }
+
+      function updateFileHistoryDropdown() {
+        const historyList = document.getElementById('fileHistoryList');
+        const history = getFileHistory();
+
+        // Clear existing options
+        historyList.innerHTML = '';
+
+        // Add history items as options
+        history.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.path;
+          historyList.appendChild(option);
+        });
+      }
+
+      function getApiBase() {
+        const value = apiBaseInput.value.trim();
+        if (!value) {
+          return defaultApiBase();
+        }
+        return value.replace(/\/?$/, "");
+      }
+
+      function buildApiUrl(path) {
+        const base = getApiBase();
+        return base + (path.startsWith("/") ? path : `/${path}`);
+      }
+
+      function log(action, data, isError = false) {
+        const entry = document.createElement("div");
+        const bgClass = isError ? "log-error" : "log-success";
+        entry.className = `mb-2 pb-3 ${bgClass} rounded-md p-2`;
+        const timestamp = new Date().toLocaleTimeString();
+
+        // 优化时间戳和动作文本的颜色
+        const headerColor = isError ? "text-red-800" : "text-green-800";
+        const statusIcon = isError ? "❌" : "✅";
+
+        entry.innerHTML = `<div class="text-sm font-semibold ${headerColor} mb-2 flex items-center gap-1">
+          <span>${statusIcon}</span>
+          <span>[${timestamp}] ${action}</span>
+        </div><pre class="log-pre text-sm p-3 rounded-md overflow-auto max-h-32 whitespace-pre-wrap border border-slate-600">${
+          typeof data === "string" ? data : JSON.stringify(data, null, 2)
+        }</pre>`;
+        logContainer.prepend(entry);
+      }
+
+      async function jsonRequest(method, path, payload) {
+        const options = { method, headers: { Accept: "application/json" } };
+        if (payload) {
+          options.headers["Content-Type"] = "application/json";
+          options.body = JSON.stringify(payload);
+        }
+        const response = await fetch(buildApiUrl(path), options);
+        const text = await response.text();
+        let parsed;
+        try {
+          parsed = text ? JSON.parse(text) : {};
+        } catch (error) {
+          log("解析响应失败", text, true);
+          throw error;
+        }
+        if (!response.ok) {
+          const message = parsed?.detail || response.statusText;
+          throw new Error(message || "请求失败");
+        }
+        return parsed;
+      }
+
+      async function textRequest(path) {
+        const response = await fetch(buildApiUrl(path), { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.text();
+      }
+
+      function resetSessionProgressUI() {
+        if (!sessionProgressBar || !sessionProgressLabel || !sessionProgressStage) {
+          return;
+        }
+        sessionProgressBar.style.width = "0%";
+        sessionProgressBar.classList.remove("bg-green-500", "bg-red-500");
+        sessionProgressBar.classList.add("bg-blue-600");
+        sessionProgressLabel.textContent = "未开始";
+        sessionProgressStage.textContent = "等待会话创建";
+        lastProgressSnapshot = null;
+      }
+
+      function updateSessionProgressUI(progress) {
+        if (!sessionProgressBar || !sessionProgressLabel || !sessionProgressStage) {
+          return;
+        }
+        const percentValue = Number(progress?.progress_percent ?? 0);
+        const percent = Math.max(0, Math.min(percentValue, 100));
+        sessionProgressBar.style.width = `${percent}%`;
+        sessionProgressLabel.textContent = `${percent.toFixed(1)}%`;
+
+        const stageText = progress?.error_message
+          ? `错误: ${progress.error_message}`
+          : progress?.progress_stage || "处理中";
+        sessionProgressStage.textContent = stageText;
+
+        sessionProgressBar.classList.remove("bg-blue-600", "bg-green-500", "bg-red-500");
+        if (progress?.error_message) {
+          sessionProgressBar.classList.add("bg-red-500");
+        } else if (progress?.is_ready) {
+          sessionProgressBar.classList.add("bg-green-500");
+        } else {
+          sessionProgressBar.classList.add("bg-blue-600");
+        }
+      }
+
+      function maybeLogProgress(progress) {
+        if (!progress) return;
+        const percent = Number(progress.progress_percent ?? 0);
+        const stage = progress.progress_stage || "";
+        const isReady = Boolean(progress.is_ready);
+        const errorMessage = progress.error_message || null;
+
+        const lastPercent = lastProgressSnapshot?.percent ?? -1;
+        const lastStage = lastProgressSnapshot?.stage;
+        const lastReady = Boolean(lastProgressSnapshot?.isReady);
+        const lastError = lastProgressSnapshot?.errorMessage;
+
+        const percentChanged = Math.abs(percent - lastPercent) >= 5;
+        const stageChanged = stage !== lastStage;
+        const readyChanged = isReady && !lastReady;
+        const errorChanged = Boolean(errorMessage) && errorMessage !== lastError;
+
+        if (stageChanged || percentChanged || readyChanged || errorChanged) {
+          log(
+            "会话进度更新",
+            {
+              stage,
+              percent: percent.toFixed(1),
+              status: progress.status,
+              is_ready: progress.is_ready,
+              error: errorMessage || undefined,
+            },
+            Boolean(errorMessage)
+          );
+        }
+
+        lastProgressSnapshot = {
+          stage,
+          percent,
+          isReady,
+          errorMessage,
+        };
+      }
+
+      function stopProgressPolling() {
+        if (progressPollTimer) {
+          clearInterval(progressPollTimer);
+          progressPollTimer = null;
+        }
+      }
+
+      async function pollSessionProgress(sessionId) {
+        if (!sessionId) return;
+        try {
+          const progress = await jsonRequest(
+            "GET",
+            `/session/${sessionId}/progress`
+          );
+          updateSessionProgressUI(progress);
+          maybeLogProgress(progress);
+
+          if (progress?.playlist_url) {
+            currentPlaylistUrl = progress.playlist_url;
+          }
+
+          if (progress?.error_message) {
+            playerStatus.textContent = `会话创建失败: ${progress.error_message}`;
+            stopProgressPolling();
+            return;
+          }
+
+          if (progress?.is_ready) {
+            stopProgressPolling();
+            setSessionState(progress.session_id, progress.playlist_url || currentPlaylistUrl);
+            if (progress.playlist_url || currentPlaylistUrl) {
+              playerStatus.textContent = "会话准备就绪，加载播放列表...";
+              loadPlaylist(progress.playlist_url || currentPlaylistUrl);
+            }
+          }
+        } catch (error) {
+          sessionProgressStage.textContent = `获取进度失败: ${error.message}`;
+        }
+      }
+
+      function startProgressPolling(sessionId) {
+        stopProgressPolling();
+        if (!sessionId) return;
+        pollSessionProgress(sessionId);
+        progressPollTimer = setInterval(() => {
+          pollSessionProgress(sessionId);
+        }, 2000);
+      }
+
+      function setSessionState(sessionId, playlistUrl) {
+        currentSessionId = sessionId;
+        currentPlaylistUrl = playlistUrl;
+        const label = sessionId ? `当前会话: ${sessionId}` : "当前会话: 未创建";
+        currentSessionLabel.textContent = label;
+        const hasSession = Boolean(sessionId);
+        refreshInfoButton.disabled = !hasSession;
+        refreshPlaylistButton.disabled = !hasSession;
+        refreshPlaylistInfoButton.disabled = !hasSession;
+        seekButton.disabled = !hasSession;
+        reportButton.disabled = !hasSession;
+        deleteButton.disabled = !hasSession;
+        if (!hasSession) {
+          stopProgressPolling();
+          resetSessionProgressUI();
+          playerStatus.textContent = "播放器尚未加载播放列表";
+        }
+      }
+
+      function loadPlaylist(url) {
+        if (!url) {
+          playerStatus.textContent = "未找到播放列表 URL";
+          return;
+        }
+        const playlist = new URL(url, getApiBase() + "/").toString();
+        if (hlsPlayer) {
+          hlsPlayer.destroy();
+          hlsPlayer = null;
+        }
+        if (Hls.isSupported()) {
+          hlsPlayer = new Hls({ enableWorker: true, lowLatencyMode: true });
+          hlsPlayer.on(Hls.Events.ERROR, (_, data) => {
+            log("HLS 播放错误", data, true);
+            playerStatus.textContent = `HLS 错误: ${data?.details || "未知"}`;
+          });
+          hlsPlayer.loadSource(playlist);
+          hlsPlayer.attachMedia(videoElement);
+          playerStatus.textContent = `正在播放: ${playlist}`;
+        } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
+          videoElement.src = playlist;
+          playerStatus.textContent = `正在播放 (原生 HLS): ${playlist}`;
+        } else {
+          playerStatus.textContent = "当前浏览器不支持 HLS";
+        }
+      }
+
+      async function handleCreate() {
+        const payload = {
+          file_path: filePathInput.value.trim(),
+          initial_time: parseFloat(initialTimeInput.value) || 0,
+        };
+        if (!payload.file_path) {
+          alert("请填写文件路径");
+          return;
+        }
+
+        // Save file path to history when creating session
+        saveFileHistory(payload.file_path);
+        updateFileHistoryDropdown();
+        if (videoCodecInput.value.trim())
+          payload.video_codec = videoCodecInput.value.trim();
+        if (videoPresetInput.value.trim())
+          payload.video_preset = videoPresetInput.value.trim();
+        if (videoBitrateInput.value.trim())
+          payload.video_bitrate = videoBitrateInput.value.trim();
+        if (hlsTimeInput.value)
+          payload.hls_time = parseFloat(hlsTimeInput.value);
+        if (windowDurationInput.value)
+          payload.window_duration = parseFloat(windowDurationInput.value);
+        try {
+          createButton.disabled = true;
+          stopProgressPolling();
+          resetSessionProgressUI();
+          sessionProgressLabel.textContent = "0.0%";
+          sessionProgressStage.textContent = "正在创建会话...";
+          playerStatus.textContent = "会话创建中，请稍候...";
+          const response = await jsonRequest(
+            "POST",
+            "/session/create",
+            payload
+          );
+          log("创建会话", response);
+          setSessionState(response.session_id, response.playlist_url);
+          sessionProgressStage.textContent = "等待进度更新...";
+          startProgressPolling(response.session_id);
+          playerStatus.textContent = "正在等待会话转码完成...";
+        } catch (error) {
+          log("创建会话失败", error.message, true);
+          alert(`创建会话失败: ${error.message}`);
+          sessionProgressStage.textContent = `创建会话失败: ${error.message}`;
+          sessionProgressLabel.textContent = "未开始";
+          playerStatus.textContent = "播放器尚未加载播放列表";
+        } finally {
+          createButton.disabled = false;
+        }
+      }
+
+      async function handleInfo() {
+        if (!currentSessionId) return;
+        try {
+          const data = await jsonRequest(
+            "GET",
+            `/session/${currentSessionId}/info`
+          );
+          log("会话信息", data);
+        } catch (error) {
+          log("获取会话信息失败", error.message, true);
+        }
+      }
+
+      async function handlePlaylist() {
+        if (!currentSessionId) return;
+        try {
+          const text = await textRequest(
+            `/session/${currentSessionId}/playlist.m3u8`
+          );
+          log("播放列表", text);
+        } catch (error) {
+          log("获取播放列表失败", error.message, true);
+        }
+      }
+
+      async function handlePlaylistInfo() {
+        if (!currentSessionId) return;
+        try {
+          const data = await jsonRequest(
+            "GET",
+            `/session/${currentSessionId}/playlist-info`
+          );
+          log("播放列表详情", data);
+        } catch (error) {
+          log("获取播放列表详情失败", error.message, true);
+        }
+      }
+
+      async function handleSeek() {
+        if (!currentSessionId) return;
+        const time = parseFloat(seekInput.value);
+        if (Number.isNaN(time)) {
+          alert("请输入有效的 seek 时间");
+          return;
+        }
+        try {
+          const data = await jsonRequest(
+            "POST",
+            `/session/${currentSessionId}/seek`,
+            { time_seconds: time }
+          );
+          log("Seek 结果", data);
+          if (data.playlist_updated) {
+            loadPlaylist(currentPlaylistUrl);
+          }
+        } catch (error) {
+          log("Seek 失败", error.message, true);
+        }
+      }
+
+      async function handleReport() {
+        if (!currentSessionId) return;
+        const time = parseFloat(reportInput.value);
+        if (Number.isNaN(time)) {
+          alert("请输入有效的播放时间");
+          return;
+        }
+        try {
+          const data = await jsonRequest(
+            "POST",
+            `/session/${currentSessionId}/update-time`,
+            { current_time: time }
+          );
+          log("更新播放时间", data);
+        } catch (error) {
+          log("更新播放时间失败", error.message, true);
+        }
+      }
+
+      async function handleDelete() {
+        if (!currentSessionId) return;
+        if (!confirm("确认删除当前会话吗?")) return;
+        try {
+          const data = await jsonRequest(
+            "DELETE",
+            `/session/${currentSessionId}`
+          );
+          log("删除会话", data);
+          setSessionState(null, null);
+          if (hlsPlayer) {
+            hlsPlayer.destroy();
+            hlsPlayer = null;
+          }
+          videoElement.removeAttribute("src");
+          videoElement.load();
+          playerStatus.textContent = "会话已删除";
+        } catch (error) {
+          log("删除会话失败", error.message, true);
+        }
+      }
+
+      async function handleListSessions() {
+        try {
+          const data = await jsonRequest("GET", "/session/list");
+          log("会话列表", data);
+        } catch (error) {
+          log("获取会话列表失败", error.message, true);
+        }
+      }
+
+      async function handleStats() {
+        try {
+          const data = await jsonRequest("GET", "/session/stats");
+          log("会话统计", data);
+        } catch (error) {
+          log("获取会话统计失败", error.message, true);
+        }
+      }
+
+      async function handleHealthCheck() {
+        try {
+          const data = await jsonRequest("GET", "/session/stats");
+          log("健康检查", { message: "服务器可用", stats: data });
+        } catch (error) {
+          log("健康检查失败", error.message, true);
+        }
+      }
+
+      async function handleClearFileCache() {
+        const filePath = cacheFilePathInput.value.trim();
+        if (!filePath) {
+          alert("请填写文件路径");
+          return;
+        }
+        if (!confirm(`确认清空文件 "${filePath}" 的所有缓存吗?`)) return;
+
+        // Save file path to history when clearing cache
+        saveFileHistory(filePath);
+        updateFileHistoryDropdown();
+        try {
+          clearFileCacheButton.disabled = true;
+          const data = await jsonRequest(
+            "POST",
+            "/jit/cache/cleanup/file",
+            { file_path: filePath }
+          );
+          log("清空文件缓存", data);
+        } catch (error) {
+          log("清空文件缓存失败", error.message, true);
+        } finally {
+          clearFileCacheButton.disabled = false;
+        }
+      }
+
+      async function handlePlayerSeek() {
+        const time = parseFloat(playerSeekInput.value);
+        if (Number.isNaN(time) || time < 0) {
+          alert("请输入有效的时间");
+          return;
+        }
+        if (!videoElement.duration) {
+          alert("视频尚未加载完成");
+          return;
+        }
+        try {
+          videoElement.currentTime = time;
+          log("播放器 Seek", { time: time, success: true });
+        } catch (error) {
+          log("播放器 Seek 失败", error.message, true);
+        }
+      }
+
+
+      // 12*n-2 序列计算函数
+      function calculateSequenceTime(currentTime, direction) {
+        // 12*n-2 序列: 10, 22, 34, 46, 58, 70, 82, 94, 106, 118...
+        // 即: 12*1-2=10, 12*2-2=22, 12*3-2=34, ...
+
+        if (direction === 'prev') {
+          // 找到上一个 12*n-2 的值
+          const n = Math.ceil((currentTime + 2) / 12) - 1;
+          return Math.max(0, n * 12 - 2);
+        } else {
+          // 找到下一个 12*n-2 的值
+          const n = Math.floor((currentTime + 2) / 12) + 1;
+          return n * 12 - 2;
+        }
+      }
+
+      async function handleSequenceSeek(direction) {
+        if (!videoElement.duration) {
+          alert("视频尚未加载完成");
+          return;
+        }
+
+        try {
+          const currentTime = videoElement.currentTime || 0;
+          const targetTime = calculateSequenceTime(currentTime, direction);
+
+          // 确保不超过视频长度
+          const clampedTime = Math.min(targetTime, videoElement.duration);
+
+          videoElement.currentTime = clampedTime;
+          playerSeekInput.value = clampedTime;
+
+          // 如果视频没有播放则自动播放
+          if (videoElement.paused) {
+            try {
+              await videoElement.play();
+              log(`自动播放`, { time: clampedTime.toFixed(1) });
+            } catch (playError) {
+              log(`自动播放失败`, playError.message, true);
+            }
+          }
+
+          log(`序列跳转 (${direction})`, {
+            from: currentTime.toFixed(1),
+            to: clampedTime.toFixed(1),
+            sequence: '12n-2',
+            success: true
+          });
+        } catch (error) {
+          log(`序列跳转失败 (${direction})`, error.message, true);
+        }
+      }
+
+      createButton.addEventListener("click", handleCreate);
+      checkHealthButton.addEventListener("click", handleHealthCheck);
+      clearFileCacheButton.addEventListener("click", handleClearFileCache);
+      refreshInfoButton.addEventListener("click", handleInfo);
+      refreshPlaylistButton.addEventListener("click", handlePlaylist);
+      refreshPlaylistInfoButton.addEventListener("click", handlePlaylistInfo);
+      listSessionsButton.addEventListener("click", handleListSessions);
+      getStatsButton.addEventListener("click", handleStats);
+      seekButton.addEventListener("click", handleSeek);
+      reportButton.addEventListener("click", handleReport);
+      deleteButton.addEventListener("click", handleDelete);
+
+      playerSeekButton.addEventListener("click", handlePlayerSeek);
+      prevSequenceButton.addEventListener("click", () => handleSequenceSeek('prev'));
+      nextSequenceButton.addEventListener("click", () => handleSequenceSeek('next'));
+
+      // 动态调整 seek 时间 - 12的倍数减2的序列
+      function adjustSeekTime(direction) {
+        const currentValue = parseFloat(playerSeekInput.value) || 0;
+        let newValue;
+
+        if (direction === "up") {
+          // 向上：找到下一个 12n-2 的值
+          const nextMultiple = Math.floor((currentValue + 2) / 12) + 1;
+          newValue = nextMultiple * 12 - 2;
+        } else {
+          // 向下：找到上一个 12n-2 的值
+          const prevMultiple = Math.ceil((currentValue + 2) / 12) - 1;
+          newValue = Math.max(0, prevMultiple * 12 - 2);
+        }
+
+        playerSeekInput.value = newValue;
+        return newValue;
+      }
+
+      // 拦截键盘上下箭头
+      playerSeekInput.addEventListener("keydown", function(event) {
+        if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+          event.preventDefault();
+          adjustSeekTime(event.key === "ArrowUp" ? "up" : "down");
+        }
+      });
+
+      // 拦截鼠标滚轮
+      playerSeekInput.addEventListener("wheel", function(event) {
+        event.preventDefault();
+        adjustSeekTime(event.deltaY < 0 ? "up" : "down");
+      });
+
+      // 拦截输入框的增减按钮点击（通过监听值变化）
+      let lastValue = playerSeekInput.value;
+      playerSeekInput.addEventListener("input", function(event) {
+        const currentValue = parseFloat(this.value) || 0;
+        const lastVal = parseFloat(lastValue) || 0;
+
+        // 如果值变化了1或-1，说明可能是点击了增减按钮
+        if (Math.abs(currentValue - lastVal) === 1) {
+          const direction = currentValue > lastVal ? "up" : "down";
+          adjustSeekTime(direction);
+        }
+
+        lastValue = this.value;
+      });
+
+      defaultFileInput.addEventListener("change", () => {
+        const filePath = defaultFileInput.value.trim();
+        filePathInput.value = filePath;
+        cacheFilePathInput.value = filePath;
+
+        // Save to localStorage
+        if (filePath) {
+          saveToStorage(STORAGE_KEYS.DEFAULT_FILE, filePath);
+          saveFileHistory(filePath);
+          updateFileHistoryDropdown();
+        }
+      });
+
+      // Save API base when it changes
+      apiBaseInput.addEventListener("change", () => {
+        const apiBase = apiBaseInput.value.trim();
+        if (apiBase) {
+          saveToStorage(STORAGE_KEYS.API_BASE, apiBase);
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Load saved API base or use default
+        const savedApiBase = getFromStorage(STORAGE_KEYS.API_BASE);
+        apiBaseInput.value = savedApiBase || defaultApiBase();
+
+        // Load saved default file path
+        const savedDefaultFile = getFromStorage(STORAGE_KEYS.DEFAULT_FILE);
+        if (savedDefaultFile) {
+          defaultFileInput.value = savedDefaultFile;
+          filePathInput.value = savedDefaultFile;
+          cacheFilePathInput.value = savedDefaultFile;
+        }
+
+        // Update file history dropdown
+        updateFileHistoryDropdown();
+      });
+    </script>
+  </body>
+</html>
