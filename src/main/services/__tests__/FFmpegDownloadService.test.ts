@@ -104,7 +104,7 @@ describe('FFmpegDownloadService', () => {
 
   describe('getFFmpegVersion', () => {
     it('should return version config for supported platforms', () => {
-      // 由于现在默认使用中国镜像源，我们需要明确设置镜像源来测试
+      // 明确设置为全球镜像源以保证测试的确定性
       service.setMirrorSource(false) // 设置为全球镜像源
 
       const winVersion = service.getFFmpegVersion('win32', 'x64')
@@ -151,14 +151,14 @@ describe('FFmpegDownloadService', () => {
       expect(platforms).toContain('darwin-arm64')
       expect(platforms).toContain('linux-x64')
 
-      // Since we default to China mirror now, verify URLs contain gitcode.com
+      // 默认使用全球镜像源，URL 不应包含 gitcode.com
       versions.forEach((version) => {
-        expect(version.url).toContain('gitcode.com')
+        expect(version.url).not.toContain('gitcode.com')
       })
     })
 
     it('should return different versions based on mirror source', () => {
-      // Test China mirror (default)
+      // Test China mirror
       service.setMirrorSource(true)
       const chinaVersions = service.getAllSupportedVersions()
       expect(chinaVersions).toHaveLength(6)
@@ -310,11 +310,11 @@ describe('FFmpegDownloadService', () => {
         expect(country).toBe('HK')
       })
 
-      it('should return CN as default when API fails', async () => {
+      it('should return US as default when API fails', async () => {
         vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'))
 
         const country = await (service as any).getIpCountry()
-        expect(country).toBe('CN') // 默认返回 CN，验证回退逻辑
+        expect(country).toBe('US') // 默认返回 US，验证回退逻辑
       })
 
       it('should handle timeout properly', async () => {
@@ -333,7 +333,7 @@ describe('FFmpegDownloadService', () => {
         })
 
         const country = await (service as any).getIpCountry()
-        expect(country).toBe('CN') // 超时后默认返回 CN
+        expect(country).toBe('US') // 超时后默认返回 US
       }, 10000) // 增加测试超时时间
     })
 
@@ -454,11 +454,11 @@ describe('FFmpegDownloadService', () => {
       expect(service.getCurrentMirrorSource()).toBe('global')
     })
 
-    it('should default to China mirror when detection fails', async () => {
+    it('should default to global mirror when detection fails', async () => {
       vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'))
 
       await (service as any).detectRegionAndSetMirror()
-      expect(service.getCurrentMirrorSource()).toBe('china')
+      expect(service.getCurrentMirrorSource()).toBe('global')
     })
   })
 

@@ -131,10 +131,10 @@ export default class AppUpdater {
 
       clearTimeout(timeoutId)
       const data = await ipinfo.json()
-      return data.country || 'CN'
+      return data.country || 'US'
     } catch (error) {
       logger.error('Failed to get ipinfo:', error)
-      return 'CN'
+      return 'US'
     }
   }
 

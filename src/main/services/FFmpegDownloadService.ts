@@ -310,8 +310,8 @@ export class FFmpegDownloadService {
         useChinaMirror: this.useChinaMirror
       })
     } catch (error) {
-      logger.warn('无法检测用户地区，使用默认镜像源', { error })
-      this.useChinaMirror = true // 检测失败时默认使用中国镜像源
+      logger.warn('无法检测用户地区，使用全球镜像源作为回退', { error })
+      this.useChinaMirror = false // 检测失败时默认使用全球镜像源
     }
   }
 
@@ -334,10 +334,10 @@ export class FFmpegDownloadService {
 
       clearTimeout(timeoutId)
       const data = await response.json()
-      return data.country || 'CN' // 默认返回 CN，这样中国用户即使检测失败也能使用中国镜像源
+      return data.country || 'US' // 默认返回 US，确保回退到全球镜像源
     } catch (error) {
-      logger.warn('获取IP地理位置失败，默认使用中国镜像源', { error })
-      return 'CN' // 默认返回 CN
+      logger.warn('获取IP地理位置失败，默认使用全球镜像源', { error })
+      return 'US' // 默认返回 US
     }
   }
 
