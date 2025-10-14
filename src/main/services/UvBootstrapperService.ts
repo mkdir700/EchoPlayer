@@ -193,6 +193,7 @@ const PYPI_MIRRORS: PyPiMirror[] = [
 export class UvBootstrapperService {
   private downloadProgress = new Map<string, DownloadProgress>()
   private downloadController = new Map<string, AbortController>()
+  private activeDownloads = new Set<string>()
   private readonly binariesDir: string
   private fastestMirror: PyPiMirror | null = null
   private mirrorTestPromise: Promise<PyPiMirror> | null = null
@@ -512,45 +513,55 @@ export class UvBootstrapperService {
       return true
     }
 
-    // 仅当请求的平台与当前进程一致时，才额外使用缓存的系统检测结果
-    if (platform === process.platform && arch === process.arch) {
-      const installation = await this.checkUvInstallation()
-      if (installation.exists && installation.isDownloaded) {
-        logger.info('uv 已存在，跳过下载', { platform, arch, path: installation.path })
-        return true
-      }
-    }
-
-    // 检查是否正在下载
-    if (this.downloadProgress.has(key) || this.downloadController.has(key)) {
+    if (this.activeDownloads.has(key)) {
       logger.warn('uv 正在下载中', { platform, arch })
       return false
     }
 
-    if (this.regionDetectionPromise) {
-      try {
-        await this.regionDetectionPromise
-      } catch (error) {
-        logger.warn('地区检测失败，将使用默认 UV 下载源', {
-          error: error instanceof Error ? error.message : String(error)
-        })
+    this.activeDownloads.add(key)
+    try {
+      // 仅当请求的平台与当前进程一致时，才额外使用缓存的系统检测结果
+      if (platform === process.platform && arch === process.arch) {
+        const installation = await this.checkUvInstallation()
+        if (installation.exists && installation.isDownloaded) {
+          logger.info('uv 已存在，跳过下载', { platform, arch, path: installation.path })
+          return true
+        }
       }
+
+      if (this.regionDetectionPromise) {
+        try {
+          await this.regionDetectionPromise
+        } catch (error) {
+          logger.warn('地区检测失败，将使用默认 UV 下载源', {
+            error: error instanceof Error ? error.message : String(error)
+          })
+        }
+      }
+
+      const version = this.getUvVersion(platform, arch)
+      if (!version) {
+        logger.error('不支持的平台', { platform, arch })
+        return false
+      }
+
+      // 再次确认未有并发下载（防御性检查）
+      if (this.downloadProgress.has(key) || this.downloadController.has(key)) {
+        logger.warn('uv 正在下载中', { platform, arch })
+        return false
+      }
+
+      logger.info('开始下载 uv', {
+        platform,
+        arch,
+        version: version.version,
+        url: version.url
+      })
+
+      return await this.performDownload(platform, arch, version, onProgress)
+    } finally {
+      this.activeDownloads.delete(key)
     }
-
-    const version = this.getUvVersion(platform, arch)
-    if (!version) {
-      logger.error('不支持的平台', { platform, arch })
-      return false
-    }
-
-    logger.info('开始下载 uv', {
-      platform,
-      arch,
-      version: version.version,
-      url: version.url
-    })
-
-    return await this.performDownload(platform, arch, version, onProgress)
   }
 
   /**
