@@ -11,6 +11,22 @@ import { UvBootstrapperService } from '../UvBootstrapperService'
 const require = createRequire(import.meta.url)
 const https = require('https') as typeof import('https')
 
+type RegionDetectionService = {
+  getCountry: (forceRefresh?: boolean) => Promise<string>
+  isChinaCountry: (country?: string | null) => boolean
+  isChinaUser: (forceRefresh?: boolean) => Promise<boolean>
+  clearCache: () => void
+}
+
+const mockGetCountry = vi.fn<RegionDetectionService['getCountry']>()
+const mockIsChinaCountry = vi
+  .fn<RegionDetectionService['isChinaCountry']>()
+  .mockImplementation((country?: string | null) =>
+    ['cn', 'hk', 'mo', 'tw'].includes((country || '').toLowerCase())
+  )
+const mockIsChinaUser = vi.fn<RegionDetectionService['isChinaUser']>()
+const mockClearCache = vi.fn<RegionDetectionService['clearCache']>()
+
 const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
   debug: vi.fn(),
@@ -34,6 +50,18 @@ vi.mock('../LoggerService', () => ({
     withContext: vi.fn(() => mockLogger)
   }
 }))
+vi.mock('../RegionDetectionService', () => ({
+  regionDetectionService: {
+    getCountry: (...args: Parameters<RegionDetectionService['getCountry']>) =>
+      mockGetCountry(...args),
+    isChinaCountry: (...args: Parameters<RegionDetectionService['isChinaCountry']>) =>
+      mockIsChinaCountry(...args),
+    isChinaUser: (...args: Parameters<RegionDetectionService['isChinaUser']>) =>
+      mockIsChinaUser(...args),
+    clearCache: (...args: Parameters<RegionDetectionService['clearCache']>) =>
+      mockClearCache(...args)
+  }
+}))
 
 let httpsGetSpy: ReturnType<typeof vi.fn>
 
@@ -50,6 +78,12 @@ describe('UvBootstrapperService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetCountry.mockResolvedValue('US')
+    mockIsChinaCountry.mockImplementation((country?: string | null) =>
+      ['cn', 'hk', 'mo', 'tw'].includes((country || '').toLowerCase())
+    )
+    mockIsChinaUser.mockResolvedValue(false)
+    mockClearCache.mockImplementation(() => {})
     httpsGetSpy.mockReset()
     service = new UvBootstrapperService()
   })
@@ -75,7 +109,9 @@ describe('UvBootstrapperService', () => {
       Object.defineProperty(process, 'arch', { value: 'x64' })
 
       const result = service.getUvPath()
-      expect(result).toContain('latest-win32-x64')
+      const version = service.getUvVersion('win32', 'x64')
+      expect(version).not.toBeNull()
+      expect(result).toContain(`${version?.version}-win32-x64`)
       expect(result).toContain('uv.exe')
 
       Object.defineProperty(process, 'platform', { value: originalPlatform })
@@ -90,7 +126,9 @@ describe('UvBootstrapperService', () => {
       Object.defineProperty(process, 'arch', { value: 'arm64' })
 
       const result = service.getUvPath()
-      expect(result).toContain('latest-darwin-arm64')
+      const version = service.getUvVersion('darwin', 'arm64')
+      expect(version).not.toBeNull()
+      expect(result).toContain(`${version?.version}-darwin-arm64`)
       expect(result).toContain('uv')
 
       Object.defineProperty(process, 'platform', { value: originalPlatform })
@@ -179,29 +217,35 @@ describe('UvBootstrapperService', () => {
   describe('getUvVersion', () => {
     it('should return correct version config for supported platforms', () => {
       const win32Config = service.getUvVersion('win32', 'x64')
-      expect(win32Config).toEqual({
-        version: 'latest',
+      expect(win32Config).toMatchObject({
         platform: 'win32',
         arch: 'x64',
-        url: 'https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-pc-windows-msvc.zip',
-        size: 15 * 1024 * 1024,
         extractPath: 'uv.exe'
       })
+      expect(win32Config?.url).toContain('uv-x86_64-pc-windows-msvc.zip')
 
       const darwinConfig = service.getUvVersion('darwin', 'arm64')
-      expect(darwinConfig).toEqual({
-        version: 'latest',
+      expect(darwinConfig).toMatchObject({
         platform: 'darwin',
         arch: 'arm64',
-        url: 'https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-apple-darwin.tar.gz',
-        size: 12 * 1024 * 1024,
         extractPath: 'uv'
       })
+      expect(darwinConfig?.url).toContain('uv-aarch64-apple-darwin.tar.gz')
     })
 
     it('should return null for unsupported platform', () => {
       const result = service.getUvVersion('unsupported' as any, 'x64')
       expect(result).toBeNull()
+    })
+
+    it('should use China-specific download source when region detected as Chinese', async () => {
+      mockGetCountry.mockResolvedValueOnce('CN')
+      mockIsChinaCountry.mockReturnValueOnce(true)
+
+      await (service as any).detectRegionAndSetMirror()
+      const chinaConfig = service.getUvVersion('darwin', 'arm64')
+
+      expect(chinaConfig?.url).toContain('gitcode.com')
     })
   })
 

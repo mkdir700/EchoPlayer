@@ -155,17 +155,12 @@ export class PythonVenvService {
 
       if (venvExists) {
         try {
-          // 使用 uv 获取 Python 版本
-          const uvPath = await uvBootstrapperService.getAvailableUvPath()
-          if (uvPath) {
-            const result = await this.executeCommand(
-              uvPath,
-              ['run', 'python', '--version'],
-              mediaServerPath
-            )
-            const versionMatch = result.match(/Python (\S+)/)
-            pythonVersion = versionMatch ? versionMatch[1] : undefined
-          }
+          const result = await this.executeCommand(
+            pythonPath,
+            ['-c', 'import platform; print(platform.python_version())'],
+            mediaServerPath
+          )
+          pythonVersion = result.trim() || undefined
         } catch (error) {
           logger.warn('获取 Python 版本失败', { error })
         }
