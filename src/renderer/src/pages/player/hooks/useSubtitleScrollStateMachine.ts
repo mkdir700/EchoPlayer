@@ -237,7 +237,10 @@ class SubtitleScrollStateMachine {
     switch (newState) {
       case SubtitleScrollState.USER_BROWSING:
         // 进入浏览模式时启动自动回到当前的定时器
-        if (trigger === ScrollTrigger.USER_MANUAL_SCROLL) {
+        if (
+          trigger === ScrollTrigger.USER_MANUAL_SCROLL ||
+          trigger === ScrollTrigger.USER_CLICK_ITEM
+        ) {
           this.startAutoReturnTimer()
         }
         break
