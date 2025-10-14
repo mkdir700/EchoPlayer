@@ -22,8 +22,12 @@ files:
     filter:
       - 'out/**' # 渲染进程打包后文件
       - 'resources/**' # 运行时资源（如果需要）
+      - '!resources/media-server/**' # 由 extraResources 处理，确保在打包产物中保持解压状态
       - 'package.json'
       - '!**/*.map'
+extraResources:
+  - from: resources/media-server
+    to: media-server
 asarUnpack:
   - resources/**
   - '**/*.{metal,exp,lib}'
