@@ -5,6 +5,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 import { loggerService } from './LoggerService'
+import { regionDetectionService } from './RegionDetectionService'
 
 const logger = loggerService.withContext('UvBootstrapperService')
 
@@ -50,54 +51,111 @@ export interface PyPiMirror {
 const UV_VERSIONS: Record<Platform, Record<Arch, UvVersion>> = {
   win32: {
     x64: {
-      version: 'latest',
+      version: '0.9.2',
       platform: 'win32',
       arch: 'x64',
-      url: 'https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-pc-windows-msvc.zip',
+      url: 'https://github.com/astral-sh/uv/releases/download/0.9.2/uv-x86_64-pc-windows-msvc.zip',
       size: 15 * 1024 * 1024, // 约 15MB
       extractPath: 'uv.exe'
     },
     arm64: {
-      version: 'latest',
+      version: '0.9.2',
       platform: 'win32',
       arch: 'arm64',
-      url: 'https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-pc-windows-msvc.zip',
+      url: 'https://github.com/astral-sh/uv/releases/download/0.9.2/uv-aarch64-pc-windows-msvc.zip',
       size: 15 * 1024 * 1024, // 约 15MB
       extractPath: 'uv.exe'
     }
   },
   darwin: {
     x64: {
-      version: 'latest',
+      version: '0.9.2',
       platform: 'darwin',
       arch: 'x64',
-      url: 'https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-apple-darwin.tar.gz',
+      url: 'https://github.com/astral-sh/uv/releases/download/0.9.2/uv-x86_64-apple-darwin.tar.gz',
       size: 12 * 1024 * 1024, // 约 12MB
       extractPath: 'uv'
     },
     arm64: {
-      version: 'latest',
+      version: '0.9.2',
       platform: 'darwin',
       arch: 'arm64',
-      url: 'https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-apple-darwin.tar.gz',
+      url: 'https://github.com/astral-sh/uv/releases/download/0.9.2/uv-aarch64-apple-darwin.tar.gz',
       size: 12 * 1024 * 1024, // 约 12MB
       extractPath: 'uv'
     }
   },
   linux: {
     x64: {
-      version: 'latest',
+      version: '0.9.2',
       platform: 'linux',
       arch: 'x64',
-      url: 'https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz',
+      url: 'https://github.com/astral-sh/uv/releases/download/0.9.2/uv-x86_64-unknown-linux-gnu.tar.gz',
       size: 12 * 1024 * 1024, // 约 12MB
       extractPath: 'uv'
     },
     arm64: {
-      version: 'latest',
+      version: '0.9.2',
       platform: 'linux',
       arch: 'arm64',
-      url: 'https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-unknown-linux-gnu.tar.gz',
+      url: 'https://github.com/astral-sh/uv/releases/download/0.9.2/uv-aarch64-unknown-linux-gnu.tar.gz',
+      size: 12 * 1024 * 1024, // 约 12MB
+      extractPath: 'uv'
+    }
+  }
+}
+
+const CHINA_UV_VERSIONS: Record<Platform, Record<Arch, UvVersion>> = {
+  win32: {
+    x64: {
+      version: '0.9.2',
+      platform: 'win32',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-uv/releases/download/v0.9.2/uv-x86_64-pc-windows-msvc.zip',
+      size: 15 * 1024 * 1024, // 约 15MB
+      extractPath: 'uv.exe'
+    },
+    arm64: {
+      version: '0.9.2',
+      platform: 'win32',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-uv/releases/download/v0.9.2/uv-aarch64-pc-windows-msvc.zip',
+      size: 15 * 1024 * 1024, // 约 15MB
+      extractPath: 'uv.exe'
+    }
+  },
+  darwin: {
+    x64: {
+      version: '0.9.2',
+      platform: 'darwin',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-uv/releases/download/v0.9.2/uv-x86_64-apple-darwin.tar.gz',
+      size: 12 * 1024 * 1024, // 约 12MB
+      extractPath: 'uv'
+    },
+    arm64: {
+      version: '0.9.2',
+      platform: 'darwin',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-uv/releases/download/v0.9.2/uv-aarch64-apple-darwin.tar.gz',
+      size: 12 * 1024 * 1024, // 约 12MB
+      extractPath: 'uv'
+    }
+  },
+  linux: {
+    x64: {
+      version: '0.9.2',
+      platform: 'linux',
+      arch: 'x64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-uv/releases/download/v0.9.2/uv-x86_64-unknown-linux-gnu.tar.gz',
+      size: 12 * 1024 * 1024, // 约 12MB
+      extractPath: 'uv'
+    },
+    arm64: {
+      version: '0.9.2',
+      platform: 'linux',
+      arch: 'arm64',
+      url: 'https://gitcode.com/mkdir700/echoplayer-uv/releases/download/v0.9.2/uv-aarch64-unknown-linux-gnu.tar.gz',
       size: 12 * 1024 * 1024, // 约 12MB
       extractPath: 'uv'
     }
@@ -138,6 +196,8 @@ export class UvBootstrapperService {
   private readonly binariesDir: string
   private fastestMirror: PyPiMirror | null = null
   private mirrorTestPromise: Promise<PyPiMirror> | null = null
+  private useChinaMirror = false
+  private regionDetectionPromise: Promise<void> | null = null
 
   // uv 可用性缓存
   private static uvAvailabilityCache: { [key: string]: UvInstallationInfo } = {}
@@ -149,11 +209,28 @@ export class UvBootstrapperService {
     this.binariesDir = path.join(app.getPath('userData'), 'binaries', 'uv')
     this.ensureDir(this.binariesDir)
 
+    this.regionDetectionPromise = this.detectRegionAndSetMirror()
+
     logger.info('UvBootstrapperService 初始化完成', {
       binariesDir: this.binariesDir,
       platform: process.platform,
       arch: process.arch
     })
+  }
+
+  private async detectRegionAndSetMirror(): Promise<void> {
+    try {
+      const country = await regionDetectionService.getCountry()
+      this.useChinaMirror = regionDetectionService.isChinaCountry(country)
+
+      logger.info('通过IP检测地区，设置 UV 下载源', {
+        country,
+        useChinaMirror: this.useChinaMirror
+      })
+    } catch (error) {
+      logger.warn('无法检测用户地区，使用全球 UV 下载源作为回退', { error })
+      this.useChinaMirror = false
+    }
   }
 
   /**
@@ -321,7 +398,22 @@ export class UvBootstrapperService {
     platform = process.platform as Platform,
     arch = process.arch as Arch
   ): UvVersion | null {
-    return UV_VERSIONS[platform]?.[arch] || null
+    const versions = this.useChinaMirror ? CHINA_UV_VERSIONS : UV_VERSIONS
+    const version = versions[platform]?.[arch]
+
+    if (version) {
+      return version
+    }
+
+    if (this.useChinaMirror) {
+      const fallback = UV_VERSIONS[platform]?.[arch]
+      if (fallback) {
+        logger.warn('中国 UV 下载源不支持当前平台，回退到全球源', { platform, arch })
+        return fallback
+      }
+    }
+
+    return null
   }
 
   /**
@@ -433,6 +525,16 @@ export class UvBootstrapperService {
     if (this.downloadProgress.has(key) || this.downloadController.has(key)) {
       logger.warn('uv 正在下载中', { platform, arch })
       return false
+    }
+
+    if (this.regionDetectionPromise) {
+      try {
+        await this.regionDetectionPromise
+      } catch (error) {
+        logger.warn('地区检测失败，将使用默认 UV 下载源', {
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
     }
 
     const version = this.getUvVersion(platform, arch)

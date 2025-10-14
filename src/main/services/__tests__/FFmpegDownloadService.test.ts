@@ -5,6 +5,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FFmpegDownloadService } from '../FFmpegDownloadService'
 
+type RegionDetectionService = {
+  getCountry: (forceRefresh?: boolean) => Promise<string>
+  isChinaCountry: (country?: string | null) => boolean
+  isChinaUser: (forceRefresh?: boolean) => Promise<boolean>
+  clearCache: () => void
+}
+
+const mockGetCountry = vi.fn<RegionDetectionService['getCountry']>()
+const mockIsChinaCountry = vi
+  .fn<RegionDetectionService['isChinaCountry']>()
+  .mockImplementation((country?: string | null) =>
+    ['cn', 'hk', 'mo', 'tw'].includes((country || '').toLowerCase())
+  )
+const mockIsChinaUser = vi.fn<RegionDetectionService['isChinaUser']>()
+const mockClearCache = vi.fn<RegionDetectionService['clearCache']>()
+
 // Mock modules
 vi.mock('fs')
 vi.mock('path')
@@ -22,11 +38,20 @@ vi.mock('../LoggerService', () => ({
     })
   }
 }))
+vi.mock('../RegionDetectionService', () => ({
+  regionDetectionService: {
+    getCountry: (...args: Parameters<RegionDetectionService['getCountry']>) =>
+      mockGetCountry(...args),
+    isChinaCountry: (...args: Parameters<RegionDetectionService['isChinaCountry']>) =>
+      mockIsChinaCountry(...args),
+    isChinaUser: (...args: Parameters<RegionDetectionService['isChinaUser']>) =>
+      mockIsChinaUser(...args),
+    clearCache: (...args: Parameters<RegionDetectionService['clearCache']>) =>
+      mockClearCache(...args)
+  }
+}))
 vi.mock('https')
 vi.mock('child_process')
-
-// Mock global fetch for IP detection tests
-global.fetch = vi.fn()
 
 describe('FFmpegDownloadService', () => {
   let service: FFmpegDownloadService
@@ -34,6 +59,12 @@ describe('FFmpegDownloadService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetCountry.mockResolvedValue('US')
+    mockIsChinaCountry.mockImplementation((country?: string | null) =>
+      ['cn', 'hk', 'mo', 'tw'].includes((country || '').toLowerCase())
+    )
+    mockIsChinaUser.mockResolvedValue(false)
+    mockClearCache.mockImplementation(() => {})
 
     // Mock app.getPath
     vi.mocked(app.getPath).mockReturnValue(mockUserDataPath)
@@ -273,68 +304,30 @@ describe('FFmpegDownloadService', () => {
       vi.clearAllMocks()
     })
 
-    describe('getIpCountry', () => {
-      it('should detect China region and return CN', async () => {
-        const mockResponse = {
-          json: vi.fn().mockResolvedValue({
-            country: 'CN',
-            city: 'Beijing',
-            region: 'Beijing'
-          })
-        }
-        vi.mocked(global.fetch).mockResolvedValue(mockResponse as any)
+    describe('地区检测服务集成', () => {
+      it('should enable China mirror when region detection reports Chinese region', async () => {
+        mockGetCountry.mockResolvedValueOnce('CN')
+        mockIsChinaCountry.mockReturnValueOnce(true)
 
-        // 通过反射访问私有方法进行测试
-        const country = await (service as any).getIpCountry()
-        expect(country).toBe('CN')
-        expect(global.fetch).toHaveBeenCalledWith('https://ipinfo.io/json', {
-          signal: expect.any(AbortSignal),
-          headers: {
-            'User-Agent': 'EchoPlayer-FFmpeg-Downloader/2.0',
-            'Accept-Language': 'en-US,en;q=0.9'
-          }
-        })
+        await (service as any).detectRegionAndSetMirror()
+        expect(service.getCurrentMirrorSource()).toBe('china')
+        expect(mockIsChinaCountry).toHaveBeenCalledWith('CN')
       })
 
-      it('should detect Hong Kong region and return HK', async () => {
-        const mockResponse = {
-          json: vi.fn().mockResolvedValue({
-            country: 'HK',
-            city: 'Hong Kong',
-            region: 'Hong Kong'
-          })
-        }
-        vi.mocked(global.fetch).mockResolvedValue(mockResponse as any)
+      it('should use global mirror when region detection reports non-Chinese region', async () => {
+        mockGetCountry.mockResolvedValueOnce('US')
+        mockIsChinaCountry.mockReturnValueOnce(false)
 
-        const country = await (service as any).getIpCountry()
-        expect(country).toBe('HK')
+        await (service as any).detectRegionAndSetMirror()
+        expect(service.getCurrentMirrorSource()).toBe('global')
       })
 
-      it('should return US as default when API fails', async () => {
-        vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'))
+      it('should fallback to global mirror when detection fails', async () => {
+        mockGetCountry.mockRejectedValueOnce(new Error('Network error'))
 
-        const country = await (service as any).getIpCountry()
-        expect(country).toBe('US') // 默认返回 US，验证回退逻辑
+        await (service as any).detectRegionAndSetMirror()
+        expect(service.getCurrentMirrorSource()).toBe('global')
       })
-
-      it('should handle timeout properly', async () => {
-        // Mock fetch that will be aborted due to timeout
-        vi.mocked(global.fetch).mockImplementation((_, options) => {
-          return new Promise((resolve, reject) => {
-            const signal = options?.signal as AbortSignal
-            if (signal) {
-              signal.addEventListener('abort', () => {
-                reject(new Error('The operation was aborted'))
-              })
-            }
-            // Simulate a long-running request that doesn't resolve in time
-            setTimeout(() => resolve({} as any), 10000)
-          })
-        })
-
-        const country = await (service as any).getIpCountry()
-        expect(country).toBe('US') // 超时后默认返回 US
-      }, 10000) // 增加测试超时时间
     })
 
     describe('镜像源选择逻辑', () => {
@@ -376,10 +369,7 @@ describe('FFmpegDownloadService', () => {
         ]
 
         for (const testCase of testCases) {
-          const mockResponse = {
-            json: vi.fn().mockResolvedValue({ country: testCase.country })
-          }
-          vi.mocked(global.fetch).mockResolvedValue(mockResponse as any)
+          mockGetCountry.mockResolvedValueOnce(testCase.country)
 
           await (service as any).detectRegionAndSetMirror()
           const currentMirror = service.getCurrentMirrorSource()
@@ -435,27 +425,23 @@ describe('FFmpegDownloadService', () => {
 
   describe('地区检测集成测试', () => {
     it('should set China mirror after successful IP detection', async () => {
-      const mockResponse = {
-        json: vi.fn().mockResolvedValue({ country: 'CN' })
-      }
-      vi.mocked(global.fetch).mockResolvedValue(mockResponse as any)
+      mockGetCountry.mockResolvedValueOnce('CN')
+      mockIsChinaCountry.mockReturnValueOnce(true)
 
       await (service as any).detectRegionAndSetMirror()
       expect(service.getCurrentMirrorSource()).toBe('china')
     })
 
     it('should set global mirror for non-Chinese regions', async () => {
-      const mockResponse = {
-        json: vi.fn().mockResolvedValue({ country: 'US' })
-      }
-      vi.mocked(global.fetch).mockResolvedValue(mockResponse as any)
+      mockGetCountry.mockResolvedValueOnce('US')
+      mockIsChinaCountry.mockReturnValueOnce(false)
 
       await (service as any).detectRegionAndSetMirror()
       expect(service.getCurrentMirrorSource()).toBe('global')
     })
 
     it('should default to global mirror when detection fails', async () => {
-      vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'))
+      mockGetCountry.mockRejectedValueOnce(new Error('Network error'))
 
       await (service as any).detectRegionAndSetMirror()
       expect(service.getCurrentMirrorSource()).toBe('global')

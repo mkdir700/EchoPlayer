@@ -1,12 +1,12 @@
 import { Arch, Platform } from '@shared/types/system'
 import { spawn } from 'child_process'
-// import * as crypto from 'crypto' // TODO: 将来用于 SHA256 校验
 import { app } from 'electron'
 import * as fs from 'fs'
 import * as https from 'https'
 import * as path from 'path'
 
 import { loggerService } from './LoggerService'
+import { regionDetectionService } from './RegionDetectionService'
 
 const logger = loggerService.withContext('FFmpegDownloadService')
 
@@ -299,11 +299,8 @@ export class FFmpegDownloadService {
    */
   private async detectRegionAndSetMirror(): Promise<void> {
     try {
-      const country = await this.getIpCountry()
-
-      // 中国大陆、香港、澳门、台湾用户都使用中国镜像源
-      const chineseRegions = ['cn', 'hk', 'mo', 'tw']
-      this.useChinaMirror = chineseRegions.includes(country?.toLowerCase() || '')
+      const country = await regionDetectionService.getCountry()
+      this.useChinaMirror = regionDetectionService.isChinaCountry(country)
 
       logger.info('通过IP检测地区，设置镜像源', {
         country,
@@ -312,32 +309,6 @@ export class FFmpegDownloadService {
     } catch (error) {
       logger.warn('无法检测用户地区，使用全球镜像源作为回退', { error })
       this.useChinaMirror = false // 检测失败时默认使用全球镜像源
-    }
-  }
-
-  /**
-   * 获取用户IP对应的国家代码
-   */
-  private async getIpCountry(): Promise<string> {
-    try {
-      // 使用 AbortController 设置 5 秒超时
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-      const response = await fetch('https://ipinfo.io/json', {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'EchoPlayer-FFmpeg-Downloader/2.0',
-          'Accept-Language': 'en-US,en;q=0.9'
-        }
-      })
-
-      clearTimeout(timeoutId)
-      const data = await response.json()
-      return data.country || 'US' // 默认返回 US，确保回退到全球镜像源
-    } catch (error) {
-      logger.warn('获取IP地理位置失败，默认使用全球镜像源', { error })
-      return 'US' // 默认返回 US
     }
   }
 

@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # Use UV for dependency management
 uv sync                    # Install dependencies and dev dependencies
+uv sync --no-dev           # Install only production dependencies (packaged builds)
 python -m venv .venv       # Create virtual environment (if not using uv)
 source .venv/bin/activate  # Activate virtual environment
 ```
