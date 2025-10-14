@@ -1,3 +1,5 @@
+# [1.1.0-alpha.6](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.5...v1.1.0-alpha.6) (2025-10-14)
+
 # [1.1.0-alpha.5](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.4...v1.1.0-alpha.5) (2025-10-14)
 
 ### Bug Fixes
