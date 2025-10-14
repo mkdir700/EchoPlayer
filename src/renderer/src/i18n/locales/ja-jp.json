@@ -99,6 +99,7 @@
       "single_loop": "ループ再生",
       "title": "ショートカットキー",
       "toggle_fullscreen": "全画面表示に切り替えます",
+      "toggle_auto_pause": "自動一時停止の切り替え",
       "toggle_new_context": "上下文をクリアする",
       "toggle_show_assistants": "アシスタント表示の切り替え",
       "toggle_show_topics": "トピックの切り替え表示",
