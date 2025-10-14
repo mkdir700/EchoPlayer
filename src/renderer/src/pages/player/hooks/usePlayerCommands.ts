@@ -19,6 +19,8 @@ export function usePlayerCommands() {
   const { orchestrator } = usePlayerEngine()
   const subtitles = usePlayerSubtitlesStore((s) => s.subtitles)
   const toggleLoopEnabled = usePlayerStore((s) => s.toggleLoopEnabled)
+  const autoPauseEnabled = usePlayerStore((s) => s.autoPauseEnabled)
+  const setAutoPauseEnabled = usePlayerStore((s) => s.setAutoPauseEnabled)
 
   // 播放/暂停
   const playPause = useCallback(async () => {
@@ -149,6 +151,13 @@ export function usePlayerCommands() {
     orchestrator.requestToggleMute()
     logger.info('Command: toggleMute executed')
   }, [orchestrator])
+
+  const toggleAutoPause = useCallback(() => {
+    setAutoPauseEnabled(!autoPauseEnabled)
+    logger.info('Command: toggleAutoPause executed', {
+      enabled: !autoPauseEnabled
+    })
+  }, [autoPauseEnabled, setAutoPauseEnabled])
 
   // 播放速度
   const setPlaybackRate = useCallback(
@@ -300,6 +309,7 @@ export function usePlayerCommands() {
     goToNextSubtitle,
 
     // 功能控制
-    toggleLoopEnabled
+    toggleLoopEnabled,
+    toggleAutoPause
   }
 }
