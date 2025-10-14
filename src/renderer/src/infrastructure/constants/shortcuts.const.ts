@@ -109,5 +109,12 @@ export const DEFAULT_SHORTCUTS: Shortcut[] = [
     editable: true,
     enabled: true,
     system: false
+  },
+  {
+    key: 'toggle_auto_pause',
+    shortcut: ['P'],
+    editable: true,
+    enabled: true,
+    system: false
   }
 ]
