@@ -139,6 +139,12 @@ export function usePlayerShortcuts() {
     cmd.toggleLoopEnabled()
   })
 
+  // 自动暂停切换
+  useShortcut('toggle_auto_pause', () => {
+    cmd.toggleAutoPause()
+    logger.info('自动暂停功能切换')
+  })
+
   // 字幕面板切换
   useShortcut('toggle_subtitle_panel', () => {
     toggleSubtitlePanel()

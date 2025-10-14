@@ -176,7 +176,8 @@ const shortcutKeys = [
   'toggle_subtitle_panel',
   'playback_rate_next',
   'playback_rate_prev',
-  'copy_subtitle'
+  'copy_subtitle',
+  'toggle_auto_pause'
 ] as const
 
 const shortcutKeyMap = shortcutKeys.reduce(
