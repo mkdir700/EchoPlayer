@@ -1,3 +1,18 @@
+# [1.1.0-alpha.8](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.7...v1.1.0-alpha.8) (2025-10-15)
+
+### Bug Fixes
+
+- make subtitle overlay container semantic ([51f17fd](https://github.com/mkdir700/EchoPlayer/commit/51f17fdf0134cb5e8d22b31bf67feea08f83f600))
+- **useSubtitleScrollStateMachine:** start auto-return timer on user interactions ([1e11845](https://github.com/mkdir700/EchoPlayer/commit/1e11845a2cd5c06ac26717c84d6297d39bab6e0f))
+
+### Features
+
+- **player:** add subtitle search functionality ([124924a](https://github.com/mkdir700/EchoPlayer/commit/124924aeae678c17b5e212a05916fcc45cb4878a))
+- **PlayerSettingsLoader:** add mask mode to subtitle overlay ([18973da](https://github.com/mkdir700/EchoPlayer/commit/18973da5d269f8c4fdaa17de4c4fefedc0017c10))
+- **subtitle:** introduce mask mode for subtitle overlay ([a7dc2d6](https://github.com/mkdir700/EchoPlayer/commit/a7dc2d646751156ce00ab7c8221adb01967c671e))
+- **SubtitleOverlay:** enhance positioning and collision handling ([789f048](https://github.com/mkdir700/EchoPlayer/commit/789f0484d6e79cd2bb0265a82acb819115f6b522))
+- **UvBootstrapperService:** enhance download management with concurrency control ([f74e9b4](https://github.com/mkdir700/EchoPlayer/commit/f74e9b4157a6ab5374816877d434531380fbd1a1))
+
 # [1.1.0-alpha.7](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.6...v1.1.0-alpha.7) (2025-10-14)
 
 ### Bug Fixes
