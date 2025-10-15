@@ -1000,7 +1000,6 @@ const ContentContainer = styled.div<{
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 16px;
   border-radius: 8px;
   box-sizing: border-box;
   position: relative;
