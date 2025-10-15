@@ -120,6 +120,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const size = currentConfig.size
   const backgroundStyle = currentConfig.backgroundStyle
   const isMaskMode = currentConfig.isMaskMode
+  const autoPositioning = currentConfig.autoPositioning
 
   // === 配置操作（通过 integration） ===
   const setPosition = integration.setPosition
@@ -135,16 +136,38 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const [maskViewport, setMaskViewport] = useState<MaskLayout | null>(null)
   const previousMaskModeRef = useRef(isMaskMode)
   const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null)
+  const containerElementRef = useRef<HTMLElement | null>(null)
+  const videoElementRef = useRef<HTMLVideoElement | null>(null)
+  const setOverlayConfig = usePlayerStore((s) => s.setSubtitleOverlay)
 
   const resolveElements = useCallback(() => {
-    const containerElement =
+    const providedContainer =
       containerRef?.current ||
       (document.querySelector('[data-testid="video-surface"]') as HTMLElement | null)
 
-    if (!containerElement) return null
+    let containerElement = containerElementRef.current
+    if (providedContainer && providedContainer !== containerElement) {
+      containerElement = providedContainer
+    }
 
-    const videoElement = containerElement.querySelector('video') as HTMLVideoElement | null
+    if (!containerElement || !containerElement.isConnected) {
+      containerElement = providedContainer
+    }
+
+    if (!containerElement) return null
+    containerElementRef.current = containerElement
+
+    let videoElement = videoElementRef.current
+    if (
+      !videoElement ||
+      !videoElement.isConnected ||
+      videoElement.closest('[data-testid="video-surface"]') !== containerElement
+    ) {
+      videoElement = containerElement.querySelector('video') as HTMLVideoElement | null
+    }
+
     if (!videoElement) return null
+    videoElementRef.current = videoElement
 
     return { containerElement, videoElement }
   }, [containerRef])
@@ -295,7 +318,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     const viewport = computeMaskViewport()
 
     if (!viewport) {
-      setMaskViewport((prev) => (prev !== null ? null : prev))
+      if (!isMaskMode) {
+        setMaskViewport((prev) => (prev !== null ? null : prev))
+      }
       return
     }
 
@@ -311,7 +336,13 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       }
       return viewport
     })
-  }, [computeMaskViewport, containerBounds.height, containerBounds.width, videoAspectRatio])
+  }, [
+    computeMaskViewport,
+    containerBounds.height,
+    containerBounds.width,
+    isMaskMode,
+    videoAspectRatio
+  ])
 
   useEffect(() => {
     if (!maskViewport) {
@@ -505,6 +536,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     (event: React.MouseEvent) => {
       if (isResizing) return
 
+      if (autoPositioning) {
+        setOverlayConfig({ autoPositioning: false })
+      }
+
       event.preventDefault()
       event.stopPropagation() // 阻止事件冒泡，防止触发VideoSurface的点击事件
       const startX = event.clientX
@@ -514,6 +549,11 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       startDragging()
 
       let animationId: number
+      const suppressClick = (clickEvent: MouseEvent) => {
+        clickEvent.preventDefault()
+        clickEvent.stopPropagation()
+        document.removeEventListener('click', suppressClick, true)
+      }
       const handleMouseMove = (moveEvent: MouseEvent) => {
         // 取消之前的动画帧
         if (animationId) {
@@ -567,7 +607,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         })
       }
 
-      const handleMouseUp = () => {
+      const handleMouseUp = (upEvent: MouseEvent) => {
         if (animationId) {
           cancelAnimationFrame(animationId)
         }
@@ -577,6 +617,17 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         if (isMaskMode && !maskOnboardingComplete) {
           setMaskOnboardingComplete(true)
           setToastVisible(false)
+        }
+
+        const releasedOutside =
+          !overlayRef.current ||
+          !(upEvent.target instanceof Node && overlayRef.current.contains(upEvent.target))
+
+        if (releasedOutside) {
+          document.addEventListener('click', suppressClick, true)
+          setTimeout(() => {
+            document.removeEventListener('click', suppressClick, true)
+          }, 0)
         }
 
         document.removeEventListener('mousemove', handleMouseMove)
@@ -596,7 +647,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       isMaskMode,
       maskOnboardingComplete,
       setMaskOnboardingComplete,
-      maskViewport
+      maskViewport,
+      autoPositioning,
+      setOverlayConfig
     ]
   )
 
@@ -606,6 +659,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       event.preventDefault()
       event.stopPropagation() // 阻止事件冒泡，防止触发VideoSurface的点击事件
 
+      if (autoPositioning) {
+        setOverlayConfig({ autoPositioning: false })
+      }
+
       const startX = event.clientX
       const startY = event.clientY
       const startSize = { width: overlaySize.width, height: overlaySize.height }
@@ -613,6 +670,11 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       startResizing()
 
       let animationId: number
+      const suppressClick = (clickEvent: MouseEvent) => {
+        clickEvent.preventDefault()
+        clickEvent.stopPropagation()
+        document.removeEventListener('click', suppressClick, true)
+      }
       const handleMouseMove = (moveEvent: MouseEvent) => {
         // 取消之前的动画帧
         if (animationId) {
@@ -659,7 +721,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         })
       }
 
-      const handleMouseUp = () => {
+      const handleMouseUp = (upEvent: MouseEvent) => {
         if (animationId) {
           cancelAnimationFrame(animationId)
         }
@@ -669,6 +731,17 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         if (isMaskMode && !maskOnboardingComplete) {
           setMaskOnboardingComplete(true)
           setToastVisible(false)
+        }
+
+        const releasedOutside =
+          !overlayRef.current ||
+          !(upEvent.target instanceof Node && overlayRef.current.contains(upEvent.target))
+
+        if (releasedOutside) {
+          document.addEventListener('click', suppressClick, true)
+          setTimeout(() => {
+            document.removeEventListener('click', suppressClick, true)
+          }, 0)
         }
 
         document.removeEventListener('mousemove', handleMouseMove)
@@ -687,7 +760,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       isMaskMode,
       maskOnboardingComplete,
       setMaskOnboardingComplete,
-      maskViewport
+      maskViewport,
+      autoPositioning,
+      setOverlayConfig
     ]
   )
 
@@ -781,7 +856,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       isMaskMode,
       maskOnboardingComplete,
       setMaskOnboardingComplete,
-      maskViewport
+      maskViewport,
+      autoPositioning,
+      setOverlayConfig
     ]
   )
 
@@ -822,7 +899,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         <ContentContainer
           $backgroundType={effectiveBackgroundType}
           $opacity={backgroundStyle.opacity}
-          $isMaskMode={isMaskMode}
         >
           <SubtitleContent
             displayMode={displayMode}
@@ -913,14 +989,13 @@ const OverlayContainer = styled.div<{
 const ContentContainer = styled.div<{
   $backgroundType: SubtitleBackgroundType
   $opacity: number
-  $isMaskMode: boolean
 }>`
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: ${(props) => (props.$isMaskMode ? '12px 16px' : '12px 16px')};
+  padding: 12px 16px;
   border-radius: 8px;
   box-sizing: border-box;
   position: relative;
