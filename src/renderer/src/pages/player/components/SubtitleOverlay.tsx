@@ -38,6 +38,10 @@ const clampPercent = (value: number) =>
   Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0))
 
 const MIN_SPAN_PERCENT = 1
+const ESTIMATED_SUBTITLE_HEIGHT_PX = 160
+const MAX_ESTIMATED_HEIGHT_PERCENT = 12
+const MAX_OVERLAY_WIDTH_PERCENT = 95
+const MAX_OVERLAY_HEIGHT_PERCENT_NORMAL_MODE = 40
 const VIEWPORT_CHANGE_THRESHOLD = 0.1
 
 const toMaskRelativePosition = (position: { x: number; y: number }, mask: MaskLayout) => {
@@ -565,7 +569,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           const deltaY = moveEvent.clientY - startY
 
           // 使用估算的字幕高度（自适应模式下约为 160px）
-          const estimatedHeightPercent = Math.min(12, (160 / containerBounds.height) * 100)
+          const estimatedHeightPercent = Math.min(
+            MAX_ESTIMATED_HEIGHT_PERCENT,
+            (ESTIMATED_SUBTITLE_HEIGHT_PX / containerBounds.height) * 100
+          )
           const xMin = isMaskMode && maskViewport ? maskViewport.position.x : 0
           const xMax =
             isMaskMode && maskViewport
@@ -697,12 +704,12 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           const widthLimit =
             isMaskMode && maskRight !== null
               ? Math.max(MIN_SPAN_PERCENT, maskRight - latestPositionRef.current.x)
-              : 95
+              : MAX_OVERLAY_WIDTH_PERCENT
           const heightLimit =
             isMaskMode && maskBottom !== null
               ? Math.max(MIN_SPAN_PERCENT, maskBottom - latestPositionRef.current.y)
-              : 95
-          const maxHeightPercent = isMaskMode ? heightLimit : 40
+              : MAX_OVERLAY_WIDTH_PERCENT
+          const maxHeightPercent = isMaskMode ? heightLimit : MAX_OVERLAY_HEIGHT_PERCENT_NORMAL_MODE
 
           const newSize = {
             width: Math.max(
@@ -810,7 +817,8 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       event.preventDefault()
       event.stopPropagation() // 阻止事件冒泡，防止触发VideoSurface的点击事件
 
-      const maxWidth = isMaskMode && maskViewport ? maskViewport.size.width : 95 // 最大宽度95%
+      const maxWidth =
+        isMaskMode && maskViewport ? maskViewport.size.width : MAX_OVERLAY_WIDTH_PERCENT // 最大宽度95%
 
       const newSize = {
         ...overlaySize,
