@@ -524,13 +524,8 @@ const OriginalTextLine = styled.div<{ $fontSize?: string }>`
   font-size: ${(props) => props.$fontSize || '16px'};
   font-weight: 600;
   text-shadow: var(--subtitle-text-shadow);
-  margin-bottom: 0;
   transition: all var(--subtitle-transition-duration);
-
-  /* 在双语模式下添加间距 */
-  &.bilingual {
-    margin-bottom: 8px;
-  }
+  margin: 4px;
 `
 
 const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
@@ -538,7 +533,6 @@ const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
   font-weight: 500;
   opacity: 0.95;
   text-shadow: var(--subtitle-text-shadow);
-  margin-top: 0;
   transition: all var(--subtitle-transition-duration);
 `
 
