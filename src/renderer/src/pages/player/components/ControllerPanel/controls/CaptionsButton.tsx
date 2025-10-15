@@ -24,6 +24,7 @@ export default function CaptionsButton() {
     type: SubtitleBackgroundType.BLUR,
     opacity: 0.8
   }
+  const isMaskMode = integration.isMaskMode
 
   // 配置操作
   const setDisplayMode = integration.setDisplayMode
@@ -106,6 +107,7 @@ export default function CaptionsButton() {
   }
 
   const handleBackgroundChange = (type: SubtitleBackgroundType) => {
+    if (isMaskMode) return
     setBackgroundType(type)
     logger.info('字幕背景类型已切换', { type })
   }
@@ -145,6 +147,23 @@ export default function CaptionsButton() {
           onMouseLeave={menuProps.onMouseLeave}
         >
           <MenuSection>
+            <MenuTitle>{t('player.controls.subtitle.mask-mode.title')}</MenuTitle>
+            <MenuRow>
+              <MenuOption
+                $active={isMaskMode}
+                onClick={() => integration.toggleMaskMode()}
+                title={
+                  isMaskMode
+                    ? t('player.controls.subtitle.mask-mode.disable.tooltip')
+                    : t('player.controls.subtitle.mask-mode.enable.tooltip')
+                }
+              >
+                <span>{t('player.controls.subtitle.mask-mode.label')}</span>
+              </MenuOption>
+            </MenuRow>
+          </MenuSection>
+
+          <MenuSection>
             <MenuTitle>{t('player.controls.subtitle.display-mode.title')}</MenuTitle>
             <MenuRow>
               {displayModes.map(({ mode, label, tooltip }) => (
@@ -167,8 +186,13 @@ export default function CaptionsButton() {
                 <MenuOption
                   key={type}
                   $active={backgroundStyle.type === type}
+                  $disabled={isMaskMode}
                   onClick={() => handleBackgroundChange(type)}
-                  title={tooltip}
+                  title={
+                    isMaskMode
+                      ? t('player.controls.subtitle.mask-mode.background-locked.tooltip')
+                      : tooltip
+                  }
                 >
                   <BackgroundPreview $type={type} />
                 </MenuOption>
@@ -236,7 +260,14 @@ const MenuOption = styled.button<{ $active?: boolean; $disabled?: boolean }>`
   min-height: 28px;
 
   &:hover {
-    background: ${(p) => (p.$active ? 'var(--color-primary-soft)' : 'var(--color-hover)')};
+    background: ${(p) =>
+      p.$disabled
+        ? p.$active
+          ? 'var(--color-primary-mute)'
+          : 'var(--color-background-soft)'
+        : p.$active
+          ? 'var(--color-primary-soft)'
+          : 'var(--color-hover)'};
   }
 `
 
