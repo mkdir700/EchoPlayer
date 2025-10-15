@@ -4,7 +4,7 @@ import { SubtitleOverlay } from '@renderer/pages/player/components/SubtitleOverl
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@renderer/pages/player/hooks', () => ({
   useSubtitleOverlay: () => ({
@@ -87,6 +87,21 @@ vi.mock('antd', async () => {
 describe('SubtitleOverlay dictionary lookup', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+
+    // 创建包含 video 元素的 DOM 结构
+    const container = document.createElement('div')
+    container.setAttribute('data-testid', 'video-surface')
+    const video = document.createElement('video')
+    container.appendChild(video)
+    document.body.appendChild(container)
+  })
+
+  afterEach(() => {
+    // 清理 DOM
+    const container = document.querySelector('[data-testid="video-surface"]')
+    if (container) {
+      document.body.removeChild(container)
+    }
   })
 
   it('queries dictionary when a word is clicked and shows enhanced popover', async () => {
