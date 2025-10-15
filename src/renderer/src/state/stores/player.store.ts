@@ -38,6 +38,149 @@ export interface SubtitleOverlayConfig {
 }
 
 /**
+ * 创建默认的字幕覆盖层配置
+ * @param overrides 可选的覆盖配置（如从全局设置中获取的默认值）
+ * @returns 完整的 SubtitleOverlayConfig 对象
+ */
+export function createDefaultSubtitleOverlayConfig(
+  overrides?: Partial<SubtitleOverlayConfig>
+): SubtitleOverlayConfig {
+  return {
+    displayMode: overrides?.displayMode ?? SubtitleDisplayMode.BILINGUAL,
+    backgroundStyle: {
+      type: overrides?.backgroundStyle?.type ?? SubtitleBackgroundType.BLUR,
+      opacity: overrides?.backgroundStyle?.opacity ?? 0.8,
+      customValue: overrides?.backgroundStyle?.customValue
+    },
+    isMaskMode: overrides?.isMaskMode ?? false,
+    maskOnboardingComplete: overrides?.maskOnboardingComplete ?? false,
+    position: {
+      x: overrides?.position?.x ?? 10,
+      y: overrides?.position?.y ?? 75
+    },
+    size: {
+      width: overrides?.size?.width ?? 80,
+      height: overrides?.size?.height ?? 20
+    },
+    autoPositioning: overrides?.autoPositioning ?? true,
+    isInitialized: overrides?.isInitialized ?? false
+  }
+}
+
+/**
+ * 创建默认的转码信息
+ * @param overrides 可选的覆盖配置
+ * @returns 完整的 TranscodeInfo 对象
+ */
+export function createDefaultTranscodeInfo(overrides?: Partial<TranscodeInfo>): TranscodeInfo {
+  return {
+    status: overrides?.status ?? 'idle',
+    hlsSrc: overrides?.hlsSrc,
+    sessionId: overrides?.sessionId,
+    error: overrides?.error,
+    startTime: overrides?.startTime,
+    endTime: overrides?.endTime
+  }
+}
+
+/**
+ * 全局播放设置（用于初始化 PlayerState）
+ */
+export interface GlobalPlaybackSettings {
+  defaultVolume: number
+  defaultPlaybackSpeed: number
+  defaultSubtitleDisplayMode: SubtitleDisplayMode
+  defaultSubtitleBackgroundType: SubtitleBackgroundType
+  defaultLoopMode: LoopMode
+  defaultLoopCount: number
+  defaultFavoriteRates: number[]
+}
+
+/**
+ * PlayerState 初始化选项
+ */
+export interface PlayerStateOptions {
+  /** 全局播放设置（从 settings.store.playback 获取） */
+  globalSettings?: Partial<GlobalPlaybackSettings>
+  /** 持久化的播放器设置（从数据库恢复） */
+  persistedSettings?: Partial<PlayerState>
+}
+
+/**
+ * 创建 PlayerState 的统一工厂函数
+ * 优先级：persistedSettings > globalSettings > 硬编码默认值
+ *
+ * @param options 初始化选项
+ * @returns 完整的 PlayerState 对象
+ */
+export function createPlayerState(options: PlayerStateOptions = {}): PlayerState {
+  const { globalSettings = {}, persistedSettings = {} } = options
+
+  return {
+    // === 基础播放状态（运行时状态，不持久化） ===
+    currentTime: persistedSettings.currentTime ?? 0,
+    duration: persistedSettings.duration ?? 0,
+    paused: persistedSettings.paused ?? true,
+    isFullscreen: persistedSettings.isFullscreen ?? false,
+    activeCueIndex: persistedSettings.activeCueIndex ?? -1,
+
+    // === 音量和播放速度（可持久化） ===
+    volume: persistedSettings.volume ?? globalSettings.defaultVolume ?? 1.0,
+    muted: persistedSettings.muted ?? false,
+    playbackRate: persistedSettings.playbackRate ?? globalSettings.defaultPlaybackSpeed ?? 1.0,
+
+    // === 常用播放速度设置（可持久化） ===
+    favoriteRates: persistedSettings.favoriteRates ?? globalSettings.defaultFavoriteRates ?? [1.0],
+    currentFavoriteIndex:
+      persistedSettings.currentFavoriteIndex ??
+      (() => {
+        const rates = persistedSettings.favoriteRates ??
+          globalSettings.defaultFavoriteRates ?? [1.0]
+        const speed = persistedSettings.playbackRate ?? globalSettings.defaultPlaybackSpeed ?? 1.0
+        return Math.max(0, rates.indexOf(speed))
+      })(),
+
+    // === 循环设置（可持久化） ===
+    loopEnabled: persistedSettings.loopEnabled ?? false,
+    loopMode: persistedSettings.loopMode ?? globalSettings.defaultLoopMode ?? LoopMode.SINGLE,
+    loopCount: persistedSettings.loopCount ?? globalSettings.defaultLoopCount ?? -1,
+    loopRemainingCount:
+      persistedSettings.loopRemainingCount ?? globalSettings.defaultLoopCount ?? -1,
+
+    // === 自动暂停设置（可持久化） ===
+    autoPauseEnabled: persistedSettings.autoPauseEnabled ?? false,
+    pauseOnSubtitleEnd: persistedSettings.pauseOnSubtitleEnd ?? true,
+    resumeEnabled: persistedSettings.resumeEnabled ?? false,
+    resumeDelay: persistedSettings.resumeDelay ?? 5000,
+
+    // === 字幕覆盖层设置（可持久化） ===
+    subtitleOverlay:
+      persistedSettings.subtitleOverlay ??
+      createDefaultSubtitleOverlayConfig({
+        displayMode: globalSettings.defaultSubtitleDisplayMode,
+        backgroundStyle: globalSettings.defaultSubtitleBackgroundType
+          ? {
+              type: globalSettings.defaultSubtitleBackgroundType,
+              opacity: 0.8
+            }
+          : undefined
+      }),
+
+    // === 转码状态管理（运行时状态，不持久化） ===
+    hlsMode: persistedSettings.hlsMode ?? false,
+    transcodeInfo: persistedSettings.transcodeInfo ?? createDefaultTranscodeInfo(),
+
+    // === UI 短时态（运行时状态，不持久化） ===
+    isSettingsOpen: persistedSettings.isSettingsOpen ?? false,
+    wasPlayingBeforeOpen: persistedSettings.wasPlayingBeforeOpen ?? false,
+    isAutoResumeCountdownOpen: persistedSettings.isAutoResumeCountdownOpen ?? false,
+    subtitlePanelVisible: persistedSettings.subtitlePanelVisible ?? true,
+    isVideoSeeking: persistedSettings.isVideoSeeking ?? false,
+    isVideoWaiting: persistedSettings.isVideoWaiting ?? false
+  }
+}
+
+/**
  * 转码状态枚举
  */
 export type TranscodeStatus =
@@ -218,59 +361,8 @@ export interface PlayerActions {
 
 export type PlayerStore = PlayerState & PlayerActions
 
-const initialState: PlayerState = {
-  currentTime: 0,
-  duration: 0,
-  paused: true,
-  volume: 1,
-  muted: false,
-  activeCueIndex: -1,
-  playbackRate: 1,
-  favoriteRates: [1.0], // 默认常用速度
-  currentFavoriteIndex: 1, // 默认选择 1.0x
-  isFullscreen: false,
-
-  // === 转码状态管理 ===
-  hlsMode: false,
-  transcodeInfo: {
-    status: 'idle'
-  },
-
-  // === 视频加载状态 ===
-  isVideoSeeking: false,
-  isVideoWaiting: false,
-
-  // === 循环设置 / Loop Settings ===
-  loopEnabled: false,
-  loopMode: LoopMode.SINGLE,
-  loopCount: -1, // -1 表示无限循环
-  loopRemainingCount: -1,
-
-  // === 自动暂停设置 / Auto Pause Settings ===
-  autoPauseEnabled: false,
-  pauseOnSubtitleEnd: true,
-  resumeEnabled: false, // 是否启用自动恢复播放
-  resumeDelay: 5000, // 5秒
-
-  subtitleOverlay: {
-    displayMode: SubtitleDisplayMode.BILINGUAL,
-    backgroundStyle: {
-      type: SubtitleBackgroundType.BLUR,
-      opacity: 0.8
-    },
-    isMaskMode: false,
-    maskOnboardingComplete: false,
-    position: { x: 10, y: 75 },
-    size: { width: 80, height: 20 },
-    autoPositioning: true,
-    isInitialized: false
-  },
-
-  isSettingsOpen: false,
-  wasPlayingBeforeOpen: false,
-  isAutoResumeCountdownOpen: false,
-  subtitlePanelVisible: true
-}
+// 使用工厂函数创建初始状态（使用硬编码默认值）
+const initialState: PlayerState = createPlayerState()
 
 // 仅包含需要持久化到数据库的设置切片类型
 export type PlayerSettings = Pick<
