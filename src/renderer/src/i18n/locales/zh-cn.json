@@ -85,6 +85,20 @@
             "tooltip": "透明背景"
           }
         },
+        "mask-mode": {
+          "background-locked": {
+            "tooltip": "遮罩模式下背景样式固定为高斯模糊"
+          },
+          "disable": {
+            "tooltip": "关闭遮罩模式"
+          },
+          "enable": {
+            "tooltip": "开启遮罩模式，锁定内嵌字幕区域"
+          },
+          "label": "遮罩模式",
+          "onboarding": "拖动或调整字幕框以匹配视频中的内嵌字幕区域",
+          "title": "遮罩模式"
+        },
         "display-mode": {
           "bilingual": {
             "label": "双语",

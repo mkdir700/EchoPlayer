@@ -34,6 +34,51 @@ import SubtitleContent from './SubtitleContent'
 
 const logger = loggerService.withContext('SubtitleOverlay')
 
+const clampPercent = (value: number) =>
+  Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0))
+
+const MIN_SPAN_PERCENT = 1
+const VIEWPORT_CHANGE_THRESHOLD = 0.1
+
+const toMaskRelativePosition = (position: { x: number; y: number }, mask: MaskLayout) => {
+  const width = Math.max(mask.size.width, MIN_SPAN_PERCENT)
+  const height = Math.max(mask.size.height, MIN_SPAN_PERCENT)
+
+  return {
+    x: clampPercent(((position.x - mask.position.x) / width) * 100),
+    y: clampPercent(((position.y - mask.position.y) / height) * 100)
+  }
+}
+
+const fromMaskRelativePosition = (position: { x: number; y: number }, mask: MaskLayout) => {
+  return {
+    x: clampPercent(mask.position.x + (position.x / 100) * mask.size.width),
+    y: clampPercent(mask.position.y + (position.y / 100) * mask.size.height)
+  }
+}
+
+const toMaskRelativeSize = (size: { width: number; height: number }, mask: MaskLayout) => {
+  const width = Math.max(mask.size.width, MIN_SPAN_PERCENT)
+  const height = Math.max(mask.size.height, MIN_SPAN_PERCENT)
+
+  return {
+    width: clampPercent((size.width / width) * 100),
+    height: clampPercent((size.height / height) * 100)
+  }
+}
+
+const fromMaskRelativeSize = (size: { width: number; height: number }, mask: MaskLayout) => {
+  return {
+    width: clampPercent((size.width / 100) * mask.size.width),
+    height: clampPercent((size.height / 100) * mask.size.height)
+  }
+}
+
+type MaskLayout = {
+  position: { x: number; y: number }
+  size: { width: number; height: number }
+}
+
 // === 接口定义 ===
 export interface SubtitleOverlayProps {
   /** 容器元素引用（用于计算边界） */
@@ -74,16 +119,225 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const position = currentConfig.position
   const size = currentConfig.size
   const backgroundStyle = currentConfig.backgroundStyle
+  const isMaskMode = currentConfig.isMaskMode
 
   // === 配置操作（通过 integration） ===
   const setPosition = integration.setPosition
   const setSize = integration.setSize
+  const setMaskOnboardingComplete = integration.setMaskOnboardingComplete
+  const maskOnboardingComplete = integration.maskOnboardingComplete
 
   // === 本地状态 ===
   const overlayRef = useRef<HTMLDivElement>(null)
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const hideToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [maskViewport, setMaskViewport] = useState<MaskLayout | null>(null)
+  const previousMaskModeRef = useRef(isMaskMode)
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null)
+
+  const resolveElements = useCallback(() => {
+    const containerElement =
+      containerRef?.current ||
+      (document.querySelector('[data-testid="video-surface"]') as HTMLElement | null)
+
+    if (!containerElement) return null
+
+    const videoElement = containerElement.querySelector('video') as HTMLVideoElement | null
+    if (!videoElement) return null
+
+    return { containerElement, videoElement }
+  }, [containerRef])
+
+  useEffect(() => {
+    const elements = resolveElements()
+    if (!elements) return
+
+    const { videoElement } = elements
+
+    const updateAspectRatio = () => {
+      const naturalWidth = videoElement.videoWidth
+      const naturalHeight = videoElement.videoHeight
+      if (naturalWidth > 0 && naturalHeight > 0) {
+        const ratio = naturalWidth / naturalHeight
+        setVideoAspectRatio((prev) =>
+          prev !== null && Math.abs(prev - ratio) < 0.0001 ? prev : ratio
+        )
+      } else {
+        setVideoAspectRatio((prev) => (prev === null ? prev : null))
+      }
+    }
+
+    updateAspectRatio()
+
+    videoElement.addEventListener('loadedmetadata', updateAspectRatio)
+    videoElement.addEventListener('loadeddata', updateAspectRatio)
+    videoElement.addEventListener('emptied', updateAspectRatio)
+
+    return () => {
+      videoElement.removeEventListener('loadedmetadata', updateAspectRatio)
+      videoElement.removeEventListener('loadeddata', updateAspectRatio)
+      videoElement.removeEventListener('emptied', updateAspectRatio)
+    }
+  }, [resolveElements])
+
+  const computeContentRects = useCallback(() => {
+    const elements = resolveElements()
+    if (!elements) return null
+
+    const { containerElement, videoElement } = elements
+    const containerRect = containerElement.getBoundingClientRect()
+
+    if (containerRect.width <= 0 || containerRect.height <= 0) {
+      return null
+    }
+
+    const naturalWidth = videoElement.videoWidth
+    const naturalHeight = videoElement.videoHeight
+    const aspectRatio =
+      videoAspectRatio ||
+      (naturalWidth > 0 && naturalHeight > 0 ? naturalWidth / naturalHeight : null)
+
+    if (!aspectRatio) {
+      return {
+        containerRect,
+        contentRect: {
+          left: containerRect.left,
+          top: containerRect.top,
+          right: containerRect.right,
+          bottom: containerRect.bottom,
+          width: containerRect.width,
+          height: containerRect.height
+        },
+        aspectRatio: null
+      }
+    }
+
+    const containerRatio = containerRect.width / containerRect.height
+
+    let contentWidth = containerRect.width
+    let contentHeight = containerRect.height
+
+    if (containerRatio > aspectRatio) {
+      contentHeight = containerRect.height
+      contentWidth = contentHeight * aspectRatio
+    } else {
+      contentWidth = containerRect.width
+      contentHeight = contentWidth / aspectRatio
+    }
+
+    const offsetX = (containerRect.width - contentWidth) / 2
+    const offsetY = (containerRect.height - contentHeight) / 2
+
+    const left = containerRect.left + offsetX
+    const top = containerRect.top + offsetY
+    const right = left + contentWidth
+    const bottom = top + contentHeight
+
+    const contentRect = {
+      left,
+      top,
+      right,
+      bottom,
+      width: contentWidth,
+      height: contentHeight
+    }
+
+    return { containerRect, contentRect, aspectRatio }
+  }, [resolveElements, videoAspectRatio])
+
+  const computeMaskViewport = useCallback(() => {
+    const rects = computeContentRects()
+    if (!rects) return null
+    const { containerRect, contentRect, aspectRatio } = rects
+
+    if (!aspectRatio) {
+      return null
+    }
+
+    const position = {
+      x: clampPercent(((contentRect.left - containerRect.left) / containerRect.width) * 100),
+      y: clampPercent(((contentRect.top - containerRect.top) / containerRect.height) * 100)
+    }
+
+    const size = {
+      width: Math.max(
+        MIN_SPAN_PERCENT,
+        clampPercent((contentRect.width / containerRect.width) * 100)
+      ),
+      height: Math.max(
+        MIN_SPAN_PERCENT,
+        clampPercent((contentRect.height / containerRect.height) * 100)
+      )
+    }
+
+    return { position, size }
+  }, [computeContentRects])
+
+  const overlayPosition = useMemo(() => {
+    if (isMaskMode && maskViewport) {
+      return fromMaskRelativePosition(position, maskViewport)
+    }
+    return position
+  }, [isMaskMode, maskViewport, position])
+
+  const overlaySize = useMemo(() => {
+    if (isMaskMode && maskViewport) {
+      return fromMaskRelativeSize(size, maskViewport)
+    }
+    return size
+  }, [isMaskMode, maskViewport, size])
+
+  const latestPositionRef = useRef(overlayPosition)
+  const latestSizeRef = useRef(overlaySize)
+
+  useEffect(() => {
+    const viewport = computeMaskViewport()
+
+    if (!viewport) {
+      setMaskViewport((prev) => (prev !== null ? null : prev))
+      return
+    }
+
+    setMaskViewport((prev) => {
+      if (
+        prev &&
+        Math.abs(prev.position.x - viewport.position.x) < VIEWPORT_CHANGE_THRESHOLD &&
+        Math.abs(prev.position.y - viewport.position.y) < VIEWPORT_CHANGE_THRESHOLD &&
+        Math.abs(prev.size.width - viewport.size.width) < VIEWPORT_CHANGE_THRESHOLD &&
+        Math.abs(prev.size.height - viewport.size.height) < VIEWPORT_CHANGE_THRESHOLD
+      ) {
+        return prev
+      }
+      return viewport
+    })
+  }, [computeMaskViewport, containerBounds.height, containerBounds.width, videoAspectRatio])
+
+  useEffect(() => {
+    if (!maskViewport) {
+      return
+    }
+
+    if (isMaskMode && !previousMaskModeRef.current) {
+      const relativePosition = toMaskRelativePosition(position, maskViewport)
+      const relativeSize = toMaskRelativeSize(size, maskViewport)
+      setPosition(relativePosition)
+      setSize(relativeSize)
+      previousMaskModeRef.current = true
+      return
+    }
+
+    if (!isMaskMode && previousMaskModeRef.current) {
+      const absolutePosition = fromMaskRelativePosition(position, maskViewport)
+      const absoluteSize = fromMaskRelativeSize(size, maskViewport)
+      setPosition(absolutePosition)
+      setSize(absoluteSize)
+      previousMaskModeRef.current = false
+      return
+    }
+
+    previousMaskModeRef.current = isMaskMode
+  }, [isMaskMode, maskViewport, position, setPosition, setSize, size])
 
   // === 复制成功toast监听器 ===
   useEffect(() => {
@@ -112,6 +366,14 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       window.removeEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
     }
   }, [])
+
+  useEffect(() => {
+    latestPositionRef.current = overlayPosition
+  }, [overlayPosition])
+
+  useEffect(() => {
+    latestSizeRef.current = overlaySize
+  }, [overlaySize])
 
   // === 初始化和容器边界更新 ===
   useEffect(() => {
@@ -247,7 +509,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       event.stopPropagation() // 阻止事件冒泡，防止触发VideoSurface的点击事件
       const startX = event.clientX
       const startY = event.clientY
-      const startPosition = { x: position.x, y: position.y }
+      const startPosition = { x: overlayPosition.x, y: overlayPosition.y }
 
       startDragging()
 
@@ -264,21 +526,44 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 
           // 使用估算的字幕高度（自适应模式下约为 160px）
           const estimatedHeightPercent = Math.min(12, (160 / containerBounds.height) * 100)
+          const xMin = isMaskMode && maskViewport ? maskViewport.position.x : 0
+          const xMax =
+            isMaskMode && maskViewport
+              ? Math.max(
+                  maskViewport.position.x,
+                  maskViewport.position.x +
+                    maskViewport.size.width -
+                    Math.max(MIN_SPAN_PERCENT, latestSizeRef.current.width)
+                )
+              : 100 - latestSizeRef.current.width
+          const yMin = isMaskMode && maskViewport ? maskViewport.position.y : 0
+          const yMax =
+            isMaskMode && maskViewport
+              ? Math.max(
+                  maskViewport.position.y,
+                  maskViewport.position.y +
+                    maskViewport.size.height -
+                    Math.max(MIN_SPAN_PERCENT, latestSizeRef.current.height)
+                )
+              : 100 - estimatedHeightPercent
 
           const newPosition = {
             x: Math.max(
-              0,
-              Math.min(100 - size.width, startPosition.x + (deltaX / containerBounds.width) * 100)
+              xMin,
+              Math.min(xMax, startPosition.x + (deltaX / containerBounds.width) * 100)
             ),
             y: Math.max(
-              0,
-              Math.min(
-                100 - estimatedHeightPercent,
-                startPosition.y + (deltaY / containerBounds.height) * 100
-              )
+              yMin,
+              Math.min(yMax, startPosition.y + (deltaY / containerBounds.height) * 100)
             )
           }
-          setPosition(newPosition)
+
+          latestPositionRef.current = newPosition
+          const positionForStore =
+            isMaskMode && maskViewport
+              ? toMaskRelativePosition(newPosition, maskViewport)
+              : newPosition
+          setPosition(positionForStore)
         })
       }
 
@@ -287,7 +572,12 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           cancelAnimationFrame(animationId)
         }
         stopDragging()
-        logger.info('字幕覆盖层位置更新', { newPosition: position })
+        logger.info('字幕覆盖层位置更新', { newPosition: overlayPosition })
+
+        if (isMaskMode && !maskOnboardingComplete) {
+          setMaskOnboardingComplete(true)
+          setToastVisible(false)
+        }
 
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
@@ -296,7 +586,18 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       document.addEventListener('mousemove', handleMouseMove, { passive: true })
       document.addEventListener('mouseup', handleMouseUp)
     },
-    [position, size, containerBounds, startDragging, stopDragging, setPosition, isResizing]
+    [
+      overlayPosition,
+      containerBounds,
+      startDragging,
+      stopDragging,
+      setPosition,
+      isResizing,
+      isMaskMode,
+      maskOnboardingComplete,
+      setMaskOnboardingComplete,
+      maskViewport
+    ]
   )
 
   // === 调整尺寸功能（优化版本） ===
@@ -307,7 +608,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 
       const startX = event.clientX
       const startY = event.clientY
-      const startSize = { width: size.width, height: size.height }
+      const startSize = { width: overlaySize.width, height: overlaySize.height }
 
       startResizing()
 
@@ -322,17 +623,39 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           const deltaX = moveEvent.clientX - startX
           const deltaY = moveEvent.clientY - startY
 
+          const maskRight =
+            maskViewport?.position.x !== undefined && maskViewport?.size.width !== undefined
+              ? maskViewport.position.x + maskViewport.size.width
+              : null
+          const maskBottom =
+            maskViewport?.position.y !== undefined && maskViewport?.size.height !== undefined
+              ? maskViewport.position.y + maskViewport.size.height
+              : null
+
+          const widthLimit =
+            isMaskMode && maskRight !== null
+              ? Math.max(MIN_SPAN_PERCENT, maskRight - latestPositionRef.current.x)
+              : 95
+          const heightLimit =
+            isMaskMode && maskBottom !== null
+              ? Math.max(MIN_SPAN_PERCENT, maskBottom - latestPositionRef.current.y)
+              : 95
+          const maxHeightPercent = isMaskMode ? heightLimit : 40
+
           const newSize = {
             width: Math.max(
-              20,
-              Math.min(95, startSize.width + (deltaX / containerBounds.width) * 100)
+              MIN_SPAN_PERCENT,
+              Math.min(widthLimit, startSize.width + (deltaX / containerBounds.width) * 100)
             ),
             height: Math.max(
-              10,
-              Math.min(40, startSize.height + (deltaY / containerBounds.height) * 100)
+              MIN_SPAN_PERCENT,
+              Math.min(maxHeightPercent, startSize.height + (deltaY / containerBounds.height) * 100)
             )
           }
-          setSize(newSize)
+          latestSizeRef.current = newSize
+          const sizeForStore =
+            isMaskMode && maskViewport ? toMaskRelativeSize(newSize, maskViewport) : newSize
+          setSize(sizeForStore)
         })
       }
 
@@ -341,7 +664,12 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           cancelAnimationFrame(animationId)
         }
         stopResizing()
-        logger.info('字幕覆盖层尺寸更新', { newSize: size })
+        logger.info('字幕覆盖层尺寸更新', { newSize: overlaySize })
+
+        if (isMaskMode && !maskOnboardingComplete) {
+          setMaskOnboardingComplete(true)
+          setToastVisible(false)
+        }
 
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
@@ -350,7 +678,17 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       document.addEventListener('mousemove', handleMouseMove, { passive: true })
       document.addEventListener('mouseup', handleMouseUp)
     },
-    [size, containerBounds, startResizing, stopResizing, setSize]
+    [
+      overlaySize,
+      containerBounds,
+      startResizing,
+      stopResizing,
+      setSize,
+      isMaskMode,
+      maskOnboardingComplete,
+      setMaskOnboardingComplete,
+      maskViewport
+    ]
   )
 
   // === 悬停状态处理 ===
@@ -378,30 +716,50 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     event.stopPropagation()
   }, [])
 
+  useEffect(() => {
+    if (isMaskMode && !maskOnboardingComplete) {
+      if (hideToastTimerRef.current) {
+        clearTimeout(hideToastTimerRef.current)
+        hideToastTimerRef.current = null
+      }
+      setToastMessage(t('player.controls.subtitle.mask-mode.onboarding'))
+      setToastVisible(true)
+    } else if (!isMaskMode && toastVisible) {
+      setToastVisible(false)
+    }
+  }, [isMaskMode, maskOnboardingComplete, t, toastVisible])
+
   // === ResizeHandle 双击扩展处理 ===
   const handleResizeDoubleClick = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault()
       event.stopPropagation() // 阻止事件冒泡，防止触发VideoSurface的点击事件
 
-      const maxWidth = 95 // 最大宽度95%
-
-      // 计算扩展后的居中位置（95%宽度居中）
-      const expandedCenterX = 50 - maxWidth / 2
+      const maxWidth = isMaskMode && maskViewport ? maskViewport.size.width : 95 // 最大宽度95%
 
       const newSize = {
-        ...size,
+        ...overlaySize,
         width: maxWidth
       }
 
       const newPosition = {
-        ...position,
-        x: Math.max(0, Math.min(100 - maxWidth, expandedCenterX))
+        ...overlayPosition,
+        x:
+          isMaskMode && maskViewport
+            ? maskViewport.position.x
+            : Math.max(0, Math.min(100 - maxWidth, 50 - maxWidth / 2))
       }
 
       // 同时更新尺寸和位置
-      setSize(newSize)
-      setPosition(newPosition)
+      const sizeForStore =
+        isMaskMode && maskViewport ? toMaskRelativeSize(newSize, maskViewport) : newSize
+      const positionForStore =
+        isMaskMode && maskViewport ? toMaskRelativePosition(newPosition, maskViewport) : newPosition
+
+      setSize(sizeForStore)
+      setPosition(positionForStore)
+      latestSizeRef.current = newSize
+      latestPositionRef.current = newPosition
 
       logger.info('字幕覆盖层双击扩展', {
         newSize,
@@ -409,8 +767,22 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         centerFirst: true,
         thenExpand: true
       })
+
+      if (isMaskMode && !maskOnboardingComplete) {
+        setMaskOnboardingComplete(true)
+        setToastVisible(false)
+      }
     },
-    [size, position, setSize, setPosition]
+    [
+      overlaySize,
+      overlayPosition,
+      setSize,
+      setPosition,
+      isMaskMode,
+      maskOnboardingComplete,
+      setMaskOnboardingComplete,
+      maskViewport
+    ]
   )
 
   // === 条件渲染：配置未加载或隐藏模式不显示 ===
@@ -423,54 +795,63 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     return null
   }
 
+  const effectiveBackgroundType = isMaskMode ? SubtitleBackgroundType.BLUR : backgroundStyle.type
+
   return (
-    <OverlayContainer
-      ref={overlayRef}
-      $position={position}
-      $size={size}
-      $showBoundaries={showBoundaries}
-      $isDragging={isDragging}
-      $isResizing={isResizing}
-      $isHovered={isHovered}
-      $backgroundType={backgroundStyle.type}
-      $opacity={backgroundStyle.opacity}
-      onMouseDown={handleMouseDown}
-      onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      data-testid="subtitle-overlay"
-      role="region"
-      aria-label="字幕覆盖层"
-      tabIndex={0}
-    >
-      <ContentContainer $backgroundType={backgroundStyle.type} $opacity={backgroundStyle.opacity}>
-        <SubtitleContent
-          displayMode={displayMode}
-          originalText={integration.currentSubtitle?.originalText || ''}
-          translatedText={integration.currentSubtitle?.translatedText}
-          onTextSelection={handleTextSelection}
-          containerHeight={containerBounds.height}
-        />
-      </ContentContainer>
-
-      <Tooltip
-        title={t('settings.playback.subtitle.overlay.resizeHandle.tooltip')}
-        placement="top"
-        mouseEnterDelay={0.5}
-        mouseLeaveDelay={0}
+    <>
+      <OverlayContainer
+        ref={overlayRef}
+        $position={overlayPosition}
+        $size={overlaySize}
+        $showBoundaries={showBoundaries}
+        $isDragging={isDragging}
+        $isResizing={isResizing}
+        $isHovered={isHovered}
+        $isMaskMode={isMaskMode}
+        $backgroundType={effectiveBackgroundType}
+        $opacity={backgroundStyle.opacity}
+        onMouseDown={handleMouseDown}
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        data-testid="subtitle-overlay"
+        role="region"
+        aria-label="字幕覆盖层"
+        tabIndex={0}
       >
-        <ResizeHandle
-          $visible={isHovered || isDragging || isResizing}
-          onMouseDown={handleResizeMouseDown}
-          onDoubleClick={handleResizeDoubleClick}
-          data-testid="subtitle-resize-handle"
-        />
-      </Tooltip>
+        <ContentContainer
+          $backgroundType={effectiveBackgroundType}
+          $opacity={backgroundStyle.opacity}
+          $isMaskMode={isMaskMode}
+        >
+          <SubtitleContent
+            displayMode={displayMode}
+            originalText={integration.currentSubtitle?.originalText || ''}
+            translatedText={integration.currentSubtitle?.translatedText}
+            onTextSelection={handleTextSelection}
+            containerHeight={containerBounds.height}
+          />
+        </ContentContainer>
 
-      <ToastContainer $visible={toastVisible} role="status" aria-live="polite" aria-atomic="true">
-        <ToastContent>{toastMessage}</ToastContent>
-      </ToastContainer>
-    </OverlayContainer>
+        <Tooltip
+          title={t('settings.playback.subtitle.overlay.resizeHandle.tooltip')}
+          placement="top"
+          mouseEnterDelay={0.5}
+          mouseLeaveDelay={0}
+        >
+          <ResizeHandle
+            $visible={isHovered || isDragging || isResizing}
+            onMouseDown={handleResizeMouseDown}
+            onDoubleClick={handleResizeDoubleClick}
+            data-testid="subtitle-resize-handle"
+          />
+        </Tooltip>
+
+        <ToastContainer $visible={toastVisible} role="status" aria-live="polite" aria-atomic="true">
+          <ToastContent>{toastMessage}</ToastContent>
+        </ToastContainer>
+      </OverlayContainer>
+    </>
   )
 })
 
@@ -484,6 +865,7 @@ const OverlayContainer = styled.div<{
   $isDragging: boolean
   $isResizing: boolean
   $isHovered: boolean
+  $isMaskMode: boolean
   $backgroundType: SubtitleBackgroundType
   $opacity: number
 }>`
@@ -492,9 +874,10 @@ const OverlayContainer = styled.div<{
   left: ${(props) => props.$position.x}%;
   top: ${(props) => props.$position.y}%;
   width: ${(props) => props.$size.width}%;
-  height: auto;
-  min-height: 60px;
-  max-height: 160px;
+  height: ${(props) =>
+    props.$isMaskMode ? `${Math.max(props.$size.height, MIN_SPAN_PERCENT)}%` : 'auto'};
+  min-height: ${(props) => (props.$isMaskMode ? '0' : '60px')};
+  max-height: ${(props) => (props.$isMaskMode ? 'none' : '160px')};
 
   /* 基础样式 */
   pointer-events: auto;
@@ -530,13 +913,14 @@ const OverlayContainer = styled.div<{
 const ContentContainer = styled.div<{
   $backgroundType: SubtitleBackgroundType
   $opacity: number
+  $isMaskMode: boolean
 }>`
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 16px;
+  padding: ${(props) => (props.$isMaskMode ? '12px 16px' : '12px 16px')};
   border-radius: 8px;
   box-sizing: border-box;
   position: relative;

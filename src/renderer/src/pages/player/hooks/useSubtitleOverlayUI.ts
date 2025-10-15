@@ -16,6 +16,8 @@ import { useCallback, useEffect, useState } from 'react'
 
 const logger = loggerService.withContext('SubtitleOverlayUI')
 
+const BOUNDS_CHANGE_THRESHOLD = 0.5
+
 /**
  * 位置信息
  */
@@ -176,16 +178,39 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
 
   // === 响应式处理 ===
   const updateContainerBounds = useCallback((bounds: { width: number; height: number }) => {
-    setContainerBounds(bounds)
-    logger.debug('更新容器边界', { bounds })
+    setContainerBounds((prev) => {
+      const widthDiff = Math.abs(prev.width - bounds.width)
+      const heightDiff = Math.abs(prev.height - bounds.height)
+
+      if (widthDiff < BOUNDS_CHANGE_THRESHOLD && heightDiff < BOUNDS_CHANGE_THRESHOLD) {
+        return prev
+      }
+
+      logger.debug('更新容器边界', { bounds })
+      return bounds
+    })
   }, [])
 
   const adaptToContainerResize = useCallback(
     (newBounds: { width: number; height: number }) => {
       const oldBounds = containerBounds
+      const widthDiff = Math.abs(oldBounds.width - newBounds.width)
+      const heightDiff = Math.abs(oldBounds.height - newBounds.height)
+
+      if (widthDiff < BOUNDS_CHANGE_THRESHOLD && heightDiff < BOUNDS_CHANGE_THRESHOLD) {
+        return
+      }
+
       setContainerBounds(newBounds)
 
       if (!subtitleOverlay) return
+
+      if (subtitleOverlay.isMaskMode) {
+        logger.debug('遮罩模式下容器尺寸变化由遮罩布局管理', {
+          newBounds
+        })
+        return
+      }
 
       const widthRatio = newBounds.width / Math.max(oldBounds.width, 1)
       const heightRatio = newBounds.height / Math.max(oldBounds.height, 1)
@@ -228,13 +253,17 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
         })
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // 移除依赖，使用闭包获取最新值
+    [containerBounds, setSubtitleOverlay, subtitleOverlay]
   )
 
   const avoidCollision = useCallback(
     (conflictAreas: Array<{ x: number; y: number; width: number; height: number }>) => {
       if (conflictAreas.length === 0 || !subtitleOverlay) return
+
+      if (subtitleOverlay.isMaskMode) {
+        logger.debug('遮罩模式下跳过冲突检测')
+        return
+      }
 
       // 使用估算的字幕高度（自适应模式下约为 160px）
       const estimatedHeightPercent = Math.min(12, (160 / containerBounds.height) * 100)
@@ -293,8 +322,7 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // 移除依赖，使用闭包获取最新值
+    [containerBounds.height, setSubtitleOverlay, subtitleOverlay]
   )
 
   return {
