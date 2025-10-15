@@ -1,3 +1,4 @@
+import { SPACING } from '@renderer/infrastructure/styles/theme'
 import { FC, memo } from 'react'
 import styled from 'styled-components'
 
@@ -45,8 +46,8 @@ export default HighlightedText
 const Highlight = styled.mark`
   background-color: var(--ant-color-warning-bg, #fffbe6);
   color: var(--ant-color-text, #000000);
-  padding: 2px 0;
-  border-radius: 2px;
+  padding: ${SPACING.XXS / 2}px 0;
+  border-radius: ${SPACING.XXS / 2}px;
   font-weight: 500;
 
   /* 深色主题下的高亮样式 */
