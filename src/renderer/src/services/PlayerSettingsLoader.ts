@@ -1,9 +1,10 @@
 import { loggerService } from '@logger'
 import { PlayerSettingsInsert } from '@shared/types/database'
-import { LoopMode, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
+import { LoopMode } from '@types'
 import type { PlayerSettingsRecord } from 'packages/shared/types/database'
 
 import type { PlayerState } from '../state/stores/player.store'
+import { createDefaultSubtitleOverlayConfig, createPlayerState } from '../state/stores/player.store'
 import { useSettingsStore } from '../state/stores/settings.store'
 
 const logger = loggerService.withContext('PlayerSettingsService')
@@ -35,66 +36,9 @@ export class PlayerSettingsService {
   private static createDefaultPlayerState(): PlayerState {
     const globalSettings = useSettingsStore.getState().playback
 
-    return {
-      // 基础播放状态（不从数据库恢复这些实时状态）
-      currentTime: 0,
-      duration: 0,
-      paused: true,
-      isFullscreen: false,
-      activeCueIndex: -1,
-
-      // 从全局设置获取的默认值
-      volume: globalSettings.defaultVolume,
-      muted: false,
-      playbackRate: globalSettings.defaultPlaybackSpeed,
-
-      // 常用播放速度设置（从全局设置获取）
-      favoriteRates: globalSettings.defaultFavoriteRates,
-      currentFavoriteIndex: Math.max(
-        0,
-        globalSettings.defaultFavoriteRates.indexOf(globalSettings.defaultPlaybackSpeed)
-      ),
-
-      // 循环设置（从全局设置获取）
-      loopEnabled: false,
-      loopMode: globalSettings.defaultLoopMode,
-      loopCount: globalSettings.defaultLoopCount,
-      loopRemainingCount: globalSettings.defaultLoopCount,
-
-      // 自动暂停设置（默认值）
-      autoPauseEnabled: false,
-      pauseOnSubtitleEnd: true,
-      resumeEnabled: false,
-      resumeDelay: 5000,
-
-      // 字幕覆盖层设置（从全局设置获取）
-      subtitleOverlay: {
-        displayMode: globalSettings.defaultSubtitleDisplayMode,
-        backgroundStyle: {
-          type: globalSettings.defaultSubtitleBackgroundType,
-          opacity: 0.8
-        },
-        isMaskMode: false,
-        position: { x: 10, y: 75 },
-        size: { width: 80, height: 20 },
-        autoPositioning: true,
-        isInitialized: false
-      },
-
-      // === 转码状态管理 ===（运行时状态，不持久化）
-      hlsMode: false,
-      transcodeInfo: {
-        status: 'idle'
-      },
-
-      // UI 短时态（不持久化）
-      isSettingsOpen: false,
-      wasPlayingBeforeOpen: false,
-      isAutoResumeCountdownOpen: false,
-      subtitlePanelVisible: true,
-      isVideoSeeking: false,
-      isVideoWaiting: false
-    }
+    return createPlayerState({
+      globalSettings
+    })
   }
 
   static async save(videoId: number, state: PlayerState): Promise<void> {
@@ -142,7 +86,8 @@ export class PlayerSettingsService {
    */
   private static mapDatabaseToState(dbData: PlayerSettingsRecord): PlayerState {
     const globalSettings = useSettingsStore.getState().playback
-    // 解析 JSON 字段
+
+    // 解析 JSON 字段的辅助函数
     const parseJsonField = <T>(jsonStr: string | null, defaultValue: T): T => {
       if (!jsonStr) return defaultValue
       try {
@@ -170,74 +115,34 @@ export class PlayerSettingsService {
     })
 
     // 解析字幕覆盖层设置
-    const subtitleOverlaySettings = parseJsonField(dbData.subtitleOverlaySettings, {
-      displayMode: SubtitleDisplayMode.BILINGUAL,
-      backgroundStyle: {
-        type: SubtitleBackgroundType.BLUR,
-        opacity: 0.8
-      },
-      isMaskMode: false,
-      position: { x: 10, y: 75 },
-      size: { width: 80, height: 20 },
-      autoPositioning: true,
-      isInitialized: false
+    const subtitleOverlaySettings = parseJsonField(
+      dbData.subtitleOverlaySettings,
+      createDefaultSubtitleOverlayConfig()
+    )
+
+    // 解析常用播放速度
+    const favoriteRates = parseJsonField(dbData.favoriteRates, globalSettings.defaultFavoriteRates)
+
+    // 使用工厂函数创建 PlayerState，并用数据库数据覆盖
+    return createPlayerState({
+      globalSettings,
+      persistedSettings: {
+        volume: dbData.volume,
+        muted: Boolean(dbData.muted),
+        playbackRate: dbData.playbackRate,
+        favoriteRates,
+        currentFavoriteIndex: Math.max(0, favoriteRates.indexOf(dbData.playbackRate)),
+        loopEnabled: loopSettings.loopEnabled,
+        loopMode: loopSettings.loopMode,
+        loopCount: loopSettings.loopCount,
+        loopRemainingCount: loopSettings.loopRemainingCount,
+        autoPauseEnabled: autoPauseSettings.autoPauseEnabled,
+        pauseOnSubtitleEnd: autoPauseSettings.pauseOnSubtitleEnd,
+        resumeEnabled: autoPauseSettings.resumeEnabled,
+        resumeDelay: autoPauseSettings.resumeDelay,
+        subtitleOverlay: subtitleOverlaySettings
+      }
     })
-
-    // 构建 PlayerState
-    const playerState: PlayerState = {
-      // 基础播放状态（不从数据库恢复这些实时状态）
-      currentTime: 0,
-      duration: 0,
-      paused: true,
-      isFullscreen: false,
-      activeCueIndex: -1,
-
-      // 从数据库恢复的设置
-      volume: dbData.volume,
-      muted: Boolean(dbData.muted),
-      playbackRate: dbData.playbackRate,
-
-      // 常用播放速度设置（解析 JSON 字段，使用全局设置作为默认值）
-      favoriteRates: parseJsonField(dbData.favoriteRates, globalSettings.defaultFavoriteRates),
-      // currentFavoriteIndex 是运行时状态，根据当前播放速度和常用列表计算
-      currentFavoriteIndex: Math.max(
-        0,
-        parseJsonField(dbData.favoriteRates, globalSettings.defaultFavoriteRates).indexOf(
-          dbData.playbackRate
-        )
-      ),
-
-      // 循环设置
-      loopEnabled: loopSettings.loopEnabled,
-      loopMode: loopSettings.loopMode,
-      loopCount: loopSettings.loopCount,
-      loopRemainingCount: loopSettings.loopRemainingCount,
-
-      // 自动暂停设置
-      autoPauseEnabled: autoPauseSettings.autoPauseEnabled,
-      pauseOnSubtitleEnd: autoPauseSettings.pauseOnSubtitleEnd,
-      resumeEnabled: autoPauseSettings.resumeEnabled,
-      resumeDelay: autoPauseSettings.resumeDelay,
-
-      // 字幕覆盖层设置
-      subtitleOverlay: subtitleOverlaySettings,
-
-      // === 转码状态管理 ===（运行时状态，不持久化）
-      hlsMode: false,
-      transcodeInfo: {
-        status: 'idle'
-      },
-
-      // UI 短时态（不持久化）
-      isSettingsOpen: false,
-      wasPlayingBeforeOpen: false,
-      isAutoResumeCountdownOpen: false,
-      subtitlePanelVisible: true,
-      isVideoSeeking: false,
-      isVideoWaiting: false
-    }
-
-    return playerState
   }
 
   /**
