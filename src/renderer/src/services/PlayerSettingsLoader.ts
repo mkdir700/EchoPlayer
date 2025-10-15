@@ -74,6 +74,7 @@ export class PlayerSettingsService {
           type: globalSettings.defaultSubtitleBackgroundType,
           opacity: 0.8
         },
+        isMaskMode: false,
         position: { x: 10, y: 75 },
         size: { width: 80, height: 20 },
         autoPositioning: true,
@@ -175,6 +176,7 @@ export class PlayerSettingsService {
         type: SubtitleBackgroundType.BLUR,
         opacity: 0.8
       },
+      isMaskMode: false,
       position: { x: 10, y: 75 },
       size: { width: 80, height: 20 },
       autoPositioning: true,
