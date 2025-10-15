@@ -187,7 +187,16 @@ export default function CaptionsButton() {
                   key={type}
                   $active={backgroundStyle.type === type}
                   $disabled={isMaskMode}
-                  onClick={() => handleBackgroundChange(type)}
+                  disabled={isMaskMode}
+                  aria-disabled={isMaskMode}
+                  tabIndex={isMaskMode ? -1 : 0}
+                  onClick={() => {
+                    if (isMaskMode) {
+                      return
+                    }
+
+                    handleBackgroundChange(type)
+                  }}
                   title={
                     isMaskMode
                       ? t('player.controls.subtitle.mask-mode.background-locked.tooltip')
