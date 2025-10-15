@@ -187,15 +187,9 @@ export function useSubtitleOverlay(): SubtitleOverlay {
 
   const setMaskMode = useCallback(
     (enabled: boolean) => {
-      if (enabled) {
-        setSubtitleOverlay({
-          isMaskMode: true
-        })
-      } else {
-        setSubtitleOverlay({
-          isMaskMode: false
-        })
-      }
+      setSubtitleOverlay({
+        isMaskMode: enabled
+      })
       logger.info('设置遮罩模式', { enabled })
     },
     [setSubtitleOverlay]
