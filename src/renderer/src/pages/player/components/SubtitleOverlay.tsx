@@ -856,9 +856,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
       isMaskMode,
       maskOnboardingComplete,
       setMaskOnboardingComplete,
-      maskViewport,
-      autoPositioning,
-      setOverlayConfig
+      maskViewport
     ]
   )
 
