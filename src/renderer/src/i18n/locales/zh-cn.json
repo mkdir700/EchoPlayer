@@ -85,20 +85,6 @@
             "tooltip": "透明背景"
           }
         },
-        "mask-mode": {
-          "background-locked": {
-            "tooltip": "遮罩模式下背景样式固定为高斯模糊"
-          },
-          "disable": {
-            "tooltip": "关闭遮罩模式"
-          },
-          "enable": {
-            "tooltip": "开启遮罩模式，锁定内嵌字幕区域"
-          },
-          "label": "遮罩模式",
-          "onboarding": "拖动或调整字幕框以匹配视频中的内嵌字幕区域",
-          "title": "遮罩模式"
-        },
         "display-mode": {
           "bilingual": {
             "label": "双语",
@@ -117,8 +103,29 @@
             "label": "译文",
             "tooltip": "仅显示译文字幕 (Ctrl+3)"
           }
+        },
+        "mask-mode": {
+          "background-locked": {
+            "tooltip": "遮罩模式下背景样式固定为高斯模糊"
+          },
+          "disable": {
+            "tooltip": "关闭遮罩模式"
+          },
+          "enable": {
+            "tooltip": "开启遮罩模式，锁定内嵌字幕区域"
+          },
+          "label": "遮罩模式",
+          "onboarding": "拖动或调整字幕框以匹配视频中的内嵌字幕区域",
+          "title": "遮罩模式"
         }
       }
+    },
+    "dictionary": {
+      "error": "查询失败",
+      "loading": "查询中...",
+      "more_definitions": "... 还有 {{count}} 个释义",
+      "pronunciation": "点击发音",
+      "translations": "常用翻译"
     },
     "errorRecovery": {
       "actions": {
@@ -179,39 +186,49 @@
         "label": "文件路径"
       }
     },
-    "subtitles": {
-      "hide": "隐藏字幕列表",
-      "show": "展开字幕列表"
-    },
     "mediaServerPrompt": {
-      "title": "视频格式不兼容",
-      "subtitle": "检测到当前视频格式不受支持",
-      "benefits": {
-        "title": "安装 Media Server 可以解决此问题",
-        "compatibility": {
-          "title": "完美兼容",
-          "description": "支持所有常见视频格式，包括高清和蓝光视频"
-        },
-        "transcoding": {
-          "title": "实时转码",
-          "description": "后台自动转码，无需等待，即开即用"
-        },
-        "easySetup": {
-          "title": "一键安装",
-          "description": "自动化安装流程，无需手动配置"
-        }
-      },
       "actions": {
         "install": "立即安装",
         "later": "稍后再说"
-      }
+      },
+      "benefits": {
+        "compatibility": {
+          "description": "支持所有常见视频格式，包括高清和蓝光视频",
+          "title": "完美兼容"
+        },
+        "easySetup": {
+          "description": "自动化安装流程，无需手动配置",
+          "title": "一键安装"
+        },
+        "title": "安装 Media Server 可以解决此问题",
+        "transcoding": {
+          "description": "后台自动转码，无需等待，即开即用",
+          "title": "实时转码"
+        }
+      },
+      "subtitle": "检测到当前视频格式不受支持",
+      "title": "视频格式不兼容"
     },
-    "dictionary": {
-      "loading": "查询中...",
-      "error": "查询失败",
-      "pronunciation": "点击发音",
-      "more_definitions": "... 还有 {{count}} 个释义",
-      "translations": "常用翻译"
+    "subtitles": {
+      "hide": "隐藏字幕列表",
+      "search": "搜索字幕",
+      "show": "展开字幕列表"
+    },
+    "subtitleList": {
+      "empty": {
+        "title": "在视频文件同目录下未找到匹配的字幕文件",
+        "description": "您可以点击下方按钮选择字幕文件，或将字幕文件拖拽到此区域"
+      },
+      "search": {
+        "placeholder": "搜索字幕...",
+        "pending": "搜索中...",
+        "count": "找到 {{count}} 条字幕",
+        "count_one": "找到 {{count}} 条字幕",
+        "count_other": "找到 {{count}} 条字幕",
+        "none": "未找到匹配的字幕",
+        "emptyTitle": "未找到匹配结果",
+        "emptySubtitle": "请尝试其他关键词"
+      }
     }
   },
   "search": {
@@ -415,11 +432,11 @@
         },
         "description": "FFprobe 用于读取音视频元数据和流信息，帮助 EchoPlayer 验证文件状态并完成兼容性检测。",
         "download": {
-          "install": "安装",
           "cancel": "取消下载",
           "cancelled": "下载已取消",
           "downloading": "下载中",
           "failed": "下载失败，请重试",
+          "install": "安装",
           "success": "下载完成"
         },
         "path": {
@@ -489,12 +506,12 @@
       "show_settings": "打开设置",
       "single_loop": "循环播放",
       "title": "快捷键",
+      "toggle_auto_pause": "切换自动暂停",
       "toggle_fullscreen": "切换全屏",
       "toggle_new_context": "清除上下文",
       "toggle_show_assistants": "切换助手显示",
       "toggle_show_topics": "切换话题显示",
       "toggle_subtitle_panel": "切换字幕面板",
-      "toggle_auto_pause": "切换自动暂停",
       "volume_down": "减小音量",
       "volume_up": "增大音量",
       "zoom_in": "放大界面",

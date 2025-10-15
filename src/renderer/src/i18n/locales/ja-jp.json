@@ -134,5 +134,23 @@
       "show_mini_window": "快速助手",
       "show_window": "表示ウィンドウ"
     }
+  },
+  "player": {
+    "subtitleList": {
+      "empty": {
+        "title": "動画ファイルと同じフォルダーに一致する字幕ファイルが見つかりません",
+        "description": "下のボタンから字幕ファイルを選択するか、このエリアにドラッグしてください"
+      },
+      "search": {
+        "placeholder": "字幕を検索...",
+        "pending": "検索中...",
+        "count": "{{count}} 件の字幕が見つかりました",
+        "count_one": "{{count}} 件の字幕が見つかりました",
+        "count_other": "{{count}} 件の字幕が見つかりました",
+        "none": "一致する字幕が見つかりません",
+        "emptyTitle": "一致する結果がありません",
+        "emptySubtitle": "別のキーワードを試してください"
+      }
+    }
   }
 }

@@ -12,6 +12,7 @@ import { PlayerSettingsService } from '@renderer/services/PlayerSettingsLoader'
 import { playerSettingsPersistenceService } from '@renderer/services/PlayerSettingsSaver'
 import { usePlayerStore } from '@renderer/state'
 import { usePlayerSessionStore } from '@renderer/state/stores/player-session.store'
+import { usePlayerUIStore } from '@renderer/state/stores/player-ui.store'
 import { IpcChannel } from '@shared/IpcChannel'
 import { Layout, Tooltip } from 'antd'
 
@@ -24,7 +25,7 @@ import {
   FONT_SIZES,
   SPACING
 } from '@renderer/infrastructure/styles/theme'
-import { ArrowLeft, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { ArrowLeft, PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -93,6 +94,7 @@ function PlayerPage() {
 
   const { t } = useTranslation()
   const { subtitlePanelVisible, toggleSubtitlePanel } = usePlayerStore()
+  const toggleSubtitleSearch = usePlayerUIStore((s) => s.toggleSubtitleSearch)
 
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -600,8 +602,14 @@ function PlayerPage() {
             <NavTitle title={videoData.title}>{videoData.title}</NavTitle>
           </NavbarCenter>
           <NavbarRight>
+            <Tooltip title={t('player.subtitles.search')} mouseEnterDelay={0.8}>
+              <NavbarIcon onClick={toggleSubtitleSearch}>
+                <Search size={18} />
+              </NavbarIcon>
+            </Tooltip>
             <Tooltip
               title={subtitlePanelVisible ? t('player.subtitles.hide') : t('player.subtitles.show')}
+              mouseEnterDelay={0.8}
             >
               <NavbarIcon onClick={toggleSubtitlePanel}>
                 {subtitlePanelVisible ? (
