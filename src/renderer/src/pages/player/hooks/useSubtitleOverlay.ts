@@ -22,11 +22,16 @@ export interface SubtitleOverlay {
   displayText: string
 
   // 配置操作（基于当前视频项目）
+  isMaskMode: boolean
+  maskOnboardingComplete?: boolean
   setDisplayMode: (mode: SubtitleDisplayMode) => void
   setBackgroundType: (type: SubtitleBackgroundType) => void
   setOpacity: (opacity: number) => void
   setPosition: (position: { x: number; y: number }) => void
   setSize: (size: { width: number; height: number }) => void
+  setMaskMode: (enabled: boolean) => void
+  toggleMaskMode: () => void
+  setMaskOnboardingComplete: (completed: boolean) => void
 }
 
 /**
@@ -138,6 +143,10 @@ export function useSubtitleOverlay(): SubtitleOverlay {
 
   const setBackgroundTypeHandler = useCallback(
     (type: SubtitleBackgroundType) => {
+      if (subtitleOverlayConfig.isMaskMode) {
+        logger.debug('遮罩模式下忽略背景类型切换', { type })
+        return
+      }
       const newBackgroundStyle = {
         ...subtitleOverlayConfig.backgroundStyle,
         type
@@ -176,15 +185,48 @@ export function useSubtitleOverlay(): SubtitleOverlay {
     [setSubtitleOverlay]
   )
 
+  const setMaskMode = useCallback(
+    (enabled: boolean) => {
+      if (enabled) {
+        setSubtitleOverlay({
+          isMaskMode: true
+        })
+      } else {
+        setSubtitleOverlay({
+          isMaskMode: false
+        })
+      }
+      logger.info('设置遮罩模式', { enabled })
+    },
+    [setSubtitleOverlay]
+  )
+
+  const toggleMaskMode = useCallback(() => {
+    setMaskMode(!subtitleOverlayConfig.isMaskMode)
+  }, [setMaskMode, subtitleOverlayConfig.isMaskMode])
+
+  const setMaskOnboardingComplete = useCallback(
+    (completed: boolean) => {
+      setSubtitleOverlay({ maskOnboardingComplete: completed })
+      logger.debug('更新遮罩模式引导状态', { completed })
+    },
+    [setSubtitleOverlay]
+  )
+
   return {
     currentSubtitle: stableCurrentSubtitle,
     shouldShow,
     displayText,
+    isMaskMode: subtitleOverlayConfig.isMaskMode,
+    maskOnboardingComplete: subtitleOverlayConfig.maskOnboardingComplete,
     setDisplayMode: setDisplayModeWithSync,
     setBackgroundType: setBackgroundTypeHandler,
     setOpacity: setOpacityHandler,
     setPosition: setPositionHandler,
-    setSize: setSizeHandler
+    setSize: setSizeHandler,
+    setMaskMode,
+    toggleMaskMode,
+    setMaskOnboardingComplete
   }
 }
 
