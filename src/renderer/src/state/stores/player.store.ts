@@ -17,6 +17,10 @@ export interface SubtitleOverlayConfig {
     opacity: number
     customValue?: string
   }
+  /** 是否启用遮罩模式 */
+  isMaskMode: boolean
+  /** 用户是否完成遮罩模式首次引导 */
+  maskOnboardingComplete?: boolean
   /** 位置（百分比） */
   position: {
     x: number // 0-100%
@@ -254,6 +258,8 @@ const initialState: PlayerState = {
       type: SubtitleBackgroundType.BLUR,
       opacity: 0.8
     },
+    isMaskMode: false,
+    maskOnboardingComplete: false,
     position: { x: 10, y: 75 },
     size: { width: 80, height: 20 },
     autoPositioning: true,
@@ -457,6 +463,13 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
   setSubtitleOverlay: (overlayConfig: Partial<SubtitleOverlayConfig>) =>
     set((s: Draft<PlayerStore>) => {
       const overlay = { ...s.subtitleOverlay, ...overlayConfig }
+
+      if (!overlay.maskOnboardingComplete) {
+        overlay.maskOnboardingComplete = false
+      }
+      if (overlay.isMaskMode === undefined) {
+        overlay.isMaskMode = false
+      }
       s.subtitleOverlay = overlay
     }),
 
@@ -514,7 +527,11 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
         s.resumeDelay = settings.resumeDelay
       }
       if (settings.subtitleOverlay !== undefined) {
-        s.subtitleOverlay = settings.subtitleOverlay
+        const overlay = {
+          ...initialState.subtitleOverlay,
+          ...settings.subtitleOverlay
+        }
+        s.subtitleOverlay = overlay
       }
     }),
 

@@ -34,6 +34,58 @@
         "install": "Install Now",
         "later": "Maybe Later"
       }
+    },
+    "controls": {
+      "subtitle": {
+        "mask-mode": {
+          "title": "Mask Mode",
+          "label": "Mask Mode",
+          "enable": {
+            "tooltip": "Enable mask mode to lock the hard subtitle area"
+          },
+          "disable": {
+            "tooltip": "Disable mask mode"
+          },
+          "background-locked": {
+            "tooltip": "Background style is forced to Gaussian blur while mask mode is active"
+          },
+          "onboarding": "Drag or resize the subtitle box to match the on-screen hard subtitles"
+        },
+        "display-mode": {
+          "hide": {
+            "label": "Hide",
+            "tooltip": "Hide subtitles (Ctrl+1)"
+          },
+          "original": {
+            "label": "Original",
+            "tooltip": "Show original subtitles only (Ctrl+2)"
+          },
+          "translation": {
+            "label": "Translation",
+            "tooltip": "Show translated subtitles only (Ctrl+3)"
+          },
+          "bilingual": {
+            "label": "Bilingual",
+            "tooltip": "Show both languages (Ctrl+4)"
+          },
+          "title": "Display Mode"
+        },
+        "background-type": {
+          "title": "Background Style",
+          "transparent": {
+            "tooltip": "Transparent background"
+          },
+          "blur": {
+            "tooltip": "Blur background"
+          },
+          "solid-black": {
+            "tooltip": "Solid black background"
+          },
+          "solid-gray": {
+            "tooltip": "Solid gray background"
+          }
+        }
+      }
     }
   },
   "settings": {

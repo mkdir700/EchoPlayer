@@ -69,14 +69,6 @@ export interface SubtitleMargins {
   readonly bottom: number
 }
 
-// 遮罩框接口 / Mask Frame Interface
-export interface MaskFrame {
-  readonly left: number
-  readonly top: number
-  readonly width: number
-  readonly height: number
-}
-
 // 背景类型枚举 / Background Type Enum
 export enum SubtitleBackgroundType {
   TRANSPARENT = 'transparent',
@@ -90,7 +82,6 @@ export interface SubtitleDisplaySettings {
   readonly margins: SubtitleMargins
   readonly backgroundType: SubtitleBackgroundType
   readonly isMaskMode: boolean
-  readonly maskFrame: MaskFrame
   readonly fontSize?: number
   readonly fontFamily?: string
   readonly fontColor?: string
