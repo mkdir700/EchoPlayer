@@ -86,6 +86,22 @@
           }
         }
       }
+    },
+    "subtitleList": {
+      "empty": {
+        "title": "No matching subtitle file found",
+        "description": "You can choose a subtitle file with the button below or drag a subtitle file into this area."
+      },
+      "search": {
+        "placeholder": "Search subtitles...",
+        "pending": "Searching...",
+        "count": "Found {{count}} subtitle",
+        "count_one": "Found {{count}} subtitle",
+        "count_other": "Found {{count}} subtitles",
+        "none": "No subtitles match your search",
+        "emptyTitle": "No matches found",
+        "emptySubtitle": "Try another keyword"
+      }
     }
   },
   "settings": {

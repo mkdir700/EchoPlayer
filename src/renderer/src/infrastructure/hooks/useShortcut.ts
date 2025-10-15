@@ -10,12 +10,59 @@ interface UseShortcutOptions {
   enableOnFormTags?: boolean
   enabled?: boolean
   description?: string
+  allowWhenTyping?: boolean
 }
 
 const defaultOptions: UseShortcutOptions = {
   preventDefault: true,
   enableOnFormTags: true,
-  enabled: true
+  enabled: true,
+  allowWhenTyping: false
+}
+
+const NON_TYPABLE_INPUT_TYPES = new Set([
+  'button',
+  'checkbox',
+  'color',
+  'date',
+  'datetime-local',
+  'file',
+  'hidden',
+  'image',
+  'month',
+  'radio',
+  'range',
+  'reset',
+  'submit',
+  'time',
+  'week'
+])
+
+function isTypingInput(element: Element | null): boolean {
+  if (!element || !(element instanceof HTMLElement)) {
+    return false
+  }
+
+  if (element.isContentEditable) {
+    return true
+  }
+
+  const tagName = element.tagName.toLowerCase()
+
+  if (tagName === 'textarea') {
+    return true
+  }
+
+  if (tagName === 'input') {
+    const el = element as HTMLInputElement
+    return !NON_TYPABLE_INPUT_TYPES.has((el.type || '').toLowerCase())
+  }
+
+  if (tagName === 'select') {
+    return true
+  }
+
+  return false
 }
 
 export const useShortcut = (
@@ -43,17 +90,24 @@ export const useShortcut = (
   useHotkeys(
     shortcutConfig?.enabled ? formatShortcut(shortcutConfig.shortcut) : 'none',
     (e) => {
+      const activeElement = document.activeElement
+      const typingActive =
+        !options.allowWhenTyping && isTypingInput(activeElement) && e.key !== 'Escape'
+
+      if (options.enabled === false || typingActive) {
+        return
+      }
+
       if (options.preventDefault) {
         e.preventDefault()
       }
-      if (options.enabled !== false) {
-        callback(e)
-      }
+
+      callback(e)
     },
     {
       enableOnFormTags: options.enableOnFormTags,
       description: options.description || shortcutConfig?.key,
-      enabled: !!shortcutConfig?.enabled
+      enabled: options.enabled !== false && !!shortcutConfig?.enabled
     }
   )
 }

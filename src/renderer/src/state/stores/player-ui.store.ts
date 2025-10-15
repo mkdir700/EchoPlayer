@@ -11,6 +11,9 @@ export interface PlayerUIState {
   overlays: {
     settingsOpen: boolean
   }
+  subtitleSearch: {
+    isSearchVisible: boolean
+  }
 }
 
 export interface PlayerUIActions {
@@ -21,6 +24,9 @@ export interface PlayerUIActions {
   setLoading: (loading: boolean) => void
   openSettings: () => void
   closeSettings: () => void
+  toggleSubtitleSearch: () => void
+  showSubtitleSearch: () => void
+  hideSubtitleSearch: () => void
 }
 
 export type PlayerUIStore = PlayerUIState & PlayerUIActions
@@ -34,6 +40,9 @@ const initialState: PlayerUIState = {
   isLoading: false,
   overlays: {
     settingsOpen: false
+  },
+  subtitleSearch: {
+    isSearchVisible: false
   }
 }
 
@@ -85,6 +94,24 @@ const createPlayerUIStore: StateCreator<
   closeSettings: () => {
     set((s: Draft<PlayerUIStore>) => {
       s.overlays.settingsOpen = false
+    })
+  },
+
+  toggleSubtitleSearch: () => {
+    set((s: Draft<PlayerUIStore>) => {
+      s.subtitleSearch.isSearchVisible = !s.subtitleSearch.isSearchVisible
+    })
+  },
+
+  showSubtitleSearch: () => {
+    set((s: Draft<PlayerUIStore>) => {
+      s.subtitleSearch.isSearchVisible = true
+    })
+  },
+
+  hideSubtitleSearch: () => {
+    set((s: Draft<PlayerUIStore>) => {
+      s.subtitleSearch.isSearchVisible = false
     })
   }
 })
