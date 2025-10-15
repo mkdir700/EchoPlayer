@@ -287,13 +287,21 @@ jobs:
       - name: Create release on GitCode
         if: steps.check-release.outputs.exists == 'false'
         id: create-release
+        env:
+          TAG_NAME: ${{ steps.release.outputs.tag_name }}
+          RELEASE_NAME: ${{ steps.release.outputs.release_name }}
+          RELEASE_BODY: ${{ steps.release.outputs.release_body }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          DRAFT: ${{ steps.release.outputs.draft }}
+          TEST_MODE: ${{ steps.release.outputs.test_mode }}
+          ACCESS_TOKEN: ${{ secrets.GITCODE_ACCESS_TOKEN }}
         run: |
           payload=$(jq -n \
-            --arg tag_name "${{ steps.release.outputs.tag_name }}" \
-            --arg name "${{ steps.release.outputs.release_name }}" \
-            --arg body "${{ steps.release.outputs.release_body }}" \
-            --argjson prerelease "${{ steps.release.outputs.prerelease }}" \
-            --argjson draft "${{ steps.release.outputs.draft }}" \
+            --arg tag_name "$TAG_NAME" \
+            --arg name "$RELEASE_NAME" \
+            --arg body "$RELEASE_BODY" \
+            --argjson prerelease "$PRERELEASE" \
+            --argjson draft "$DRAFT" \
             '{
               tag_name: $tag_name,
               name: $name,
@@ -305,7 +313,7 @@ jobs:
           echo "Creating release with payload:"
           echo "$payload" | jq .
 
-          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+          if [ "$TEST_MODE" = "true" ]; then
             echo "🧪 Test mode enabled - skipping release creation on GitCode"
             echo "✅ Test mode: Would create release successfully on GitCode"
             echo "created=true" >> $GITHUB_OUTPUT
@@ -315,7 +323,7 @@ jobs:
               -H "Content-Type: application/json" \
               -H "Accept: application/json" \
               -d "$payload" \
-              "$GITCODE_API_BASE/repos/$GITCODE_OWNER/$GITCODE_REPO/releases?access_token=${{ secrets.GITCODE_ACCESS_TOKEN }}")
+              "$GITCODE_API_BASE/repos/$GITCODE_OWNER/$GITCODE_REPO/releases?access_token=$ACCESS_TOKEN")
 
             http_code="${response: -3}"
             response_body="${response%???}"
@@ -337,12 +345,20 @@ jobs:
       - name: Update existing release on GitCode
         if: steps.check-release.outputs.exists == 'true'
         id: update-release
+        env:
+          TAG_NAME: ${{ steps.release.outputs.tag_name }}
+          RELEASE_NAME: ${{ steps.release.outputs.release_name }}
+          RELEASE_BODY: ${{ steps.release.outputs.release_body }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          DRAFT: ${{ steps.release.outputs.draft }}
+          TEST_MODE: ${{ steps.release.outputs.test_mode }}
+          ACCESS_TOKEN: ${{ secrets.GITCODE_ACCESS_TOKEN }}
         run: |
           payload=$(jq -n \
-            --arg name "${{ steps.release.outputs.release_name }}" \
-            --arg body "${{ steps.release.outputs.release_body }}" \
-            --argjson prerelease "${{ steps.release.outputs.prerelease }}" \
-            --argjson draft "${{ steps.release.outputs.draft }}" \
+            --arg name "$RELEASE_NAME" \
+            --arg body "$RELEASE_BODY" \
+            --argjson prerelease "$PRERELEASE" \
+            --argjson draft "$DRAFT" \
             '{
               name: $name,
               body: $body,
@@ -353,7 +369,7 @@ jobs:
           echo "Updating release with payload:"
           echo "$payload" | jq .
 
-          if [ "${{ steps.release.outputs.test_mode }}" = "true" ]; then
+          if [ "$TEST_MODE" = "true" ]; then
             echo "🧪 Test mode enabled - skipping release update on GitCode"
             echo "✅ Test mode: Would update release successfully on GitCode"
             echo "updated=true" >> $GITHUB_OUTPUT
@@ -363,7 +379,7 @@ jobs:
               -H "Content-Type: application/json" \
               -H "Accept: application/json" \
               -d "$payload" \
-              "$GITCODE_API_BASE/repos/$GITCODE_OWNER/$GITCODE_REPO/releases/${{ steps.release.outputs.tag_name }}?access_token=${{ secrets.GITCODE_ACCESS_TOKEN }}")
+              "$GITCODE_API_BASE/repos/$GITCODE_OWNER/$GITCODE_REPO/releases/$TAG_NAME?access_token=$ACCESS_TOKEN")
 
             http_code="${response: -3}"
             response_body="${response%???}"
