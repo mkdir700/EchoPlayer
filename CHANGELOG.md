@@ -1,3 +1,56 @@
+# [1.1.0-beta.1](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0...v1.1.0-beta.1) (2025-10-15)
+
+### Bug Fixes
+
+- **AppUpdater, FFmpegDownloadService:** update default mirror source to global ([83194b3](https://github.com/mkdir700/EchoPlayer/commit/83194b3e3f95019bcc58a040312fca2a14f88cbc))
+- **build:** adjust resource handling for media-server in packaging ([086bd1b](https://github.com/mkdir700/EchoPlayer/commit/086bd1b230d16a2294c9b2eb60dc230810cff659))
+- **codec-compatibility:** handle missing codec information gracefully ([ea29f21](https://github.com/mkdir700/EchoPlayer/commit/ea29f21ee3618180811605ad96f57d309dc5c008))
+- **FFmpegSection:** manage completion timeout for download process ([39b43c0](https://github.com/mkdir700/EchoPlayer/commit/39b43c06b6d7566ac648d87c6c2de4063bad7cf6))
+- **FFprobeSection:** add return statement to download progress polling function ([49636cf](https://github.com/mkdir700/EchoPlayer/commit/49636cf3d38f6f6c4bada9914ac647bb250bf4be))
+- **FFprobeSection:** ensure timeout cleanup after download success ([81a1431](https://github.com/mkdir700/EchoPlayer/commit/81a1431609ae281b4684e97c02c22ed766b5527e))
+- **FFprobeSection:** manage success timeout for download completion ([ce55d49](https://github.com/mkdir700/EchoPlayer/commit/ce55d49c991e120182ab547b37dad3032ff3cb43))
+- **FFprobeSection:** standardize font size using theme constants ([6387445](https://github.com/mkdir700/EchoPlayer/commit/6387445100bd5d04d661fa72afb64cdc899094d3))
+- **FFprobeSection:** standardize spacing in styled components ([ba3c3d4](https://github.com/mkdir700/EchoPlayer/commit/ba3c3d4ac79da1e97ba2cdf6e6fa55ed792012fb))
+- **homepage:** improve bottom spacing for card grid ([#194](https://github.com/mkdir700/EchoPlayer/issues/194)) ([801b6cd](https://github.com/mkdir700/EchoPlayer/commit/801b6cd6ec6b409d5a7e9173a536212e7af64760))
+- make subtitle overlay container semantic ([2d6ae60](https://github.com/mkdir700/EchoPlayer/commit/2d6ae604642a28419ecbf3a4299c4fa2f2d9a6b2))
+- **MediaServerService:** enhance error handling for file existence check ([11b74ef](https://github.com/mkdir700/EchoPlayer/commit/11b74ef421fe05570ead8122c45cb173f1f80006))
+- **MediaServerService:** replace fs.existsSync with async stat for file existence check ([c9c98da](https://github.com/mkdir700/EchoPlayer/commit/c9c98daa96b1a006207cfe34f5819c54b31debab))
+- **player:** apply playback rate change through orchestrator when cycling speeds ([#210](https://github.com/mkdir700/EchoPlayer/issues/210)) ([fa9aa09](https://github.com/mkdir700/EchoPlayer/commit/fa9aa0932b4315038670ade99820db856573c359))
+- **player:** remove HLS player missing error handling ([c7b593e](https://github.com/mkdir700/EchoPlayer/commit/c7b593e660dc0250b2a3637754092ee93ec64997))
+- remove green glow effect from progress bar ([#196](https://github.com/mkdir700/EchoPlayer/issues/196)) ([abc6f3e](https://github.com/mkdir700/EchoPlayer/commit/abc6f3edb00c4a7000940b03fb2fe9ce5dfb26ea)), closes [#e50914](https://github.com/mkdir700/EchoPlayer/issues/e50914) [#00b96](https://github.com/mkdir700/EchoPlayer/issues/00b96)
+- **semantic-release:** enhance version increment rules for prerelease branches ([#199](https://github.com/mkdir700/EchoPlayer/issues/199)) ([5d1e533](https://github.com/mkdir700/EchoPlayer/commit/5d1e5339589e9366776acefeed3633327c978c14))
+- **theme:** resolve theme color not updating immediately for Switch components and progress bars ([#197](https://github.com/mkdir700/EchoPlayer/issues/197)) ([eed9ea2](https://github.com/mkdir700/EchoPlayer/commit/eed9ea2354f386d1f86f0ce17ce5bd1f74502da8))
+- **TranscodeLoadingIndicator:** remove logging for loading indicator display ([085db44](https://github.com/mkdir700/EchoPlayer/commit/085db4414ac8d1e56d95dc2796c49b0a633faec5))
+- **useSubtitleScrollStateMachine:** start auto-return timer on user interactions ([8496ae0](https://github.com/mkdir700/EchoPlayer/commit/8496ae089a46473d5d3db9312469d0fcd0b7d9b3))
+- **UvBootstrapperService:** enhance UV download logic with cached path checks ([fc0791a](https://github.com/mkdir700/EchoPlayer/commit/fc0791acf161a10c8fbccd0a2b6ea7873302cd63))
+- **UvBootstrapperService:** ensure temp directory cleanup after download ([02c7b16](https://github.com/mkdir700/EchoPlayer/commit/02c7b16aebebd72ad9073f1b35d01c03134224da))
+- **UvBootstrapperService:** prevent concurrent downloads by checking download controllers ([19d31e7](https://github.com/mkdir700/EchoPlayer/commit/19d31e7d2836b3c5d61798e557230bf39758c5aa))
+- **VolumeIndicator:** skip indicator display on initial render ([82d2281](https://github.com/mkdir700/EchoPlayer/commit/82d228192110102f97ce08a2ea9fa4e0464a41bc))
+- **workflow:** update artifact listing command for better compatibility ([dfb6ee4](https://github.com/mkdir700/EchoPlayer/commit/dfb6ee4fc5425c50fd9613b4ac7c9ddd1748f3de))
+
+### Features
+
+- integrate session-backed HLS playback flow ([#200](https://github.com/mkdir700/EchoPlayer/issues/200)) ([ee972d1](https://github.com/mkdir700/EchoPlayer/commit/ee972d170d0f29c6a9bc34cd12b55dbbc100d2ec))
+- intro backend for hls player ([2d34e7b](https://github.com/mkdir700/EchoPlayer/commit/2d34e7bc2ca3c289544698678e961d6505ecd7ee))
+- **media-server:** add transcode cache cleanup for deleted videos ([e2de9ad](https://github.com/mkdir700/EchoPlayer/commit/e2de9ad054f70454e62daa65f2ff8c32ae3800e9))
+- **media-server:** implement runtime runtime management system ([#204](https://github.com/mkdir700/EchoPlayer/issues/204)) ([f5f68b0](https://github.com/mkdir700/EchoPlayer/commit/f5f68b0cd9021e7ebce473af43932726a3f37b8a))
+- optimize media-server build output to resources directory ([#201](https://github.com/mkdir700/EchoPlayer/issues/201)) ([1b8c28e](https://github.com/mkdir700/EchoPlayer/commit/1b8c28e3e265ab9b9bf7d5bb1122c6fe221e998d))
+- **player:** add animated loading progress bar to PlayerPage ([#206](https://github.com/mkdir700/EchoPlayer/issues/206)) ([8ba6f7f](https://github.com/mkdir700/EchoPlayer/commit/8ba6f7f50fdd175695e5729d78944fca1770ec11))
+- **player:** add media server recommendation prompt for incompatible videos ([#205](https://github.com/mkdir700/EchoPlayer/issues/205)) ([63221a2](https://github.com/mkdir700/EchoPlayer/commit/63221a27ea306c4d70064826710f8d931bfb8b22))
+- **player:** add subtitle search functionality ([c3228c3](https://github.com/mkdir700/EchoPlayer/commit/c3228c36192f4ed972a8f304ba5cc97142918256))
+- **player:** add toggle auto-pause functionality ([98b59ef](https://github.com/mkdir700/EchoPlayer/commit/98b59efb2434cb361f7b6f7963a66fbcaddf82d9))
+- **player:** HLS session progress polling with media server integration ([#209](https://github.com/mkdir700/EchoPlayer/issues/209)) ([a76e8c2](https://github.com/mkdir700/EchoPlayer/commit/a76e8c2f5deedcdec9ec88dbdcde00da9940f44b))
+- **PlayerSettingsLoader:** add mask mode to subtitle overlay ([56e4f65](https://github.com/mkdir700/EchoPlayer/commit/56e4f659ebc290dfe498d27854061a3fbd3b8ddd))
+- **player:** update seek button icons from rewind/fastforward to undo/redo ([#193](https://github.com/mkdir700/EchoPlayer/issues/193)) ([1612c43](https://github.com/mkdir700/EchoPlayer/commit/1612c438cdf4585b43bc7827a5d41adcf6e9ebe3))
+- **RegionDetection:** integrate region detection service for IP-based country identification ([dbeb077](https://github.com/mkdir700/EchoPlayer/commit/dbeb0775ef10c602f30468a198d4c9c76374bbe0))
+- **subtitle:** introduce mask mode for subtitle overlay ([e1fb3eb](https://github.com/mkdir700/EchoPlayer/commit/e1fb3eb835759b171ea215edc961b9947af83623))
+- **SubtitleOverlay:** enhance positioning and collision handling ([92b061a](https://github.com/mkdir700/EchoPlayer/commit/92b061a2a8542dbc9ba0be5b01443262cad4055c))
+- **UvBootstrapperService:** enhance download management with concurrency control ([20522e9](https://github.com/mkdir700/EchoPlayer/commit/20522e906013a5fdc1fd5344b5226b5021da7f27))
+
+### Reverts
+
+- "fix(build): adjust resource handling for media-server in packaging" ([2133401](https://github.com/mkdir700/EchoPlayer/commit/2133401a95dc64a7ca1d3a6e09ae28ae18426a45))
+
 # 1.0.0 (2025-09-17)
 
 ### Bug Fixes
