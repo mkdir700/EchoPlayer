@@ -260,6 +260,11 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
     (conflictAreas: Array<{ x: number; y: number; width: number; height: number }>) => {
       if (conflictAreas.length === 0 || !subtitleOverlay) return
 
+      if (!subtitleOverlay.autoPositioning) {
+        logger.debug('禁用自动定位时跳过冲突检测')
+        return
+      }
+
       if (subtitleOverlay.isMaskMode) {
         logger.debug('遮罩模式下跳过冲突检测')
         return
