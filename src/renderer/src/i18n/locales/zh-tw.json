@@ -95,5 +95,23 @@
       "show_mini_window": "快速助手",
       "show_window": "顯示視窗"
     }
+  },
+  "player": {
+    "subtitleList": {
+      "empty": {
+        "title": "在影片檔同目錄下未找到符合的字幕檔案",
+        "description": "您可以點擊下方按鈕選擇字幕檔，或將字幕檔拖曳到此區域"
+      },
+      "search": {
+        "placeholder": "搜尋字幕...",
+        "pending": "搜尋中...",
+        "count": "找到 {{count}} 筆字幕",
+        "count_one": "找到 {{count}} 筆字幕",
+        "count_other": "找到 {{count}} 筆字幕",
+        "none": "未找到符合的字幕",
+        "emptyTitle": "找不到符合的結果",
+        "emptySubtitle": "請嘗試其他關鍵字"
+      }
+    }
   }
 }
