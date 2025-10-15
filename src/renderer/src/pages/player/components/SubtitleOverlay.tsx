@@ -890,7 +890,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         data-testid="subtitle-overlay"
-        role="region"
         aria-label="字幕覆盖层"
         tabIndex={0}
       >
@@ -932,7 +931,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 export default SubtitleOverlay
 
 // === 样式组件 ===
-const OverlayContainer = styled.div<{
+const OverlayContainer = styled.section<{
   $position: { x: number; y: number }
   $size: { width: number; height: number }
   $showBoundaries: boolean
