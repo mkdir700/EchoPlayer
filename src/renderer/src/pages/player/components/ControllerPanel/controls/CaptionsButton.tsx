@@ -107,7 +107,6 @@ export default function CaptionsButton() {
   }
 
   const handleBackgroundChange = (type: SubtitleBackgroundType) => {
-    if (isMaskMode) return
     setBackgroundType(type)
     logger.info('字幕背景类型已切换', { type })
   }
@@ -152,6 +151,8 @@ export default function CaptionsButton() {
               <MenuOption
                 $active={isMaskMode}
                 onClick={() => integration.toggleMaskMode()}
+                role="menuitemcheckbox"
+                aria-checked={isMaskMode}
                 title={
                   isMaskMode
                     ? t('player.controls.subtitle.mask-mode.disable.tooltip')
@@ -254,7 +255,21 @@ const MenuRow = styled.div`
   flex-wrap: wrap;
 `
 
-const MenuOption = styled.button<{ $active?: boolean; $disabled?: boolean }>`
+type MenuOptionState = { $active?: boolean; $disabled?: boolean }
+
+const getHoverBackground = ({ $disabled, $active }: MenuOptionState) => {
+  if ($disabled) {
+    return $active ? 'var(--color-primary-mute)' : 'var(--color-background-soft)'
+  }
+
+  if ($active) {
+    return 'var(--color-primary-soft)'
+  }
+
+  return 'var(--color-hover)'
+}
+
+const MenuOption = styled.button<MenuOptionState>`
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 12px;
@@ -269,14 +284,7 @@ const MenuOption = styled.button<{ $active?: boolean; $disabled?: boolean }>`
   min-height: 28px;
 
   &:hover {
-    background: ${(p) =>
-      p.$disabled
-        ? p.$active
-          ? 'var(--color-primary-mute)'
-          : 'var(--color-background-soft)'
-        : p.$active
-          ? 'var(--color-primary-soft)'
-          : 'var(--color-hover)'};
+    background: ${(p) => getHoverBackground(p)};
   }
 `
 
