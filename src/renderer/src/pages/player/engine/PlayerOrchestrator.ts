@@ -117,6 +117,7 @@ export class PlayerOrchestrator {
     paused: true,
     playbackRate: 1,
     volume: 1,
+    muted: false,
     activeCueIndex: -1,
     subtitles: [],
     loopEnabled: false,
@@ -197,7 +198,14 @@ export class PlayerOrchestrator {
     controller.seek(this.context.currentTime)
     controller.setPlaybackRate(this.context.playbackRate)
     controller.setVolume(this.context.volume)
-    logger.debug('ClockScheduler started')
+    controller.setMuted(this.context.muted)
+
+    logger.debug('ClockScheduler started and player state initialized', {
+      currentTime: this.context.currentTime,
+      playbackRate: this.context.playbackRate,
+      volume: this.context.volume,
+      muted: this.context.muted
+    })
   }
 
   /**
