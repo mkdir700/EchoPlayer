@@ -1,3 +1,9 @@
+# [1.1.0-alpha.10](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.9...v1.1.0-alpha.10) (2025-10-16)
+
+### Bug Fixes
+
+- **player:** restore muted state when re-entering player page ([ecbdea7](https://github.com/mkdir700/EchoPlayer/commit/ecbdea759143ae95e627bbb770f77ab1c1cea393))
+
 # [1.1.0-alpha.9](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.8...v1.1.0-alpha.9) (2025-10-15)
 
 # [1.1.0-alpha.8](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0-alpha.7...v1.1.0-alpha.8) (2025-10-15)
