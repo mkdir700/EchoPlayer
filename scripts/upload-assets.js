@@ -39,11 +39,20 @@ class GitCodeUploader {
         ...options.httpsOptions
       }
 
+      // 设置超时时间,大文件上传需要更长的超时时间
+      const timeout = options.timeout || 600000 // 默认 10 分钟
+
       const req = https.request(requestOptions, (res) => {
         let data = ''
+        let receivedBytes = 0
 
         res.on('data', (chunk) => {
           data += chunk
+          receivedBytes += chunk.length
+          // 对于大响应,显示接收进度
+          if (options.showProgress && receivedBytes % (1024 * 1024) === 0) {
+            console.log(`  接收响应数据: ${(receivedBytes / 1024 / 1024).toFixed(2)} MB`)
+          }
         })
 
         res.on('end', () => {
@@ -65,7 +74,22 @@ class GitCodeUploader {
         })
       })
 
+      // 设置请求超时
+      req.setTimeout(timeout, () => {
+        req.destroy()
+        reject(new Error(`请求超时 (${timeout}ms)`))
+      })
+
       req.on('error', reject)
+
+      // 监听连接事件
+      req.on('socket', (socket) => {
+        if (options.showProgress) {
+          socket.on('connect', () => {
+            console.log('  Socket 已连接')
+          })
+        }
+      })
 
       if (options.body) {
         if (options.body instanceof Buffer || typeof options.body === 'string') {
@@ -160,24 +184,36 @@ class GitCodeUploader {
 
     const uploadUrl = uploadInfo.url
 
-    console.log(uploadInfo.url)
-    console.log(uploadInfo.headers)
+    console.log(`📤 开始上传到对象存储: ${fileName}`)
+    console.log(`  URL: ${uploadUrl.substring(0, 80)}...`)
+    console.log(`  大小: ${(fileSize / 1024 / 1024).toFixed(2)} MB`)
 
     try {
+      const startTime = Date.now()
+
       const response = await this.httpRequest(uploadUrl, {
         method: 'PUT',
         headers: { ...uploadInfo.headers, 'Content-Length': fileSize },
-        body: fileBuffer
+        body: fileBuffer,
+        timeout: 1800000, // 30 分钟超时,用于大文件上传
+        showProgress: true // 显示上传进度
       })
 
-      if (response.statusCode === 200) {
-        console.log(`✓ ${fileName} 上传成功 (${fileSize} bytes)`)
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2)
+      const speed = (fileSize / 1024 / 1024 / duration).toFixed(2)
+
+      // 检查响应状态码 (200, 201, 204 都表示成功)
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        console.log(`✓ ${fileName} 上传成功 (HTTP ${response.statusCode})`)
+        console.log(`  耗时: ${duration}秒, 速度: ${speed} MB/s`)
         return true
       } else {
+        console.error(`✗ 上传失败: HTTP ${response.statusCode}`)
+        console.error(`  响应: ${response.data.substring(0, 200)}`)
         throw new Error(`上传失败: ${response.statusCode} ${response.data}`)
       }
     } catch (error) {
-      console.error(`上传 ${fileName} 到存储失败:`, error.message)
+      console.error(`✗ 上传 ${fileName} 到存储失败:`, error.message)
       throw error
     }
   }
