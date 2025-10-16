@@ -29,6 +29,7 @@ import { mediaServerService } from './services/MediaServerService'
 import NotificationService from './services/NotificationService'
 import { pythonVenvService } from './services/PythonVenvService'
 import { registerShortcuts, unregisterAllShortcuts } from './services/ShortcutService'
+import SubtitleExtractorService from './services/SubtitleExtractorService'
 import { themeService } from './services/ThemeService'
 import { uvBootstrapperService } from './services/UvBootstrapperService'
 import { calculateDirectorySize, getResourcePath } from './utils'
@@ -41,6 +42,7 @@ const fileManager = new FileStorage()
 const dictionaryService = new DictionaryService()
 const ffmpegService = new FFmpegService()
 const mediaParserService = new MediaParserService()
+const subtitleExtractorService = new SubtitleExtractorService()
 
 /**
  * Register all IPC handlers used by the main process.
@@ -678,6 +680,31 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
       timeoutMs: number = 10000
     ) => {
       return await mediaParserService.getVideoInfoWithStrategy(inputPath, strategy, timeoutMs)
+    }
+  )
+
+  // 字幕轨道相关 IPC 处理程序 / Subtitle stream-related IPC handlers
+  ipcMain.handle(IpcChannel.Media_GetSubtitleStreams, async (_, inputPath: string) => {
+    return await mediaParserService.getSubtitleStreams(inputPath)
+  })
+
+  ipcMain.handle(
+    IpcChannel.Media_ExtractSubtitle,
+    async (
+      _,
+      options: {
+        videoPath: string
+        streamIndex: number
+        outputFormat?: string
+        subtitleCodec?: string
+      }
+    ) => {
+      return await subtitleExtractorService.extractSubtitle({
+        videoPath: options.videoPath,
+        streamIndex: options.streamIndex,
+        outputFormat: (options.outputFormat as 'srt' | 'ass' | 'vtt') || 'srt',
+        subtitleCodec: options.subtitleCodec
+      })
     }
   )
 

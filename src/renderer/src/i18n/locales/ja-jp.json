@@ -5,6 +5,70 @@
   "docs": {
     "title": "ドキュメント"
   },
+  "player": {
+    "subtitleList": {
+      "empty": {
+        "description": "字幕の追加を開始する方法を選択してください",
+        "title": "動画ファイルと同じフォルダーに一致する字幕ファイルが見つかりません",
+        "options": {
+          "embedded": {
+            "title": "埋め込み字幕を使用",
+            "description": "動画ファイルに字幕トラックが含まれており、直接インポートできます",
+            "action": "選択"
+          },
+          "external": {
+            "title": "外部字幕をインポート",
+            "description": "ローカルファイルからSRT、VTTなどの字幕形式をインポート"
+          },
+          "ai": {
+            "title": "AI生成字幕",
+            "description": "音声認識に基づいて単語レベルの字幕を生成",
+            "action": "近日公開"
+          }
+        }
+      },
+      "search": {
+        "count": "{{count}} 件の字幕が見つかりました",
+        "count_one": "{{count}} 件の字幕が見つかりました",
+        "count_other": "{{count}} 件の字幕が見つかりました",
+        "emptySubtitle": "別のキーワードを試してください",
+        "emptyTitle": "一致する結果がありません",
+        "none": "一致する字幕が見つかりません",
+        "pending": "検索中...",
+        "placeholder": "字幕を検索..."
+      }
+    },
+    "subtitleTrackSelector": {
+      "title": "埋め込み字幕トラックをインポート",
+      "empty": "字幕トラックが検出されませんでした",
+      "sections": {
+        "text": "テキスト字幕トラック",
+        "image": "PGS字幕トラック（画像字幕）"
+      },
+      "stream": {
+        "label": "ストリーム {{index}}",
+        "tags": {
+          "default": "デフォルト",
+          "forced": "強制",
+          "unsupported": "未対応"
+        }
+      },
+      "warning": {
+        "pgs": "PGSは画像形式の字幕で、OCR技術のサポートが必要です。現在インポートは対応していません。"
+      },
+      "actions": {
+        "cancel": "キャンセル",
+        "import": "インポート"
+      },
+      "messages": {
+        "selectAtLeastOne": "少なくとも1つの字幕トラックを選択してください",
+        "extractFailed": "字幕トラック {{index}} の抽出に失敗しました",
+        "importFailed": "字幕トラックの抽出に失敗しました。もう一度お試しください",
+        "importSuccess": "字幕をインポートしました：{{source}}（{{count}} 項目）",
+        "importMultipleSuccess": "{{tracks}} 個の字幕トラックをインポートしました（合計 {{count}} 項目）"
+      }
+    }
+  },
   "settings": {
     "about": {
       "checkUpdate": {
@@ -98,8 +162,8 @@
       "show_settings": "設定を開く",
       "single_loop": "ループ再生",
       "title": "ショートカットキー",
-      "toggle_fullscreen": "全画面表示に切り替えます",
       "toggle_auto_pause": "自動一時停止の切り替え",
+      "toggle_fullscreen": "全画面表示に切り替えます",
       "toggle_new_context": "上下文をクリアする",
       "toggle_show_assistants": "アシスタント表示の切り替え",
       "toggle_show_topics": "トピックの切り替え表示",
@@ -133,24 +197,6 @@
       "quit": "退出",
       "show_mini_window": "快速助手",
       "show_window": "表示ウィンドウ"
-    }
-  },
-  "player": {
-    "subtitleList": {
-      "empty": {
-        "title": "動画ファイルと同じフォルダーに一致する字幕ファイルが見つかりません",
-        "description": "下のボタンから字幕ファイルを選択するか、このエリアにドラッグしてください"
-      },
-      "search": {
-        "placeholder": "字幕を検索...",
-        "pending": "検索中...",
-        "count": "{{count}} 件の字幕が見つかりました",
-        "count_one": "{{count}} 件の字幕が見つかりました",
-        "count_other": "{{count}} 件の字幕が見つかりました",
-        "none": "一致する字幕が見つかりません",
-        "emptyTitle": "一致する結果がありません",
-        "emptySubtitle": "別のキーワードを試してください"
-      }
     }
   }
 }

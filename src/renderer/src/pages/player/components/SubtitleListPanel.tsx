@@ -2,7 +2,7 @@ import { BORDER_RADIUS, SPACING } from '@renderer/infrastructure/styles/theme'
 import { usePlayerUIStore } from '@renderer/state/stores/player-ui.store'
 import type { SubtitleItem } from '@types'
 import { Button } from 'antd'
-import { Loader2, Search, X } from 'lucide-react'
+import { FileText, Loader2, Search, Sparkles, Video, X } from 'lucide-react'
 import { ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
@@ -33,6 +33,10 @@ interface SubtitleListPannelProps {
   emptyDescription?: string
   /** 空状态操作按钮（可选） */
   emptyActions?: EmptyAction[]
+  /** 是否有内置字幕 */
+  hasEmbeddedSubtitles?: boolean
+  /** 打开内置字幕选择对话框 */
+  onOpenEmbeddedSubtitleSelector?: () => void
 }
 
 type SubtitleSearchResult = {
@@ -41,9 +45,10 @@ type SubtitleSearchResult = {
 }
 
 function SubtitleListPanel({
-  emptyTitle,
   emptyDescription,
-  emptyActions
+  emptyActions,
+  hasEmbeddedSubtitles,
+  onOpenEmbeddedSubtitleSelector
 }: SubtitleListPannelProps) {
   const subtitles = useSubtitles()
   usePlayerEngine()
@@ -187,12 +192,57 @@ function SubtitleListPanel({
     return (
       <Container role="complementary" aria-label="caption-list">
         <EmptyState>
-          <PrimaryText>{emptyTitle ?? t('player.subtitleList.empty.title')}</PrimaryText>
-          <SecondaryText>
-            {emptyDescription ?? t('player.subtitleList.empty.description')}
-          </SecondaryText>
+          <EmptyHeader>
+            <EmptyTitle>
+              {emptyDescription ?? t('player.subtitleList.empty.description')}
+            </EmptyTitle>
+          </EmptyHeader>
+
+          <OptionsGrid>
+            {/* 内置字幕选项 */}
+            {hasEmbeddedSubtitles && onOpenEmbeddedSubtitleSelector && (
+              <OptionCard>
+                <OptionIconWrapper $color="var(--ant-color-success, #52c41a)">
+                  <Video size={20} />
+                </OptionIconWrapper>
+                <OptionContent>
+                  <OptionTitle>使用内嵌字幕</OptionTitle>
+                  <OptionDescription>视频文件包含字幕轨道，可直接导入</OptionDescription>
+                </OptionContent>
+                <Button type="primary" onClick={onOpenEmbeddedSubtitleSelector}>
+                  选择
+                </Button>
+              </OptionCard>
+            )}
+
+            {/* 外挂字幕选项 */}
+            <OptionCard>
+              <OptionIconWrapper $color="var(--ant-color-primary, #1890ff)">
+                <FileText size={20} />
+              </OptionIconWrapper>
+              <OptionContent>
+                <OptionTitle>导入外挂字幕</OptionTitle>
+                <OptionDescription>从本地文件导入 SRT、VTT 等格式字幕</OptionDescription>
+              </OptionContent>
+              <ImportSubtitleButton />
+            </OptionCard>
+
+            {/* AI 生成选项 */}
+            <OptionCard $disabled>
+              <OptionIconWrapper $color="var(--ant-color-warning, #faad14)">
+                <Sparkles size={20} />
+              </OptionIconWrapper>
+              <OptionContent>
+                <OptionTitle>AI 生成字幕</OptionTitle>
+                <OptionDescription>基于语音识别生成单词级字幕</OptionDescription>
+              </OptionContent>
+              <Button disabled>即将推出</Button>
+            </OptionCard>
+          </OptionsGrid>
+
+          {/* 保留旧的自定义操作按钮（如果有） */}
           {emptyActions && emptyActions.length > 0 && (
-            <ActionsRow>
+            <LegacyActionsRow>
               {emptyActions.map((action, idx) => (
                 <ActionButton
                   key={action.key ?? String(idx)}
@@ -203,12 +253,8 @@ function SubtitleListPanel({
                   {action.label}
                 </ActionButton>
               ))}
-            </ActionsRow>
+            </LegacyActionsRow>
           )}
-          {/* 直接在空态区域提供导入字幕按钮 */}
-          <ActionsRow>
-            <ImportSubtitleButton />
-          </ActionsRow>
         </EmptyState>
       </Container>
     )
@@ -476,40 +522,112 @@ const EmptyState = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: ${SPACING.XL}px ${SPACING.MD}px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--ant-color-border, #2a2a2a);
+    border-radius: 3px;
+  }
+`
+
+const EmptyHeader = styled.div`
   text-align: center;
-  gap: 8px;
-  padding: 24px;
+  margin-bottom: ${SPACING.XL}px;
 `
 
-const PrimaryText = styled.div`
-  margin-top: 6px;
-  font-size: 16px;
+const EmptyTitle = styled.div`
+  font-size: 18px;
   font-weight: 600;
-  color: var(--color-text-1, #ddd);
+  color: var(--ant-color-text, #ddd);
+  margin-bottom: ${SPACING.XS}px;
 `
 
-const SecondaryText = styled.div`
-  margin-top: 2px;
-  font-size: 13px;
-  color: var(--color-text-3, #666);
-  max-width: 460px;
-  line-height: 1.6;
+const OptionsGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.MD}px;
+  width: 100%;
+  max-width: 480px;
 `
 
-const ActionsRow = styled.div`
-  margin-top: 12px;
+const OptionCard = styled.div<{ $disabled?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.SM}px;
+  padding: ${SPACING.MD}px;
+  background: var(--ant-color-bg-elevated, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--ant-color-border, rgba(255, 255, 255, 0.08));
+  border-radius: ${BORDER_RADIUS.LG}px;
+  transition: all 0.2s ease;
+  opacity: ${(p) => (p.$disabled ? 0.6 : 1)};
+  cursor: ${(p) => (p.$disabled ? 'not-allowed' : 'default')};
+
+  &:hover {
+    ${(p) =>
+      !p.$disabled &&
+      `
+      background: var(--ant-color-bg-container, rgba(255, 255, 255, 0.06));
+      border-color: var(--ant-color-border-secondary, rgba(255, 255, 255, 0.12));
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    `}
+  }
+`
+
+const OptionIconWrapper = styled.div<{ $color: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: ${BORDER_RADIUS.BASE}px;
+  background: ${(p) => p.$color}20;
+  color: ${(p) => p.$color};
+  flex-shrink: 0;
+`
+
+const OptionContent = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.XXS}px;
+`
+
+const OptionTitle = styled.div`
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ant-color-text, #ddd);
+`
+
+const OptionDescription = styled.div`
+  font-size: 12px;
+  color: var(--ant-color-text-tertiary, #666);
+  line-height: 1.5;
+`
+
+const LegacyActionsRow = styled.div`
+  margin-top: ${SPACING.LG}px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${SPACING.SM}px;
   flex-wrap: wrap;
 `
 
 const ActionButton = styled(Button)`
   height: 40px;
-  padding: 0 16px;
-  border-radius: 12px;
+  padding: 0 ${SPACING.MD}px;
+  border-radius: ${BORDER_RADIUS.LG}px;
 `
 
 const SubtitleItem = styled.div<{ $active: boolean }>`

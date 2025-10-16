@@ -1,7 +1,8 @@
 import { parseMedia } from '@remotion/media-parser'
 import { nodeReader } from '@remotion/media-parser/node'
 import { PathConverter } from '@shared/utils/PathConverter'
-import type { FFmpegVideoInfo } from '@types'
+import type { FFmpegVideoInfo, SubtitleStream, SubtitleStreamsResponse } from '@types'
+import { spawn } from 'child_process'
 import * as fs from 'fs'
 
 import FFmpegService from './FFmpegService'
@@ -491,6 +492,192 @@ class MediaParserService {
         reject(new Error(`${parserName} parsing timeout after ${timeoutMs}ms`))
       }, timeoutMs)
     })
+  }
+
+  /**
+   * 使用 ffprobe 获取视频文件的字幕轨道信息
+   */
+  public async getSubtitleStreams(inputPath: string): Promise<SubtitleStreamsResponse | null> {
+    const startTime = Date.now()
+    logger.info('🔍 开始获取字幕轨道信息', { inputPath })
+
+    try {
+      // 转换文件路径
+      const pathResult = PathConverter.convertToLocalPath(inputPath)
+
+      if (!pathResult.isValid) {
+        logger.error(`❌ 路径转换失败: ${pathResult.error}`)
+        return null
+      }
+
+      // 检查文件是否存在
+      if (!fs.existsSync(pathResult.localPath)) {
+        logger.error(`❌ 文件不存在: ${pathResult.localPath}`)
+        return null
+      }
+
+      // 使用 ffprobe 获取流信息
+      const streams = await this.probeSubtitleStreams(pathResult.localPath)
+
+      if (!streams || streams.length === 0) {
+        logger.info('📄 此视频文件不含字幕轨道', { inputPath })
+        return {
+          videoPath: inputPath,
+          streams: [],
+          textStreams: [],
+          imageStreams: []
+        }
+      }
+
+      // 分类字幕轨道（文本与图像）
+      const textStreams: SubtitleStream[] = []
+      const imageStreams: SubtitleStream[] = []
+
+      for (const stream of streams) {
+        if (stream.isPGS) {
+          imageStreams.push(stream)
+        } else {
+          textStreams.push(stream)
+        }
+      }
+
+      const totalTime = Date.now() - startTime
+      logger.info('✅ 成功获取字幕轨道信息', {
+        total: streams.length,
+        text: textStreams.length,
+        image: imageStreams.length,
+        duration: `${totalTime}ms`
+      })
+
+      return {
+        videoPath: inputPath,
+        streams,
+        textStreams,
+        imageStreams
+      }
+    } catch (error) {
+      const totalTime = Date.now() - startTime
+      logger.error(`❌ 获取字幕轨道失败，耗时: ${totalTime}ms`, {
+        inputPath,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return null
+    }
+  }
+
+  /**
+   * 使用 ffprobe 探测字幕轨道
+   */
+  private async probeSubtitleStreams(localPath: string): Promise<SubtitleStream[] | null> {
+    return new Promise((resolve, reject) => {
+      const ffprobePath = new FFmpegService().getFFprobePath()
+
+      logger.debug('🔍 执行 ffprobe 命令', {
+        ffprobePath,
+        inputPath: localPath
+      })
+
+      const ffprobe = spawn(ffprobePath, [
+        '-v',
+        'quiet',
+        '-print_format',
+        'json',
+        '-show_streams',
+        localPath
+      ])
+
+      let output = ''
+      let errorOutput = ''
+
+      const timeoutHandle = setTimeout(() => {
+        if (ffprobe && !ffprobe.killed) {
+          ffprobe.kill('SIGKILL')
+        }
+        reject(new Error('ffprobe execution timeout'))
+      }, 15000)
+
+      ffprobe.stdout?.on('data', (data) => {
+        output += data.toString()
+      })
+
+      ffprobe.stderr?.on('data', (data) => {
+        errorOutput += data.toString()
+      })
+
+      ffprobe.on('close', (code) => {
+        clearTimeout(timeoutHandle)
+
+        if (code !== 0) {
+          logger.error('📄 ffprobe 执行失败', {
+            code,
+            error: errorOutput
+          })
+          resolve(null)
+          return
+        }
+
+        try {
+          const result = JSON.parse(output)
+          const subtitleStreams = this.parseFFprobeSubtitleStreams(result.streams || [])
+          resolve(subtitleStreams)
+        } catch (error) {
+          logger.error('解析 ffprobe 输出失败', {
+            error: error instanceof Error ? error.message : String(error),
+            output: output.slice(0, 500)
+          })
+          resolve(null)
+        }
+      })
+
+      ffprobe.on('error', (error) => {
+        clearTimeout(timeoutHandle)
+        logger.error('📄 ffprobe 进程错误', {
+          error: error.message
+        })
+        reject(error)
+      })
+    })
+  }
+
+  /**
+   * 解析 ffprobe 输出中的字幕轨道
+   */
+  private parseFFprobeSubtitleStreams(streams: any[]): SubtitleStream[] {
+    const subtitleStreams: SubtitleStream[] = []
+    const pgsCodecs = ['hdmv_pgs_subtitle', 'dvb_subtitle', 'xsub']
+
+    for (const stream of streams) {
+      // 只处理字幕轨道
+      if (stream.codec_type !== 'subtitle') {
+        continue
+      }
+
+      const codec = stream.codec_name || 'unknown'
+      const isPGS = pgsCodecs.includes(codec)
+
+      const subtitleStream: SubtitleStream = {
+        index: stream.index,
+        streamId: `0:${stream.index}`,
+        codec: codec as any,
+        language: stream.tags?.language || undefined,
+        title: stream.tags?.title || undefined,
+        isDefault: stream.disposition?.default === 1,
+        isForced: stream.disposition?.forced === 1,
+        isPGS
+      }
+
+      subtitleStreams.push(subtitleStream)
+
+      logger.debug('📄 字幕轨道信息', {
+        index: subtitleStream.index,
+        codec: subtitleStream.codec,
+        language: subtitleStream.language,
+        title: subtitleStream.title,
+        isPGS: subtitleStream.isPGS
+      })
+    }
+
+    return subtitleStreams
   }
 
   /**

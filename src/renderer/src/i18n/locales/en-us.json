@@ -12,69 +12,9 @@
     "title": "Documentation"
   },
   "player": {
-    "mediaServerPrompt": {
-      "title": "Video Format Incompatible",
-      "subtitle": "Current video format is not supported",
-      "benefits": {
-        "title": "Installing Media Server can resolve this issue",
-        "compatibility": {
-          "title": "Perfect Compatibility",
-          "description": "Supports all common video formats, including HD and Blu-ray videos"
-        },
-        "transcoding": {
-          "title": "Real-time Transcoding",
-          "description": "Automatic background transcoding, no waiting required, ready to use"
-        },
-        "easySetup": {
-          "title": "One-click Installation",
-          "description": "Automated installation process, no manual configuration needed"
-        }
-      },
-      "actions": {
-        "install": "Install Now",
-        "later": "Maybe Later"
-      }
-    },
     "controls": {
       "subtitle": {
-        "mask-mode": {
-          "title": "Mask Mode",
-          "label": "Mask Mode",
-          "enable": {
-            "tooltip": "Enable mask mode to lock the hard subtitle area"
-          },
-          "disable": {
-            "tooltip": "Disable mask mode"
-          },
-          "background-locked": {
-            "tooltip": "Background style is forced to Gaussian blur while mask mode is active"
-          },
-          "onboarding": "Drag or resize the subtitle box to match the on-screen hard subtitles"
-        },
-        "display-mode": {
-          "hide": {
-            "label": "Hide",
-            "tooltip": "Hide subtitles (Ctrl+1)"
-          },
-          "original": {
-            "label": "Original",
-            "tooltip": "Show original subtitles only (Ctrl+2)"
-          },
-          "translation": {
-            "label": "Translation",
-            "tooltip": "Show translated subtitles only (Ctrl+3)"
-          },
-          "bilingual": {
-            "label": "Bilingual",
-            "tooltip": "Show both languages (Ctrl+4)"
-          },
-          "title": "Display Mode"
-        },
         "background-type": {
-          "title": "Background Style",
-          "transparent": {
-            "tooltip": "Transparent background"
-          },
           "blur": {
             "tooltip": "Blur background"
           },
@@ -83,24 +23,130 @@
           },
           "solid-gray": {
             "tooltip": "Solid gray background"
+          },
+          "title": "Background Style",
+          "transparent": {
+            "tooltip": "Transparent background"
           }
+        },
+        "display-mode": {
+          "bilingual": {
+            "label": "Bilingual",
+            "tooltip": "Show both languages (Ctrl+4)"
+          },
+          "hide": {
+            "label": "Hide",
+            "tooltip": "Hide subtitles (Ctrl+1)"
+          },
+          "original": {
+            "label": "Original",
+            "tooltip": "Show original subtitles only (Ctrl+2)"
+          },
+          "title": "Display Mode",
+          "translation": {
+            "label": "Translation",
+            "tooltip": "Show translated subtitles only (Ctrl+3)"
+          }
+        },
+        "mask-mode": {
+          "background-locked": {
+            "tooltip": "Background style is forced to Gaussian blur while mask mode is active"
+          },
+          "disable": {
+            "tooltip": "Disable mask mode"
+          },
+          "enable": {
+            "tooltip": "Enable mask mode to lock the hard subtitle area"
+          },
+          "label": "Mask Mode",
+          "onboarding": "Drag or resize the subtitle box to match the on-screen hard subtitles",
+          "title": "Mask Mode"
         }
       }
     },
+    "mediaServerPrompt": {
+      "actions": {
+        "install": "Install Now",
+        "later": "Maybe Later"
+      },
+      "benefits": {
+        "compatibility": {
+          "description": "Supports all common video formats, including HD and Blu-ray videos",
+          "title": "Perfect Compatibility"
+        },
+        "easySetup": {
+          "description": "Automated installation process, no manual configuration needed",
+          "title": "One-click Installation"
+        },
+        "title": "Installing Media Server can resolve this issue",
+        "transcoding": {
+          "description": "Automatic background transcoding, no waiting required, ready to use",
+          "title": "Real-time Transcoding"
+        }
+      },
+      "subtitle": "Current video format is not supported",
+      "title": "Video Format Incompatible"
+    },
     "subtitleList": {
       "empty": {
+        "description": "Choose a way to start adding subtitles",
         "title": "No matching subtitle file found",
-        "description": "You can choose a subtitle file with the button below or drag a subtitle file into this area."
+        "options": {
+          "embedded": {
+            "title": "Use Embedded Subtitles",
+            "description": "Video file contains subtitle tracks that can be imported directly",
+            "action": "Select"
+          },
+          "external": {
+            "title": "Import External Subtitles",
+            "description": "Import SRT, VTT, and other subtitle formats from local files"
+          },
+          "ai": {
+            "title": "AI-Generated Subtitles",
+            "description": "Generate word-level subtitles based on speech recognition",
+            "action": "Coming Soon"
+          }
+        }
       },
       "search": {
-        "placeholder": "Search subtitles...",
-        "pending": "Searching...",
         "count": "Found {{count}} subtitle",
         "count_one": "Found {{count}} subtitle",
         "count_other": "Found {{count}} subtitles",
-        "none": "No subtitles match your search",
+        "emptySubtitle": "Try another keyword",
         "emptyTitle": "No matches found",
-        "emptySubtitle": "Try another keyword"
+        "none": "No subtitles match your search",
+        "pending": "Searching...",
+        "placeholder": "Search subtitles..."
+      }
+    },
+    "subtitleTrackSelector": {
+      "title": "Import Embedded Subtitle Tracks",
+      "empty": "No subtitle tracks detected",
+      "sections": {
+        "text": "Text Subtitle Tracks",
+        "image": "PGS Subtitle Tracks (Image Subtitles)"
+      },
+      "stream": {
+        "label": "Stream {{index}}",
+        "tags": {
+          "default": "Default",
+          "forced": "Forced",
+          "unsupported": "Unsupported"
+        }
+      },
+      "warning": {
+        "pgs": "PGS is an image-based subtitle format that requires OCR technology support. Import is not currently supported."
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "import": "Import"
+      },
+      "messages": {
+        "selectAtLeastOne": "Please select at least one subtitle track",
+        "extractFailed": "Failed to extract subtitle track {{index}}",
+        "importFailed": "Failed to extract subtitle tracks, please try again",
+        "importSuccess": "Imported subtitle: {{source}} ({{count}} items)",
+        "importMultipleSuccess": "Imported {{tracks}} subtitle tracks ({{count}} items total)"
       }
     }
   },
@@ -218,33 +264,6 @@
           "warmup_failed": "Warmup failed, please check installation",
           "warmup_success": "Warmup successful, FFmpeg is now available"
         },
-        "prompt": {
-          "title": "Video Processing Component Required",
-          "subtitle": "EchoPlayer needs FFmpeg to process this video file",
-          "benefits": {
-            "title": "Benefits of installing FFmpeg:",
-            "compatibility": {
-              "title": "Broader Format Support",
-              "description": "Support for almost all video formats including MP4, AVI, MKV, MOV, WMV and more"
-            },
-            "performance": {
-              "title": "Faster Processing Speed",
-              "description": "Optimized decoding algorithms for smoother playback experience"
-            },
-            "reliability": {
-              "title": "Higher Stability",
-              "description": "Professional-grade video processing capabilities, reducing parsing failures and playback errors"
-            }
-          },
-          "effort": {
-            "title": "Easy and Quick Installation",
-            "description": "One-click automatic download, about 50MB, installation completes in 2-3 minutes. No manual configuration needed, ready to use immediately."
-          },
-          "actions": {
-            "download": "Download FFmpeg Now",
-            "later": "Handle Later"
-          }
-        },
         "path": {
           "browse": "Browse",
           "browse_title": "Select FFmpeg Executable",
@@ -253,6 +272,33 @@
           "placeholder": "FFmpeg path will be auto-filled after download, or specify manually",
           "valid": "Path validation successful",
           "validation_failed": "Path validation failed"
+        },
+        "prompt": {
+          "actions": {
+            "download": "Download FFmpeg Now",
+            "later": "Handle Later"
+          },
+          "benefits": {
+            "compatibility": {
+              "description": "Support for almost all video formats including MP4, AVI, MKV, MOV, WMV and more",
+              "title": "Broader Format Support"
+            },
+            "performance": {
+              "description": "Optimized decoding algorithms for smoother playback experience",
+              "title": "Faster Processing Speed"
+            },
+            "reliability": {
+              "description": "Professional-grade video processing capabilities, reducing parsing failures and playback errors",
+              "title": "Higher Stability"
+            },
+            "title": "Benefits of installing FFmpeg:"
+          },
+          "effort": {
+            "description": "One-click automatic download, about 50MB, installation completes in 2-3 minutes. No manual configuration needed, ready to use immediately.",
+            "title": "Easy and Quick Installation"
+          },
+          "subtitle": "EchoPlayer needs FFmpeg to process this video file",
+          "title": "Video Processing Component Required"
         },
         "status": {
           "available": "Available",

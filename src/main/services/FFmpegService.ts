@@ -243,6 +243,19 @@ class FFmpegService {
     }
   }
 
+  // 获取 FFprobe 路径
+  public getFFprobePath(): string {
+    try {
+      return ffmpegDownloadService.getFFprobePath()
+    } catch (error) {
+      logger.warn('获取下载的 FFprobe 路径失败，使用系统 FFprobe', {
+        error: error instanceof Error ? error.message : String(error)
+      })
+      // 降级到系统 FFprobe
+      return 'ffprobe'
+    }
+  }
+
   // 快速检查 FFmpeg 是否存在（文件系统级别检查）
   public fastCheckFFmpegExists(): boolean {
     const startTime = Date.now()

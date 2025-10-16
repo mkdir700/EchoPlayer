@@ -217,7 +217,23 @@
     "subtitleList": {
       "empty": {
         "title": "在视频文件同目录下未找到匹配的字幕文件",
-        "description": "您可以点击下方按钮选择字幕文件，或将字幕文件拖拽到此区域"
+        "description": "选择一种方式开始添加字幕",
+        "options": {
+          "embedded": {
+            "title": "使用内嵌字幕",
+            "description": "视频文件包含字幕轨道，可直接导入",
+            "action": "选择"
+          },
+          "external": {
+            "title": "导入外挂字幕",
+            "description": "从本地文件导入 SRT、VTT 等格式字幕"
+          },
+          "ai": {
+            "title": "AI 生成字幕",
+            "description": "基于语音识别生成单词级字幕",
+            "action": "即将推出"
+          }
+        }
       },
       "search": {
         "placeholder": "搜索字幕...",
@@ -228,6 +244,36 @@
         "none": "未找到匹配的字幕",
         "emptyTitle": "未找到匹配结果",
         "emptySubtitle": "请尝试其他关键词"
+      }
+    },
+    "subtitleTrackSelector": {
+      "title": "导入内嵌字幕轨道",
+      "empty": "未检测到字幕轨道",
+      "sections": {
+        "text": "文本字幕轨道",
+        "image": "PGS 字幕轨（图像字幕）"
+      },
+      "stream": {
+        "label": "Stream {{index}}",
+        "tags": {
+          "default": "默认",
+          "forced": "强制",
+          "unsupported": "暂不支持"
+        }
+      },
+      "warning": {
+        "pgs": "PGS 是图像格式字幕，需要 OCR 技术支持，暂不支持导入。"
+      },
+      "actions": {
+        "cancel": "取消",
+        "import": "导入"
+      },
+      "messages": {
+        "selectAtLeastOne": "请选择至少一个字幕轨道",
+        "extractFailed": "提取字幕轨道 {{index}} 失败",
+        "importFailed": "字幕轨道提取失败，请重试",
+        "importSuccess": "已导入字幕：{{source}}（共 {{count}} 条）",
+        "importMultipleSuccess": "已导入 {{tracks}} 个字幕轨道（共 {{count}} 条）"
       }
     }
   },

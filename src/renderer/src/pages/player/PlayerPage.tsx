@@ -25,6 +25,7 @@ import {
   FONT_SIZES,
   SPACING
 } from '@renderer/infrastructure/styles/theme'
+import type { SubtitleStreamsResponse } from '@types'
 import { ArrowLeft, PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -38,6 +39,7 @@ import {
   ProgressBar,
   SettingsPopover,
   SubtitleListPanel,
+  SubtitleTrackSelector,
   VideoErrorRecovery
 } from './components'
 import { disposeGlobalOrchestrator } from './hooks/usePlayerEngine'
@@ -111,10 +113,15 @@ function PlayerPage() {
     stage: string
     status: string
   } | null>(null)
+  const [subtitleStreams, setSubtitleStreams] = useState<SubtitleStreamsResponse | null>(null)
+  const [showSubtitleTrackSelector, setShowSubtitleTrackSelector] = useState(false)
+  const [userDismissedEmbeddedSubtitles, setUserDismissedEmbeddedSubtitles] = useState(false)
   // const { pokeInteraction } = usePlayerUI()
 
   // 保存转码会话 ID 用于清理
   const sessionIdRef = useRef<string | null>(null)
+  // 保存原始文件路径用于字幕检测（不是 HLS 播放源）
+  const originalFilePathRef = useRef<string | null>(null)
 
   // 加载视频数据
   useEffect(() => {
@@ -205,6 +212,9 @@ function PlayerPage() {
         if (!file) throw new Error('关联文件不存在')
 
         logger.info(`从数据库加载视频文件:`, { file })
+
+        // 保存原始文件路径用于字幕检测
+        originalFilePathRef.current = file.path
 
         // 将 path 转为 file:// URL (Windows-safe)
         const fileUrl = toFileUrl(file.path)
@@ -514,6 +524,47 @@ function PlayerPage() {
     }
   }, [])
 
+  // 检测字幕轨道
+  useEffect(() => {
+    if (!videoData || !originalFilePathRef.current || userDismissedEmbeddedSubtitles) {
+      return
+    }
+
+    const detectSubtitleStreams = async () => {
+      try {
+        // 使用原始文件路径检测字幕，而不是 HLS 播放源
+        const detectionPath = originalFilePathRef.current
+        logger.info('🔍 开始检测字幕轨道', {
+          detectionPath,
+          playSource: videoData.src
+        })
+
+        const result = await window.electron.ipcRenderer.invoke(
+          IpcChannel.Media_GetSubtitleStreams,
+          detectionPath
+        )
+
+        if (result && result.streams && result.streams.length > 0) {
+          logger.info('✅ 检测到字幕轨道', {
+            total: result.streams.length,
+            text: result.textStreams?.length || 0,
+            image: result.imageStreams?.length || 0
+          })
+
+          setSubtitleStreams(result)
+        } else {
+          logger.info('📄 此视频文件不含字幕轨道')
+        }
+      } catch (error) {
+        logger.warn('检测字幕轨道失败', {
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
+    }
+
+    detectSubtitleStreams()
+  }, [videoData, userDismissedEmbeddedSubtitles, showMediaServerPrompt])
+
   // 键盘事件处理
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -651,7 +702,12 @@ function PlayerPage() {
                   }}
                 >
                   <RightSidebar>
-                    <SubtitleListPanel />
+                    <SubtitleListPanel
+                      hasEmbeddedSubtitles={
+                        subtitleStreams !== null && subtitleStreams.streams.length > 0
+                      }
+                      onOpenEmbeddedSubtitleSelector={() => setShowSubtitleTrackSelector(true)}
+                    />
                   </RightSidebar>
                 </Sider>
               </Layout>
@@ -676,6 +732,16 @@ function PlayerPage() {
         <MediaServerRecommendationPrompt
           open={showMediaServerPrompt}
           onClose={() => setShowMediaServerPrompt(false)}
+        />
+
+        {/* 字幕轨道选择对话框 */}
+        <SubtitleTrackSelector
+          visible={showSubtitleTrackSelector}
+          streams={subtitleStreams}
+          originalFilePath={originalFilePathRef.current || undefined}
+          onClose={() => setShowSubtitleTrackSelector(false)}
+          onImported={() => setShowSubtitleTrackSelector(false)}
+          onDismiss={() => setUserDismissedEmbeddedSubtitles(true)}
         />
       </Container>
     </PlayerPageProvider>
