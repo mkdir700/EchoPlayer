@@ -53,23 +53,33 @@ jobs:
         id: release
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Manual trigger - extract tag from branch name
-            echo "🔧 Manual trigger detected, extracting tag from branch name"
+            # Manual trigger - use selected tag/branch from workflow UI
+            echo "🔧 Manual trigger detected"
 
-            # Get current branch name
-            BRANCH_NAME="${{ github.ref_name }}"
-            echo "Current branch: $BRANCH_NAME"
+            # Get the selected ref (can be a tag or branch)
+            SELECTED_REF="${{ github.ref_name }}"
+            REF_TYPE="${{ github.ref_type }}"
 
-            # Try to extract tag from branch name
-            # Support patterns like: release/v1.0.0, v1.0.0, mkdir700/v1.0.0, etc.
-            if [[ "$BRANCH_NAME" =~ (v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?) ]]; then
-              TAG_NAME="${BASH_REMATCH[1]}"
-              echo "✅ Extracted tag from branch name: $TAG_NAME"
+            echo "Selected ref: $SELECTED_REF"
+            echo "Ref type: $REF_TYPE"
+
+            # If user selected a tag directly from the Tags tab, use it
+            if [ "$REF_TYPE" = "tag" ]; then
+              TAG_NAME="$SELECTED_REF"
+              echo "✅ Using selected tag: $TAG_NAME"
             else
-              echo "❌ Could not extract tag from branch name: $BRANCH_NAME"
-              echo "Branch name should contain a version tag like v1.0.0"
-              echo "Supported patterns: release/v1.0.0, v1.0.0, mkdir700/v1.0.0, etc."
-              exit 1
+              # If it's a branch, try to extract tag from branch name
+              echo "Selected ref is a branch, trying to extract tag from branch name"
+              if [[ "$SELECTED_REF" =~ (v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?) ]]; then
+                TAG_NAME="${BASH_REMATCH[1]}"
+                echo "✅ Extracted tag from branch name: $TAG_NAME"
+              else
+                echo "❌ Could not extract tag from branch name: $SELECTED_REF"
+                echo "Please either:"
+                echo "  1. Select a tag from the 'Tags' tab in the workflow UI, or"
+                echo "  2. Use a branch name containing a version tag (e.g., release/v1.0.0)"
+                exit 1
+              fi
             fi
 
             echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
