@@ -103,6 +103,7 @@ export function usePlayerEngine() {
   const paused = usePlayerStore((s) => s.paused)
   const playbackRate = usePlayerStore((s) => s.playbackRate)
   const volume = usePlayerStore((s) => s.volume)
+  const muted = usePlayerStore((s) => s.muted)
 
   // 循环设置
   const loopEnabled = usePlayerStore((s) => s.loopEnabled)
@@ -125,6 +126,7 @@ export function usePlayerEngine() {
     duration,
     paused,
     volume,
+    muted,
     playbackRate,
     subtitles,
     loopEnabled,
@@ -157,6 +159,7 @@ export function usePlayerEngine() {
       paused,
       playbackRate,
       volume,
+      muted,
       subtitles,
       loopEnabled,
       loopMode,
@@ -174,6 +177,7 @@ export function usePlayerEngine() {
     paused,
     playbackRate,
     volume,
+    muted,
     subtitles,
     loopEnabled,
     loopMode,
