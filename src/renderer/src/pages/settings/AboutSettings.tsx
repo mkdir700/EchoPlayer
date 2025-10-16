@@ -14,8 +14,7 @@ import { useTheme } from '@renderer/contexts/theme.context'
 import i18n from '@renderer/i18n'
 import { useRuntime } from '@renderer/infrastructure'
 import { useSettings } from '@renderer/infrastructure'
-import { UpgradeChannel } from '@shared/config/constant'
-import { Avatar, Button, Progress, Radio, Row, Switch, Tag, Tooltip } from 'antd'
+import { Avatar, Button, Progress, Row, Switch, Tag } from 'antd'
 import { debounce } from 'lodash'
 import { Bug, FileCheck, Github, Globe, Mail, Rss } from 'lucide-react'
 import { BadgeQuestionMark } from 'lucide-react'
@@ -35,11 +34,11 @@ const AboutSettings: FC = () => {
   const { t } = useTranslation()
   const {
     autoCheckUpdate,
-    setAutoCheckUpdate,
-    testPlan,
-    setTestPlan,
-    testChannel,
-    setTestChannel
+    setAutoCheckUpdate
+    // testPlan,
+    // setTestPlan,
+    // testChannel,
+    // setTestChannel
   } = useSettings()
   const { theme } = useTheme()
   const { update, setUpdateState } = useRuntime()
@@ -104,70 +103,70 @@ const AboutSettings: FC = () => {
     onOpenWebsite(APP_RELEASES)
   }
 
-  const currentChannelByVersion =
-    [
-      { pattern: `-${UpgradeChannel.BETA}.`, channel: UpgradeChannel.BETA },
-      { pattern: `-${UpgradeChannel.ALPHA}.`, channel: UpgradeChannel.ALPHA }
-    ].find(({ pattern }) => version.includes(pattern))?.channel || UpgradeChannel.LATEST
+  // const currentChannelByVersion =
+  //   [
+  //     { pattern: `-${UpgradeChannel.BETA}.`, channel: UpgradeChannel.BETA },
+  //     { pattern: `-${UpgradeChannel.ALPHA}.`, channel: UpgradeChannel.ALPHA }
+  //   ].find(({ pattern }) => version.includes(pattern))?.channel || UpgradeChannel.LATEST
 
-  const handleTestChannelChange = async (value: UpgradeChannel) => {
-    if (
-      testPlan &&
-      currentChannelByVersion !== UpgradeChannel.LATEST &&
-      value !== currentChannelByVersion
-    ) {
-      window.message.warning(t('settings.general.test_plan.version_channel_not_match'))
-    }
-    setTestChannel(value)
-    // Clear update info when switching upgrade channel
-    setUpdateState({
-      available: false,
-      info: null,
-      downloaded: false,
-      checking: false,
-      downloading: false,
-      downloadProgress: 0
-    })
-  }
+  // const handleTestChannelChange = async (value: UpgradeChannel) => {
+  //   if (
+  //     testPlan &&
+  //     currentChannelByVersion !== UpgradeChannel.LATEST &&
+  //     value !== currentChannelByVersion
+  //   ) {
+  //     window.message.warning(t('settings.general.test_plan.version_channel_not_match'))
+  //   }
+  //   setTestChannel(value)
+  //   // Clear update info when switching upgrade channel
+  //   setUpdateState({
+  //     available: false,
+  //     info: null,
+  //     downloaded: false,
+  //     checking: false,
+  //     downloading: false,
+  //     downloadProgress: 0
+  //   })
+  // }
 
-  // Get available test version options based on current version
-  const getAvailableTestChannels = () => {
-    return [
-      {
-        tooltip: t('settings.general.test_plan.alpha_version_tooltip'),
-        label: t('settings.general.test_plan.alpha_version'),
-        value: UpgradeChannel.ALPHA
-      },
-      {
-        tooltip: t('settings.general.test_plan.beta_version_tooltip'),
-        label: t('settings.general.test_plan.beta_version'),
-        value: UpgradeChannel.BETA
-      }
-    ]
-  }
+  // // Get available test version options based on current version
+  // const getAvailableTestChannels = () => {
+  //   return [
+  //     {
+  //       tooltip: t('settings.general.test_plan.alpha_version_tooltip'),
+  //       label: t('settings.general.test_plan.alpha_version'),
+  //       value: UpgradeChannel.ALPHA
+  //     },
+  //     {
+  //       tooltip: t('settings.general.test_plan.beta_version_tooltip'),
+  //       label: t('settings.general.test_plan.beta_version'),
+  //       value: UpgradeChannel.BETA
+  //     }
+  //   ]
+  // }
 
-  const handleSetTestPlan = (value: boolean) => {
-    setTestPlan(value)
-    setUpdateState({
-      available: false,
-      info: null,
-      downloaded: false,
-      checking: false,
-      downloading: false,
-      downloadProgress: 0
-    })
+  // const handleSetTestPlan = (value: boolean) => {
+  //   setTestPlan(value)
+  //   setUpdateState({
+  //     available: false,
+  //     info: null,
+  //     downloaded: false,
+  //     checking: false,
+  //     downloading: false,
+  //     downloadProgress: 0
+  //   })
 
-    if (value === true) {
-      setTestChannel(getTestChannel())
-    }
-  }
+  //   if (value === true) {
+  //     setTestChannel(getTestChannel())
+  //   }
+  // }
 
-  const getTestChannel = () => {
-    if (testChannel === UpgradeChannel.LATEST) {
-      return UpgradeChannel.ALPHA
-    }
-    return testChannel
-  }
+  // const getTestChannel = () => {
+  //   if (testChannel === UpgradeChannel.LATEST) {
+  //     return UpgradeChannel.ALPHA
+  //   }
+  //   return testChannel
+  // }
 
   useEffect(() => {
     const initAppInfo = async () => {
@@ -251,7 +250,8 @@ const AboutSettings: FC = () => {
               <SettingRowTitle>{t('settings.general.auto_check_update.title')}</SettingRowTitle>
               <Switch value={autoCheckUpdate} onChange={(v) => setAutoCheckUpdate(v)} />
             </SettingRow>
-            <SettingDivider />
+            {/* 暂时禁用预发布通道入口 */}
+            {/* <SettingDivider />
             <SettingRow>
               <SettingRowTitle>{t('settings.general.test_plan.title')}</SettingRowTitle>
               <Tooltip title={t('settings.general.test_plan.tooltip')} trigger={['hover', 'focus']}>
@@ -279,7 +279,7 @@ const AboutSettings: FC = () => {
                   </Radio.Group>
                 </SettingRow>
               </>
-            )}
+            )} */}
           </>
         )}
       </SettingGroup>
