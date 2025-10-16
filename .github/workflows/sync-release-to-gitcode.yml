@@ -5,16 +5,12 @@ on:
     types: [published, prereleased, edited]
   workflow_dispatch:
     inputs:
-      tag_name:
-        description: 'Tag name to sync (e.g., v1.0.0)'
-        required: true
-        type: string
       release_name:
-        description: 'Release name'
+        description: 'Release name (optional, defaults to tag name)'
         required: false
         type: string
       release_body:
-        description: 'Release description/body'
+        description: 'Release description/body (optional, fetched from GitHub if not provided)'
         required: false
         type: string
       prerelease:
@@ -57,31 +53,48 @@ jobs:
         id: release
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Manual trigger - use inputs
-            echo "🔧 Manual trigger detected, using workflow inputs"
-            echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
-            echo "release_name=${{ github.event.inputs.release_name || github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
-            
+            # Manual trigger - extract tag from branch name
+            echo "🔧 Manual trigger detected, extracting tag from branch name"
+
+            # Get current branch name
+            BRANCH_NAME="${{ github.ref_name }}"
+            echo "Current branch: $BRANCH_NAME"
+
+            # Try to extract tag from branch name
+            # Support patterns like: release/v1.0.0, v1.0.0, mkdir700/v1.0.0, etc.
+            if [[ "$BRANCH_NAME" =~ (v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?) ]]; then
+              TAG_NAME="${BASH_REMATCH[1]}"
+              echo "✅ Extracted tag from branch name: $TAG_NAME"
+            else
+              echo "❌ Could not extract tag from branch name: $BRANCH_NAME"
+              echo "Branch name should contain a version tag like v1.0.0"
+              echo "Supported patterns: release/v1.0.0, v1.0.0, mkdir700/v1.0.0, etc."
+              exit 1
+            fi
+
+            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "release_name=${{ github.event.inputs.release_name || '$TAG_NAME' }}" >> $GITHUB_OUTPUT
+
             # Handle release body - fetch from GitHub if not provided
             if [ -z "${{ github.event.inputs.release_body }}" ]; then
               echo "📄 No release description provided, fetching from GitHub API..."
-              
+
               release_response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.event.inputs.tag_name }}")
-              
+                "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME")
+
               if [ "$(echo "$release_response" | jq -r '.message // empty')" = "Not Found" ]; then
-                echo "⚠️ Release not found for tag: ${{ github.event.inputs.tag_name }}, using default description"
-                github_release_body="Release created via manual trigger for tag ${{ github.event.inputs.tag_name }}"
+                echo "⚠️ Release not found for tag: $TAG_NAME, using default description"
+                github_release_body="Release created via manual trigger for tag $TAG_NAME"
               else
                 github_release_body=$(echo "$release_response" | jq -r '.body // empty')
                 if [ -z "$github_release_body" ] || [ "$github_release_body" = "null" ]; then
                   echo "⚠️ No description found in GitHub release, using default description"
-                  github_release_body="Release created via manual trigger for tag ${{ github.event.inputs.tag_name }}"
+                  github_release_body="Release created via manual trigger for tag $TAG_NAME"
                 else
                   echo "✅ Successfully fetched release description from GitHub"
                 fi
               fi
-              
+
               echo "release_body<<EOF" >> $GITHUB_OUTPUT
               echo "$github_release_body" >> $GITHUB_OUTPUT
               echo "EOF" >> $GITHUB_OUTPUT
@@ -91,7 +104,7 @@ jobs:
               echo "${{ github.event.inputs.release_body }}" >> $GITHUB_OUTPUT
               echo "EOF" >> $GITHUB_OUTPUT
             fi
-            
+
             echo "prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
             echo "draft=${{ github.event.inputs.draft }}" >> $GITHUB_OUTPUT
             echo "test_mode=${{ github.event.inputs.test_mode }}" >> $GITHUB_OUTPUT
