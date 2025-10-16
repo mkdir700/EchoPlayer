@@ -328,6 +328,47 @@ jobs:
           echo "📦 Version: ${{ needs.version-analysis.outputs.next_version }}"
           pnpm semantic-release
 
+      - name: Install coscmd for Tencent Cloud COS
+        run: |
+          echo "📦 Installing coscmd for Tencent Cloud COS upload"
+          pip install coscmd
+
+      - name: Configure coscmd
+        env:
+          COS_SECRET_ID: ${{ secrets.COS_SECRET_ID }}
+          COS_SECRET_KEY: ${{ secrets.COS_SECRET_KEY }}
+          COS_BUCKET: ${{ secrets.COS_BUCKET }}
+          COS_REGION: ${{ secrets.COS_REGION }}
+        run: |
+          echo "🔧 Configuring coscmd"
+          coscmd config -a $COS_SECRET_ID -s $COS_SECRET_KEY -b $COS_BUCKET -r $COS_REGION
+
+      - name: Upload artifacts to Tencent Cloud COS
+        env:
+          VERSION: ${{ needs.version-analysis.outputs.next_version }}
+          CHANNEL: ${{ needs.version-analysis.outputs.channel }}
+        run: |
+          echo "☁️ Uploading artifacts to Tencent Cloud COS"
+          echo "📦 Version: $VERSION"
+          echo "📺 Channel: $CHANNEL"
+
+          # 创建版本目录路径
+          COS_PATH="releases/$CHANNEL/$VERSION"
+          echo "📁 COS path: $COS_PATH"
+
+          # 上传所有构建产物
+          echo "📤 Uploading build artifacts..."
+          for file in dist/*; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              echo "  📄 Uploading: $filename"
+              coscmd upload "$file" "$COS_PATH/$filename"
+            fi
+          done
+
+          echo "✅ All artifacts uploaded successfully"
+          echo "🔗 Artifacts are available at: $COS_PATH"
+
   notify:
     needs: [version-analysis, release, semantic-release]
     runs-on: ubuntu-latest
