@@ -594,11 +594,14 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
                 )
               : 100 - estimatedHeightPercent
 
+          // 在非遮罩模式下，x 位置保持居中，只允许 y 方向移动
           const newPosition = {
-            x: Math.max(
-              xMin,
-              Math.min(xMax, startPosition.x + (deltaX / containerBounds.width) * 100)
-            ),
+            x: isMaskMode
+              ? Math.max(
+                  xMin,
+                  Math.min(xMax, startPosition.x + (deltaX / containerBounds.width) * 100)
+                )
+              : startPosition.x, // 非遮罩模式下保持 x 不变
             y: Math.max(
               yMin,
               Math.min(yMax, startPosition.y + (deltaY / containerBounds.height) * 100)
@@ -914,19 +917,22 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           />
         </ContentContainer>
 
-        <Tooltip
-          title={t('settings.playback.subtitle.overlay.resizeHandle.tooltip')}
-          placement="top"
-          mouseEnterDelay={0.5}
-          mouseLeaveDelay={0}
-        >
-          <ResizeHandle
-            $visible={isHovered || isDragging || isResizing}
-            onMouseDown={handleResizeMouseDown}
-            onDoubleClick={handleResizeDoubleClick}
-            data-testid="subtitle-resize-handle"
-          />
-        </Tooltip>
+        {/* 只在遮罩模式下显示调整大小句柄 */}
+        {isMaskMode && (
+          <Tooltip
+            title={t('settings.playback.subtitle.overlay.resizeHandle.tooltip')}
+            placement="top"
+            mouseEnterDelay={0.5}
+            mouseLeaveDelay={0}
+          >
+            <ResizeHandle
+              $visible={isHovered || isDragging || isResizing}
+              onMouseDown={handleResizeMouseDown}
+              onDoubleClick={handleResizeDoubleClick}
+              data-testid="subtitle-resize-handle"
+            />
+          </Tooltip>
+        )}
 
         <ToastContainer $visible={toastVisible} role="status" aria-live="polite" aria-atomic="true">
           <ToastContent>{toastMessage}</ToastContent>
@@ -952,9 +958,13 @@ const OverlayContainer = styled.section<{
 }>`
   /* 基础定位和尺寸 */
   position: absolute;
-  left: ${(props) => props.$position.x}%;
+  /* 非遮罩模式下，使用水平居中定位，忽略 position.x */
+  left: ${(props) => (props.$isMaskMode ? `${props.$position.x}%` : '50%')};
+  transform: ${(props) => (props.$isMaskMode ? 'none' : 'translateX(-50%)')};
   top: ${(props) => props.$position.y}%;
-  width: ${(props) => props.$size.width}%;
+  /* 非遮罩模式下宽度自适应内容 */
+  width: ${(props) => (props.$isMaskMode ? `${props.$size.width}%` : 'auto')};
+  max-width: ${(props) => (props.$isMaskMode ? 'none' : '95%')};
   height: ${(props) =>
     props.$isMaskMode ? `${Math.max(props.$size.height, MIN_SPAN_PERCENT)}%` : 'auto'};
   min-height: ${(props) => (props.$isMaskMode ? '0' : '60px')};
@@ -969,7 +979,8 @@ const OverlayContainer = styled.section<{
   cursor: ${(props) => {
     if (props.$isDragging) return 'grabbing'
     if (props.$isResizing) return 'nw-resize'
-    return 'grab'
+    // 非遮罩模式下使用 ns-resize（垂直拖动）光标
+    return props.$isMaskMode ? 'grab' : 'ns-resize'
   }};
 
   /* 边界显示 */
@@ -982,7 +993,7 @@ const OverlayContainer = styled.section<{
   ${(props) =>
     props.$isDragging &&
     css`
-      transform: rotate(1deg);
+      transform: ${props.$isMaskMode ? 'rotate(1deg)' : 'translateX(-50%) rotate(1deg)'};
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       border-color: rgba(102, 126, 234, 0.8);
     `}
@@ -1003,6 +1014,7 @@ const ContentContainer = styled.div<{
   border-radius: 8px;
   box-sizing: border-box;
   position: relative;
+  overflow: visible;
 
   /* 背景样式 */
   ${(props) => {

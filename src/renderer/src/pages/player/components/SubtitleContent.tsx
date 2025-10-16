@@ -493,12 +493,13 @@ export default SubtitleContent
 
 // === 样式组件 ===
 const ContentContainer = styled.div`
-  width: 100%;
+  display: inline-block;
   line-height: var(--subtitle-line-height, 1.6);
   user-select: text;
   -webkit-user-select: text;
   color: var(--subtitle-text-color, #ffffff);
   text-align: center;
+  padding: 0 12px;
 
   /* 文本选中样式 */
   ::selection {
@@ -526,6 +527,7 @@ const OriginalTextLine = styled.div<{ $fontSize?: string }>`
   text-shadow: var(--subtitle-text-shadow);
   transition: all var(--subtitle-transition-duration);
   margin: 4px;
+  white-space: nowrap;
 `
 
 const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
@@ -534,6 +536,8 @@ const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
   opacity: 0.95;
   text-shadow: var(--subtitle-text-shadow);
   transition: all var(--subtitle-transition-duration);
+  margin: 4px;
+  white-space: nowrap;
 `
 
 const EmptyState = styled.div<{ $fontSize?: string }>`
@@ -610,4 +614,5 @@ const TokenizedTextContainer = styled.div`
   display: inline;
   user-select: text;
   -webkit-user-select: text;
+  white-space: nowrap;
 `
