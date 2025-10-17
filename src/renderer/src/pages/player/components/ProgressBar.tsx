@@ -2,7 +2,6 @@ import { COMPONENT_TOKENS } from '@renderer/infrastructure/styles/theme'
 import { formatTime } from '@renderer/state/infrastructure/utils'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
 import { usePlayerUIStore } from '@renderer/state/stores/player-ui.store'
-import { PerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
 
@@ -29,6 +28,7 @@ function ProgressBar() {
   const [isVisible, setIsVisible] = useState(false)
   const [previewTime, setPreviewTime] = useState<number | null>(null)
   const [bufferProgress, setBufferProgress] = useState(0)
+  const [dragSeekTime, setDragSeekTime] = useState<number | null>(null)
 
   // 引用管理
   const progressBarRef = useRef<HTMLDivElement>(null)
@@ -80,29 +80,24 @@ function ProgressBar() {
     }
   }, [currentTime, duration])
 
-  const handleProgressChange = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      if (!duration || !progressBarRef.current) return
-
-      const m = new PerformanceMonitor('handleProgressChange')
-      const rect = progressBarRef.current.getBoundingClientRect()
-      const clickX = event.clientX - rect.left
-      const progress = Math.max(0, Math.min(1, clickX / rect.width))
-      const newTime = progress * duration
-
-      seekToUser(newTime)
-      m.finish()
-    },
-    [duration, seekToUser]
-  )
-
   const handleMouseDown = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       if (event.button !== 0) return // 只处理左键
 
+      if (!duration || !progressBarRef.current) return
+
       setIsDragging(true)
       dragStartRef.current = true
-      handleProgressChange(event)
+
+      // 计算初始拖动位置，但不立即 seek
+      const rect = progressBarRef.current.getBoundingClientRect()
+      const clickX = event.clientX - rect.left
+      const progress = Math.max(0, Math.min(1, clickX / rect.width))
+      const initialTime = progress * duration
+      setDragSeekTime(initialTime)
+
+      // 使用 ref 来存储最新的拖动目标时间
+      let latestDragTime = initialTime
 
       const handleMouseMove = (e: MouseEvent) => {
         if (!duration || !progressBarRef.current || !dragStartRef.current) return
@@ -112,12 +107,21 @@ function ProgressBar() {
         const progress = Math.max(0, Math.min(1, clickX / rect.width))
         const newTime = progress * duration
 
-        seekToUser(newTime)
+        // 拖动时只更新本地状态，不执行 seek
+        latestDragTime = newTime
+        setDragSeekTime(newTime)
       }
 
       const handleMouseUp = () => {
         setIsDragging(false)
         dragStartRef.current = false
+
+        // 松手时执行真正的 seek，使用最新的拖动位置
+        if (latestDragTime !== null) {
+          seekToUser(latestDragTime)
+        }
+
+        setDragSeekTime(null)
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
       }
@@ -125,7 +129,7 @@ function ProgressBar() {
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
     },
-    [duration, seekToUser, handleProgressChange]
+    [duration, seekToUser]
   )
 
   const handleMouseEnter = useCallback(() => {
@@ -153,9 +157,12 @@ function ProgressBar() {
 
   // 计算当前进度百分比
   const progressPercentage = useMemo(() => {
-    if (!duration || !currentTime) return 0
-    return Math.max(0, Math.min(100, (currentTime / duration) * 100))
-  }, [currentTime, duration])
+    if (!duration) return 0
+    // 拖动时使用拖动目标时间，否则使用当前播放时间
+    const displayTime = dragSeekTime !== null ? dragSeekTime : currentTime
+    if (!displayTime) return 0
+    return Math.max(0, Math.min(100, (displayTime / duration) * 100))
+  }, [currentTime, duration, dragSeekTime])
 
   // 计算缓冲进度百分比
   const bufferPercentage = useMemo(() => {
@@ -236,12 +243,15 @@ const ProgressContainer = styled.div<{
 `
 
 // 缓冲进度条
-const BufferTrack = styled.div<{ $progress: number }>`
+const BufferTrack = styled.div.attrs<{ $progress: number }>((props) => ({
+  style: {
+    width: `${props.$progress}%`
+  }
+}))<{ $progress: number }>`
   position: absolute;
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: ${(props) => props.$progress}%;
   background: var(--ant-color-text-tertiary, rgba(255, 255, 255, 0.3));
   opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.BUFFER_OPACITY};
   border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
@@ -289,12 +299,15 @@ const ProgressTrack = styled.div<{ $isActive: boolean }>`
 `
 
 // 已播放进度填充
-const ProgressFill = styled.div<{ $progress: number; $isActive: boolean }>`
+const ProgressFill = styled.div.attrs<{ $progress: number; $isActive: boolean }>((props) => ({
+  style: {
+    width: `${props.$progress}%`
+  }
+}))<{ $progress: number; $isActive: boolean }>`
   position: absolute;
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: ${(props) => props.$progress}%;
   height: ${(props) =>
     props.$isActive
       ? COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER
@@ -312,13 +325,19 @@ const ProgressFill = styled.div<{ $progress: number; $isActive: boolean }>`
 `
 
 // 进度手柄
-const ProgressHandle = styled.div<{
+const ProgressHandle = styled.div.attrs<{
+  $progress: number
+  $isVisible: boolean
+}>((props) => ({
+  style: {
+    left: `${props.$progress}%`
+  }
+}))<{
   $progress: number
   $isVisible: boolean
 }>`
   position: absolute;
   top: 50%;
-  left: ${(props) => props.$progress}%;
   transform: translate(-50%, -50%);
   width: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px;
   height: ${COMPONENT_TOKENS.PROGRESS_BAR.HANDLE_SIZE_HOVER}px;

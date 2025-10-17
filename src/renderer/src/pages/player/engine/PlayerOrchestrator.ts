@@ -132,6 +132,7 @@ export class PlayerOrchestrator {
 
   // 用户跳转状态管理
   private userSeekTaskId: string | null = null
+  private userSeekingTarget: number | null = null // 用户主动seek的目标时间，防止中间值覆盖
   private currentIntents: Intent[] = []
 
   // 定时器管理
@@ -400,13 +401,17 @@ export class PlayerOrchestrator {
       }
     )
 
-    // 立即更新 store 中的 currentTime，确保 UI 组件能立即响应
-    if (this.stateUpdater) {
-      this.stateUpdater.setCurrentTime(to)
-    }
-
     // 执行跳转
     const clampedTime = Math.max(0, Math.min(this.context.duration || Infinity, to))
+
+    // 设置用户seek目标时间，防止中间时间值覆盖UI
+    this.userSeekingTarget = clampedTime
+
+    // 立即更新 store 中的 currentTime，确保 UI 组件能立即响应
+    if (this.stateUpdater) {
+      this.stateUpdater.setCurrentTime(clampedTime)
+    }
+
     this.videoController.seek(clampedTime)
 
     // 恢复正常状态
@@ -461,13 +466,17 @@ export class PlayerOrchestrator {
       }
     )
 
-    // 立即更新 store 中的 currentTime，确保字幕 overlay 能立即响应
-    if (this.stateUpdater) {
-      this.stateUpdater.setCurrentTime(cue.startTime)
-    }
-
     // 执行跳转
     const clampedTime = Math.max(0, Math.min(this.context.duration || Infinity, cue.startTime))
+
+    // 设置用户seek目标时间，防止中间时间值覆盖UI
+    this.userSeekingTarget = clampedTime
+
+    // 立即更新 store 中的 currentTime，确保字幕 overlay 能立即响应
+    if (this.stateUpdater) {
+      this.stateUpdater.setCurrentTime(clampedTime)
+    }
+
     this.videoController.seek(clampedTime)
 
     // 恢复正常状态
@@ -803,6 +812,11 @@ export class PlayerOrchestrator {
   private _nextEffectId = 0
 
   private handleClockEvent(event: MediaClockEvent): void {
+    // 如果收到 seeked 事件，清除用户 seek 目标标志
+    if (event.type === 'seeked') {
+      this.userSeekingTarget = null
+    }
+
     const traceId = ++this._nextTraceId
     const traceStartTime = performance.now()
     const phaseMetrics: PhasePerformanceMetrics = {
@@ -880,7 +894,17 @@ export class PlayerOrchestrator {
     })
 
     // 同步到外部状态管理器
-    this.stateUpdater?.setCurrentTime(event.currentTime)
+    // 如果正在进行用户seek且当前时间不是目标时间，跳过更新以防止跳动
+    const isSeekingToTarget = this.userSeekingTarget !== null
+    const isIntermediateValue =
+      isSeekingToTarget &&
+      this.userSeekingTarget !== null &&
+      Math.abs(event.currentTime - this.userSeekingTarget) > 0.1
+
+    if (!isIntermediateValue) {
+      this.stateUpdater?.setCurrentTime(event.currentTime)
+    }
+
     this.stateUpdater?.setDuration(event.duration)
     this.stateUpdater?.setPlaying(!event.paused)
   }
