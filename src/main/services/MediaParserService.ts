@@ -545,7 +545,8 @@ class MediaParserService {
    */
   private async probeSubtitleStreams(localPath: string): Promise<SubtitleStream[] | null> {
     return new Promise((resolve, reject) => {
-      const ffprobePath = new FFmpegService().getFFprobePath()
+      const ffprobePath = this.ffmpegService.getFFprobePath()
+      let settled = false
 
       logger.debug('🔍 执行 ffprobe 命令', {
         ffprobePath,
@@ -558,6 +559,8 @@ class MediaParserService {
         '-print_format',
         'json',
         '-show_streams',
+        '-select_streams',
+        's',
         localPath
       ])
 
@@ -565,10 +568,18 @@ class MediaParserService {
       let errorOutput = ''
 
       const timeoutHandle = setTimeout(() => {
+        if (settled) return
+
+        logger.warn('⏱️ ffprobe 执行超时', {
+          inputPath: localPath
+        })
+
         if (ffprobe && !ffprobe.killed) {
           ffprobe.kill('SIGKILL')
         }
-        reject(new Error('ffprobe execution timeout'))
+
+        settled = true
+        resolve(null)
       }, 15000)
 
       ffprobe.stdout?.on('data', (data) => {
@@ -580,6 +591,8 @@ class MediaParserService {
       })
 
       ffprobe.on('close', (code) => {
+        if (settled) return
+
         clearTimeout(timeoutHandle)
 
         if (code !== 0) {
@@ -587,6 +600,7 @@ class MediaParserService {
             code,
             error: errorOutput
           })
+          settled = true
           resolve(null)
           return
         }
@@ -594,21 +608,26 @@ class MediaParserService {
         try {
           const result = JSON.parse(output)
           const subtitleStreams = this.parseFFprobeSubtitleStreams(result.streams || [])
+          settled = true
           resolve(subtitleStreams)
         } catch (error) {
           logger.error('解析 ffprobe 输出失败', {
             error: error instanceof Error ? error.message : String(error),
             output: output.slice(0, 500)
           })
+          settled = true
           resolve(null)
         }
       })
 
       ffprobe.on('error', (error) => {
+        if (settled) return
+
         clearTimeout(timeoutHandle)
         logger.error('📄 ffprobe 进程错误', {
           error: error.message
         })
+        settled = true
         reject(error)
       })
     })
