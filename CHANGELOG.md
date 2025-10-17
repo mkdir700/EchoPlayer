@@ -1,3 +1,9 @@
+# [1.2.0](https://github.com/mkdir700/EchoPlayer/compare/v1.1.1...v1.2.0) (2025-10-17)
+
+### Features
+
+- add subtitle stream handling and extraction([#221](https://github.com/mkdir700/EchoPlayer/issues/221)) ([87d11bd](https://github.com/mkdir700/EchoPlayer/commit/87d11bd29c8264c4eab962cc38c76efad605b690)), closes [#222](https://github.com/mkdir700/EchoPlayer/issues/222)
+
 ## [1.1.1](https://github.com/mkdir700/EchoPlayer/compare/v1.1.0...v1.1.1) (2025-10-16)
 
 # [1.1.0](https://github.com/mkdir700/EchoPlayer/compare/v1.0.0...v1.1.0) (2025-10-16)
