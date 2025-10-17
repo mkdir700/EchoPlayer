@@ -72,13 +72,7 @@ export function useSubtitleOverlay(): SubtitleOverlay {
       endTime: currentSubtitleData.endTime,
       index: currentSubtitleData.index
     }
-  }, [
-    currentSubtitleData?.originalText,
-    currentSubtitleData?.translatedText,
-    currentSubtitleData?.startTime,
-    currentSubtitleData?.endTime,
-    currentSubtitleData?.index
-  ])
+  }, [currentSubtitleData])
 
   // === 计算是否应该显示 ===
   const shouldShow = useMemo(() => {

@@ -138,6 +138,7 @@ export enum IpcChannel {
   // 字幕轨道相关 IPC 通道 / Subtitle stream related IPC channels
   Media_GetSubtitleStreams = 'media:get-subtitle-streams',
   Media_ExtractSubtitle = 'media:extract-subtitle',
+  SubtitleExtractor_CleanupTemp = 'subtitle-extractor:cleanup-temp',
 
   // 文件系统相关 IPC 通道 / File system related IPC channels
   Fs_CheckFileExists = 'fs:check-file-exists',

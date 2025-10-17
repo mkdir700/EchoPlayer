@@ -558,7 +558,7 @@ function PlayerPage() {
     }
 
     detectSubtitleStreams()
-  }, [videoData, userDismissedEmbeddedSubtitles, showMediaServerPrompt])
+  }, [videoData, userDismissedEmbeddedSubtitles, showMediaServerPrompt, videoId])
 
   // 键盘事件处理
   useEffect(() => {
