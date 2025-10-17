@@ -42,7 +42,17 @@ class SubtitleExtractorService {
 
     try {
       // 验证输入
-      if (!options.videoPath || !fs.existsSync(options.videoPath)) {
+      if (!options.videoPath) {
+        logger.error('❌ 视频文件路径为空', { videoPath: options.videoPath })
+        return {
+          success: false,
+          error: '视频文件不存在'
+        }
+      }
+
+      try {
+        await fs.promises.access(options.videoPath, fs.constants.F_OK)
+      } catch {
         logger.error('❌ 视频文件不存在', { videoPath: options.videoPath })
         return {
           success: false,
@@ -76,7 +86,9 @@ class SubtitleExtractorService {
       }
 
       // 验证输出文件
-      if (!fs.existsSync(outputPath)) {
+      try {
+        await fs.promises.access(outputPath, fs.constants.F_OK)
+      } catch {
         logger.error('❌ 输出文件不存在', { outputPath })
         return {
           success: false,
