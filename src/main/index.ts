@@ -186,7 +186,7 @@ if (!app.requestSingleInstanceLock()) {
     try {
       const SubtitleExtractorService = (await import('./services/SubtitleExtractorService')).default
       const subtitleExtractorService = new SubtitleExtractorService()
-      subtitleExtractorService.cleanupTempFiles()
+      await subtitleExtractorService.cleanupTempFiles()
       logger.info('Temporary subtitle files cleaned up')
     } catch (error) {
       logger.error('Error cleaning up temporary subtitle files:', { error })

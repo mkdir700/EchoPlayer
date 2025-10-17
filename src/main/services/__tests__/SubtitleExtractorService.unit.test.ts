@@ -56,7 +56,7 @@ describe('SubtitleExtractorService', () => {
   })
 
   describe('cleanupTempFiles', () => {
-    it('should cleanup temporary subtitle files matching the pattern', () => {
+    it('should cleanup temporary subtitle files matching the pattern', async () => {
       // 创建符合模式的临时字幕文件
       const subtitleFiles = [
         path.join(tempDir, 'subtitle_1234567890_abc123.srt'),
@@ -81,7 +81,7 @@ describe('SubtitleExtractorService', () => {
       expect(fs.existsSync(otherFile)).toBe(true)
 
       // 执行清理
-      service.cleanupTempFiles()
+      await service.cleanupTempFiles()
 
       // 验证符合模式的文件被删除
       for (const file of subtitleFiles) {
@@ -95,15 +95,15 @@ describe('SubtitleExtractorService', () => {
       expect(mockLogger.info).toHaveBeenCalledWith('清理临时字幕文件完成', { count: 3 })
     })
 
-    it('should handle case when no temporary subtitle files exist', () => {
+    it('should handle case when no temporary subtitle files exist', async () => {
       // 执行清理（没有创建任何临时文件）
-      service.cleanupTempFiles()
+      await service.cleanupTempFiles()
 
       // 验证日志记录
       expect(mockLogger.info).toHaveBeenCalledWith('未找到临时字幕文件可清理')
     })
 
-    it('should match correct file patterns', () => {
+    it('should match correct file patterns', async () => {
       // 创建各种格式的临时字幕文件
       const validFiles = [
         'subtitle_1234567890_abc123.srt', // SRT
@@ -129,7 +129,7 @@ describe('SubtitleExtractorService', () => {
       }
 
       // 执行清理
-      service.cleanupTempFiles()
+      await service.cleanupTempFiles()
 
       // 验证有效文件被删除
       for (const file of validFiles) {

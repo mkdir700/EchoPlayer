@@ -105,6 +105,15 @@ const StyledComponent = styled.div`
   5. 包含完整的错误处理和日志记录，跳过正在使用或无法删除的文件
 - 临时文件命名规范：使用 `<prefix>_<timestamp>_<random>.<ext>` 格式（如 `subtitle_1234567890_abc123.srt`），便于模式匹配和清理
 
+## File System Operations
+
+- **禁止使用同步文件操作**：在主进程中必须使用异步文件 API（`fs.promises.*`），避免阻塞事件循环导致应用冻结
+- 文件操作最佳实践：
+  - ❌ 错误示例：`fs.readdirSync()`, `fs.unlinkSync()`, `fs.readFileSync()`
+  - ✅ 正确示例：`await fs.promises.readdir()`, `await fs.promises.unlink()`, `await fs.promises.readFile()`
+  - 批量文件操作使用 `Promise.all()` 并行执行，提升性能
+  - 所有文件操作方法应声明为 `async` 并返回 `Promise`
+
 ## Issues & Solutions
 
 1. DictionaryPopover 组件主题兼容性问题已修复：将硬编码的深色主题颜色（白色文字、深色背景）替换为 Ant Design CSS 变量（如 `var(--ant-color-text)`、`var(--ant-color-bg-elevated)`），实现浅色和深色主题的自动适配，包括文字颜色、背景色、边框、滚动条和交互状态的完整主题化。

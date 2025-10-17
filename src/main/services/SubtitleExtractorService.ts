@@ -254,31 +254,39 @@ class SubtitleExtractorService {
    * 清理所有临时字幕文件
    * 扫描系统临时目录中的所有 subtitle_* 格式的临时文件并清理
    */
-  public cleanupTempFiles(): void {
+  public async cleanupTempFiles(): Promise<void> {
     try {
       const tempDir = os.tmpdir()
-      const files = fs.readdirSync(tempDir)
+      const files = await fs.promises.readdir(tempDir)
 
       // 匹配临时字幕文件的模式：subtitle_<timestamp>_<random>.<ext>
       const subtitlePattern = /^subtitle_\d+_[a-z0-9]+\.(srt|ass|vtt|sup|sub)$/
 
       let cleanedCount = 0
+      const deletePromises: Promise<void>[] = []
+
       for (const file of files) {
         if (subtitlePattern.test(file)) {
           const filePath = path.join(tempDir, file)
-          try {
-            fs.unlinkSync(filePath)
-            cleanedCount++
-            logger.debug('清理临时字幕文件', { filePath })
-          } catch (error) {
-            // 跳过无法删除的文件（可能正在被使用）
-            logger.debug('无法清理临时字幕文件（可能正在使用）', {
-              filePath,
-              error: error instanceof Error ? error.message : String(error)
+          const deletePromise = fs.promises
+            .unlink(filePath)
+            .then(() => {
+              cleanedCount++
+              logger.debug('清理临时字幕文件', { filePath })
             })
-          }
+            .catch((error) => {
+              // 跳过无法删除的文件（可能正在被使用）
+              logger.debug('无法清理临时字幕文件（可能正在使用）', {
+                filePath,
+                error: error instanceof Error ? error.message : String(error)
+              })
+            })
+          deletePromises.push(deletePromise)
         }
       }
+
+      // 并行执行所有删除操作
+      await Promise.all(deletePromises)
 
       if (cleanedCount > 0) {
         logger.info('清理临时字幕文件完成', { count: cleanedCount })

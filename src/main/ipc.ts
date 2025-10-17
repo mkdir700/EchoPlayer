@@ -707,8 +707,8 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
     }
   )
 
-  ipcMain.handle(IpcChannel.SubtitleExtractor_CleanupTemp, () => {
-    return subtitleExtractorService.cleanupTempFiles()
+  ipcMain.handle(IpcChannel.SubtitleExtractor_CleanupTemp, async () => {
+    return await subtitleExtractorService.cleanupTempFiles()
   })
 
   // 文件系统相关 IPC 处理程序 / File system-related IPC handlers
