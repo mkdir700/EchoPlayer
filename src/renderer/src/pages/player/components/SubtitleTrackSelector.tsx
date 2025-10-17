@@ -5,6 +5,7 @@ import {
   FONT_WEIGHTS,
   SPACING
 } from '@renderer/infrastructure/styles/theme'
+import { SubtitleLibraryService } from '@renderer/services/SubtitleLibrary'
 import { SubtitleReader } from '@renderer/services/subtitles/SubtitleReader'
 import { usePlayerSubtitlesStore } from '@renderer/state/stores/player-subtitles.store'
 import { IpcChannel } from '@shared/IpcChannel'
@@ -14,6 +15,8 @@ import { AlertCircle } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
+
+import { useCurrentVideo } from '../state/player-context'
 
 const logger = loggerService.withContext('SubtitleTrackSelector')
 
@@ -37,6 +40,7 @@ const SubtitleTrackSelector: React.FC<SubtitleTrackSelectorProps> = ({
   const [isLoading, setIsLoading] = useState(false)
   const { t } = useTranslation()
 
+  const currentVideoId = useCurrentVideo()?.id
   const setSubtitles = usePlayerSubtitlesStore((s) => s.setSubtitles)
   const setSource = usePlayerSubtitlesStore((s) => s.setSource)
 
@@ -82,6 +86,24 @@ const SubtitleTrackSelector: React.FC<SubtitleTrackSelectorProps> = ({
 
             setSubtitles(items)
             setSource({ type: 'embedded', name: source })
+
+            // 写入字幕库记录，包含解析后的字幕数据
+            if (currentVideoId) {
+              try {
+                const svc = new SubtitleLibraryService()
+                await svc.addRecordWithSubtitles({
+                  videoId: currentVideoId,
+                  filePath: result.outputPath,
+                  subtitles: items
+                })
+                logger.info('字幕数据已缓存到数据库', { count: items.length })
+              } catch (e) {
+                logger.warn('写入字幕库记录失败（不影响本次使用）', { error: e })
+              }
+            } else {
+              logger.warn('当前没有视频ID，无法持久化字幕数据到数据库')
+            }
+
             message.success(
               t('player.subtitleTrackSelector.messages.importSuccess', {
                 source,
@@ -108,7 +130,7 @@ const SubtitleTrackSelector: React.FC<SubtitleTrackSelectorProps> = ({
         setIsLoading(false)
       }
     },
-    [streams, originalFilePath, setSubtitles, setSource, onClose, onImported, t]
+    [streams, originalFilePath, currentVideoId, setSubtitles, setSource, onClose, onImported, t]
   )
 
   // 处理关闭
