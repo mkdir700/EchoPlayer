@@ -224,7 +224,8 @@ class SubtitleExtractorService {
   private generateTempSubtitlePath(format: string): string {
     const tempDir = os.tmpdir()
     const timestamp = Date.now()
-    const randomStr = Math.random().toString(36).substring(7)
+    // 生成只包含小写字母和数字的随机字符串
+    const randomStr = Math.random().toString(36).substring(7).toLowerCase()
     const fileName = `subtitle_${timestamp}_${randomStr}.${format}`
     return path.join(tempDir, fileName)
   }
