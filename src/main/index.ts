@@ -182,6 +182,16 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.on('will-quit', async () => {
+    // Cleanup temporary subtitle files
+    try {
+      const SubtitleExtractorService = (await import('./services/SubtitleExtractorService')).default
+      const subtitleExtractorService = new SubtitleExtractorService()
+      await subtitleExtractorService.cleanupTempFiles()
+      logger.info('Temporary subtitle files cleaned up')
+    } catch (error) {
+      logger.error('Error cleaning up temporary subtitle files:', { error })
+    }
+
     // Close database connections
     try {
       const { closeDatabase } = await import('./db/index')

@@ -60,42 +60,22 @@ export function useSubtitleOverlay(): SubtitleOverlay {
     }
   }, [currentSubtitle, currentIndex])
 
-  // === 缓存当前字幕数据以防止不必要的重新渲染 ===
-  const stableCurrentSubtitle = useMemo(() => {
-    if (!currentSubtitleData) return null
-
-    // 只有当内容实际变化时才返回新对象
-    return {
-      originalText: currentSubtitleData.originalText,
-      translatedText: currentSubtitleData.translatedText,
-      startTime: currentSubtitleData.startTime,
-      endTime: currentSubtitleData.endTime,
-      index: currentSubtitleData.index
-    }
-  }, [
-    currentSubtitleData?.originalText,
-    currentSubtitleData?.translatedText,
-    currentSubtitleData?.startTime,
-    currentSubtitleData?.endTime,
-    currentSubtitleData?.index
-  ])
-
   // === 计算是否应该显示 ===
   const shouldShow = useMemo(() => {
     // 基础条件：显示模式不为 NONE 且有字幕数据
-    if (subtitleOverlayConfig.displayMode === SubtitleDisplayMode.NONE || !stableCurrentSubtitle) {
+    if (subtitleOverlayConfig.displayMode === SubtitleDisplayMode.NONE || !currentSubtitleData) {
       return false
     }
 
     // 优先检查：如果当前字幕索引与 engine 提供的索引一致，说明这是权威数据，直接显示
     // 这可以避免用户跳转时因时间不同步导致的闪烁
-    if (currentIndex >= 0 && stableCurrentSubtitle.index === currentIndex) {
+    if (currentIndex >= 0 && currentSubtitleData.index === currentIndex) {
       return true
     }
 
     // 正常的时间边界检查：确保当前播放时间在字幕的时间范围内
     const isInTimeRange =
-      currentTime >= stableCurrentSubtitle.startTime && currentTime <= stableCurrentSubtitle.endTime
+      currentTime >= currentSubtitleData.startTime && currentTime <= currentSubtitleData.endTime
 
     // 如果在时间范围内，直接显示
     if (isInTimeRange) {
@@ -104,33 +84,33 @@ export function useSubtitleOverlay(): SubtitleOverlay {
 
     // 智能容差机制：处理播放时的短暂时间不同步问题
     // 如果当前时间接近字幕开始时间，也应该显示（防止跳转闪烁）
-    const timeDiffToStart = Math.abs(currentTime - stableCurrentSubtitle.startTime)
+    const timeDiffToStart = Math.abs(currentTime - currentSubtitleData.startTime)
     const isNearStart = timeDiffToStart <= 2.0 // 2秒容差，处理跳转延迟
 
     return isNearStart
-  }, [subtitleOverlayConfig.displayMode, stableCurrentSubtitle, currentTime, currentIndex])
+  }, [subtitleOverlayConfig.displayMode, currentSubtitleData, currentTime, currentIndex])
 
   // === 计算显示文本 ===
   const displayText = useMemo(() => {
-    if (!stableCurrentSubtitle || !shouldShow || !subtitleOverlayConfig) return ''
+    if (!currentSubtitleData || !shouldShow || !subtitleOverlayConfig) return ''
 
     switch (subtitleOverlayConfig.displayMode) {
       case SubtitleDisplayMode.ORIGINAL:
-        return stableCurrentSubtitle.originalText
+        return currentSubtitleData.originalText
 
       case SubtitleDisplayMode.TRANSLATED:
-        return stableCurrentSubtitle.translatedText || stableCurrentSubtitle.originalText
+        return currentSubtitleData.translatedText || currentSubtitleData.originalText
 
       case SubtitleDisplayMode.BILINGUAL:
-        if (stableCurrentSubtitle.translatedText) {
-          return `${stableCurrentSubtitle.originalText}\n${stableCurrentSubtitle.translatedText}`
+        if (currentSubtitleData.translatedText) {
+          return `${currentSubtitleData.originalText}\n${currentSubtitleData.translatedText}`
         }
-        return stableCurrentSubtitle.originalText
+        return currentSubtitleData.originalText
 
       default:
         return ''
     }
-  }, [subtitleOverlayConfig, stableCurrentSubtitle, shouldShow])
+  }, [subtitleOverlayConfig, currentSubtitleData, shouldShow])
 
   // === 配置操作的包装器（添加 PlayerStore 同步） ===
   const setDisplayModeWithSync = useCallback(
@@ -208,7 +188,7 @@ export function useSubtitleOverlay(): SubtitleOverlay {
   )
 
   return {
-    currentSubtitle: stableCurrentSubtitle,
+    currentSubtitle: currentSubtitleData,
     shouldShow,
     displayText,
     isMaskMode: subtitleOverlayConfig.isMaskMode,

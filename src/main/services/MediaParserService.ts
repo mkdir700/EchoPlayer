@@ -1,7 +1,8 @@
 import { parseMedia } from '@remotion/media-parser'
 import { nodeReader } from '@remotion/media-parser/node'
 import { PathConverter } from '@shared/utils/PathConverter'
-import type { FFmpegVideoInfo } from '@types'
+import type { FFmpegVideoInfo, SubtitleStream, SubtitleStreamsResponse } from '@types'
+import { spawn } from 'child_process'
 import * as fs from 'fs'
 
 import FFmpegService from './FFmpegService'
@@ -14,42 +15,6 @@ class MediaParserService {
 
   constructor() {
     this.ffmpegService = new FFmpegService()
-  }
-
-  /**
-   * 将文件 URL 转换为本地路径
-   */
-  private convertFileUrlToLocalPath(inputPath: string): string {
-    // 如果是file://URL，需要转换为本地路径
-    if (inputPath.startsWith('file://')) {
-      try {
-        const url = new URL(inputPath)
-        let localPath = decodeURIComponent(url.pathname)
-
-        // Windows路径处理：移除开头的斜杠
-        if (process.platform === 'win32' && localPath.startsWith('/')) {
-          localPath = localPath.substring(1)
-        }
-
-        logger.info('🔄 URL路径转换', {
-          原始路径: inputPath,
-          转换后路径: localPath,
-          平台: process.platform,
-          文件是否存在: fs.existsSync(localPath)
-        })
-
-        return localPath
-      } catch (error) {
-        logger.error('URL路径转换失败:', {
-          error: error instanceof Error ? error : new Error(String(error))
-        })
-        // 如果转换失败，返回原路径
-        return inputPath
-      }
-    }
-
-    // 如果不是file://URL，直接返回
-    return inputPath
   }
 
   /**
@@ -194,13 +159,15 @@ class MediaParserService {
         return null
       }
 
-      // 快速检查文件存在性
-      if (!fs.existsSync(pathResult.localPath)) {
+      // 快速检查文件存在性并获取文件大小
+      let fileSize: number
+      try {
+        const stats = await fs.promises.stat(pathResult.localPath)
+        fileSize = stats.size
+      } catch {
         logger.error(`❌ 文件不存在: ${pathResult.localPath}`)
         return null
       }
-
-      const fileSize = fs.statSync(pathResult.localPath).size
       logger.info(`📊 文件大小: ${Math.round((fileSize / 1024 / 1024) * 100) / 100}MB`)
 
       // 根据策略选择解析器
@@ -288,7 +255,14 @@ class MediaParserService {
     try {
       // 转换文件路径
       const pathConvertStartTime = Date.now()
-      const localInputPath = this.convertFileUrlToLocalPath(inputPath)
+      const pathResult = PathConverter.convertToLocalPath(inputPath)
+
+      if (!pathResult.isValid) {
+        logger.error(`❌ 路径转换失败: ${pathResult.error}`)
+        return null
+      }
+
+      const localInputPath = pathResult.localPath
       const pathConvertEndTime = Date.now()
 
       logger.info(`🔄 路径转换耗时: ${pathConvertEndTime - pathConvertStartTime}ms`, {
@@ -296,27 +270,27 @@ class MediaParserService {
         localInputPath
       })
 
-      // 检查文件是否存在
+      // 检查文件是否存在并获取文件信息
       const fileCheckStartTime = Date.now()
-      const fileExists = fs.existsSync(localInputPath)
-      const fileCheckEndTime = Date.now()
-
-      logger.info(`📁 文件存在性检查耗时: ${fileCheckEndTime - fileCheckStartTime}ms`, {
-        fileExists
-      })
-
-      if (!fileExists) {
+      let fileStats: fs.Stats
+      let fileSize: number
+      try {
+        fileStats = await fs.promises.stat(localInputPath)
+        fileSize = fileStats.size
+      } catch {
+        const fileCheckEndTime = Date.now()
+        logger.info(`📁 文件存在性检查耗时: ${fileCheckEndTime - fileCheckStartTime}ms`, {
+          fileExists: false
+        })
         logger.error(`❌ 文件不存在: ${localInputPath}`)
         return null
       }
-
-      // 获取文件大小
-      const fileStatsStartTime = Date.now()
-      const fileStats = fs.statSync(localInputPath)
-      const fileSize = fileStats.size
       const fileStatsEndTime = Date.now()
 
-      logger.info(`📊 文件信息获取耗时: ${fileStatsEndTime - fileStatsStartTime}ms`, {
+      logger.info(`📁 文件存在性检查耗时: ${fileStatsEndTime - fileCheckStartTime}ms`, {
+        fileExists: true
+      })
+      logger.info(`📊 文件信息获取耗时: ${fileStatsEndTime - fileCheckStartTime}ms`, {
         fileSize: `${Math.round((fileSize / 1024 / 1024) * 100) / 100}MB`
       })
 
@@ -491,6 +465,213 @@ class MediaParserService {
         reject(new Error(`${parserName} parsing timeout after ${timeoutMs}ms`))
       }, timeoutMs)
     })
+  }
+
+  /**
+   * 使用 ffprobe 获取视频文件的字幕轨道信息
+   */
+  public async getSubtitleStreams(inputPath: string): Promise<SubtitleStreamsResponse | null> {
+    const startTime = Date.now()
+    logger.info('🔍 开始获取字幕轨道信息', { inputPath })
+
+    try {
+      // 转换文件路径
+      const pathResult = PathConverter.convertToLocalPath(inputPath)
+
+      if (!pathResult.isValid) {
+        logger.error(`❌ 路径转换失败: ${pathResult.error}`)
+        return null
+      }
+
+      // 检查文件是否存在
+      try {
+        await fs.promises.access(pathResult.localPath, fs.constants.F_OK)
+      } catch {
+        logger.error(`❌ 文件不存在: ${pathResult.localPath}`)
+        return null
+      }
+
+      // 使用 ffprobe 获取流信息
+      const streams = await this.probeSubtitleStreams(pathResult.localPath)
+
+      if (!streams || streams.length === 0) {
+        logger.info('📄 此视频文件不含字幕轨道', { inputPath })
+        return {
+          videoPath: inputPath,
+          streams: [],
+          textStreams: [],
+          imageStreams: []
+        }
+      }
+
+      // 分类字幕轨道（文本与图像）
+      const textStreams: SubtitleStream[] = []
+      const imageStreams: SubtitleStream[] = []
+
+      for (const stream of streams) {
+        if (stream.isPGS) {
+          imageStreams.push(stream)
+        } else {
+          textStreams.push(stream)
+        }
+      }
+
+      const totalTime = Date.now() - startTime
+      logger.info('✅ 成功获取字幕轨道信息', {
+        total: streams.length,
+        text: textStreams.length,
+        image: imageStreams.length,
+        duration: `${totalTime}ms`
+      })
+
+      return {
+        videoPath: inputPath,
+        streams,
+        textStreams,
+        imageStreams
+      }
+    } catch (error) {
+      const totalTime = Date.now() - startTime
+      logger.error(`❌ 获取字幕轨道失败，耗时: ${totalTime}ms`, {
+        inputPath,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return null
+    }
+  }
+
+  /**
+   * 使用 ffprobe 探测字幕轨道
+   */
+  private async probeSubtitleStreams(localPath: string): Promise<SubtitleStream[] | null> {
+    return new Promise((resolve, reject) => {
+      const ffprobePath = this.ffmpegService.getFFprobePath()
+      let settled = false
+
+      logger.debug('🔍 执行 ffprobe 命令', {
+        ffprobePath,
+        inputPath: localPath
+      })
+
+      const ffprobe = spawn(ffprobePath, [
+        '-v',
+        'quiet',
+        '-print_format',
+        'json',
+        '-show_streams',
+        '-select_streams',
+        's',
+        localPath
+      ])
+
+      let output = ''
+      let errorOutput = ''
+
+      const timeoutHandle = setTimeout(() => {
+        if (settled) return
+
+        logger.warn('⏱️ ffprobe 执行超时', {
+          inputPath: localPath
+        })
+
+        if (ffprobe && !ffprobe.killed) {
+          ffprobe.kill('SIGKILL')
+        }
+
+        settled = true
+        resolve(null)
+      }, 15000)
+
+      ffprobe.stdout?.on('data', (data) => {
+        output += data.toString()
+      })
+
+      ffprobe.stderr?.on('data', (data) => {
+        errorOutput += data.toString()
+      })
+
+      ffprobe.on('close', (code) => {
+        if (settled) return
+
+        clearTimeout(timeoutHandle)
+
+        if (code !== 0) {
+          logger.error('📄 ffprobe 执行失败', {
+            code,
+            error: errorOutput
+          })
+          settled = true
+          resolve(null)
+          return
+        }
+
+        try {
+          const result = JSON.parse(output)
+          const subtitleStreams = this.parseFFprobeSubtitleStreams(result.streams || [])
+          settled = true
+          resolve(subtitleStreams)
+        } catch (error) {
+          logger.error('解析 ffprobe 输出失败', {
+            error: error instanceof Error ? error.message : String(error),
+            output: output.slice(0, 500)
+          })
+          settled = true
+          resolve(null)
+        }
+      })
+
+      ffprobe.on('error', (error) => {
+        if (settled) return
+
+        clearTimeout(timeoutHandle)
+        logger.error('📄 ffprobe 进程错误', {
+          error: error.message
+        })
+        settled = true
+        reject(error)
+      })
+    })
+  }
+
+  /**
+   * 解析 ffprobe 输出中的字幕轨道
+   */
+  private parseFFprobeSubtitleStreams(streams: any[]): SubtitleStream[] {
+    const subtitleStreams: SubtitleStream[] = []
+    const pgsCodecs = ['hdmv_pgs_subtitle', 'dvb_subtitle', 'xsub']
+
+    for (const stream of streams) {
+      // 只处理字幕轨道
+      if (stream.codec_type !== 'subtitle') {
+        continue
+      }
+
+      const codec = stream.codec_name || 'unknown'
+      const isPGS = pgsCodecs.includes(codec)
+
+      const subtitleStream: SubtitleStream = {
+        index: stream.index,
+        streamId: `0:${stream.index}`,
+        codec: codec as any,
+        language: stream.tags?.language || undefined,
+        title: stream.tags?.title || undefined,
+        isDefault: stream.disposition?.default === 1,
+        isForced: stream.disposition?.forced === 1,
+        isPGS
+      }
+
+      subtitleStreams.push(subtitleStream)
+
+      logger.debug('📄 字幕轨道信息', {
+        index: subtitleStream.index,
+        codec: subtitleStream.codec,
+        language: subtitleStream.language,
+        title: subtitleStream.title,
+        isPGS: subtitleStream.isPGS
+      })
+    }
+
+    return subtitleStreams
   }
 
   /**

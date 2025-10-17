@@ -29,6 +29,7 @@ import { mediaServerService } from './services/MediaServerService'
 import NotificationService from './services/NotificationService'
 import { pythonVenvService } from './services/PythonVenvService'
 import { registerShortcuts, unregisterAllShortcuts } from './services/ShortcutService'
+import SubtitleExtractorService from './services/SubtitleExtractorService'
 import { themeService } from './services/ThemeService'
 import { uvBootstrapperService } from './services/UvBootstrapperService'
 import { calculateDirectorySize, getResourcePath } from './utils'
@@ -41,18 +42,18 @@ const fileManager = new FileStorage()
 const dictionaryService = new DictionaryService()
 const ffmpegService = new FFmpegService()
 const mediaParserService = new MediaParserService()
+const subtitleExtractorService = new SubtitleExtractorService()
 
 /**
- * Register all IPC handlers used by the main process.
+ * Registers all ipcMain handlers used by the main process.
  *
- * Initializes updater and notification services and wires a comprehensive set of ipcMain.handle
- * handlers exposing application control, system info, theming/language, spell-check, cache and
- * file operations, dictionary lookups, FFmpeg operations, shortcut management, and database DAOs
- * (Files, VideoLibrary, SubtitleLibrary) to renderer processes.
+ * Exposes application control, system information, theming/language, spell-check, cache and file
+ * operations, media tooling (FFmpeg, media parser, subtitle extraction), shortcuts, and database
+ * DAOs to renderer processes via ipcMain handlers.
  *
- * This function has side effects: it registers handlers on ipcMain, may attach an app 'before-quit'
- * listener when requested, and mutates Electron state (e.g., app paths, sessions). Call from the
- * Electron main process once (typically during app initialization).
+ * This function mutates Electron state (registers handlers on ipcMain, may add/remove an app
+ * 'before-quit' listener, and updates sessions/paths) and must be invoked once from the main
+ * process during application initialization.
  */
 export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   const appUpdater = new AppUpdater(mainWindow)
@@ -681,14 +682,45 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
     }
   )
 
+  // 字幕轨道相关 IPC 处理程序 / Subtitle stream-related IPC handlers
+  ipcMain.handle(IpcChannel.Media_GetSubtitleStreams, async (_, inputPath: string) => {
+    return await mediaParserService.getSubtitleStreams(inputPath)
+  })
+
+  ipcMain.handle(
+    IpcChannel.Media_ExtractSubtitle,
+    async (
+      _,
+      options: {
+        videoPath: string
+        streamIndex: number
+        outputFormat?: string
+        subtitleCodec?: string
+      }
+    ) => {
+      return await subtitleExtractorService.extractSubtitle({
+        videoPath: options.videoPath,
+        streamIndex: options.streamIndex,
+        outputFormat: (options.outputFormat as 'srt' | 'ass' | 'vtt') || 'srt',
+        subtitleCodec: options.subtitleCodec
+      })
+    }
+  )
+
+  ipcMain.handle(IpcChannel.SubtitleExtractor_CleanupTemp, async () => {
+    const count = await subtitleExtractorService.cleanupTempFiles()
+    logger.info('触发字幕临时文件清理', { count })
+    return count
+  })
+
   // 文件系统相关 IPC 处理程序 / File system-related IPC handlers
   ipcMain.handle(IpcChannel.Fs_CheckFileExists, async (_, filePath: string) => {
     try {
-      const exists = fs.existsSync(filePath)
-      logger.debug('检查文件存在性', { filePath, exists })
-      return exists
+      await fs.promises.access(filePath, fs.constants.F_OK)
+      logger.debug('检查文件存在性', { filePath, exists: true })
+      return true
     } catch (error) {
-      logger.error('检查文件存在性时出错', { filePath, error })
+      logger.debug('检查文件存在性', { filePath, exists: false })
       return false
     }
   })

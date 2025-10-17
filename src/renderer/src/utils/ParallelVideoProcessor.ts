@@ -5,6 +5,7 @@
 
 import { loggerService } from '@logger'
 import type { FileMetadata } from '@shared/types/database'
+import { PathConverter } from '@shared/utils/PathConverter'
 
 import { type FormatAnalysis, MediaFormatStrategy } from './MediaFormatStrategy'
 
@@ -93,7 +94,19 @@ export class ParallelVideoProcessor {
 
     try {
       // 路径转换
-      const localPath = await this.convertFileUrlToLocalPathAsync(file.path)
+      const pathResult = PathConverter.convertToLocalPath(file.path)
+
+      if (!pathResult.isValid) {
+        return {
+          isValid: false,
+          localPath: file.path,
+          fileExists: false,
+          fileSize: 0,
+          error: pathResult.error || '路径转换失败'
+        }
+      }
+
+      const localPath = pathResult.localPath
 
       // 检查文件存在性
       const fileExists = await window.api.fs.checkFileExists(localPath)
@@ -228,36 +241,6 @@ export class ParallelVideoProcessor {
         estimatedTime: 2000
       }
     }
-  }
-
-  /**
-   * 异步路径转换
-   */
-  private static async convertFileUrlToLocalPathAsync(inputPath: string): Promise<string> {
-    return new Promise((resolve) => {
-      // 如果是file://URL，需要转换为本地路径
-      if (inputPath.startsWith('file://')) {
-        try {
-          const url = new URL(inputPath)
-          let localPath = decodeURIComponent(url.pathname)
-
-          // Windows路径处理：移除开头的斜杠
-          if (process.platform === 'win32' && localPath.startsWith('/')) {
-            localPath = localPath.substring(1)
-          }
-
-          resolve(localPath)
-        } catch (error) {
-          logger.warn('路径转换失败，使用原路径', {
-            inputPath,
-            error: error instanceof Error ? error.message : String(error)
-          })
-          resolve(inputPath)
-        }
-      } else {
-        resolve(inputPath)
-      }
-    })
   }
 
   /**

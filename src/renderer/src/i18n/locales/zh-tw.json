@@ -2,6 +2,70 @@
   "common": {
     "language": "語言"
   },
+  "player": {
+    "subtitleList": {
+      "empty": {
+        "description": "選擇方式開始新增字幕",
+        "title": "在影片檔同目錄下未找到符合的字幕檔案",
+        "options": {
+          "embedded": {
+            "title": "使用內嵌字幕",
+            "description": "影片檔案包含字幕軌道，可直接匯入",
+            "action": "選擇"
+          },
+          "external": {
+            "title": "匯入外掛字幕",
+            "description": "從本機檔案匯入 SRT、VTT 等格式字幕"
+          },
+          "ai": {
+            "title": "AI 生成字幕",
+            "description": "基於語音辨識生成單字級字幕",
+            "action": "即將推出"
+          }
+        }
+      },
+      "search": {
+        "count": "找到 {{count}} 筆字幕",
+        "count_one": "找到 {{count}} 筆字幕",
+        "count_other": "找到 {{count}} 筆字幕",
+        "emptySubtitle": "請嘗試其他關鍵字",
+        "emptyTitle": "找不到符合的結果",
+        "none": "未找到符合的字幕",
+        "pending": "搜尋中...",
+        "placeholder": "搜尋字幕..."
+      }
+    },
+    "subtitleTrackSelector": {
+      "title": "匯入內嵌字幕軌道",
+      "empty": "未偵測到字幕軌道",
+      "sections": {
+        "text": "文字字幕軌道",
+        "image": "PGS 字幕軌（圖像字幕）"
+      },
+      "stream": {
+        "label": "Stream {{index}}",
+        "tags": {
+          "default": "預設",
+          "forced": "強制",
+          "unsupported": "暫不支援"
+        }
+      },
+      "warning": {
+        "pgs": "PGS 是圖像格式字幕，需要 OCR 技術支援，暫不支援匯入。"
+      },
+      "actions": {
+        "cancel": "取消",
+        "import": "匯入"
+      },
+      "messages": {
+        "selectAtLeastOne": "請選擇至少一個字幕軌道",
+        "extractFailed": "擷取字幕軌道 {{index}} 失敗",
+        "importFailed": "字幕軌道擷取失敗，請重試",
+        "importSuccess": "已匯入字幕：{{source}}（共 {{count}} 條）",
+        "importMultipleSuccess": "已匯入 {{tracks}} 個字幕軌道（共 {{count}} 條）"
+      }
+    }
+  },
   "settings": {
     "about": {
       "updateError": "更新檢查失敗"
@@ -58,9 +122,9 @@
       "show_settings": "打開設定",
       "single_loop": "循環播放",
       "title": "快捷鍵",
+      "toggle_auto_pause": "切換自動暫停",
       "toggle_fullscreen": "切換全屏",
       "toggle_new_context": "清除上下文",
-      "toggle_auto_pause": "切換自動暫停",
       "toggle_show_assistants": "切換助手顯示",
       "toggle_show_topics": "切換話題顯示",
       "toggle_subtitle_panel": "切換字幕面板",
@@ -94,24 +158,6 @@
       "quit": "退出",
       "show_mini_window": "快速助手",
       "show_window": "顯示視窗"
-    }
-  },
-  "player": {
-    "subtitleList": {
-      "empty": {
-        "title": "在影片檔同目錄下未找到符合的字幕檔案",
-        "description": "您可以點擊下方按鈕選擇字幕檔，或將字幕檔拖曳到此區域"
-      },
-      "search": {
-        "placeholder": "搜尋字幕...",
-        "pending": "搜尋中...",
-        "count": "找到 {{count}} 筆字幕",
-        "count_one": "找到 {{count}} 筆字幕",
-        "count_other": "找到 {{count}} 筆字幕",
-        "none": "未找到符合的字幕",
-        "emptyTitle": "找不到符合的結果",
-        "emptySubtitle": "請嘗試其他關鍵字"
-      }
     }
   }
 }

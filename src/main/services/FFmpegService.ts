@@ -1,3 +1,4 @@
+import { PathConverter } from '@shared/utils/PathConverter'
 import { PerformanceMonitor } from '@shared/utils/PerformanceMonitor'
 import { spawn } from 'child_process'
 import { app } from 'electron'
@@ -36,81 +37,6 @@ class FFmpegService {
 
   constructor() {
     // 构造函数可以用于初始化操作
-  }
-
-  // 将file://URL转换为本地文件路径
-  private convertFileUrlToLocalPath(inputPath: string): string {
-    // 如果是file://URL，需要转换为本地路径
-    if (inputPath.startsWith('file://')) {
-      try {
-        const url = new URL(inputPath)
-        let localPath = decodeURIComponent(url.pathname)
-
-        // Windows路径处理：移除开头的斜杠
-        if (process.platform === 'win32' && localPath.startsWith('/')) {
-          localPath = localPath.substring(1)
-        }
-
-        // 添加详细的调试信息
-        logger.info('🔄 URL路径转换详情', {
-          原始路径: inputPath,
-          'URL.pathname': url.pathname,
-          解码前路径: url.pathname,
-          解码后路径: localPath,
-          平台: process.platform,
-          文件是否存在: fs.existsSync(localPath)
-        })
-
-        // 额外验证：尝试列出目录内容来确认文件是否真的存在
-        if (!fs.existsSync(localPath)) {
-          const dirPath = path.dirname(localPath)
-          const fileName = path.basename(localPath)
-
-          logger.info('🔍 文件不存在，检查目录内容', {
-            目录路径: dirPath,
-            期望文件名: fileName,
-            目录是否存在: fs.existsSync(dirPath)
-          })
-
-          if (fs.existsSync(dirPath)) {
-            try {
-              const filesInDir = fs.readdirSync(dirPath)
-              logger.info('📁 目录中的文件', {
-                目录路径: dirPath,
-                文件列表: filesInDir,
-                文件数量: filesInDir.length
-              })
-
-              // 查找可能的匹配文件（大小写不敏感匹配）
-              const matchingFiles = filesInDir.filter(
-                (file) =>
-                  file.toLowerCase().includes('老友记') ||
-                  file.toLowerCase().includes('h265') ||
-                  file.toLowerCase().includes(fileName.toLowerCase())
-              )
-
-              if (matchingFiles.length > 0) {
-                logger.info('🎯 找到可能匹配的文件', { matchingFiles })
-              }
-            } catch (error) {
-              logger.error(
-                '无法读取目录内容:',
-                error instanceof Error ? error : new Error(String(error))
-              )
-            }
-          }
-        }
-
-        return localPath
-      } catch (error) {
-        logger.error('URL路径转换失败:', error instanceof Error ? error : new Error(String(error)))
-        // 如果转换失败，返回原路径
-        return inputPath
-      }
-    }
-
-    // 如果不是file://URL，直接返回
-    return inputPath
   }
 
   // 获取内置 FFmpeg 路径
@@ -243,20 +169,29 @@ class FFmpegService {
     }
   }
 
+  // 获取 FFprobe 路径
+  public getFFprobePath(): string {
+    try {
+      return ffmpegDownloadService.getFFprobePath()
+    } catch (error) {
+      logger.warn('获取下载的 FFprobe 路径失败，使用系统 FFprobe', {
+        error: error instanceof Error ? error.message : String(error)
+      })
+      // 降级到系统 FFprobe
+      return 'ffprobe'
+    }
+  }
+
   // 快速检查 FFmpeg 是否存在（文件系统级别检查）
-  public fastCheckFFmpegExists(): boolean {
+  public async fastCheckFFmpegExists(): Promise<boolean> {
     const startTime = Date.now()
     const ffmpegPath = this.getFFmpegPath()
 
     try {
-      // 检查文件是否存在
-      if (!fs.existsSync(ffmpegPath)) {
-        logger.info('⚡ 快速检查: FFmpeg 文件不存在', { ffmpegPath })
-        return false
-      }
+      // 检查文件是否存在并获取文件信息
+      const stats = await fs.promises.stat(ffmpegPath)
 
       // 检查是否为文件（非目录）
-      const stats = fs.statSync(ffmpegPath)
       if (!stats.isFile()) {
         logger.info('⚡ 快速检查: FFmpeg 路径不是文件', { ffmpegPath })
         return false
@@ -319,7 +254,7 @@ class FFmpegService {
     })
 
     try {
-      const fastCheckPassed = this.fastCheckFFmpegExists()
+      const fastCheckPassed = await this.fastCheckFFmpegExists()
       if (!fastCheckPassed) {
         // 快速检查失败，直接缓存结果并返回
         FFmpegService.ffmpegAvailabilityCache[ffmpegPath] = false
@@ -483,12 +418,21 @@ class FFmpegService {
 
     try {
       // 转换路径
-      pm.startTiming(this.convertFileUrlToLocalPath)
-      const localInputPath = this.convertFileUrlToLocalPath(inputPath)
-      pm.endTiming(this.convertFileUrlToLocalPath)
+      pm.startTiming('convertToLocalPath')
+      const pathResult = PathConverter.convertToLocalPath(inputPath)
+      pm.endTiming('convertToLocalPath')
+
+      if (!pathResult.isValid) {
+        logger.error(`❌ 路径转换失败: ${pathResult.error}`)
+        return null
+      }
+
+      const localInputPath = pathResult.localPath
 
       // 检查文件是否存在
-      if (!fs.existsSync(localInputPath)) {
+      try {
+        await fs.promises.access(localInputPath, fs.constants.F_OK)
+      } catch {
         logger.error(`❌ 文件不存在: ${localInputPath}`)
         return null
       }

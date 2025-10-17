@@ -113,3 +113,34 @@ export interface SubtitleNavigationState {
   readonly canJumpToNext: boolean
   readonly canJumpToPrev: boolean
 }
+
+// 字幕轨道编码类型 / Subtitle Stream Codec Type
+export type SubtitleCodecType =
+  | 'subrip'
+  | 'ass'
+  | 'ssa'
+  | 'pgs'
+  | 'dvb_subtitle'
+  | 'webvtt'
+  | 'mov_text'
+  | string
+
+// 字幕轨道信息接口 / Subtitle Stream Info Interface
+export interface SubtitleStream {
+  readonly index: number // 流索引 (0, 1, 2...)
+  readonly streamId: string // 流标识 (0:6, 0:7...)
+  readonly codec: SubtitleCodecType // 编码格式
+  readonly language?: string // 语言代码 (zh, en, ja...)
+  readonly title?: string // 轨道标题
+  readonly isDefault?: boolean // 是否为默认轨道
+  readonly isForced?: boolean // 是否为强制字幕
+  readonly isPGS?: boolean // 是否为 PGS 图像字幕
+}
+
+// 字幕轨道列表响应 / Subtitle Streams Response
+export interface SubtitleStreamsResponse {
+  readonly videoPath: string
+  readonly streams: SubtitleStream[]
+  readonly textStreams: SubtitleStream[] // 文本字幕轨
+  readonly imageStreams: SubtitleStream[] // 图像字幕轨 (PGS)
+}
