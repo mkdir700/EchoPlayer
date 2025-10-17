@@ -1,6 +1,7 @@
 import { COMPONENT_TOKENS } from '@renderer/infrastructure/styles/theme'
 import { formatTime } from '@renderer/state/infrastructure/utils'
 import { usePlayerStore } from '@renderer/state/stores/player.store'
+import { usePlayerUIStore } from '@renderer/state/stores/player-ui.store'
 import { PerformanceMonitor } from '@renderer/utils/PerformanceMonitor'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
@@ -11,10 +12,16 @@ const formatTimeOnly = (time: number): string => {
   return formatTime(time)
 }
 
+const INACTIVITY_TIMEOUT = 3000 // 3 seconds
+
 function ProgressBar() {
   const currentTime = usePlayerStore((s) => s.currentTime)
   const duration = usePlayerStore((s) => s.duration)
   const { seekToUser } = usePlayerCommands()
+
+  // 从 PlayerUIStore 获取视频区域悬停状态
+  const videoAreaHovered = usePlayerUIStore((s) => s.videoAreaHovered)
+  const lastVideoAreaInteraction = usePlayerUIStore((s) => s.lastVideoAreaInteraction)
 
   // 进度条状态管理
   const [isHovering, setIsHovering] = useState(false)
@@ -30,7 +37,7 @@ function ProgressBar() {
 
   // 自动隐藏逻辑
   useEffect(() => {
-    if (isHovering || isDragging) {
+    if (isHovering || isDragging || videoAreaHovered) {
       setIsVisible(true)
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current)
@@ -46,7 +53,23 @@ function ProgressBar() {
         clearTimeout(hideTimeoutRef.current)
       }
     }
-  }, [isHovering, isDragging])
+  }, [isHovering, isDragging, videoAreaHovered])
+
+  // 视频区域不活动自动隐藏逻辑
+  useEffect(() => {
+    if (!videoAreaHovered) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      const elapsed = Date.now() - lastVideoAreaInteraction
+      if (elapsed >= INACTIVITY_TIMEOUT) {
+        setIsVisible(false)
+      }
+    }, INACTIVITY_TIMEOUT)
+
+    return () => clearTimeout(timer)
+  }, [videoAreaHovered, lastVideoAreaInteraction])
 
   // 模拟缓冲进度（实际项目中应从视频元素获取）
   useEffect(() => {
@@ -159,13 +182,19 @@ function ProgressBar() {
       <BufferTrack $progress={bufferPercentage} />
 
       {/* 主进度轨道 */}
-      <ProgressTrack />
+      <ProgressTrack $isActive={isHovering || isDragging || videoAreaHovered} />
 
       {/* 已播放进度 */}
-      <ProgressFill $progress={progressPercentage} />
+      <ProgressFill
+        $progress={progressPercentage}
+        $isActive={isHovering || isDragging || videoAreaHovered}
+      />
 
       {/* 手柄 */}
-      <ProgressHandle $progress={progressPercentage} $isVisible={isHovering || isDragging} />
+      <ProgressHandle
+        $progress={progressPercentage}
+        $isVisible={isHovering || isDragging || videoAreaHovered}
+      />
 
       {/* 时间预览提示 */}
       {previewTimeDisplay && isHovering && !isDragging && (
@@ -189,15 +218,20 @@ const ProgressContainer = styled.div<{
   display: flex;
   align-items: center;
 
-  /* 鼠标交互区域 */
+  /* 扩大的鼠标交互区域 - 悬停时增加可点击范围 */
   &::before {
     content: '';
     position: absolute;
-    top: 0;
+    top: ${(props) =>
+      props.$isHovering || props.$isDragging || props.$isVisible ? '-12px' : '-8px'};
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: ${(props) =>
+      props.$isHovering || props.$isDragging || props.$isVisible ? '-12px' : '-8px'};
     z-index: 1;
+    transition:
+      top ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH},
+      bottom ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH};
   }
 `
 
@@ -225,24 +259,24 @@ const BufferTrack = styled.div<{ $progress: number }>`
 `
 
 // 主进度轨道
-const ProgressTrack = styled.div`
+const ProgressTrack = styled.div<{ $isActive: boolean }>`
   position: absolute;
   left: 0;
   top: 50%;
   transform: translateY(-50%);
   width: 100%;
-  height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HIDDEN}px;
+  height: ${(props) =>
+    props.$isActive
+      ? COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER
+      : COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HIDDEN}px;
   background: var(--ant-color-border, rgba(255, 255, 255, 0.2));
-  opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_BASE};
+  opacity: ${(props) =>
+    props.$isActive
+      ? COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_HOVER
+      : COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_BASE};
   border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
   transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH};
   z-index: 2;
-
-  /* 悬停时增大 */
-  ${ProgressContainer}:hover & {
-    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
-    opacity: ${COMPONENT_TOKENS.PROGRESS_BAR.RAIL_OPACITY_HOVER};
-  }
 
   /* 主题适配 */
   [theme-mode='light'] & {
@@ -255,26 +289,26 @@ const ProgressTrack = styled.div`
 `
 
 // 已播放进度填充
-const ProgressFill = styled.div<{ $progress: number }>`
+const ProgressFill = styled.div<{ $progress: number; $isActive: boolean }>`
   position: absolute;
   left: 0;
   top: 50%;
   transform: translateY(-50%);
   width: ${(props) => props.$progress}%;
-  height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HIDDEN}px;
+  height: ${(props) =>
+    props.$isActive
+      ? COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER
+      : COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HIDDEN}px;
   background: ${COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GRADIENT};
   border-radius: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_BORDER_RADIUS}px;
   transition: all ${COMPONENT_TOKENS.PROGRESS_BAR.TRANSITION_SMOOTH};
   z-index: 3;
 
   /* 主题色光晕效果 */
-  box-shadow: ${COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GLOW};
-
-  /* 悬停时增大并增强光晕 */
-  ${ProgressContainer}:hover & {
-    height: ${COMPONENT_TOKENS.PROGRESS_BAR.TRACK_HEIGHT_HOVER}px;
-    box-shadow: ${COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GLOW_HOVER};
-  }
+  box-shadow: ${(props) =>
+    props.$isActive
+      ? COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GLOW_HOVER
+      : COMPONENT_TOKENS.PROGRESS_BAR.PROGRESS_GLOW};
 `
 
 // 进度手柄

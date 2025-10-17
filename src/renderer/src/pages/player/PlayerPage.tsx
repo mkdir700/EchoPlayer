@@ -89,6 +89,8 @@ function PlayerPage() {
   const { t } = useTranslation()
   const { subtitlePanelVisible, toggleSubtitlePanel } = usePlayerStore()
   const toggleSubtitleSearch = usePlayerUIStore((s) => s.toggleSubtitleSearch)
+  const setVideoAreaHovered = usePlayerUIStore((s) => s.setVideoAreaHovered)
+  const pokeVideoAreaInteraction = usePlayerUIStore((s) => s.pokeVideoAreaInteraction)
 
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -516,6 +518,19 @@ function PlayerPage() {
     }
   }, [])
 
+  // 处理视频区域悬停
+  const handleVideoAreaEnter = useCallback(() => {
+    setVideoAreaHovered(true)
+  }, [setVideoAreaHovered])
+
+  const handleVideoAreaLeave = useCallback(() => {
+    setVideoAreaHovered(false)
+  }, [setVideoAreaHovered])
+
+  const handleVideoAreaMove = useCallback(() => {
+    pokeVideoAreaInteraction()
+  }, [pokeVideoAreaInteraction])
+
   // 检测字幕轨道
   useEffect(() => {
     if (!videoData || !originalFilePathRef.current || userDismissedEmbeddedSubtitles) {
@@ -673,12 +688,18 @@ function PlayerPage() {
               <Layout style={{ height: '100%' }}>
                 <Content>
                   <LeftMain>
-                    <VideoStage>
-                      <PlayerSelector src={videoData.src} onError={handleVideoError} />
-                    </VideoStage>
-                    <ProgressBarArea>
-                      <ProgressBar />
-                    </ProgressBarArea>
+                    <VideoInteractionArea
+                      onMouseEnter={handleVideoAreaEnter}
+                      onMouseLeave={handleVideoAreaLeave}
+                      onMouseMove={handleVideoAreaMove}
+                    >
+                      <VideoStage>
+                        <PlayerSelector src={videoData.src} onError={handleVideoError} />
+                      </VideoStage>
+                      <ProgressBarArea>
+                        <ProgressBar />
+                      </ProgressBarArea>
+                    </VideoInteractionArea>
                     <BottomBar>
                       <ControllerPanel />
                     </BottomBar>
@@ -927,6 +948,13 @@ const LeftMain = styled.div`
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+`
+
+const VideoInteractionArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 `
 
 const VideoStage = styled.div`

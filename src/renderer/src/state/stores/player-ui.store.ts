@@ -14,6 +14,8 @@ export interface PlayerUIState {
   subtitleSearch: {
     isSearchVisible: boolean
   }
+  videoAreaHovered: boolean
+  lastVideoAreaInteraction: number
 }
 
 export interface PlayerUIActions {
@@ -27,6 +29,8 @@ export interface PlayerUIActions {
   toggleSubtitleSearch: () => void
   showSubtitleSearch: () => void
   hideSubtitleSearch: () => void
+  setVideoAreaHovered: (hovered: boolean) => void
+  pokeVideoAreaInteraction: () => void
 }
 
 export type PlayerUIStore = PlayerUIState & PlayerUIActions
@@ -43,7 +47,9 @@ const initialState: PlayerUIState = {
   },
   subtitleSearch: {
     isSearchVisible: false
-  }
+  },
+  videoAreaHovered: false,
+  lastVideoAreaInteraction: 0
 }
 
 const createPlayerUIStore: StateCreator<
@@ -112,6 +118,21 @@ const createPlayerUIStore: StateCreator<
   hideSubtitleSearch: () => {
     set((s: Draft<PlayerUIStore>) => {
       s.subtitleSearch.isSearchVisible = false
+    })
+  },
+
+  setVideoAreaHovered: (hovered: boolean) => {
+    set((s: Draft<PlayerUIStore>) => {
+      s.videoAreaHovered = hovered
+      if (hovered) {
+        s.lastVideoAreaInteraction = Date.now()
+      }
+    })
+  },
+
+  pokeVideoAreaInteraction: () => {
+    set((s: Draft<PlayerUIStore>) => {
+      s.lastVideoAreaInteraction = Date.now()
     })
   }
 })
