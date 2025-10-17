@@ -257,19 +257,15 @@ class FFmpegService {
   }
 
   // 快速检查 FFmpeg 是否存在（文件系统级别检查）
-  public fastCheckFFmpegExists(): boolean {
+  public async fastCheckFFmpegExists(): Promise<boolean> {
     const startTime = Date.now()
     const ffmpegPath = this.getFFmpegPath()
 
     try {
-      // 检查文件是否存在
-      if (!fs.existsSync(ffmpegPath)) {
-        logger.info('⚡ 快速检查: FFmpeg 文件不存在', { ffmpegPath })
-        return false
-      }
+      // 检查文件是否存在并获取文件信息
+      const stats = await fs.promises.stat(ffmpegPath)
 
       // 检查是否为文件（非目录）
-      const stats = fs.statSync(ffmpegPath)
       if (!stats.isFile()) {
         logger.info('⚡ 快速检查: FFmpeg 路径不是文件', { ffmpegPath })
         return false
@@ -332,7 +328,7 @@ class FFmpegService {
     })
 
     try {
-      const fastCheckPassed = this.fastCheckFFmpegExists()
+      const fastCheckPassed = await this.fastCheckFFmpegExists()
       if (!fastCheckPassed) {
         // 快速检查失败，直接缓存结果并返回
         FFmpegService.ffmpegAvailabilityCache[ffmpegPath] = false
@@ -501,7 +497,9 @@ class FFmpegService {
       pm.endTiming(this.convertFileUrlToLocalPath)
 
       // 检查文件是否存在
-      if (!fs.existsSync(localInputPath)) {
+      try {
+        await fs.promises.access(localInputPath, fs.constants.F_OK)
+      } catch {
         logger.error(`❌ 文件不存在: ${localInputPath}`)
         return null
       }

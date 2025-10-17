@@ -195,13 +195,15 @@ class MediaParserService {
         return null
       }
 
-      // 快速检查文件存在性
-      if (!fs.existsSync(pathResult.localPath)) {
+      // 快速检查文件存在性并获取文件大小
+      let fileSize: number
+      try {
+        const stats = await fs.promises.stat(pathResult.localPath)
+        fileSize = stats.size
+      } catch {
         logger.error(`❌ 文件不存在: ${pathResult.localPath}`)
         return null
       }
-
-      const fileSize = fs.statSync(pathResult.localPath).size
       logger.info(`📊 文件大小: ${Math.round((fileSize / 1024 / 1024) * 100) / 100}MB`)
 
       // 根据策略选择解析器
@@ -297,27 +299,27 @@ class MediaParserService {
         localInputPath
       })
 
-      // 检查文件是否存在
+      // 检查文件是否存在并获取文件信息
       const fileCheckStartTime = Date.now()
-      const fileExists = fs.existsSync(localInputPath)
-      const fileCheckEndTime = Date.now()
-
-      logger.info(`📁 文件存在性检查耗时: ${fileCheckEndTime - fileCheckStartTime}ms`, {
-        fileExists
-      })
-
-      if (!fileExists) {
+      let fileStats: fs.Stats
+      let fileSize: number
+      try {
+        fileStats = await fs.promises.stat(localInputPath)
+        fileSize = fileStats.size
+      } catch {
+        const fileCheckEndTime = Date.now()
+        logger.info(`📁 文件存在性检查耗时: ${fileCheckEndTime - fileCheckStartTime}ms`, {
+          fileExists: false
+        })
         logger.error(`❌ 文件不存在: ${localInputPath}`)
         return null
       }
-
-      // 获取文件大小
-      const fileStatsStartTime = Date.now()
-      const fileStats = fs.statSync(localInputPath)
-      const fileSize = fileStats.size
       const fileStatsEndTime = Date.now()
 
-      logger.info(`📊 文件信息获取耗时: ${fileStatsEndTime - fileStatsStartTime}ms`, {
+      logger.info(`📁 文件存在性检查耗时: ${fileStatsEndTime - fileCheckStartTime}ms`, {
+        fileExists: true
+      })
+      logger.info(`📊 文件信息获取耗时: ${fileStatsEndTime - fileCheckStartTime}ms`, {
         fileSize: `${Math.round((fileSize / 1024 / 1024) * 100) / 100}MB`
       })
 
@@ -511,7 +513,9 @@ class MediaParserService {
       }
 
       // 检查文件是否存在
-      if (!fs.existsSync(pathResult.localPath)) {
+      try {
+        await fs.promises.access(pathResult.localPath, fs.constants.F_OK)
+      } catch {
         logger.error(`❌ 文件不存在: ${pathResult.localPath}`)
         return null
       }

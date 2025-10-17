@@ -710,11 +710,11 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   // 文件系统相关 IPC 处理程序 / File system-related IPC handlers
   ipcMain.handle(IpcChannel.Fs_CheckFileExists, async (_, filePath: string) => {
     try {
-      const exists = fs.existsSync(filePath)
-      logger.debug('检查文件存在性', { filePath, exists })
-      return exists
+      await fs.promises.access(filePath, fs.constants.F_OK)
+      logger.debug('检查文件存在性', { filePath, exists: true })
+      return true
     } catch (error) {
-      logger.error('检查文件存在性时出错', { filePath, error })
+      logger.debug('检查文件存在性', { filePath, exists: false })
       return false
     }
   })
