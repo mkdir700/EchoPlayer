@@ -218,11 +218,13 @@ function SubtitleListPanel({
                   <Video size={20} />
                 </OptionIconWrapper>
                 <OptionContent>
-                  <OptionTitle>使用内嵌字幕</OptionTitle>
-                  <OptionDescription>视频文件包含字幕轨道，可直接导入</OptionDescription>
+                  <OptionTitle>{t('player.subtitleList.empty.options.embedded.title')}</OptionTitle>
+                  <OptionDescription>
+                    {t('player.subtitleList.empty.options.embedded.description')}
+                  </OptionDescription>
                 </OptionContent>
                 <Button type="primary" onClick={onOpenEmbeddedSubtitleSelector}>
-                  选择
+                  {t('player.subtitleList.empty.options.embedded.action')}
                 </Button>
               </OptionCard>
             )}
@@ -233,8 +235,10 @@ function SubtitleListPanel({
                 <FileText size={20} />
               </OptionIconWrapper>
               <OptionContent>
-                <OptionTitle>导入外挂字幕</OptionTitle>
-                <OptionDescription>从本地文件导入 SRT、VTT 等格式字幕</OptionDescription>
+                <OptionTitle>{t('player.subtitleList.empty.options.external.title')}</OptionTitle>
+                <OptionDescription>
+                  {t('player.subtitleList.empty.options.external.description')}
+                </OptionDescription>
               </OptionContent>
               <ImportSubtitleButton />
             </OptionCard>
@@ -245,10 +249,12 @@ function SubtitleListPanel({
                 <Sparkles size={20} />
               </OptionIconWrapper>
               <OptionContent>
-                <OptionTitle>AI 生成字幕</OptionTitle>
-                <OptionDescription>基于语音识别生成单词级字幕</OptionDescription>
+                <OptionTitle>{t('player.subtitleList.empty.options.ai.title')}</OptionTitle>
+                <OptionDescription>
+                  {t('player.subtitleList.empty.options.ai.description')}
+                </OptionDescription>
               </OptionContent>
-              <Button disabled>即将推出</Button>
+              <Button disabled>{t('player.subtitleList.empty.options.ai.action')}</Button>
             </OptionCard>
           </OptionsGrid>
 
