@@ -545,7 +545,10 @@ function PlayerPage() {
 
           setSubtitleStreams(result)
         } else {
-          logger.info('📄 此视频文件不含字幕轨道')
+          logger.info('📄 此视频文件不含字幕轨道', {
+            path: detectionPath,
+            videoId
+          })
         }
       } catch (error) {
         logger.warn('检测字幕轨道失败', {
