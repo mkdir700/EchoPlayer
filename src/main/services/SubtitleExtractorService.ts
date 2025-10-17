@@ -222,13 +222,14 @@ class SubtitleExtractorService {
    */
   public async cleanupTempFile(filePath: string): Promise<boolean> {
     try {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath)
-        logger.info('🧹 清理临时字幕文件', { filePath })
-        return true
-      }
-      return false
+      await fs.promises.unlink(filePath)
+      logger.info('🧹 清理临时字幕文件', { filePath })
+      return true
     } catch (error) {
+      const nodeError = error as NodeJS.ErrnoException
+      if (nodeError?.code === 'ENOENT') {
+        return false
+      }
       logger.error('清理临时字幕文件失败', {
         filePath,
         error: error instanceof Error ? error.message : String(error)
