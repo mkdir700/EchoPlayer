@@ -18,42 +18,6 @@ class MediaParserService {
   }
 
   /**
-   * 将文件 URL 转换为本地路径
-   */
-  private convertFileUrlToLocalPath(inputPath: string): string {
-    // 如果是file://URL，需要转换为本地路径
-    if (inputPath.startsWith('file://')) {
-      try {
-        const url = new URL(inputPath)
-        let localPath = decodeURIComponent(url.pathname)
-
-        // Windows路径处理：移除开头的斜杠
-        if (process.platform === 'win32' && localPath.startsWith('/')) {
-          localPath = localPath.substring(1)
-        }
-
-        logger.info('🔄 URL路径转换', {
-          原始路径: inputPath,
-          转换后路径: localPath,
-          平台: process.platform,
-          文件是否存在: fs.existsSync(localPath)
-        })
-
-        return localPath
-      } catch (error) {
-        logger.error('URL路径转换失败:', {
-          error: error instanceof Error ? error : new Error(String(error))
-        })
-        // 如果转换失败，返回原路径
-        return inputPath
-      }
-    }
-
-    // 如果不是file://URL，直接返回
-    return inputPath
-  }
-
-  /**
    * 将 Remotion parseMedia 结果转换为 FFmpegVideoInfo 格式
    */
   private parseRemotionResult(result: any): FFmpegVideoInfo | null {
@@ -291,7 +255,14 @@ class MediaParserService {
     try {
       // 转换文件路径
       const pathConvertStartTime = Date.now()
-      const localInputPath = this.convertFileUrlToLocalPath(inputPath)
+      const pathResult = PathConverter.convertToLocalPath(inputPath)
+
+      if (!pathResult.isValid) {
+        logger.error(`❌ 路径转换失败: ${pathResult.error}`)
+        return null
+      }
+
+      const localInputPath = pathResult.localPath
       const pathConvertEndTime = Date.now()
 
       logger.info(`🔄 路径转换耗时: ${pathConvertEndTime - pathConvertStartTime}ms`, {
