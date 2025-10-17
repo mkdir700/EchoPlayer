@@ -44,6 +44,18 @@ type SubtitleSearchResult = {
   index: number
 }
 
+/**
+ * Render the subtitle list panel with search, virtualized list, and empty-state actions.
+ *
+ * Renders either an empty-state view with import/embedded/AI options and legacy actions when no subtitles are available,
+ * or a searchable, virtualized list of subtitles with time formatting, range-based scrolling state management, and item selection.
+ *
+ * @param emptyDescription - Optional custom description to display in the empty-state header.
+ * @param emptyActions - Optional list of custom action buttons to show in the empty-state legacy actions row.
+ * @param hasEmbeddedSubtitles - When true, show the embedded-subtitle option card in the empty state.
+ * @param onOpenEmbeddedSubtitleSelector - Callback invoked when the embedded-subtitle option's "select" button is clicked.
+ * @returns The subtitle list panel element.
+ */
 function SubtitleListPanel({
   emptyDescription,
   emptyActions,

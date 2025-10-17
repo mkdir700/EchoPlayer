@@ -45,16 +45,15 @@ const mediaParserService = new MediaParserService()
 const subtitleExtractorService = new SubtitleExtractorService()
 
 /**
- * Register all IPC handlers used by the main process.
+ * Registers all ipcMain handlers used by the main process.
  *
- * Initializes updater and notification services and wires a comprehensive set of ipcMain.handle
- * handlers exposing application control, system info, theming/language, spell-check, cache and
- * file operations, dictionary lookups, FFmpeg operations, shortcut management, and database DAOs
- * (Files, VideoLibrary, SubtitleLibrary) to renderer processes.
+ * Exposes application control, system information, theming/language, spell-check, cache and file
+ * operations, media tooling (FFmpeg, media parser, subtitle extraction), shortcuts, and database
+ * DAOs to renderer processes via ipcMain handlers.
  *
- * This function has side effects: it registers handlers on ipcMain, may attach an app 'before-quit'
- * listener when requested, and mutates Electron state (e.g., app paths, sessions). Call from the
- * Electron main process once (typically during app initialization).
+ * This function mutates Electron state (registers handlers on ipcMain, may add/remove an app
+ * 'before-quit' listener, and updates sessions/paths) and must be invoked once from the main
+ * process during application initialization.
  */
 export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   const appUpdater = new AppUpdater(mainWindow)
