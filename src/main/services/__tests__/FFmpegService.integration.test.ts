@@ -97,7 +97,7 @@ describe('FFmpegService Integration Tests', () => {
   })
 
   describe('FFmpeg availability check', () => {
-    it('should return true for existing bundled FFmpeg', () => {
+    it('should return true for existing bundled FFmpeg', async () => {
       // Mock bundled FFmpeg exists with proper stats
       vi.mocked(fs.existsSync).mockReturnValue(true)
       vi.mocked(fs.statSync).mockReturnValue({
@@ -106,19 +106,35 @@ describe('FFmpegService Integration Tests', () => {
         size: 1024 * 1024
       } as any)
 
-      const exists = ffmpegService.fastCheckFFmpegExists()
+      // Mock fs.promises.stat for async operation
+      const mockStat = vi.fn().mockResolvedValue({
+        isFile: () => true,
+        mode: 0o755,
+        size: 1024 * 1024
+      })
+      vi.mocked(fs.promises).stat = mockStat
+
+      const exists = await ffmpegService.fastCheckFFmpegExists()
       expect(exists).toBe(true)
     })
 
-    it('should return false for non-existent FFmpeg', () => {
+    it('should return false for non-existent FFmpeg', async () => {
       // Mock FFmpeg does not exist
       vi.mocked(fs.existsSync).mockReturnValue(false)
 
-      const exists = ffmpegService.fastCheckFFmpegExists()
+      // Mock fs.promises.stat to throw ENOENT error
+      const mockStat = vi
+        .fn()
+        .mockRejectedValue(
+          Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' })
+        )
+      vi.mocked(fs.promises).stat = mockStat
+
+      const exists = await ffmpegService.fastCheckFFmpegExists()
       expect(exists).toBe(false)
     })
 
-    it('should return false for directory instead of file', () => {
+    it('should return false for directory instead of file', async () => {
       // Mock path exists but is directory
       vi.mocked(fs.existsSync).mockReturnValue(true)
       vi.mocked(fs.statSync).mockReturnValue({
@@ -127,7 +143,15 @@ describe('FFmpegService Integration Tests', () => {
         size: 0
       } as any)
 
-      const exists = ffmpegService.fastCheckFFmpegExists()
+      // Mock fs.promises.stat to return directory stats
+      const mockStat = vi.fn().mockResolvedValue({
+        isFile: () => false,
+        mode: 0o755,
+        size: 0
+      })
+      vi.mocked(fs.promises).stat = mockStat
+
+      const exists = await ffmpegService.fastCheckFFmpegExists()
       expect(exists).toBe(false)
     })
   })
@@ -201,10 +225,18 @@ describe('FFmpegService Integration Tests', () => {
         size: 1024 * 1024
       } as any)
 
+      // Mock fs.promises.stat for async operation
+      const mockStat = vi.fn().mockResolvedValue({
+        isFile: () => true,
+        mode: 0o755,
+        size: 1024 * 1024
+      })
+      vi.mocked(fs.promises).stat = mockStat
+
       // These methods should work without throwing
       const path = ffmpegService.getFFmpegPath()
       const info = ffmpegService.getFFmpegInfo()
-      const exists = ffmpegService.fastCheckFFmpegExists()
+      const exists = await ffmpegService.fastCheckFFmpegExists()
 
       expect(path).toBeTruthy()
       expect(info).toBeTruthy()
@@ -213,15 +245,18 @@ describe('FFmpegService Integration Tests', () => {
   })
 
   describe('Error handling', () => {
-    it('should handle filesystem errors gracefully', () => {
+    it('should handle filesystem errors gracefully', async () => {
       vi.mocked(fs.existsSync).mockImplementation(() => {
         throw new Error('Filesystem error')
       })
 
-      expect(() => {
-        const exists = ffmpegService.fastCheckFFmpegExists()
-        expect(exists).toBe(false)
-      }).not.toThrow()
+      // Mock fs.promises.stat to throw error
+      const mockStat = vi.fn().mockRejectedValue(new Error('Filesystem error'))
+      vi.mocked(fs.promises).stat = mockStat
+
+      // Should not throw, but return false gracefully
+      const exists = await ffmpegService.fastCheckFFmpegExists()
+      expect(exists).toBe(false)
     })
 
     it('should handle missing download service gracefully', () => {
