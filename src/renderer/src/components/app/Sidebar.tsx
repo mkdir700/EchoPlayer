@@ -22,6 +22,14 @@ const Sidebar: FC = () => {
     navigate(path)
   }
 
+  const themeRotation = [ThemeMode.light, ThemeMode.dark, ThemeMode.system]
+
+  const cycleTheme = () => {
+    const currentIndex = themeRotation.indexOf(settedTheme)
+    const nextIndex = (currentIndex + 1) % themeRotation.length
+    setTheme(themeRotation[nextIndex])
+  }
+
   return (
     <Container
       $isFullscreen={isFullscreen}
@@ -38,18 +46,7 @@ const Sidebar: FC = () => {
           mouseEnterDelay={0.8}
           placement="right"
         >
-          <Icon
-            theme={theme}
-            onClick={() => {
-              if (settedTheme === ThemeMode.light) {
-                setTheme(ThemeMode.dark)
-              } else if (settedTheme === ThemeMode.dark) {
-                setTheme(ThemeMode.system)
-              } else {
-                setTheme(ThemeMode.light)
-              }
-            }}
-          >
+          <Icon theme={theme} onClick={cycleTheme}>
             {settedTheme === ThemeMode.system ? (
               <Monitor size={20} className="icon" />
             ) : settedTheme === ThemeMode.dark ? (
