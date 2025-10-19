@@ -720,7 +720,15 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(IpcChannel.ASR_Generate, async (_, options: ASRGenerateOptions) => {
     logger.info('收到 ASR 字幕生成请求', { videoId: options.videoId })
     return await asrSubtitleService.generateSubtitle(options, (progress) => {
-      mainWindow.webContents.send(IpcChannel.ASR_Progress, progress)
+      try {
+        if (!mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+          mainWindow.webContents.send(IpcChannel.ASR_Progress, progress)
+        }
+      } catch (err) {
+        logger.warn('ASR 进度事件发送失败', {
+          error: err instanceof Error ? err.message : String(err)
+        })
+      }
     })
   })
 
