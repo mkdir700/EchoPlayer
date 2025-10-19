@@ -11,6 +11,8 @@ import { Divider } from 'antd'
 import Link from 'antd/es/typography/Link'
 import styled, { CSSProp } from 'styled-components'
 
+import { FONT_SIZES, FONT_WEIGHTS, SPACING } from '../../infrastructure/styles/theme'
+
 export const SettingContainer = styled.div<{ theme?: ThemeMode }>`
   display: flex;
   flex-direction: column;
@@ -98,4 +100,10 @@ export const SettingGroup = styled.div<{ theme?: ThemeMode; css?: CSSProp }>`
   border: 0.5px solid var(--color-border);
   padding: 16px;
   background: ${(props) => (props.theme === 'dark' ? '#00000010' : 'var(--color-background)')};
+`
+export const HelpText = styled.span`
+  font-size: ${FONT_SIZES.XS}px;
+  color: var(--color-text-3);
+  margin-top: ${SPACING.XXS}px;
+  font-weight: ${FONT_WEIGHTS.REGULAR};
 `

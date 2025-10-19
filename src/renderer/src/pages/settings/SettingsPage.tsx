@@ -1,5 +1,5 @@
 import { Navbar, NavbarCenter } from '@renderer/components/app/Navbar'
-import { Command, Eye, Info, Monitor, PlayCircle, Settings2 } from 'lucide-react'
+import { Command, Eye, Info, Mic, Monitor, PlayCircle, Settings2 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
@@ -7,6 +7,7 @@ import styled from 'styled-components'
 
 import AboutSettings from './AboutSettings'
 import { AppearanceSettings } from './AppearanceSettings'
+import ASRSettings from './ASRSettings'
 import GeneralSettings from './GeneralSettings'
 import PlaybackSettings from './PlaybackSettings'
 import PluginsSettings from './PluginsSettings'
@@ -52,6 +53,12 @@ export function SettingsPage(): React.JSX.Element {
               {t('settings.playback.title')}
             </MenuItem>
           </MenuItemLink>
+          <MenuItemLink to="/settings/asr">
+            <MenuItem className={isRoute('/settings/asr')}>
+              <Mic size={18} />
+              {t('settings.asr.title')}
+            </MenuItem>
+          </MenuItemLink>
           <MenuItemLink to="/settings/plugins">
             <MenuItem className={isRoute('/settings/plugins')}>
               <Monitor size={18} />
@@ -71,6 +78,7 @@ export function SettingsPage(): React.JSX.Element {
             <Route path="general" element={<GeneralSettings />} />
             <Route path="shortcut" element={<ShortcutSettings />} />
             <Route path="playback" element={<PlaybackSettings />} />
+            <Route path="asr" element={<ASRSettings />} />
             <Route path="plugins" element={<PluginsSettings />} />
             <Route path="about" element={<AboutSettings />} />
           </Routes>

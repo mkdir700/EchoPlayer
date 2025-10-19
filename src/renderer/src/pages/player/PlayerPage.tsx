@@ -34,6 +34,8 @@ import styled from 'styled-components'
 
 import { NavbarIcon } from '.'
 import {
+  ASRProgressModal,
+  ASRSubtitlePrompt,
   ControllerPanel,
   PlayerSelector,
   ProgressBar,
@@ -42,6 +44,7 @@ import {
   SubtitleTrackSelector,
   VideoErrorRecovery
 } from './components'
+import { useASRSubtitle } from './hooks/useASRSubtitle'
 import { disposeGlobalOrchestrator } from './hooks/usePlayerEngine'
 import { PlayerPageProvider } from './state/player-page.provider'
 
@@ -116,6 +119,18 @@ function PlayerPage() {
   const sessionIdRef = useRef<string | null>(null)
   // 保存原始文件路径用于字幕检测（不是 HLS 播放源）
   const originalFilePathRef = useRef<string | null>(null)
+
+  // ASR subtitle generation
+  const {
+    asrEnabled,
+    showAsrPrompt,
+    showAsrProgress,
+    asrProgress,
+    handleOpenASRGenerator,
+    handleGenerateSubtitle,
+    handleCancelAsr,
+    handleAsrLater
+  } = useASRSubtitle(videoId, originalFilePathRef.current)
 
   // 加载视频数据
   useEffect(() => {
@@ -723,6 +738,8 @@ function PlayerPage() {
                         subtitleStreams !== null && subtitleStreams.streams.length > 0
                       }
                       onOpenEmbeddedSubtitleSelector={() => setShowSubtitleTrackSelector(true)}
+                      asrEnabled={asrEnabled}
+                      onOpenASRGenerator={handleOpenASRGenerator}
                     />
                   </RightSidebar>
                 </Sider>
@@ -758,6 +775,21 @@ function PlayerPage() {
           onClose={() => setShowSubtitleTrackSelector(false)}
           onImported={() => setShowSubtitleTrackSelector(false)}
           onDismiss={() => setUserDismissedEmbeddedSubtitles(true)}
+        />
+
+        {/* ASR 字幕生成提示弹窗 */}
+        <ASRSubtitlePrompt
+          open={showAsrPrompt}
+          onGenerate={handleGenerateSubtitle}
+          onLater={handleAsrLater}
+          estimatedMinutes={5}
+        />
+
+        {/* ASR 字幕生成进度弹窗 */}
+        <ASRProgressModal
+          open={showAsrProgress}
+          progress={asrProgress}
+          onCancel={handleCancelAsr}
         />
       </Container>
     </PlayerPageProvider>

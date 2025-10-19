@@ -1,5 +1,7 @@
 import styled from 'styled-components'
 
+export { default as ASRProgressModal } from './ASRProgressModal'
+export { default as ASRSubtitlePrompt } from './ASRSubtitlePrompt'
 export { default as ControllerPanel } from './ControllerPanel'
 export { default as ImportSubtitleButton } from './ImportSubtitleButton'
 export { default as PlayerHeader } from './PlayerHeader'

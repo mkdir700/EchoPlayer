@@ -2,6 +2,7 @@ import fs from 'node:fs'
 
 import { UpgradeChannel } from '@shared/config/constant'
 import { IpcChannel } from '@shared/IpcChannel'
+import type { ASRGenerateOptions } from '@shared/types'
 import { Notification, Shortcut, ThemeMode } from '@types'
 import {
   BrowserWindow,
@@ -19,6 +20,7 @@ import { isLinux, isMac, isPortable, isWin } from './constant'
 import { db } from './db/dao'
 import appService from './services/AppService'
 import AppUpdater from './services/AppUpdater'
+import ASRSubtitleService from './services/ASRSubtitleService'
 import { configManager } from './services/ConfigManager'
 import DictionaryService from './services/DictionaryService'
 import FFmpegService from './services/FFmpegService'
@@ -43,6 +45,7 @@ const dictionaryService = new DictionaryService()
 const ffmpegService = new FFmpegService()
 const mediaParserService = new MediaParserService()
 const subtitleExtractorService = new SubtitleExtractorService()
+const asrSubtitleService = new ASRSubtitleService()
 
 /**
  * Registers all ipcMain handlers used by the main process.
@@ -711,6 +714,32 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
     const count = await subtitleExtractorService.cleanupTempFiles()
     logger.info('触发字幕临时文件清理', { count })
     return count
+  })
+
+  // ASR 字幕生成相关 IPC 处理程序 / ASR subtitle generation related IPC handlers
+  ipcMain.handle(IpcChannel.ASR_Generate, async (_, options: ASRGenerateOptions) => {
+    logger.info('收到 ASR 字幕生成请求', { videoId: options.videoId })
+    return await asrSubtitleService.generateSubtitle(options, (progress) => {
+      try {
+        if (!mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+          mainWindow.webContents.send(IpcChannel.ASR_Progress, progress)
+        }
+      } catch (err) {
+        logger.warn('ASR 进度事件发送失败', {
+          error: err instanceof Error ? err.message : String(err)
+        })
+      }
+    })
+  })
+
+  ipcMain.handle(IpcChannel.ASR_Cancel, async (_, taskId: string) => {
+    logger.info('取消 ASR 任务', { taskId })
+    return await asrSubtitleService.cancelTask(taskId)
+  })
+
+  ipcMain.handle(IpcChannel.ASR_ValidateApiKey, async (_, apiKey: string) => {
+    logger.info('验证 Deepgram API Key')
+    return await asrSubtitleService.validateApiKey(apiKey)
   })
 
   // 文件系统相关 IPC 处理程序 / File system-related IPC handlers
