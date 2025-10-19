@@ -140,6 +140,12 @@ export enum IpcChannel {
   Media_ExtractSubtitle = 'media:extract-subtitle',
   SubtitleExtractor_CleanupTemp = 'subtitle-extractor:cleanup-temp',
 
+  // ASR 字幕生成相关 IPC 通道 / ASR subtitle generation related IPC channels
+  ASR_Generate = 'asr:generate',
+  ASR_Progress = 'asr:progress',
+  ASR_Cancel = 'asr:cancel',
+  ASR_ValidateApiKey = 'asr:validate-api-key',
+
   // 文件系统相关 IPC 通道 / File system related IPC channels
   Fs_CheckFileExists = 'fs:check-file-exists',
   Fs_ReadFile = 'fs:read-file',

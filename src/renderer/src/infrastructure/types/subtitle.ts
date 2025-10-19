@@ -6,6 +6,15 @@
  * Based on existing EchoPlayer project's subtitle processing features
  */
 
+// 单词级时间戳接口 / Word-level Timestamp Interface
+export interface WordTimestamp {
+  readonly word: string
+  readonly start: number
+  readonly end: number
+  readonly confidence: number
+  readonly punctuated_word?: string
+}
+
 // 字幕项接口 / Subtitle Item Interface
 export interface SubtitleItem {
   readonly id: string
@@ -13,6 +22,7 @@ export interface SubtitleItem {
   readonly endTime: number
   readonly originalText: string
   readonly translatedText?: string
+  readonly words?: WordTimestamp[]
 }
 
 // 字幕格式枚举 / Subtitle Format Enum

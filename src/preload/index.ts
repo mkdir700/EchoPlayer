@@ -268,6 +268,12 @@ const api = {
         timeoutMs
       )
   },
+  asr: {
+    generate: (options: any): Promise<any> => ipcRenderer.invoke(IpcChannel.ASR_Generate, options),
+    cancel: (taskId: string): Promise<void> => ipcRenderer.invoke(IpcChannel.ASR_Cancel, taskId),
+    validateApiKey: (apiKey: string): Promise<boolean> =>
+      ipcRenderer.invoke(IpcChannel.ASR_ValidateApiKey, apiKey)
+  },
   uv: {
     checkInstallation: (): Promise<{
       exists: boolean
@@ -583,80 +589,14 @@ const api = {
       has: (videoId: number): Promise<boolean> =>
         ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Has, videoId)
     }
+  },
+  on: (channel: string, callback: (...args: any[]) => void) => {
+    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
+  },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  off: (channel: string, _callback?: (...args: any[]) => void) => {
+    ipcRenderer.removeAllListeners(channel)
   }
-  // Binary related APIs
-  // isBinaryExist: (name: string) => ipcRenderer.invoke(IpcChannel.App_IsBinaryExist, name),
-  // getBinaryPath: (name: string) => ipcRenderer.invoke(IpcChannel.App_GetBinaryPath, name),
-  // installUVBinary: () => ipcRenderer.invoke(IpcChannel.App_InstallUvBinary),
-  // installBunBinary: () => ipcRenderer.invoke(IpcChannel.App_InstallBunBinary),
-
-  // searchService: {
-  //   openSearchWindow: (uid: string) => ipcRenderer.invoke(IpcChannel.SearchWindow_Open, uid),
-  //   closeSearchWindow: (uid: string) => ipcRenderer.invoke(IpcChannel.SearchWindow_Close, uid),
-  //   openUrlInSearchWindow: (uid: string, url: string) =>
-  //     ipcRenderer.invoke(IpcChannel.SearchWindow_OpenUrl, uid, url)
-  // },
-  // webview: {
-  //   setOpenLinkExternal: (webviewId: number, isExternal: boolean) =>
-  //     ipcRenderer.invoke(IpcChannel.Webview_SetOpenLinkExternal, webviewId, isExternal),
-  //   setSpellCheckEnabled: (webviewId: number, isEnable: boolean) =>
-  //     ipcRenderer.invoke(IpcChannel.Webview_SetSpellCheckEnabled, webviewId, isEnable)
-  // },
-  // storeSync: {
-  //   subscribe: () => ipcRenderer.invoke(IpcChannel.StoreSync_Subscribe),
-  //   unsubscribe: () => ipcRenderer.invoke(IpcChannel.StoreSync_Unsubscribe),
-  //   onUpdate: (action: any) => ipcRenderer.invoke(IpcChannel.StoreSync_OnUpdate, action)
-  // },
-  // selection: {
-  //   hideToolbar: () => ipcRenderer.invoke(IpcChannel.Selection_ToolbarHide),
-  //   writeToClipboard: (text: string) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_WriteToClipboard, text),
-  //   determineToolbarSize: (width: number, height: number) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_ToolbarDetermineSize, width, height),
-  //   setEnabled: (enabled: boolean) => ipcRenderer.invoke(IpcChannel.Selection_SetEnabled, enabled),
-  //   setTriggerMode: (triggerMode: string) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_SetTriggerMode, triggerMode),
-  //   setFollowToolbar: (isFollowToolbar: boolean) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_SetFollowToolbar, isFollowToolbar),
-  //   setRemeberWinSize: (isRemeberWinSize: boolean) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_SetRemeberWinSize, isRemeberWinSize),
-  //   setFilterMode: (filterMode: string) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_SetFilterMode, filterMode),
-  //   setFilterList: (filterList: string[]) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_SetFilterList, filterList),
-  //   processAction: (actionItem: ActionItem, isFullScreen: boolean = false) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_ProcessAction, actionItem, isFullScreen),
-  //   closeActionWindow: () => ipcRenderer.invoke(IpcChannel.Selection_ActionWindowClose),
-  //   minimizeActionWindow: () => ipcRenderer.invoke(IpcChannel.Selection_ActionWindowMinimize),
-  //   pinActionWindow: (isPinned: boolean) =>
-  //     ipcRenderer.invoke(IpcChannel.Selection_ActionWindowPin, isPinned)
-  // },
-  // quoteToMainWindow: (text: string) => ipcRenderer.invoke(IpcChannel.App_QuoteToMain, text),
-  // setDisableHardwareAcceleration: (isDisable: boolean) =>
-  //   ipcRenderer.invoke(IpcChannel.App_SetDisableHardwareAcceleration, isDisable),
-  // trace: {
-  //   saveData: (topicId: string) => ipcRenderer.invoke(IpcChannel.TRACE_SAVE_DATA, topicId),
-  //   getData: (topicId: string, traceId: string, modelName?: string) =>
-  //     ipcRenderer.invoke(IpcChannel.TRACE_GET_DATA, topicId, traceId, modelName),
-  //   saveEntity: (entity: SpanEntity) => ipcRenderer.invoke(IpcChannel.TRACE_SAVE_ENTITY, entity),
-  //   getEntity: (spanId: string) => ipcRenderer.invoke(IpcChannel.TRACE_GET_ENTITY, spanId),
-  //   bindTopic: (topicId: string, traceId: string) =>
-  //     ipcRenderer.invoke(IpcChannel.TRACE_BIND_TOPIC, topicId, traceId),
-  //   tokenUsage: (spanId: string, usage: TokenUsage) =>
-  //     ipcRenderer.invoke(IpcChannel.TRACE_TOKEN_USAGE, spanId, usage),
-  //   cleanHistory: (topicId: string, traceId: string, modelName?: string) =>
-  //     ipcRenderer.invoke(IpcChannel.TRACE_CLEAN_HISTORY, topicId, traceId, modelName),
-  //   cleanTopic: (topicId: string, traceId?: string) =>
-  //     ipcRenderer.invoke(IpcChannel.TRACE_CLEAN_TOPIC, topicId, traceId),
-  //   openWindow: (topicId: string, traceId: string, autoOpen?: boolean, modelName?: string) =>
-  //     ipcRenderer.invoke(IpcChannel.TRACE_OPEN_WINDOW, topicId, traceId, autoOpen, modelName),
-  //   setTraceWindowTitle: (title: string) => ipcRenderer.invoke(IpcChannel.TRACE_SET_TITLE, title),
-  //   addEndMessage: (spanId: string, modelName: string, context: string) =>
-  //     ipcRenderer.invoke(IpcChannel.TRACE_ADD_END_MESSAGE, spanId, modelName, context),
-  //   cleanLocalData: () => ipcRenderer.invoke(IpcChannel.TRACE_CLEAN_LOCAL_DATA),
-  //   addStreamMessage: (spanId: string, modelName: string, context: string, message: any) =>
-  //     ipcRenderer.invoke(IpcChannel.TRACE_ADD_STREAM_MESSAGE, spanId, modelName, context, message)
-  // }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

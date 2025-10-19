@@ -39,7 +39,11 @@ export enum ConfigKeys {
   TestChannel = 'testChannel',
   TestPlan = 'testPlan',
   SpellCheckLanguages = 'spellCheckLanguages',
-  DisableHardwareAcceleration = 'disableHardwareAcceleration'
+  DisableHardwareAcceleration = 'disableHardwareAcceleration',
+  // ASR 相关配置
+  DeepgramApiKey = 'deepgramApiKey',
+  ASRDefaultLanguage = 'asrDefaultLanguage',
+  ASRModel = 'asrModel'
 }
 
 // 获取基于版本的动态默认值
@@ -56,7 +60,11 @@ const defaultValues: Record<ConfigKeys, any> = {
   [ConfigKeys.TestChannel]: versionBasedDefaults.testChannel,
   [ConfigKeys.TestPlan]: versionBasedDefaults.testPlan,
   [ConfigKeys.SpellCheckLanguages]: [] as string[],
-  [ConfigKeys.DisableHardwareAcceleration]: false
+  [ConfigKeys.DisableHardwareAcceleration]: false,
+  // ASR 默认配置
+  [ConfigKeys.DeepgramApiKey]: '',
+  [ConfigKeys.ASRDefaultLanguage]: 'en',
+  [ConfigKeys.ASRModel]: 'nova-3'
 }
 
 export class ConfigManager {
@@ -207,6 +215,31 @@ export class ConfigManager {
    */
   get<T>(key: string, defaultValue?: T) {
     return this.store.get(key, defaultValue ? defaultValue : defaultValues[key]) as T
+  }
+
+  // ASR 相关配置方法
+  getDeepgramApiKey(): string {
+    return this.get(ConfigKeys.DeepgramApiKey, '')
+  }
+
+  setDeepgramApiKey(apiKey: string) {
+    this.set(ConfigKeys.DeepgramApiKey, apiKey)
+  }
+
+  getASRDefaultLanguage(): string {
+    return this.get(ConfigKeys.ASRDefaultLanguage, 'en')
+  }
+
+  setASRDefaultLanguage(language: string) {
+    this.set(ConfigKeys.ASRDefaultLanguage, language)
+  }
+
+  getASRModel(): string {
+    return this.get(ConfigKeys.ASRModel, 'nova-3')
+  }
+
+  setASRModel(model: string) {
+    this.set(ConfigKeys.ASRModel, model)
   }
 }
 

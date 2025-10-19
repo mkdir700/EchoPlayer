@@ -37,6 +37,10 @@ interface SubtitleListPannelProps {
   hasEmbeddedSubtitles?: boolean
   /** 打开内置字幕选择对话框 */
   onOpenEmbeddedSubtitleSelector?: () => void
+  /** 打开 ASR 字幕生成对话框 */
+  onOpenASRGenerator?: () => void
+  /** 是否启用 ASR 功能（当 API key 已配置时） */
+  asrEnabled?: boolean
 }
 
 type SubtitleSearchResult = {
@@ -60,7 +64,9 @@ function SubtitleListPanel({
   emptyDescription,
   emptyActions,
   hasEmbeddedSubtitles,
-  onOpenEmbeddedSubtitleSelector
+  onOpenEmbeddedSubtitleSelector,
+  onOpenASRGenerator,
+  asrEnabled = false
 }: SubtitleListPannelProps) {
   const subtitles = useSubtitles()
   usePlayerEngine()
@@ -244,7 +250,7 @@ function SubtitleListPanel({
             </OptionCard>
 
             {/* AI 生成选项 */}
-            <OptionCard $disabled>
+            <OptionCard $disabled={!asrEnabled}>
               <OptionIconWrapper $color="var(--ant-color-warning, #faad14)">
                 <Sparkles size={20} />
               </OptionIconWrapper>
@@ -254,7 +260,15 @@ function SubtitleListPanel({
                   {t('player.subtitleList.empty.options.ai.description')}
                 </OptionDescription>
               </OptionContent>
-              <Button disabled>{t('player.subtitleList.empty.options.ai.action')}</Button>
+              <Button
+                type="primary"
+                disabled={!asrEnabled}
+                onClick={asrEnabled ? onOpenASRGenerator : undefined}
+              >
+                {asrEnabled
+                  ? t('player.subtitleList.empty.options.ai.actionEnabled')
+                  : t('player.subtitleList.empty.options.ai.action')}
+              </Button>
             </OptionCard>
           </OptionsGrid>
 
