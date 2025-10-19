@@ -2,7 +2,7 @@ name: Sync Release to GitCode
 
 on:
   release:
-    types: [published, prereleased, edited]
+    types: [created, published, prereleased]
   workflow_dispatch:
     inputs:
       release_name:
