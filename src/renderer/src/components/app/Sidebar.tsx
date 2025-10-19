@@ -4,7 +4,7 @@ import { isMac, ThemeMode } from '@renderer/infrastructure'
 import { useFullscreen } from '@renderer/infrastructure/hooks/useFullscreen'
 import useNavBackgroundColor from '@renderer/infrastructure/hooks/useNavBackgroundColor'
 import { Tooltip } from 'antd'
-import { LucideHeart, LucideHome, Monitor, Moon, Settings, Sun } from 'lucide-react'
+import { Heart, Home, Monitor, Moon, Settings, Sun } from 'lucide-react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -93,13 +93,13 @@ const MainMenus: FC = () => {
   const menuItems = {
     home: {
       path: '/',
-      icon: <LucideHome size={20} className="icon" />,
+      icon: <Home size={20} className="icon" />,
       label: t('common.home'),
       disabled: false
     },
     favorites: {
       path: '/favorites',
-      icon: <LucideHeart size={20} className="icon" />,
+      icon: <Heart size={20} className="icon" />,
       label: t('common.favorites'),
       disabled: true
     }
