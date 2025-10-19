@@ -104,27 +104,82 @@ export function useASRSubtitle(videoId: number | null, videoPath: string | null)
             subtitleLibraryId: result.subtitleLibraryId,
             count: subtitles.length
           })
-        } else if (result.error) {
-          throw new Error(result.error)
         } else {
-          throw new Error('ASR generation completed but no subtitle library ID returned')
+          // Handle error response - prioritize errorCode over error message
+          const errorCode = result.errorCode
+          const errorMessage = result.error || 'Unknown error'
+
+          // Log the error details for debugging
+          logger.error('ASR generation failed with error code', {
+            errorCode,
+            errorMessage,
+            fullResult: result
+          })
+
+          // Create error with code attached for upstream handling
+          const error = new Error(errorMessage)
+          if (errorCode) {
+            ;(error as any).code = errorCode
+          }
+          throw error
         }
       } catch (error: any) {
         logger.error('ASR generation failed', error)
         setShowAsrProgress(false)
 
-        // Show appropriate error message
-        const errorMsg = error.message || error.toString()
-        if (errorMsg.includes('API key')) {
-          message.error(t('player.asr.errors.invalidApiKey'))
-        } else if (errorMsg.includes('quota')) {
-          message.error(t('player.asr.errors.apiQuotaExceeded'))
-        } else if (errorMsg.includes('network')) {
-          message.error(t('player.asr.errors.networkError'))
-        } else if (errorMsg.includes('audio')) {
-          message.error(t('player.asr.errors.audioExtractionFailed'))
+        // Prioritize errorCode from backend, fall back to string matching
+        const errorCode = error.code
+        const errorMessage = error.message || error.toString()
+
+        // Map error codes to user-friendly messages
+        let translationKey: string
+        switch (errorCode) {
+          case 'NO_API_KEY':
+            translationKey = 'player.asr.errors.noApiKey'
+            break
+          case 'INVALID_API_KEY':
+            translationKey = 'player.asr.errors.invalidApiKey'
+            break
+          case 'QUOTA_EXCEEDED':
+            translationKey = 'player.asr.errors.apiQuotaExceeded'
+            break
+          case 'NETWORK_ERROR':
+            translationKey = 'player.asr.errors.networkError'
+            break
+          case 'AUDIO_EXTRACTION_FAILED':
+            translationKey = 'player.asr.errors.audioExtractionFailed'
+            break
+          case 'TASK_CANCELLED':
+            // Don't show error for user-initiated cancellation
+            return
+          case 'SUBTITLE_EXTRACTION_FAILED':
+            translationKey = 'player.asr.errors.transcriptionFailed'
+            break
+          case 'UNKNOWN_ERROR':
+          default:
+            // Fall back to string matching for legacy errors without codes
+            if (!errorCode) {
+              if (errorMessage.includes('API key') || errorMessage.includes('API Key')) {
+                translationKey = 'player.asr.errors.invalidApiKey'
+              } else if (errorMessage.includes('quota') || errorMessage.includes('配额')) {
+                translationKey = 'player.asr.errors.apiQuotaExceeded'
+              } else if (errorMessage.includes('network') || errorMessage.includes('网络')) {
+                translationKey = 'player.asr.errors.networkError'
+              } else if (errorMessage.includes('audio')) {
+                translationKey = 'player.asr.errors.audioExtractionFailed'
+              } else {
+                translationKey = 'player.asr.errors.unknown'
+              }
+            } else {
+              translationKey = 'player.asr.errors.unknown'
+            }
+        }
+
+        // Show the error message
+        if (translationKey === 'player.asr.errors.unknown') {
+          message.error(t(translationKey, { message: errorMessage }))
         } else {
-          message.error(t('player.asr.errors.unknown', { message: errorMsg }))
+          message.error(t(translationKey))
         }
       }
     },
