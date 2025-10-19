@@ -26,8 +26,8 @@ export interface ASRGenerateOptions {
   videoPath: string
   /** 视频 ID（用于保存字幕记录） */
   videoId: number
-  /** 目标语言（ISO 639-1 代码，如 'en', 'zh', 'ja'） */
-  language?: string
+  /** 目标语言（ISO 639-1 代码，如 'en', 'zh', 'ja'，或 'auto' 进行自动语言检测） */
+  language?: string | 'auto'
   /** Deepgram 模型选择 */
   model?: 'nova-2' | 'nova-3'
   /** 输出格式 */
@@ -131,7 +131,7 @@ export interface DeepgramWord {
   end: number
   /** 置信度 (0-1) */
   confidence: number
-  /** 是否标点符号 */
+  /** 带标点的词形 */
   punctuated_word?: string
 }
 
