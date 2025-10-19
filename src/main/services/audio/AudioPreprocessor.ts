@@ -81,7 +81,8 @@ class AudioPreprocessor {
     logger.info('开始提取音频轨道', {
       videoPath,
       sampleRate,
-      channels
+      channels,
+      format
     })
 
     try {
@@ -101,7 +102,7 @@ class AudioPreprocessor {
 
       // 构建 FFmpeg 命令
       const ffmpegPath = this.ffmpegService.getFFmpegPath()
-      const args = this.buildFFmpegArgs(videoPath, outputPath, sampleRate, channels)
+      const args = this.buildFFmpegArgs(videoPath, outputPath, sampleRate, channels, format)
 
       logger.debug('执行 FFmpeg 命令', { ffmpegPath, args })
 
@@ -144,8 +145,15 @@ class AudioPreprocessor {
     inputPath: string,
     outputPath: string,
     sampleRate: number,
-    channels: number
+    channels: number,
+    format: 'wav' | 'mp3' = 'wav'
   ): string[] {
+    // 根据格式选择合适的编解码器和音频参数
+    const codecConfig =
+      format === 'mp3'
+        ? { codec: 'libmp3lame', bitrate: '128k' }
+        : { codec: 'pcm_s16le', bitrate: undefined }
+
     // FFmpeg 命令：提取第一个音频流并转码为 ASR 适配格式
     const args: string[] = [
       '-i',
@@ -158,10 +166,16 @@ class AudioPreprocessor {
       '-ac',
       String(channels), // 声道数（FFmpeg 会自动混音）
       '-c:a',
-      'pcm_s16le', // WAV 格式使用 PCM 编码
-      '-y', // 覆盖输出文件
-      outputPath
+      codecConfig.codec, // 根据格式选择编解码器
+      '-y' // 覆盖输出文件
     ]
+
+    // 如果是 MP3 格式，添加比特率参数
+    if (codecConfig.bitrate) {
+      args.push('-b:a', codecConfig.bitrate)
+    }
+
+    args.push(outputPath)
 
     return args
   }

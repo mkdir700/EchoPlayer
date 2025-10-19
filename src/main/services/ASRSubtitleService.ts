@@ -4,6 +4,7 @@
  */
 
 import type {
+  ASRErrorCode,
   ASRGenerateOptions,
   ASRProgress,
   ASRResult,
@@ -526,7 +527,7 @@ class ASRSubtitleService {
   /**
    * 获取错误代码
    */
-  private getErrorCode(errorMessage: string): string {
+  private getErrorCode(errorMessage: string): ASRErrorCode {
     if (errorMessage.includes('NO_API_KEY')) return 'NO_API_KEY'
     if (errorMessage.includes('API Key 无效')) return 'INVALID_API_KEY'
     if (errorMessage.includes('配额')) return 'QUOTA_EXCEEDED'
