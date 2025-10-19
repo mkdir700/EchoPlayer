@@ -2,6 +2,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { UpgradeChannel } from '@shared/config/constant'
 import { LogLevel, LogSourceWithContext } from '@shared/config/logger'
 import { IpcChannel } from '@shared/IpcChannel'
+import type { ASRGenerateOptions, ASRProgress, ASRResult } from '@shared/types'
 import { DictionaryResponse, FFmpegVideoInfo, Shortcut, ThemeMode } from '@types'
 import { contextBridge, ipcRenderer, OpenDialogOptions, shell, webUtils } from 'electron'
 import type {
@@ -269,10 +270,18 @@ const api = {
       )
   },
   asr: {
-    generate: (options: any): Promise<any> => ipcRenderer.invoke(IpcChannel.ASR_Generate, options),
+    generate: (options: ASRGenerateOptions): Promise<ASRResult> =>
+      ipcRenderer.invoke(IpcChannel.ASR_Generate, options),
     cancel: (taskId: string): Promise<void> => ipcRenderer.invoke(IpcChannel.ASR_Cancel, taskId),
     validateApiKey: (apiKey: string): Promise<boolean> =>
-      ipcRenderer.invoke(IpcChannel.ASR_ValidateApiKey, apiKey)
+      ipcRenderer.invoke(IpcChannel.ASR_ValidateApiKey, apiKey),
+    onProgress: (listener: (progress: ASRProgress) => void) => {
+      const handler = (_event: unknown, payload: ASRProgress) => listener(payload)
+      ipcRenderer.on(IpcChannel.ASR_Progress, handler)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.ASR_Progress, handler)
+      }
+    }
   },
   uv: {
     checkInstallation: (): Promise<{
