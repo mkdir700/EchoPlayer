@@ -33,6 +33,31 @@ export interface AudioExtractResult {
   error?: string
 }
 
+/**
+ * 从 FFmpeg 输出中解析时长信息
+ * 支持多种格式：无小数部分、1-3位小数部分
+ */
+export function parseFFmpegDuration(output: string): number | null {
+  const durationMatch = output.match(/Duration: (\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?/)
+  if (durationMatch) {
+    const hours = Number(durationMatch[1]) || 0
+    const minutes = Number(durationMatch[2]) || 0
+    const seconds = Number(durationMatch[3]) || 0
+    const fractionStr = durationMatch[4] || ''
+
+    // 计算毫秒部分：如果没有小数部分则为0，否则根据位数计算
+    let fractionalSeconds = 0
+    if (fractionStr) {
+      const fraction = Number(fractionStr) || 0
+      const divisor = Math.pow(10, fractionStr.length)
+      fractionalSeconds = fraction / divisor
+    }
+
+    return hours * 3600 + minutes * 60 + seconds + fractionalSeconds
+  }
+  return null
+}
+
 class AudioPreprocessor {
   private ffmpegService: FFmpegService
 
@@ -159,13 +184,9 @@ class AudioPreprocessor {
         stderrOutput += output
 
         // 尝试解析音频时长
-        const durationMatch = output.match(/Duration: (\d{2}):(\d{2}):(\d{2})\.(\d{2})/)
-        if (durationMatch && !duration) {
-          const hours = parseInt(durationMatch[1], 10)
-          const minutes = parseInt(durationMatch[2], 10)
-          const seconds = parseInt(durationMatch[3], 10)
-          const centiseconds = parseInt(durationMatch[4], 10)
-          duration = hours * 3600 + minutes * 60 + seconds + centiseconds / 100
+        const parsedDuration = parseFFmpegDuration(output)
+        if (parsedDuration !== null && !duration) {
+          duration = parsedDuration
         }
       })
 
