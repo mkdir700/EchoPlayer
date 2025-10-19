@@ -99,3 +99,9 @@ export const SettingGroup = styled.div<{ theme?: ThemeMode; css?: CSSProp }>`
   padding: 16px;
   background: ${(props) => (props.theme === 'dark' ? '#00000010' : 'var(--color-background)')};
 `
+export const HelpText = styled.span`
+  font-size: 12px;
+  color: var(--color-text-3);
+  margin-top: 4px;
+  font-weight: 400;
+`

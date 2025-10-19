@@ -2,10 +2,12 @@ import { loggerService } from '@logger'
 import Selector from '@renderer/components/Selector'
 import { useTheme } from '@renderer/contexts'
 import { Button, Flex, Input, message } from 'antd'
+import { ExternalLink } from 'lucide-react'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
+  HelpText,
   SettingContainer,
   SettingDescription,
   SettingDivider,
@@ -133,9 +135,7 @@ const ASRSettings: FC = () => {
           <SettingRowTitle>
             <Flex vertical style={{ flex: 1 }}>
               <span>{t('settings.asr.apiKey.label')}</span>
-              <span style={{ fontSize: '12px', color: '#999', marginTop: '4px', fontWeight: 400 }}>
-                {t('settings.asr.apiKey.description')}
-              </span>
+              <HelpText>{t('settings.asr.apiKey.description')}</HelpText>
             </Flex>
           </SettingRowTitle>
           <Flex vertical gap={8} style={{ flex: 1, maxWidth: '400px' }}>
@@ -145,7 +145,7 @@ const ASRSettings: FC = () => {
                 onChange={handleApiKeyChange}
                 placeholder={t('settings.asr.apiKey.placeholder')}
                 onBlur={handleApiKeySave}
-                status={apiKeyValid === false ? 'error' : apiKeyValid === true ? '' : undefined}
+                status={apiKeyValid === false ? 'error' : undefined}
               />
               <Button onClick={handleValidateApiKey} loading={validatingApiKey}>
                 {t('settings.asr.apiKey.validate')}
@@ -156,7 +156,7 @@ const ASRSettings: FC = () => {
               onClick={openDeepgramWebsite}
               style={{ alignSelf: 'flex-start', padding: 0 }}
             >
-              {t('settings.asr.apiKey.getKey')} →
+              {t('settings.asr.apiKey.getKey')} <ExternalLink size={14} style={{ marginLeft: 4 }} />
             </Button>
           </Flex>
         </SettingRow>
@@ -167,9 +167,7 @@ const ASRSettings: FC = () => {
           <SettingRowTitle>
             <Flex vertical>
               <span>{t('settings.asr.defaultLanguage.label')}</span>
-              <span style={{ fontSize: '12px', color: '#999', marginTop: '4px', fontWeight: 400 }}>
-                {t('settings.asr.defaultLanguage.description')}
-              </span>
+              <HelpText>{t('settings.asr.defaultLanguage.description')}</HelpText>
             </Flex>
           </SettingRowTitle>
           <Selector
@@ -186,9 +184,7 @@ const ASRSettings: FC = () => {
           <SettingRowTitle>
             <Flex vertical>
               <span>{t('settings.asr.model.label')}</span>
-              <span style={{ fontSize: '12px', color: '#999', marginTop: '4px', fontWeight: 400 }}>
-                {t('settings.asr.model.description')}
-              </span>
+              <HelpText>{t('settings.asr.model.description')}</HelpText>
             </Flex>
           </SettingRowTitle>
           <Selector
