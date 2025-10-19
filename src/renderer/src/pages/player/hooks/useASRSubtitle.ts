@@ -122,76 +122,67 @@ export function useASRSubtitle(videoId: number | null, videoPath: string | null)
             })
           }
 
-          // Create error with code attached for upstream handling
-          const error = new Error(errorMessage)
-          if (errorCode) {
-            ;(error as any).code = errorCode
-          }
-          throw error
-        }
-      } catch (error: any) {
-        // Log based on error code
-        if (error.code === 'TASK_CANCELLED') {
-          logger.info('用户取消了 ASR 字幕生成', error)
-        } else {
-          logger.error('ASR generation failed', error)
-        }
-        setShowAsrProgress(false)
+          setShowAsrProgress(false)
 
-        // Prioritize errorCode from backend, fall back to string matching
-        const errorCode = error.code
-        const errorMessage = error.message || error.toString()
-
-        // Map error codes to user-friendly messages
-        let translationKey: string
-        switch (errorCode) {
-          case 'NO_API_KEY':
-            translationKey = 'player.asr.errors.noApiKey'
-            break
-          case 'INVALID_API_KEY':
-            translationKey = 'player.asr.errors.invalidApiKey'
-            break
-          case 'QUOTA_EXCEEDED':
-            translationKey = 'player.asr.errors.apiQuotaExceeded'
-            break
-          case 'NETWORK_ERROR':
-            translationKey = 'player.asr.errors.networkError'
-            break
-          case 'AUDIO_EXTRACTION_FAILED':
-            translationKey = 'player.asr.errors.audioExtractionFailed'
-            break
-          case 'TASK_CANCELLED':
-            // Don't show error for user-initiated cancellation
-            return
-          case 'SUBTITLE_EXTRACTION_FAILED':
-            translationKey = 'player.asr.errors.transcriptionFailed'
-            break
-          case 'UNKNOWN_ERROR':
-          default:
-            // Fall back to string matching for legacy errors without codes
-            if (!errorCode) {
-              if (errorMessage.includes('API key') || errorMessage.includes('API Key')) {
-                translationKey = 'player.asr.errors.invalidApiKey'
-              } else if (errorMessage.includes('quota') || errorMessage.includes('配额')) {
-                translationKey = 'player.asr.errors.apiQuotaExceeded'
-              } else if (errorMessage.includes('network') || errorMessage.includes('网络')) {
-                translationKey = 'player.asr.errors.networkError'
-              } else if (errorMessage.includes('audio')) {
-                translationKey = 'player.asr.errors.audioExtractionFailed'
+          // Map error codes to user-friendly messages
+          let translationKey: string
+          switch (errorCode) {
+            case 'NO_API_KEY':
+              translationKey = 'player.asr.errors.noApiKey'
+              break
+            case 'INVALID_API_KEY':
+              translationKey = 'player.asr.errors.invalidApiKey'
+              break
+            case 'QUOTA_EXCEEDED':
+              translationKey = 'player.asr.errors.apiQuotaExceeded'
+              break
+            case 'NETWORK_ERROR':
+              translationKey = 'player.asr.errors.networkError'
+              break
+            case 'AUDIO_EXTRACTION_FAILED':
+              translationKey = 'player.asr.errors.audioExtractionFailed'
+              break
+            case 'TASK_CANCELLED':
+              // Don't show error for user-initiated cancellation
+              return
+            case 'SUBTITLE_EXTRACTION_FAILED':
+              translationKey = 'player.asr.errors.transcriptionFailed'
+              break
+            case 'UNKNOWN_ERROR':
+            default:
+              // Fall back to string matching for legacy errors without codes
+              if (!errorCode) {
+                if (errorMessage.includes('API key') || errorMessage.includes('API Key')) {
+                  translationKey = 'player.asr.errors.invalidApiKey'
+                } else if (errorMessage.includes('quota') || errorMessage.includes('配额')) {
+                  translationKey = 'player.asr.errors.apiQuotaExceeded'
+                } else if (errorMessage.includes('network') || errorMessage.includes('网络')) {
+                  translationKey = 'player.asr.errors.networkError'
+                } else if (errorMessage.includes('audio')) {
+                  translationKey = 'player.asr.errors.audioExtractionFailed'
+                } else {
+                  translationKey = 'player.asr.errors.unknown'
+                }
               } else {
                 translationKey = 'player.asr.errors.unknown'
               }
-            } else {
-              translationKey = 'player.asr.errors.unknown'
-            }
-        }
+          }
 
-        // Show the error message
-        if (translationKey === 'player.asr.errors.unknown') {
-          message.error(t(translationKey, { message: errorMessage }))
-        } else {
-          message.error(t(translationKey))
+          // Show the error message
+          if (translationKey === 'player.asr.errors.unknown') {
+            message.error(t(translationKey, { message: errorMessage }))
+          } else {
+            message.error(t(translationKey))
+          }
+          return
         }
+      } catch (error: any) {
+        // Handle unexpected errors (network failures, etc.)
+        logger.error('ASR generation failed with unexpected error', { error })
+        setShowAsrProgress(false)
+        message.error(
+          t('player.asr.errors.unknown', { message: error.message || error.toString() })
+        )
       }
     },
     [videoPath, videoId, t, setSubtitles]
