@@ -5,6 +5,7 @@
 
 import type { AudioSegment, DeepgramResponse, TranscriptSegment } from '@shared/types'
 import * as fs from 'fs'
+import { promises as fsPromises } from 'fs'
 import https from 'https'
 import PQueue from 'p-queue'
 import * as path from 'path'
@@ -190,41 +191,45 @@ class DeepgramTranscriber {
     audioPath: string,
     options: DeepgramOptions
   ): Promise<DeepgramResponse> {
-    return new Promise((resolve, reject) => {
-      // 构建查询参数
-      const queryParams = new URLSearchParams({
-        model: options.model || 'nova-3',
-        smart_format: String(options.smartFormat !== false),
-        punctuate: 'true',
-        utterances: String(options.utterances !== false),
-        utterance_end_ms: String(options.utteranceEndMs || 1000)
-      })
+    // 构建查询参数
+    const queryParams = new URLSearchParams({
+      model: options.model || 'nova-3',
+      smart_format: String(options.smartFormat !== false),
+      punctuate: 'true',
+      utterances: String(options.utterances !== false),
+      utterance_end_ms: String(options.utteranceEndMs || 1000)
+    })
 
-      // 处理语言参数：如果是 'auto'，使用 detect_language；否则使用 language
-      if (options.language === 'auto') {
-        queryParams.append('detect_language', 'true')
-      } else if (options.language) {
-        queryParams.append('language', options.language)
-      }
+    // 处理语言参数：如果是 'auto'，使用 detect_language；否则使用 language
+    if (options.language === 'auto') {
+      queryParams.append('detect_language', 'true')
+    } else if (options.language) {
+      queryParams.append('language', options.language)
+    }
 
-      const url = `https://api.deepgram.com/v1/listen?${queryParams.toString()}`
+    const url = `https://api.deepgram.com/v1/listen?${queryParams.toString()}`
 
-      // 获取音频文件的 MIME 类型
-      const ext = path.extname(audioPath).toLowerCase()
-      const mimeTypes: Record<string, string> = {
-        '.wav': 'audio/wav',
-        '.mp3': 'audio/mpeg',
-        '.m4a': 'audio/mp4',
-        '.flac': 'audio/flac',
-        '.ogg': 'audio/ogg',
-        '.opus': 'audio/opus',
-        '.webm': 'audio/webm'
-      }
-      const contentType = mimeTypes[ext] || 'audio/wav'
+    // 获取音频文件的 MIME 类型
+    const ext = path.extname(audioPath).toLowerCase()
+    const mimeTypes: Record<string, string> = {
+      '.wav': 'audio/wav',
+      '.mp3': 'audio/mpeg',
+      '.m4a': 'audio/mp4',
+      '.flac': 'audio/flac',
+      '.ogg': 'audio/ogg',
+      '.opus': 'audio/opus',
+      '.webm': 'audio/webm'
+    }
+    const contentType = mimeTypes[ext] || 'audio/wav'
 
-      // 读取音频文件
-      const audioBuffer = fs.readFileSync(audioPath)
+    // 获取文件大小（用于 Content-Length）
+    const stats = await fsPromises.stat(audioPath)
+    const fileSize = stats.size
 
+    // 创建读取流
+    const readStream = fs.createReadStream(audioPath)
+
+    return new Promise<DeepgramResponse>((resolve, reject) => {
       // 发送请求
       const req = https.request(
         url,
@@ -232,7 +237,7 @@ class DeepgramTranscriber {
           method: 'POST',
           headers: {
             'Content-Type': contentType,
-            'Content-Length': audioBuffer.length,
+            'Content-Length': fileSize,
             Authorization: `Token ${options.apiKey}`
           }
         },
@@ -264,19 +269,27 @@ class DeepgramTranscriber {
         }
       )
 
+      // 请求错误处理
       req.on('error', (error) => {
+        readStream.destroy()
         reject(new Error(`网络错误: ${error.message}`))
       })
 
       // 设置超时（10分钟，符合 Deepgram 文档的最大处理时间）
       req.setTimeout(10 * 60 * 1000, () => {
+        readStream.destroy()
         req.destroy()
         reject(new Error('请求超时（超过10分钟）'))
       })
 
-      // 写入音频数据
-      req.write(audioBuffer)
-      req.end()
+      // 读取流错误处理
+      readStream.on('error', (error) => {
+        req.destroy()
+        reject(new Error(`读取音频文件失败: ${error.message}`))
+      })
+
+      // 将读取流管道连接到请求
+      readStream.pipe(req)
     })
   }
 
