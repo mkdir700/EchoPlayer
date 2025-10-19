@@ -2,6 +2,16 @@
  * ASR 字幕生成相关类型定义
  */
 
+export type ASRErrorCode =
+  | 'NO_API_KEY'
+  | 'INVALID_API_KEY'
+  | 'QUOTA_EXCEEDED'
+  | 'NETWORK_ERROR'
+  | 'AUDIO_EXTRACTION_FAILED'
+  | 'SUBTITLE_EXTRACTION_FAILED'
+  | 'TASK_CANCELLED'
+  | 'UNKNOWN_ERROR'
+
 /**
  * ASR 生成的字幕条目（简化版，后续需要转换为 SubtitleItem）
  */
@@ -89,7 +99,7 @@ export interface ASRResult {
   /** 错误信息 */
   error?: string
   /** 错误代码 */
-  errorCode?: string
+  errorCode?: ASRErrorCode
   /** 统计信息 */
   stats?: {
     /** 音频时长（秒） */
