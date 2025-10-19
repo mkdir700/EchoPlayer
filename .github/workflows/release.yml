@@ -328,9 +328,37 @@ jobs:
           echo "📦 Version: ${{ needs.version-analysis.outputs.next_version }}"
           pnpm semantic-release
 
+  upload-to-cos:
+    needs: [version-analysis, release, semantic-release]
+    runs-on: ubuntu-latest
+    if: needs.version-analysis.outputs.should_release == 'true' && needs.semantic-release.result == 'success'
+    strategy:
+      matrix:
+        retry: [1, 2, 3]
+      max-parallel: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare artifacts for COS upload
+        run: |
+          echo "📦 Preparing artifacts for COS upload"
+          mkdir -p dist
+          # 复制所有构建产物到 dist 目录
+          find artifacts -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.yml" -o -name "*.yaml" -o -name "*.blockmap" | while read file; do
+            cp "$file" dist/
+            echo "📁 Copied: $(basename "$file")"
+          done
+          ls -la dist/
+
       - name: Install coscmd for Tencent Cloud COS
         run: |
-          echo "📦 Installing coscmd for Tencent Cloud COS upload"
+          echo "📦 Installing coscmd for Tencent Cloud COS upload (Attempt ${{ matrix.retry }})"
           pip install coscmd
 
       - name: Configure coscmd
@@ -340,7 +368,7 @@ jobs:
           COS_BUCKET: ${{ secrets.COS_BUCKET }}
           COS_REGION: ${{ secrets.COS_REGION }}
         run: |
-          echo "🔧 Configuring coscmd"
+          echo "🔧 Configuring coscmd (Attempt ${{ matrix.retry }})"
           coscmd config -a $COS_SECRET_ID -s $COS_SECRET_KEY -b $COS_BUCKET -r $COS_REGION
 
       - name: Upload artifacts to Tencent Cloud COS
@@ -348,7 +376,7 @@ jobs:
           VERSION: ${{ needs.version-analysis.outputs.next_version }}
           CHANNEL: ${{ needs.version-analysis.outputs.channel }}
         run: |
-          echo "☁️ Uploading artifacts to Tencent Cloud COS"
+          echo "☁️ Uploading artifacts to Tencent Cloud COS (Attempt ${{ matrix.retry }})"
           echo "📦 Version: $VERSION"
           echo "📺 Channel: $CHANNEL"
 
@@ -370,7 +398,7 @@ jobs:
           echo "🔗 Artifacts are available at: $COS_PATH"
 
   notify:
-    needs: [version-analysis, release, semantic-release]
+    needs: [version-analysis, release, semantic-release, upload-to-cos]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -386,6 +414,7 @@ jobs:
           echo "Should Release: ${{ needs.version-analysis.outputs.should_release }}"
           echo "Build Status: ${{ needs.release.result }}"
           echo "Release Status: ${{ needs.semantic-release.result }}"
+          echo "COS Upload Status: ${{ needs.upload-to-cos.result }}"
           echo "Trigger: ${{ github.event_name }}"
           echo ""
 
@@ -397,6 +426,16 @@ jobs:
               echo "📍 Check: https://github.com/${{ github.repository }}/releases"
               echo "🔄 Version was automatically determined based on commit messages"
               echo "📦 Artifacts have correct version numbers in filenames"
+
+              if [ "${{ needs.upload-to-cos.result }}" == "success" ]; then
+                echo "☁️ Artifacts uploaded to Tencent Cloud COS successfully"
+              elif [ "${{ needs.upload-to-cos.result }}" == "failure" ]; then
+                echo "❌ COS upload failed - artifacts may not be available for auto-update"
+                echo "💡 Check upload-to-cos job logs for details"
+              else
+                echo "⏳ COS upload status: ${{ needs.upload-to-cos.result }}"
+              fi
+
               echo ""
               if [ "${{ needs.version-analysis.outputs.is_prerelease }}" == "true" ]; then
                 echo "🧪 This is a prerelease version:"
