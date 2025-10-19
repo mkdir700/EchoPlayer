@@ -11,7 +11,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 
 const Sidebar: FC = () => {
-  const { token, theme, setTheme } = useTheme()
+  const { token, theme, settedTheme, setTheme } = useTheme()
   const backgroundColor = useNavBackgroundColor()
   const isFullscreen = useFullscreen()
   const { pathname } = useLocation()
@@ -34,25 +34,25 @@ const Sidebar: FC = () => {
       <Divider />
       <Menus>
         <Tooltip
-          title={t('settings.theme.title') + ': ' + getThemeModeLabel(theme)}
+          title={t('settings.theme.title') + ': ' + getThemeModeLabel(settedTheme)}
           mouseEnterDelay={0.8}
           placement="right"
         >
           <Icon
             theme={theme}
             onClick={() => {
-              if (theme === ThemeMode.light) {
+              if (settedTheme === ThemeMode.light) {
                 setTheme(ThemeMode.dark)
-              } else if (theme === ThemeMode.dark) {
+              } else if (settedTheme === ThemeMode.dark) {
                 setTheme(ThemeMode.system)
               } else {
                 setTheme(ThemeMode.light)
               }
             }}
           >
-            {theme === ThemeMode.system ? (
+            {settedTheme === ThemeMode.system ? (
               <Monitor size={20} className="icon" />
-            ) : theme === ThemeMode.dark ? (
+            ) : settedTheme === ThemeMode.dark ? (
               <Moon size={20} className="icon" />
             ) : (
               <Sun size={20} className="icon" />
