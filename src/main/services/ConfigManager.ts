@@ -214,7 +214,7 @@ export class ConfigManager {
    * @param defaultValue 默认值
    */
   get<T>(key: string, defaultValue?: T) {
-    return this.store.get(key, defaultValue ? defaultValue : defaultValues[key]) as T
+    return this.store.get(key, defaultValue ?? defaultValues[key]) as T
   }
 
   // ASR 相关配置方法
@@ -223,7 +223,7 @@ export class ConfigManager {
   }
 
   setDeepgramApiKey(apiKey: string) {
-    this.set(ConfigKeys.DeepgramApiKey, apiKey)
+    this.setAndNotify(ConfigKeys.DeepgramApiKey, apiKey)
   }
 
   getASRDefaultLanguage(): string {
@@ -231,7 +231,7 @@ export class ConfigManager {
   }
 
   setASRDefaultLanguage(language: string) {
-    this.set(ConfigKeys.ASRDefaultLanguage, language)
+    this.setAndNotify(ConfigKeys.ASRDefaultLanguage, language)
   }
 
   getASRModel(): string {
@@ -239,7 +239,7 @@ export class ConfigManager {
   }
 
   setASRModel(model: string) {
-    this.set(ConfigKeys.ASRModel, model)
+    this.setAndNotify(ConfigKeys.ASRModel, model)
   }
 }
 
