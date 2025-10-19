@@ -4,7 +4,7 @@ import { isMac, ThemeMode } from '@renderer/infrastructure'
 import { useFullscreen } from '@renderer/infrastructure/hooks/useFullscreen'
 import useNavBackgroundColor from '@renderer/infrastructure/hooks/useNavBackgroundColor'
 import { Tooltip } from 'antd'
-import { LucideHeart, LucideHome, Moon, Settings, Sun } from 'lucide-react'
+import { LucideHeart, LucideHome, Monitor, Moon, Settings, Sun } from 'lucide-react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -40,9 +40,19 @@ const Sidebar: FC = () => {
         >
           <Icon
             theme={theme}
-            onClick={() => setTheme(theme === ThemeMode.dark ? ThemeMode.light : ThemeMode.dark)}
+            onClick={() => {
+              if (theme === ThemeMode.light) {
+                setTheme(ThemeMode.dark)
+              } else if (theme === ThemeMode.dark) {
+                setTheme(ThemeMode.system)
+              } else {
+                setTheme(ThemeMode.light)
+              }
+            }}
           >
-            {theme === ThemeMode.dark ? (
+            {theme === ThemeMode.system ? (
+              <Monitor size={20} className="icon" />
+            ) : theme === ThemeMode.dark ? (
               <Moon size={20} className="icon" />
             ) : (
               <Sun size={20} className="icon" />
