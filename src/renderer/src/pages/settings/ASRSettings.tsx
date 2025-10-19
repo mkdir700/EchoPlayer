@@ -32,6 +32,7 @@ const ASRSettings: FC = () => {
 
   // ASR language options
   const asrLanguageOptions = [
+    { value: 'auto', label: t('settings.asr.languages.auto') },
     { value: 'en', label: t('settings.asr.languages.en') },
     { value: 'zh', label: t('settings.asr.languages.zh') },
     { value: 'ja', label: t('settings.asr.languages.ja') },
