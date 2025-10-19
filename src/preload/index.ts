@@ -281,9 +281,6 @@ const api = {
       return () => {
         ipcRenderer.removeListener(IpcChannel.ASR_Progress, handler)
       }
-    },
-    offProgress: () => {
-      ipcRenderer.removeAllListeners(IpcChannel.ASR_Progress)
     }
   },
   uv: {
