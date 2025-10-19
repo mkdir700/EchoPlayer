@@ -106,7 +106,6 @@ const ASRProgressModal: FC<ASRProgressModalProps> = ({ open, progress, onCancel 
       footer={null}
       closable={false}
       maskClosable={false}
-      width={500}
       centered
     >
       <Flex vertical gap={24}>
