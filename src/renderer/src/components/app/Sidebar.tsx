@@ -46,7 +46,7 @@ const Sidebar: FC = () => {
           mouseEnterDelay={0.8}
           placement="right"
         >
-          <Icon theme={theme} onClick={cycleTheme}>
+          <Icon $resolvedTheme={theme} onClick={cycleTheme}>
             {settedTheme === ThemeMode.system ? (
               <Monitor size={20} className="icon" />
             ) : settedTheme === ThemeMode.dark ? (
@@ -62,7 +62,10 @@ const Sidebar: FC = () => {
               await to('/settings/appearance')
             }}
           >
-            <Icon theme={theme} className={pathname.startsWith('/settings') ? 'active' : ''}>
+            <Icon
+              $resolvedTheme={theme}
+              className={pathname.startsWith('/settings') ? 'active' : ''}
+            >
               <Settings size={20} className="icon" />
             </Icon>
           </StyledLink>
@@ -119,7 +122,7 @@ const MainMenus: FC = () => {
               className={isActive ? 'active' : ''}
             >
               <Icon
-                theme={theme}
+                $resolvedTheme={theme}
                 className={`${isActive ? 'active' : ''} ${item.disabled ? 'disabled' : ''}`}
               >
                 {item.icon}
@@ -167,7 +170,7 @@ const Menus = styled.div`
   gap: 5px;
 `
 
-const Icon = styled.div<{ theme: string }>`
+const Icon = styled.div<{ $resolvedTheme: string }>`
   width: 35px;
   height: 35px;
   display: flex;
@@ -178,8 +181,8 @@ const Icon = styled.div<{ theme: string }>`
   -webkit-app-region: none;
   border: 0.5px solid transparent;
   &:hover {
-    background-color: ${({ theme }) =>
-      theme === 'dark' ? 'var(--color-black)' : 'var(--color-white)'};
+    background-color: ${({ $resolvedTheme }) =>
+      $resolvedTheme === 'dark' ? 'var(--color-black)' : 'var(--color-white)'};
     opacity: 0.8;
     cursor: pointer;
     .icon {
@@ -202,8 +205,8 @@ const Icon = styled.div<{ theme: string }>`
     }
   }
   &.active {
-    background-color: ${({ theme }) =>
-      theme === 'dark' ? 'var(--color-black)' : 'var(--color-white)'};
+    background-color: ${({ $resolvedTheme }) =>
+      $resolvedTheme === 'dark' ? 'var(--color-black)' : 'var(--color-white)'};
     border: 0.5px solid var(--color-border);
     .icon {
       color: var(--color-primary);
