@@ -81,6 +81,7 @@ const ASRSettings: FC = () => {
   const handleValidateApiKey = async () => {
     if (!deepgramApiKey.trim()) {
       message.warning(t('settings.asr.apiKey.invalid') || 'API Key 无效')
+      return
     }
 
     setValidatingApiKey(true)
