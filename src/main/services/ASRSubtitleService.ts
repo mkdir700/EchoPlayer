@@ -143,9 +143,19 @@ class ASRSubtitleService {
 
       logger.info('音频转写完成')
 
+      // 再次检查是否被取消（在转写完成后）
+      if (this.activeTasks.get(taskId)?.cancelled) {
+        throw new Error('TASK_CANCELLED')
+      }
+
       // 阶段 4: 提取字幕数据
       this.reportProgress(taskId, ASRProgressStage.Formatting, 85, progressCallback)
       logger.info('开始格式化字幕')
+
+      // 检查是否被取消（在格式化前）
+      if (this.activeTasks.get(taskId)?.cancelled) {
+        throw new Error('TASK_CANCELLED')
+      }
 
       // 从 Deepgram 响应中提取字幕
       const rawSubtitles = this.extractSubtitlesFromResponse(deepgramResponse)
@@ -156,9 +166,19 @@ class ASRSubtitleService {
       //   maxCharsPerLine: 42
       // })
 
+      // 检查是否被取消（在提取完成后）
+      if (this.activeTasks.get(taskId)?.cancelled) {
+        throw new Error('TASK_CANCELLED')
+      }
+
       // 阶段 5: 导出文件
       this.reportProgress(taskId, ASRProgressStage.Saving, 90, progressCallback)
       logger.info('开始导出字幕文件')
+
+      // 检查是否被取消（在导出前）
+      if (this.activeTasks.get(taskId)?.cancelled) {
+        throw new Error('TASK_CANCELLED')
+      }
 
       // 直接生成到持久化目录
       const outputPath = await this.createPersistentSubtitlePath(
@@ -170,6 +190,11 @@ class ASRSubtitleService {
         await this.subtitleFormatter.exportToSRT(formattedSubtitles, outputPath)
       } else {
         await this.subtitleFormatter.exportToVTT(formattedSubtitles, outputPath)
+      }
+
+      // 检查是否被取消（在导出完成后）
+      if (this.activeTasks.get(taskId)?.cancelled) {
+        throw new Error('TASK_CANCELLED')
       }
 
       // 阶段 6: 保存到数据库
@@ -231,16 +256,21 @@ class ASRSubtitleService {
         }
       }
     } catch (error) {
-      logger.error('ASR 字幕生成失败', {
-        taskId,
-        error: error instanceof Error ? error.message : String(error)
-      })
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorCode = this.getErrorCode(errorMessage)
+
+      // 如果是用户取消，使用 info 级别日志
+      if (errorCode === 'TASK_CANCELLED') {
+        logger.info('用户取消了 ASR 字幕生成', { taskId })
+      } else {
+        logger.error('ASR 字幕生成失败', {
+          taskId,
+          error: errorMessage
+        })
+      }
 
       this.reportProgress(taskId, ASRProgressStage.Failed, 0, progressCallback)
       this.activeTasks.delete(taskId)
-
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      const errorCode = this.getErrorCode(errorMessage)
 
       return {
         success: false,
@@ -503,6 +533,7 @@ class ASRSubtitleService {
     if (errorMessage.includes('网络')) return 'NETWORK_ERROR'
     if (errorMessage.includes('AUDIO_EXTRACTION_FAILED')) return 'AUDIO_EXTRACTION_FAILED'
     if (errorMessage.includes('TASK_CANCELLED')) return 'TASK_CANCELLED'
+    if (errorMessage.includes('REQUEST_CANCELLED')) return 'TASK_CANCELLED'
     return 'UNKNOWN_ERROR'
   }
 }

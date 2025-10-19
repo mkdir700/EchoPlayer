@@ -1,7 +1,14 @@
+import {
+  ANIMATION_DURATION,
+  FONT_SIZES,
+  FONT_WEIGHTS,
+  SPACING
+} from '@renderer/infrastructure/styles/theme'
 import { ASRProgress, ASRProgressStage } from '@shared/types'
 import { Button, Flex, Modal, Progress } from 'antd'
-import { FC } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import styled from 'styled-components'
 
 interface ASRProgressModalProps {
   open: boolean
@@ -9,8 +16,42 @@ interface ASRProgressModalProps {
   onCancel: () => void
 }
 
+const Section = styled.div``
+
+const StageTitle = styled.div`
+  font-size: ${FONT_SIZES.BASE}px;
+  font-weight: ${FONT_WEIGHTS.MEDIUM};
+  margin-bottom: ${SPACING.MD}px;
+`
+
+const EstimatedText = styled.div`
+  font-size: ${FONT_SIZES.SM}px;
+  color: var(--ant-color-text-secondary);
+`
+
+const MessageText = styled.div`
+  font-size: 13px;
+  color: var(--ant-color-text-tertiary);
+`
+
+const CancelButton = styled(Button)<{ $confirmMode: boolean }>`
+  transition: all ${ANIMATION_DURATION.SLOW} ease-in-out;
+
+  ${(props) =>
+    props.$confirmMode &&
+    `
+    border-color: var(--ant-color-error) !important;
+    color: var(--color-error-text) !important;
+
+    &:hover {
+      border-color: var(--ant-color-error) !important;
+    }
+  `}
+`
+
 const ASRProgressModal: FC<ASRProgressModalProps> = ({ open, progress, onCancel }) => {
   const { t } = useTranslation()
+  const [confirmMode, setConfirmMode] = useState(false)
 
   const getStageText = () => {
     switch (progress.stage) {
@@ -32,16 +73,29 @@ const ASRProgressModal: FC<ASRProgressModalProps> = ({ open, progress, onCancel 
   }
 
   const handleCancel = () => {
-    Modal.confirm({
-      title: t('player.asr.progress.cancelConfirm'),
-      content: t('player.asr.progress.cancelConfirmDescription'),
-      okText: t('player.asr.progress.cancel'),
-      cancelText: t('common.cancel'),
-      onOk: () => {
-        onCancel()
-      }
-    })
+    if (confirmMode) {
+      onCancel()
+      setConfirmMode(false)
+    } else {
+      setConfirmMode(true)
+    }
   }
+
+  const handleCancelMouseLeave = () => {
+    if (confirmMode) {
+      setConfirmMode(false)
+    }
+  }
+
+  useEffect(() => {
+    if (confirmMode) {
+      const timer = setTimeout(() => {
+        setConfirmMode(false)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+    return undefined
+  }, [confirmMode])
 
   const estimatedMinutes = progress.eta ? Math.ceil(progress.eta / 60) : undefined
 
@@ -56,27 +110,28 @@ const ASRProgressModal: FC<ASRProgressModalProps> = ({ open, progress, onCancel 
       centered
     >
       <Flex vertical gap={24}>
-        <div>
-          <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '16px' }}>
-            {getStageText()}
-          </div>
+        <Section>
+          <StageTitle>{getStageText()}</StageTitle>
           <Progress percent={progress.percent} status="active" />
-        </div>
+        </Section>
 
         {estimatedMinutes !== undefined && estimatedMinutes > 0 && (
-          <div style={{ fontSize: '14px', color: '#666' }}>
+          <EstimatedText>
             {t('player.asr.progress.estimatedTime', { minutes: estimatedMinutes })}
-          </div>
+          </EstimatedText>
         )}
 
-        {progress.message && (
-          <div style={{ fontSize: '13px', color: '#999' }}>{progress.message}</div>
-        )}
+        {progress.message && <MessageText>{progress.message}</MessageText>}
 
         <Flex justify="flex-end">
-          <Button onClick={handleCancel} disabled={progress.stage === ASRProgressStage.Complete}>
-            {t('player.asr.progress.cancel')}
-          </Button>
+          <CancelButton
+            $confirmMode={confirmMode}
+            onClick={handleCancel}
+            onMouseLeave={handleCancelMouseLeave}
+            disabled={progress.stage === ASRProgressStage.Complete}
+          >
+            {confirmMode ? t('player.asr.progress.confirmCancel') : t('player.asr.progress.cancel')}
+          </CancelButton>
         </Flex>
       </Flex>
     </Modal>

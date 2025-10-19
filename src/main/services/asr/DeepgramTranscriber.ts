@@ -42,6 +42,7 @@ export interface TranscriptionProgress {
 
 class DeepgramTranscriber {
   private queue: PQueue
+  private activeRequests: Set<any> = new Set()
 
   constructor(concurrency: number = 3) {
     this.queue = new PQueue({ concurrency })
@@ -150,11 +151,23 @@ class DeepgramTranscriber {
 
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
+        // 在重试前检查是否有活动请求被取消
+        if (this.activeRequests.size === 0 && attempt > 0) {
+          logger.debug('检测到请求被取消，停止重试')
+          throw new Error('REQUEST_CANCELLED')
+        }
+
         if (attempt > 0) {
           // 指数退避
           const delay = Math.pow(2, attempt) * 1000
           logger.debug('重试前等待', { attempt, delay })
           await new Promise((resolve) => setTimeout(resolve, delay))
+
+          // 等待后再次检查取消状态
+          if (this.activeRequests.size === 0) {
+            logger.debug('等待期间检测到取消，停止重试')
+            throw new Error('REQUEST_CANCELLED')
+          }
         }
 
         logger.debug('调用 Deepgram API', { audioPath, model, language, attempt })
@@ -173,6 +186,18 @@ class DeepgramTranscriber {
         return response
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error))
+
+        // 如果是请求取消错误，直接抛出，不重试
+        if (
+          lastError.message === 'REQUEST_CANCELLED' ||
+          lastError.message.includes('socket hang up') ||
+          lastError.message.includes('请求被中断') ||
+          lastError.message.includes('socket was destroyed')
+        ) {
+          logger.info('用户取消了 ASR 任务，停止处理', { error: lastError.message })
+          throw new Error('REQUEST_CANCELLED')
+        }
+
         logger.warn('Deepgram API 调用失败', {
           attempt: attempt + 1,
           maxRetries: retries,
@@ -249,6 +274,9 @@ class DeepgramTranscriber {
           })
 
           res.on('end', () => {
+            // 请求完成后从活动请求列表中移除
+            this.activeRequests.delete(req)
+
             if (res.statusCode === 200) {
               try {
                 const parsed = JSON.parse(responseData) as DeepgramResponse
@@ -269,14 +297,19 @@ class DeepgramTranscriber {
         }
       )
 
+      // 将请求添加到活动请求列表
+      this.activeRequests.add(req)
+
       // 请求错误处理
       req.on('error', (error) => {
+        this.activeRequests.delete(req)
         readStream.destroy()
         reject(new Error(`网络错误: ${error.message}`))
       })
 
       // 设置超时（10分钟，符合 Deepgram 文档的最大处理时间）
       req.setTimeout(10 * 60 * 1000, () => {
+        this.activeRequests.delete(req)
         readStream.destroy()
         req.destroy()
         reject(new Error('请求超时（超过10分钟）'))
@@ -284,6 +317,7 @@ class DeepgramTranscriber {
 
       // 读取流错误处理
       readStream.on('error', (error) => {
+        this.activeRequests.delete(req)
         req.destroy()
         reject(new Error(`读取音频文件失败: ${error.message}`))
       })
@@ -307,10 +341,18 @@ class DeepgramTranscriber {
       logger.info('音频文件转写成功', { audioPath })
       return response
     } catch (error) {
-      logger.error('音频文件转写失败', {
-        audioPath,
-        error: error instanceof Error ? error.message : String(error)
-      })
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      // 如果是用户取消，使用 info 级别日志
+      if (errorMessage === 'REQUEST_CANCELLED') {
+        logger.info('用户取消了音频文件转写', { audioPath })
+      } else {
+        logger.error('音频文件转写失败', {
+          audioPath,
+          error: errorMessage
+        })
+      }
+
       throw error
     }
   }
@@ -421,9 +463,29 @@ class DeepgramTranscriber {
    * 取消所有待处理的任务
    */
   public async cancelAll(): Promise<void> {
+    // 清空队列，防止新任务开始
     this.queue.clear()
+
+    // 中断所有正在进行的 HTTP 请求
+    const requestCount = this.activeRequests.size
+    for (const req of this.activeRequests) {
+      try {
+        req.destroy()
+      } catch (error) {
+        logger.warn('中断请求失败', {
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
+    }
+    this.activeRequests.clear()
+
+    // 等待队列空闲
     await this.queue.onIdle()
-    logger.info('已取消所有待处理的转写任务')
+
+    logger.info('已取消所有转写任务', {
+      cancelledRequests: requestCount,
+      queuedTasks: this.queue.size
+    })
   }
 }
 

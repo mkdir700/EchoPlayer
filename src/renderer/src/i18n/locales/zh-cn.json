@@ -3,6 +3,7 @@
     "update_available": "有可用更新"
   },
   "common": {
+    "confirm": "确认",
     "cancel": "取消",
     "disabled": "已关闭",
     "enabled": "已开启",
@@ -59,6 +60,7 @@
       "progress": {
         "title": "正在生成字幕",
         "cancel": "取消",
+        "confirmCancel": "确认取消",
         "stages": {
           "initializing": "初始化中...",
           "extracting": "提取音频中...",

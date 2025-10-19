@@ -1,5 +1,6 @@
 {
   "common": {
+    "confirm": "Yes",
     "favorites": "Favorites",
     "favorites_developing": "This feature is under development",
     "home": "Home",
@@ -13,45 +14,46 @@
   },
   "player": {
     "asr": {
-      "prompt": {
-        "title": "No Subtitles Detected",
-        "message": "Would you like to automatically generate subtitles using AI?",
-        "description": "Use Deepgram speech recognition technology to automatically generate accurate subtitles with multi-language support and word-level timestamps.",
-        "language": "Select Language",
-        "estimatedTime": "Estimated time: {{minutes}} minutes",
-        "generate": "Generate",
-        "later": "Later",
-        "dontShowAgain": "Don't show again",
-        "configureApiKey": "Please configure Deepgram API Key in settings first"
-      },
-      "progress": {
-        "title": "Generating Subtitles",
-        "cancel": "Cancel",
-        "stages": {
-          "initializing": "Initializing...",
-          "extracting": "Extracting audio...",
-          "transcribing": "Transcribing...",
-          "formatting": "Formatting subtitles...",
-          "saving": "Saving subtitles...",
-          "complete": "Generation complete!"
-        },
-        "estimatedTime": "Estimated remaining time: {{minutes}} minutes",
-        "cancelConfirm": "Are you sure you want to cancel subtitle generation?",
-        "cancelConfirmDescription": "All temporary files will be cleaned up and generated content will not be saved."
-      },
       "errors": {
-        "noApiKey": "Please configure Deepgram API Key in settings first",
-        "invalidApiKey": "Invalid API Key, please check settings",
         "apiQuotaExceeded": "API quota exceeded, please check your Deepgram account",
-        "networkError": "Network error, please check your connection and retry",
         "audioExtractionFailed": "Audio extraction failed, please check the video file",
+        "invalidApiKey": "Invalid API Key, please check settings",
+        "networkError": "Network error, please check your connection and retry",
+        "noApiKey": "Please configure Deepgram API Key in settings first",
         "transcriptionFailed": "Transcription failed, please retry",
         "unknown": "Generation failed: {{message}}"
       },
+      "progress": {
+        "cancel": "Cancel",
+        "confirmCancel": "Confirm Cancel",
+        "cancelConfirm": "Are you sure you want to cancel subtitle generation?",
+        "cancelConfirmDescription": "All temporary files will be cleaned up and generated content will not be saved.",
+        "estimatedTime": "Estimated remaining time: {{minutes}} minutes",
+        "stages": {
+          "complete": "Generation complete!",
+          "extracting": "Extracting audio...",
+          "formatting": "Formatting subtitles...",
+          "initializing": "Initializing...",
+          "saving": "Saving subtitles...",
+          "transcribing": "Transcribing..."
+        },
+        "title": "Generating Subtitles"
+      },
+      "prompt": {
+        "configureApiKey": "Please configure Deepgram API Key in settings first",
+        "description": "Use Deepgram speech recognition technology to automatically generate accurate subtitles with multi-language support and word-level timestamps.",
+        "dontShowAgain": "Don't show again",
+        "estimatedTime": "Estimated time: {{minutes}} minutes",
+        "generate": "Generate",
+        "language": "Select Language",
+        "later": "Later",
+        "message": "Would you like to automatically generate subtitles using AI?",
+        "title": "No Subtitles Detected"
+      },
       "success": {
-        "title": "Subtitle Generation Successful",
+        "autoLoaded": "Subtitles have been automatically loaded",
         "message": "Successfully generated {{count}} subtitle items",
-        "autoLoaded": "Subtitles have been automatically loaded"
+        "title": "Subtitle Generation Successful"
       }
     },
     "controls": {
@@ -132,24 +134,24 @@
     "subtitleList": {
       "empty": {
         "description": "Choose a way to start adding subtitles",
-        "title": "No matching subtitle file found",
         "options": {
+          "ai": {
+            "action": "Coming Soon",
+            "actionEnabled": "Generate",
+            "description": "Generate word-level subtitles based on speech recognition",
+            "title": "AI-Generated Subtitles"
+          },
           "embedded": {
-            "title": "Use Embedded Subtitles",
+            "action": "Select",
             "description": "Video file contains subtitle tracks that can be imported directly",
-            "action": "Select"
+            "title": "Use Embedded Subtitles"
           },
           "external": {
-            "title": "Import External Subtitles",
-            "description": "Import SRT, VTT, and other subtitle formats from local files"
-          },
-          "ai": {
-            "title": "AI-Generated Subtitles",
-            "description": "Generate word-level subtitles based on speech recognition",
-            "action": "Coming Soon",
-            "actionEnabled": "Generate"
+            "description": "Import SRT, VTT, and other subtitle formats from local files",
+            "title": "Import External Subtitles"
           }
-        }
+        },
+        "title": "No matching subtitle file found"
       },
       "search": {
         "count": "Found {{count}} subtitle",
@@ -163,11 +165,21 @@
       }
     },
     "subtitleTrackSelector": {
-      "title": "Import Embedded Subtitle Tracks",
+      "actions": {
+        "cancel": "Cancel",
+        "import": "Import"
+      },
       "empty": "No subtitle tracks detected",
+      "messages": {
+        "extractFailed": "Failed to extract subtitle track {{index}}",
+        "importFailed": "Failed to extract subtitle tracks, please try again",
+        "importMultipleSuccess": "Imported {{tracks}} subtitle tracks ({{count}} items total)",
+        "importSuccess": "Imported subtitle: {{source}} ({{count}} items)",
+        "selectAtLeastOne": "Please select at least one subtitle track"
+      },
       "sections": {
-        "text": "Text Subtitle Tracks",
-        "image": "PGS Subtitle Tracks (Image Subtitles)"
+        "image": "PGS Subtitle Tracks (Image Subtitles)",
+        "text": "Text Subtitle Tracks"
       },
       "stream": {
         "label": "Stream {{index}}",
@@ -177,60 +189,13 @@
           "unsupported": "Unsupported"
         }
       },
+      "title": "Import Embedded Subtitle Tracks",
       "warning": {
         "pgs": "PGS is an image-based subtitle format that requires OCR technology support. Import is not currently supported."
-      },
-      "actions": {
-        "cancel": "Cancel",
-        "import": "Import"
-      },
-      "messages": {
-        "selectAtLeastOne": "Please select at least one subtitle track",
-        "extractFailed": "Failed to extract subtitle track {{index}}",
-        "importFailed": "Failed to extract subtitle tracks, please try again",
-        "importSuccess": "Imported subtitle: {{source}} ({{count}} items)",
-        "importMultipleSuccess": "Imported {{tracks}} subtitle tracks ({{count}} items total)"
       }
     }
   },
   "settings": {
-    "asr": {
-      "title": "Speech Recognition",
-      "description": "Configure AI subtitle auto-generation using Deepgram speech recognition technology to generate accurate subtitles for videos",
-      "apiKey": {
-        "label": "Deepgram API Key",
-        "placeholder": "Enter your Deepgram API Key",
-        "description": "Get an API Key from Deepgram to use AI subtitle generation features",
-        "getKey": "Get API Key",
-        "validate": "Validate",
-        "validating": "Validating...",
-        "valid": "API Key is valid",
-        "invalid": "API Key is invalid",
-        "saved": "API Key saved",
-        "saveFailed": "Failed to save"
-      },
-      "defaultLanguage": {
-        "label": "Default Language",
-        "description": "Default language for automatic subtitle generation"
-      },
-      "model": {
-        "label": "Transcription Model",
-        "description": "Select Deepgram transcription model",
-        "nova2": "Nova 2 (Recommended)",
-        "nova3": "Nova 3 (Latest)"
-      },
-      "languages": {
-        "auto": "Auto Detect",
-        "en": "English",
-        "zh": "Chinese",
-        "ja": "Japanese",
-        "es": "Spanish",
-        "fr": "French",
-        "de": "German",
-        "ko": "Korean",
-        "ru": "Russian"
-      }
-    },
     "about": {
       "checkUpdate": {
         "available": "Install Update",
@@ -268,6 +233,43 @@
     },
     "appearance": {
       "title": "Appearance Settings"
+    },
+    "asr": {
+      "apiKey": {
+        "description": "Get an API Key from Deepgram to use AI subtitle generation features",
+        "getKey": "Get API Key",
+        "invalid": "API Key is invalid",
+        "label": "Deepgram API Key",
+        "placeholder": "Enter your Deepgram API Key",
+        "saveFailed": "Failed to save",
+        "saved": "API Key saved",
+        "valid": "API Key is valid",
+        "validate": "Validate",
+        "validating": "Validating..."
+      },
+      "defaultLanguage": {
+        "description": "Default language for automatic subtitle generation",
+        "label": "Default Language"
+      },
+      "description": "Configure AI subtitle auto-generation using Deepgram speech recognition technology to generate accurate subtitles for videos",
+      "languages": {
+        "auto": "Auto Detect",
+        "de": "German",
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "ru": "Russian",
+        "zh": "Chinese"
+      },
+      "model": {
+        "description": "Select Deepgram transcription model",
+        "label": "Transcription Model",
+        "nova2": "Nova 2 (Recommended)",
+        "nova3": "Nova 3 (Latest)"
+      },
+      "title": "Speech Recognition"
     },
     "developer": {
       "enable_developer_mode": "Enable developer mode",

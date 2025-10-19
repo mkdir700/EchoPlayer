@@ -108,11 +108,19 @@ export function useASRSubtitle(videoId: number | null, videoPath: string | null)
           const errorMessage = result.error || 'Unknown error'
 
           // Log the error details for debugging
-          logger.error('ASR generation failed with error code', {
-            errorCode,
-            errorMessage,
-            fullResult: result
-          })
+          if (errorCode === 'TASK_CANCELLED') {
+            logger.info('用户取消了 ASR 字幕生成', {
+              errorCode,
+              errorMessage,
+              fullResult: result
+            })
+          } else {
+            logger.error('ASR generation failed with error code', {
+              errorCode,
+              errorMessage,
+              fullResult: result
+            })
+          }
 
           // Create error with code attached for upstream handling
           const error = new Error(errorMessage)
@@ -122,7 +130,12 @@ export function useASRSubtitle(videoId: number | null, videoPath: string | null)
           throw error
         }
       } catch (error: any) {
-        logger.error('ASR generation failed', error)
+        // Log based on error code
+        if (error.code === 'TASK_CANCELLED') {
+          logger.info('用户取消了 ASR 字幕生成', error)
+        } else {
+          logger.error('ASR generation failed', error)
+        }
         setShowAsrProgress(false)
 
         // Prioritize errorCode from backend, fall back to string matching
@@ -189,7 +202,6 @@ export function useASRSubtitle(videoId: number | null, videoPath: string | null)
       try {
         await window.api.asr.cancel(asrProgress.taskId)
         setShowAsrProgress(false)
-        message.info(t('common.cancel'))
       } catch (error) {
         logger.error('Failed to cancel ASR task', { error })
       }
@@ -197,7 +209,7 @@ export function useASRSubtitle(videoId: number | null, videoPath: string | null)
       // 如果没有 taskId，直接关闭进度窗口
       setShowAsrProgress(false)
     }
-  }, [asrProgress, t])
+  }, [asrProgress])
 
   const handleAsrLater = useCallback(() => {
     setShowAsrPrompt(false)
