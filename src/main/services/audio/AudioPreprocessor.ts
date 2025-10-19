@@ -41,7 +41,9 @@ class AudioPreprocessor {
   }
 
   /**
-   * 从视频中提取音频轨道（简化版：直接拷贝音频流）
+   * 从视频中提取音频轨道并进行转码
+   * 转换为适合 ASR 的格式：采样率 16000Hz、单声道、PCM 16位编码
+   * 包含重采样和声道混音处理，不进行流拷贝
    */
   public async extractAudioTrack(
     videoPath: string,
@@ -119,7 +121,7 @@ class AudioPreprocessor {
     sampleRate: number,
     channels: number
   ): string[] {
-    // 简化的 FFmpeg 命令：直接提取第一个音频流并转换格式
+    // FFmpeg 命令：提取第一个音频流并转码为 ASR 适配格式
     const args: string[] = [
       '-i',
       inputPath,

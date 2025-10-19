@@ -13,6 +13,8 @@ import type {
   DeepgramWord
 } from '@shared/types'
 import { ASRProgressStage } from '@shared/types'
+import { app } from 'electron'
+import * as fs from 'fs'
 import * as path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -40,6 +42,28 @@ class ASRSubtitleService {
     this.subtitleFormatter = new SubtitleFormatter()
 
     logger.info('ASR 字幕服务初始化完成')
+  }
+
+  /**
+   * 创建持久化字幕文件路径
+   */
+  private async createPersistentSubtitlePath(
+    videoId: string,
+    taskId: string,
+    outputFormat: string
+  ): Promise<string> {
+    const userDataPath = app.getPath('userData')
+    const subtitlesDir = path.join(userDataPath, 'subtitles', videoId)
+
+    // 确保目录存在（异步操作）
+    try {
+      await fs.promises.access(subtitlesDir)
+    } catch {
+      await fs.promises.mkdir(subtitlesDir, { recursive: true })
+      logger.debug('创建字幕目录', { subtitlesDir })
+    }
+
+    return path.join(subtitlesDir, `${taskId}.${outputFormat}`)
   }
 
   /**
@@ -136,7 +160,12 @@ class ASRSubtitleService {
       this.reportProgress(taskId, ASRProgressStage.Saving, 90, progressCallback)
       logger.info('开始导出字幕文件')
 
-      const outputPath = path.join(tempDir, `subtitles.${outputFormat}`)
+      // 直接生成到持久化目录
+      const outputPath = await this.createPersistentSubtitlePath(
+        String(options.videoId),
+        taskId,
+        outputFormat
+      )
       if (outputFormat === 'srt') {
         await this.subtitleFormatter.exportToSRT(formattedSubtitles, outputPath)
       } else {
@@ -162,7 +191,7 @@ class ASRSubtitleService {
       try {
         const result = await db.subtitleLibrary.addSubtitle({
           videoId: options.videoId,
-          filePath: outputPath,
+          filePath: outputPath, // 直接使用持久化路径
           subtitles: JSON.stringify(subtitleItems),
           parsed_at: Date.now()
         })
@@ -220,10 +249,15 @@ class ASRSubtitleService {
       }
     } finally {
       // 清理临时目录
-      // 注意：由于字幕已经保存到数据库，临时文件可以安全清理
-      // setTimeout(async () => {
-      //   await this.audioPreprocessor.cleanupTempDir(tempDir)
-      // }, 10000) // 延迟 10 秒清理，确保文件已被使用
+      try {
+        await this.audioPreprocessor.cleanupTempDir(tempDir)
+        logger.debug('临时目录清理成功', { tempDir })
+      } catch (error) {
+        logger.error('临时目录清理失败', {
+          tempDir,
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
     }
   }
 
