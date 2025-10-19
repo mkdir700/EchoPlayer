@@ -4,14 +4,14 @@ import { isMac, ThemeMode } from '@renderer/infrastructure'
 import { useFullscreen } from '@renderer/infrastructure/hooks/useFullscreen'
 import useNavBackgroundColor from '@renderer/infrastructure/hooks/useNavBackgroundColor'
 import { Tooltip } from 'antd'
-import { LucideHeart, LucideHome, Moon, Settings, Sun } from 'lucide-react'
+import { Heart, Home, Monitor, Moon, Settings, Sun } from 'lucide-react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 
 const Sidebar: FC = () => {
-  const { token, theme, setTheme } = useTheme()
+  const { token, theme, settedTheme, setTheme } = useTheme()
   const backgroundColor = useNavBackgroundColor()
   const isFullscreen = useFullscreen()
   const { pathname } = useLocation()
@@ -20,6 +20,14 @@ const Sidebar: FC = () => {
 
   const to = async (path: string) => {
     navigate(path)
+  }
+
+  const themeRotation = [ThemeMode.light, ThemeMode.dark, ThemeMode.system]
+
+  const cycleTheme = () => {
+    const currentIndex = themeRotation.indexOf(settedTheme)
+    const nextIndex = (currentIndex + 1) % themeRotation.length
+    setTheme(themeRotation[nextIndex])
   }
 
   return (
@@ -34,15 +42,14 @@ const Sidebar: FC = () => {
       <Divider />
       <Menus>
         <Tooltip
-          title={t('settings.theme.title') + ': ' + getThemeModeLabel(theme)}
+          title={t('settings.theme.title') + ': ' + getThemeModeLabel(settedTheme)}
           mouseEnterDelay={0.8}
           placement="right"
         >
-          <Icon
-            theme={theme}
-            onClick={() => setTheme(theme === ThemeMode.dark ? ThemeMode.light : ThemeMode.dark)}
-          >
-            {theme === ThemeMode.dark ? (
+          <Icon $resolvedTheme={theme} onClick={cycleTheme}>
+            {settedTheme === ThemeMode.system ? (
+              <Monitor size={20} className="icon" />
+            ) : settedTheme === ThemeMode.dark ? (
               <Moon size={20} className="icon" />
             ) : (
               <Sun size={20} className="icon" />
@@ -55,7 +62,10 @@ const Sidebar: FC = () => {
               await to('/settings/appearance')
             }}
           >
-            <Icon theme={theme} className={pathname.startsWith('/settings') ? 'active' : ''}>
+            <Icon
+              $resolvedTheme={theme}
+              className={pathname.startsWith('/settings') ? 'active' : ''}
+            >
               <Settings size={20} className="icon" />
             </Icon>
           </StyledLink>
@@ -83,13 +93,13 @@ const MainMenus: FC = () => {
   const menuItems = {
     home: {
       path: '/',
-      icon: <LucideHome size={20} className="icon" />,
+      icon: <Home size={20} className="icon" />,
       label: t('common.home'),
       disabled: false
     },
     favorites: {
       path: '/favorites',
-      icon: <LucideHeart size={20} className="icon" />,
+      icon: <Heart size={20} className="icon" />,
       label: t('common.favorites'),
       disabled: true
     }
@@ -112,7 +122,7 @@ const MainMenus: FC = () => {
               className={isActive ? 'active' : ''}
             >
               <Icon
-                theme={theme}
+                $resolvedTheme={theme}
                 className={`${isActive ? 'active' : ''} ${item.disabled ? 'disabled' : ''}`}
               >
                 {item.icon}
@@ -160,7 +170,7 @@ const Menus = styled.div`
   gap: 5px;
 `
 
-const Icon = styled.div<{ theme: string }>`
+const Icon = styled.div<{ $resolvedTheme: string }>`
   width: 35px;
   height: 35px;
   display: flex;
@@ -171,8 +181,8 @@ const Icon = styled.div<{ theme: string }>`
   -webkit-app-region: none;
   border: 0.5px solid transparent;
   &:hover {
-    background-color: ${({ theme }) =>
-      theme === 'dark' ? 'var(--color-black)' : 'var(--color-white)'};
+    background-color: ${({ $resolvedTheme }) =>
+      $resolvedTheme === 'dark' ? 'var(--color-black)' : 'var(--color-white)'};
     opacity: 0.8;
     cursor: pointer;
     .icon {
@@ -195,8 +205,8 @@ const Icon = styled.div<{ theme: string }>`
     }
   }
   &.active {
-    background-color: ${({ theme }) =>
-      theme === 'dark' ? 'var(--color-black)' : 'var(--color-white)'};
+    background-color: ${({ $resolvedTheme }) =>
+      $resolvedTheme === 'dark' ? 'var(--color-black)' : 'var(--color-white)'};
     border: 0.5px solid var(--color-border);
     .icon {
       color: var(--color-primary);
