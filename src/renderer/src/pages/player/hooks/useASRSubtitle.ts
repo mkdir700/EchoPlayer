@@ -1,7 +1,6 @@
 import { loggerService } from '@logger'
 import { SubtitleLibraryService } from '@renderer/services/SubtitleLibrary'
 import { usePlayerSubtitlesStore } from '@renderer/state/stores/player-subtitles.store'
-import { IpcChannel } from '@shared/IpcChannel'
 import { ASRProgress, ASRProgressStage, ASRResult } from '@shared/types'
 import { message } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
@@ -56,10 +55,9 @@ export function useASRSubtitle(videoId: number | null, videoPath: string | null)
       }
     }
 
-    window.api.on(IpcChannel.ASR_Progress, handleProgress)
-    return () => {
-      window.api.off(IpcChannel.ASR_Progress)
-    }
+    // 使用白名单方案的ASR进度订阅方法
+    const unsubscribe = window.api.asr.onProgress(handleProgress)
+    return unsubscribe
   }, [])
 
   const handleOpenASRGenerator = useCallback(() => {

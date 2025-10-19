@@ -281,6 +281,9 @@ const api = {
       return () => {
         ipcRenderer.removeListener(IpcChannel.ASR_Progress, handler)
       }
+    },
+    offProgress: () => {
+      ipcRenderer.removeAllListeners(IpcChannel.ASR_Progress)
     }
   },
   uv: {
@@ -598,13 +601,6 @@ const api = {
       has: (videoId: number): Promise<boolean> =>
         ipcRenderer.invoke(IpcChannel.DB_PlayerSettings_Has, videoId)
     }
-  },
-  on: (channel: string, callback: (...args: any[]) => void) => {
-    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
-  },
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  off: (channel: string, _callback?: (...args: any[]) => void) => {
-    ipcRenderer.removeAllListeners(channel)
   }
 }
 
