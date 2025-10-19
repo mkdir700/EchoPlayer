@@ -1,0 +1,285 @@
+---
+title: '安装指南'
+description: '详细的 EchoPlayer 安装指导，支持 Windows、macOS 和 Linux 系统'
+---
+
+## 系统要求
+
+在安装 EchoPlayer 之前，请确保您的系统满足以下要求：
+
+### 操作系统支持
+
+<CardGroup cols={3}>
+  <Card title="Windows" icon="windows">
+    **Windows 10/11** (64位)
+
+    支持 x64 和 ARM64 架构
+
+  </Card>
+  <Card title="macOS" icon="apple">
+    **macOS 10.15+**
+
+    支持 Intel 和 Apple Silicon (M1/M2/M3)
+
+  </Card>
+  <Card title="Linux" icon="linux">
+    **Ubuntu 18.04+** 或其他主流发行版
+
+    支持 x64 和 ARM64 架构
+
+  </Card>
+</CardGroup>
+
+### 硬件要求
+
+| 组件         | 最低要求           | 推荐配置           |
+| ------------ | ------------------ | ------------------ |
+| **处理器**   | 双核 1.6GHz        | 四核 2.0GHz 或更高 |
+| **内存**     | 4GB RAM            | 8GB RAM 或更高     |
+| **存储空间** | 200MB 可用空间     | 1GB 可用空间       |
+| **显卡**     | 支持硬件加速的显卡 | 独立显卡           |
+
+<Note>对于大型视频文件和高分辨率内容，建议使用更高的硬件配置以获得最佳体验。</Note>
+
+## 下载安装包
+
+### 官方下载渠道
+
+1. 访问 [GitHub Releases](https://github.com/mkdir700/EchoPlayer/releases) 页面
+2. 选择最新版本
+3. 根据您的操作系统下载对应的安装包
+
+### 安装包说明
+
+| 文件名                       | 适用系统      | 说明             |
+| ---------------------------- | ------------- | ---------------- |
+| `EchoPlayer-Setup-x.x.x.exe` | Windows       | Windows 安装程序 |
+| `EchoPlayer-x.x.x.dmg`       | macOS         | macOS 磁盘映像   |
+| `EchoPlayer-x.x.x.AppImage`  | Linux         | Linux AppImage   |
+| `EchoPlayer_x.x.x_amd64.deb` | Ubuntu/Debian | DEB 安装包       |
+
+## 安装步骤
+
+<Tabs>
+  <Tab title="Windows">
+    ### Windows 安装
+
+    1. **下载安装程序**
+       - 下载 `EchoPlayer-Setup-x.x.x.exe`
+
+    2. **运行安装程序**
+       - 双击下载的 exe 文件
+       - 如果出现 Windows Defender 警告，点击"更多信息" → "仍要运行"
+
+    3. **安装向导**
+       - 选择安装语言
+       - 接受许可协议
+       - 选择安装位置（默认：`C:\Program Files\EchoPlayer`）
+       - 选择是否创建桌面快捷方式
+
+    4. **完成安装**
+       - 点击"安装"开始安装
+       - 安装完成后可选择立即启动
+
+    <Warning>
+    首次启动时，Windows 可能会显示安全警告，这是正常现象。请点击"仍要运行"继续。
+    </Warning>
+
+  </Tab>
+
+  <Tab title="macOS">
+    ### macOS 安装
+
+    1. **下载磁盘映像**
+       - 下载 `EchoPlayer-x.x.x.dmg`
+
+    2. **挂载映像**
+       - 双击 dmg 文件挂载磁盘映像
+       - 可能需要输入管理员密码
+
+    3. **安装应用**
+       - 将 EchoPlayer.app 拖拽到 Applications 文件夹
+       - 等待复制完成
+
+    4. **首次启动**
+       - 在应用程序文件夹中找到 EchoPlayer
+       - 右键点击，选择"打开"
+       - 在安全提示中点击"打开"
+
+    <Tip>
+    EchoPlayer 已通过 Apple 公证，请放心使用。
+    </Tip>
+
+    #### Apple Silicon (M1/M2/M3) 用户
+
+    EchoPlayer 已针对 Apple Silicon 优化，可以原生运行获得最佳性能。
+
+  </Tab>
+
+  <Tab title="Linux">
+    ### Linux 安装
+
+    #### 方法一：AppImage（推荐）
+
+    1. **下载 AppImage**
+       ```bash
+       wget https://github.com/mkdir700/EchoPlayer/releases/latest/download/EchoPlayer-x.x.x.AppImage
+       ```
+
+    2. **添加执行权限**
+       ```bash
+       chmod +x EchoPlayer-x.x.x.AppImage
+       ```
+
+    3. **运行应用**
+       ```bash
+       ./EchoPlayer-x.x.x.AppImage
+       ```
+
+    #### 方法二：DEB 包（Ubuntu/Debian）
+
+    1. **下载 DEB 包**
+       ```bash
+       wget https://github.com/mkdir700/EchoPlayer/releases/latest/download/EchoPlayer_x.x.x_amd64.deb
+       ```
+
+    2. **安装包**
+       ```bash
+       sudo dpkg -i EchoPlayer_x.x.x_amd64.deb
+       sudo apt-get install -f  # 解决依赖问题
+       ```
+
+    3. **启动应用**
+       ```bash
+       echoplayer
+       ```
+
+    #### 系统依赖
+
+    确保系统已安装以下依赖：
+    ```bash
+    # Ubuntu/Debian
+    sudo apt update
+    sudo apt install libgtk-3-0 libgconf-2-4 libnss3 libxss1 libasound2
+
+    # CentOS/RHEL/Fedora
+    sudo yum install gtk3 GConf2 nss libXScrnSaver alsa-lib
+    ```
+
+  </Tab>
+</Tabs>
+
+## 验证安装
+
+安装完成后，请验证 EchoPlayer 是否正常工作：
+
+1. **启动应用**
+   - 在开始菜单、应用程序文件夹或终端中启动 EchoPlayer
+
+2. **检查版本**
+   - 在应用中点击设置 → 关于，查看版本信息
+
+3. **测试基本功能**
+   - 尝试添加一个测试视频文件
+   - 确认播放器可以正常播放
+
+## 常见安装问题
+
+<AccordionGroup>
+  <Accordion title="Windows: 应用被 Windows Defender 阻止">
+    这是因为 EchoPlayer 暂未获得微软数字签名。解决方法：
+
+    1. 点击"更多信息"
+    2. 选择"仍要运行"
+    3. 或在 Windows Defender 中添加信任
+
+    <Warning>
+    请确保从官方 GitHub 仓库下载，避免安装恶意软件。
+    </Warning>
+
+  </Accordion>
+
+  <Accordion title="macOS: 无法打开应用，提示来自不明开发者">
+    解决方法：
+
+    1. 在 Applications 文件夹中找到 EchoPlayer
+    2. 按住 Control 键点击应用图标
+    3. 选择"打开"
+    4. 在弹出对话框中点击"打开"
+
+    或者在系统偏好设置中：
+    1. 前往"安全性与隐私"
+    2. 在"通用"标签页中允许运行 EchoPlayer
+
+  </Accordion>
+
+  <Accordion title="Linux: 缺少依赖库">
+    如果启动时提示缺少库文件，请安装对应依赖：
+
+    ```bash
+    # 查看缺少的依赖
+    ldd EchoPlayer-x.x.x.AppImage
+
+    # 安装常见依赖
+    sudo apt install libgtk-3-0 libgconf-2-4 libnss3 libxss1 libasound2
+    ```
+
+  </Accordion>
+
+  <Accordion title="安装后无法启动">
+    请尝试以下步骤：
+
+    1. **检查系统要求** - 确保满足最低系统要求
+    2. **重新下载** - 可能是下载文件损坏
+    3. **以管理员身份运行** - 某些系统可能需要管理员权限
+    4. **检查防病毒软件** - 暂时禁用防病毒软件并重试
+    5. **查看错误日志** - 在用户目录的 `.echoplayer/logs` 中查看错误信息
+
+  </Accordion>
+</AccordionGroup>
+
+## 卸载 EchoPlayer
+
+如果需要卸载 EchoPlayer：
+
+<Tabs>
+  <Tab title="Windows">
+    1. 通过"添加或删除程序"卸载
+    2. 或运行安装目录下的 `Uninstall EchoPlayer.exe`
+    3. 手动删除用户数据（可选）：
+       ```
+       %APPDATA%\echoplayer
+       ```
+  </Tab>
+
+<Tab title="macOS">
+  1. 将 Applications 文件夹中的 EchoPlayer.app 拖到废纸篓 2. 清空废纸篓 3.
+  手动删除用户数据（可选）： ``` ~/Library/Application Support/echoplayer ```
+</Tab>
+
+  <Tab title="Linux">
+    **AppImage 方式：**
+    1. 直接删除 AppImage 文件
+    2. 删除用户数据：`~/.config/echoplayer`
+
+    **DEB 包方式：**
+    ```bash
+    sudo apt remove echoplayer
+    ```
+
+  </Tab>
+</Tabs>
+
+## 下一步
+
+安装完成后，请查看 [快速开始指南](/quickstart) 了解如何使用 EchoPlayer 进行语言学习。
+
+<CardGroup cols={2}>
+  <Card title="快速开始" icon="rocket" href="/quickstart">
+    学习如何添加视频和字幕，开始您的语言学习之旅
+  </Card>
+  <Card title="播放器概览" icon="play" href="/player/overview">
+    了解 EchoPlayer 的核心功能和界面布局
+  </Card>
+</CardGroup>
+

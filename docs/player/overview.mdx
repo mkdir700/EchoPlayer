@@ -1,0 +1,422 @@
+---
+title: '播放器概览'
+description: '全面了解 EchoPlayer 的界面布局、核心功能和特色设计'
+---
+
+<Info>
+  EchoPlayer
+  的播放器界面专为语言学习而设计，提供直观的操作体验和强大的学习功能。本页面将详细介绍播放器的各个组成部分。
+</Info>
+
+## 界面布局
+
+<Frame caption="EchoPlayer 播放器界面布局">
+  <img src="/images/player-layout.png" alt="EchoPlayer 播放器界面布局" />
+</Frame>
+
+播放器主要由以下几个区域组成：
+
+<CardGroup cols={3}>
+  <Card title="顶部导航栏" icon="panel-top" href="#top-navbar">
+    包含返回按钮、视频标题和功能菜单
+  </Card>
+  <Card title="视频播放区域" icon="monitor-play" href="#video-player">
+    主要的视频内容显示区域，支持字幕覆盖
+  </Card>
+  <Card title="进度控制栏" icon="panel-bottom" href="#progress-bar">
+    显示播放进度，支持精确定位和字幕跳转
+  </Card>
+  <Card title="播放控制面板" icon="settings-2" href="#control-panel">
+    集中的播放控制按钮和设置选项
+  </Card>
+  <Card title="字幕列表面板" icon="list-video" href="#subtitle-panel">
+    可收缩的侧边栏，显示完整字幕列表
+  </Card>
+  <Card title="字幕覆盖层" icon="captions" href="#subtitle-overlay">
+    可自定义位置的字幕显示区域
+  </Card>
+</CardGroup>
+
+## 详细功能区域
+
+### 1. 顶部导航栏
+
+<Frame caption="顶部导航栏界面">
+  <img src="/images/navbar.png" alt="顶部导航栏" />
+</Frame>
+
+<table>
+  <thead>
+    <tr>
+      <th>元素</th>
+      <th>功能</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>返回按钮</strong>
+      </td>
+      <td>返回视频库</td>
+      <td>保存当前播放进度</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>视频标题</strong>
+      </td>
+      <td>显示当前视频名称</td>
+      <td>支持长文件名滚动显示</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>字幕面板切换</strong>
+      </td>
+      <td>显示/隐藏字幕列表</td>
+      <td>
+        快捷键：<code>Ctrl+]</code> / <code>Cmd+]</code>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+### 2. 视频播放区域
+
+<Note>这是 EchoPlayer 的核心区域，提供沉浸式的视频播放体验。</Note>
+
+<AccordionGroup>
+  <Accordion title="视频渲染" icon="film">
+    <ul>
+      <li>支持硬件加速解码</li>
+      <li>自适应分辨率和比例</li>
+      <li>流畅的播放体验</li>
+      <li>支持全屏模式</li>
+    </ul>
+  </Accordion>
+
+  <Accordion title="字幕覆盖" icon="captions">
+    <ul>
+      <li>可拖拽调整位置</li>
+      <li>可调整大小和透明度</li>
+      <li>多种背景样式选择</li>
+      <li>支持文本选中和复制</li>
+    </ul>
+  </Accordion>
+
+  <Accordion title="交互功能" icon="mouse">
+    <ul>
+      <li>点击播放/暂停</li>
+      <li>滚轮调节音量</li>
+      {/* <li>双击进入全屏</li> */}
+      {/* <li>右键菜单选项</li> */}
+    </ul>
+  </Accordion>
+</AccordionGroup>
+
+### 3. 进度控制栏
+
+<Frame caption="进度控制栏">
+  <img src="/images/progress-bar.png" alt="进度控制栏" />
+</Frame>
+
+进度控制栏提供精确的时间定位功能：
+
+<Steps>
+  <Step title="时间显示">显示当前播放时间和总时长</Step>
+  <Step title="进度拖拽">点击或拖拽快速定位到指定时间点</Step>
+</Steps>
+
+### 4. 播放控制面板
+
+<Frame caption="播放控制面板">
+  <img src="/images/control-panel.png" alt="播放控制面板" />
+</Frame>
+
+<Info>控制面板集成了所有主要的播放控制功能，提供完整的播放体验。</Info>
+
+<Tabs>
+  <Tab title="左侧控制区">
+    <ul>
+      <li><strong>循环模式</strong>：单句循环开关</li>
+      <li><strong>自动暂停</strong>：自动暂停开关</li>
+      <li><strong>字幕按钮</strong>：字幕显示模式切换</li>
+    </ul>
+  </Tab>
+
+  <Tab title="中央控制区">
+    <ul>
+      <li><Icon icon="skip-back"/> 跳转到上一条字幕</li>
+      <li><Icon icon="rewind"/> 向后跳转(后退10秒)</li>
+      <li><Icon icon="play"/> 播放/暂停</li>
+      <li><Icon icon="fast-forward"/> 向前跳转(向前10秒)</li>
+      <li><Icon icon="skip-forward"/> 跳转到下一条字幕</li>
+    </ul>
+  </Tab>
+
+  <Tab title="右侧控制区">
+    <ul>
+      <li><strong>音量控制</strong>：滑块调节音量大小</li>
+      <li><strong>播放速度</strong>：支持 0.25x 到 2.0x 调速</li>
+      <li><strong>设置按钮</strong>：播放器设置面板</li>
+      <li><strong>全屏按钮</strong>：进入/退出全屏模式</li>
+    </ul>
+  </Tab>
+</Tabs>
+
+### 5. 字幕列表面板
+
+<Frame caption="字幕列表面板">
+  <img src="/images/subtitle-panel.gif" alt="字幕列表面板" />
+</Frame>
+
+#### 核心功能
+
+<Tabs>
+  <Tab title="字幕浏览" icon="eye">
+    <ul>
+      <li>显示完整字幕列表</li>
+      <li>当前播放字幕高亮</li>
+      <li>滚动自动跟随播放进度</li>
+    </ul>
+  </Tab>
+
+<Tab title="快速导航" icon="zap">
+  <ul>
+    <li>点击任意字幕直接跳转</li>
+    <li>支持页面翻页快速滚动</li>
+  </ul>
+</Tab>
+
+  <Tab title="学习辅助" icon="graduation-cap">
+    <ul>
+      <li>显示原文和译文</li>
+      <li>字幕时间戳显示</li>
+      <li>学习进度追踪</li>
+      <li><s>单句重复播放标记</s></li>
+    </ul>
+  </Tab>
+</Tabs>
+
+### 6. 字幕覆盖层
+
+<Frame caption="字幕覆盖层">
+  <img src="/images/subtitle-overlay.gif" alt="字幕覆盖层" />
+</Frame>
+
+<Tip>字幕覆盖层是 EchoPlayer 的创新功能，提供最佳的学习体验。</Tip>
+
+#### 位置和大小
+
+<AccordionGroup>
+  <Accordion title="智能定位" icon="target">
+    <ul>
+      <li>默认居中底部显示</li>
+      <li>记住用户自定义位置</li>
+      <li>响应式适配不同屏幕</li>
+    </ul>
+  </Accordion>
+
+  <Accordion title="自由调整" icon="move">
+    <ul>
+      <li>拖拽任意位置移动</li>
+      <li>右下角调整手柄调整大小</li>
+      <li>双击调整手柄快速最大宽度</li>
+      <li>智能边界检测防止溢出</li>
+    </ul>
+  </Accordion>
+</AccordionGroup>
+
+#### 显示样式
+
+<Note>用户可以根据喜好和环境调整字幕样式，提供多种视觉效果选择。</Note>
+
+<CardGroup cols={2}>
+  <Card title="透明背景" icon="square-dashed">
+    完全透明的背景，让字幕融入视频画面
+  </Card>
+  <Card title="毛玻璃效果" icon="sparkles">
+    模糊毛玻璃效果，现代感十足的视觉体验
+  </Card>
+  <Card title="半透明背景" icon="blend">
+    半透明纯色背景，平衡可读性与美观
+  </Card>
+  <Card title="浅灰色背景" icon="contrast">
+    经典的浅灰色背景，确保最佳可读性
+  </Card>
+</CardGroup>
+
+## 交互设计
+
+### 键盘快捷键
+
+<Info>EchoPlayer 提供完整的键盘控制支持，让您无需鼠标即可完成所有操作。</Info>
+
+<Tabs>
+  <Tab title="播放控制" icon="play">
+    <table>
+      <thead>
+        <tr>
+          <th>快捷键</th>
+          <th>功能</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>空格</code></td>
+          <td>播放/暂停</td>
+        </tr>
+        <tr>
+          <td><code>←</code>/<code>→</code></td>
+          <td>向后/向前跳转</td>
+        </tr>
+        <tr>
+          <td><code>A</code>/<code>D</code></td>
+          <td>上一句/下一句字幕</td>
+        </tr>
+        <tr>
+          <td><code>↑</code>/<code>↓</code></td>
+          <td>音量增减</td>
+        </tr>
+        <tr>
+          <td><code>R</code></td>
+          <td>单句循环开关</td>
+        </tr>
+        <tr>
+          <td><code>S</code></td>
+          <td>重播当前字幕</td>
+        </tr>
+      </tbody>
+    </table>
+  </Tab>
+
+  <Tab title="界面控制" icon="layout">
+    <table>
+      <thead>
+        <tr>
+          <th>快捷键</th>
+          <th>功能</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>F</code></td>
+          <td>全屏切换</td>
+        </tr>
+        <tr>
+          <td><code>Escape</code></td>
+          <td>退出全屏</td>
+        </tr>
+        <tr>
+          <td><code>Ctrl+]</code> / <code>Cmd+]</code></td>
+          <td>字幕面板显示切换</td>
+        </tr>
+        <tr>
+          <td><code>Ctrl+C</code> / <code>Cmd+C</code></td>
+          <td>复制字幕</td>
+        </tr>
+        <tr>
+          <td><code>Shift+[</code></td>
+          <td>在常用速度中切换</td>
+        </tr>
+      </tbody>
+    </table>
+  </Tab>
+</Tabs>
+
+### 鼠标操作
+
+<CardGroup cols={2}>
+  <Card title="视频区域" icon="mouse-pointer">
+    <ul>
+      <li><strong>左键单击</strong>：播放/暂停</li>
+      <li><strong>双击</strong>：全屏切换</li>
+    </ul>
+  </Card>
+
+  <Card title="字幕区域" icon="move">
+    <ul>
+      <li><strong>左键拖拽</strong>：移动位置</li>
+      <li><strong>右下角拖拽</strong>：调整大小</li>
+      <li><strong>文本选择</strong>：复制字幕内容</li>
+      <li><strong>双击调整手柄</strong>：快速最大宽度</li>
+    </ul>
+  </Card>
+</CardGroup>
+
+## 自适应设计
+
+### 主题适配
+
+<Note>支持系统主题自动切换，为不同使用场景提供最佳的视觉体验。</Note>
+
+<CardGroup cols={2}>
+  <Card title="浅色主题" icon="sun">
+    <ul>
+      <li>明亮清爽的界面</li>
+      <li>高对比度文字</li>
+      <li>适合白天使用</li>
+      <li>护眼设计</li>
+    </ul>
+  </Card>
+
+  <Card title="深色主题" icon="moon">
+    <ul>
+      <li>深色背景界面</li>
+      <li>减少蓝光输出</li>
+      <li>适合夜间使用</li>
+      <li>节省电池（OLED屏幕）</li>
+    </ul>
+  </Card>
+</CardGroup>
+
+## 性能优化
+
+<Tabs>
+  <Tab title="渲染优化" icon="cpu">
+    <ul>
+      <li><strong>硬件加速</strong>：利用 GPU 加速视频解码</li>
+      <li><strong>内存管理</strong>：智能缓存和垃圾回收</li>
+      <li><strong>流畅播放</strong>：防止掉帧和卡顿</li>
+      <li><strong>快速启动</strong>：优化加载时间</li>
+    </ul>
+  </Tab>
+
+  <Tab title="资源占用" icon="activity">
+    <ul>
+      <li><strong>低 CPU 占用</strong>：高效的视频处理算法</li>
+      <li><strong>内存友好</strong>：合理的缓存策略</li>
+      <li><strong>电池优化</strong>：移动设备电池续航考虑</li>
+      <li><strong>网络优化</strong>：最小化不必要的网络请求</li>
+    </ul>
+  </Tab>
+</Tabs>
+
+## 下一步
+
+<Info>了解了播放器的整体布局后，您可以深入学习各个功能模块。</Info>
+
+<CardGroup cols={2}>
+  <Card
+    title="视频管理"
+    icon="folder"
+    href="/player/video-management"
+  >
+    学习如何管理视频文件，创建播放列表
+  </Card>
+
+<Card title="字幕系统" icon="captions" href="/player/subtitle-system">
+  深入了解字幕功能和自定义选项
+</Card>
+
+<Card title="播放控制" icon="settings" href="/player/playback-controls">
+  掌握所有播放控制功能和技巧
+</Card>
+
+  <Card
+    title="语言学习功能"
+    icon="graduation-cap"
+    href="/player/language-learning"
+  >
+    了解专为语言学习设计的特色功能
+  </Card>
+</CardGroup>

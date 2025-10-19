@@ -1,0 +1,479 @@
+---
+title: '字幕系统'
+description: '深入了解 EchoPlayer 的强大字幕功能，包括多语言支持、自定义显示和学习辅助功能'
+---
+
+EchoPlayer 的字幕系统是其核心优势，专为语言学习优化，提供丰富的字幕管理和显示功能。
+
+## 字幕文件支持
+
+### 支持的格式
+
+<CardGroup cols={3}>
+<Card title="SRT (.srt)" icon="file-text">
+  **最常用的字幕格式**
+  - 简洁的文本格式
+  - 广泛的兼容性
+  - 时间轴精确
+  - 适合大多数场景
+</Card>
+
+<Card title="VTT (.vtt)" icon="captions">
+  **Web 标准字幕格式**
+  - HTML5 视频标准
+  - 支持样式和定位
+  - Web 平台友好
+  - 现代化设计
+</Card>
+
+<Card title="ASS/SSA (.ass/.ssa)" icon="file-code">
+  **高级字幕格式**
+  - 原格式提供丰富的样式支持
+  - 原格式具备动画和特效能力
+  - 精确的定位控制
+  - 专业制作标准
+</Card>
+
+</CardGroup>
+
+<Tip>
+注意：EchoPlayer 仅从文件中抽取字幕内容，如 ASS 字幕中的特效和动画不支持显示
+</Tip>
+
+## 字幕导入和管理
+
+{/* ### 自动导入
+
+启动视频播放时，EchoPlayer 会自动扫描：
+
+<Steps>
+  <Step title="同目录扫描">扫描视频文件所在目录的同名字幕文件</Step>
+  <Step title="子目录查找">检查 `subtitles/`、`subs/`、`字幕/` 等常见字幕目录</Step>
+  <Step title="语言识别">根据文件名识别字幕语言和类型</Step>
+  <Step title="自动加载">按优先级自动加载最佳字幕</Step>
+</Steps> */}
+
+### 手动导入
+
+<Steps>
+  <Step title="点击导入字幕">在字幕列表面板点击「导入字幕」按钮</Step>
+  <Step title="选择字幕文件">浏览并选择字幕文件</Step>
+</Steps>
+
+<Frame caption="导入字幕文件">
+  <img src="/images/subtitile-import.gif" alt="导入字幕文件" />
+</Frame>
+
+{/* <Tabs>
+<Tab title="播放时导入">
+  1. 在播放界面点击字幕按钮 <Icon icon="captions" size={16} />
+  2. 选择"导入字幕文件"
+  3. 浏览并选择字幕文件
+  4. 确认加载并选择语言类型
+</Tab>
+
+<Tab title="拖拽导入">
+  1. 直接拖拽字幕文件到播放器窗口
+  2. 系统自动识别并加载
+</Tab>
+
+<Tab title="在线下载">
+  1. 在字幕菜单中选择"在线搜索"
+  2. 自动匹配视频信息
+  3. 从字幕库中下载合适字幕
+  4. 一键导入到播放器
+</Tab>
+</Tabs> */}
+
+### 字幕文件管理
+
+<AccordionGroup>
+  <Accordion title="多语言支持">
+    - 同时加载多个语言的字幕
+    - 实时切换显示语言
+    - 支持双语对照显示
+    - 自定义语言优先级
+  </Accordion>
+
+  <Accordion title="编码处理">
+    - 自动检测字符编码
+    - 编码转换和修复
+    - 乱码问题自动解决
+  </Accordion>
+</AccordionGroup>
+
+## 字幕显示模式
+
+### 显示模式选择
+
+EchoPlayer 提供四种字幕显示模式，满足不同学习需求：
+
+<Tabs>
+  <Tab title="隐藏字幕">
+    **适用场景：**
+    - 听力训练和测试
+    - 高级学习者练习
+    - 影视纯享受模式
+
+    **特点：**
+    - 完全隐藏字幕显示
+    - 专注于音频内容
+    - 培养听力理解能力
+
+  </Tab>
+
+  <Tab title="原文字幕">
+    **适用场景：**
+    - 进阶语言学习
+    - 语音与文字对照
+    - 发音练习
+
+    **特点：**
+    - 仅显示原语言字幕
+    - 帮助语音识别训练
+    - 提高阅读理解能力
+
+  </Tab>
+
+  <Tab title="译文字幕">
+    **适用场景：**
+    - 内容理解优先
+    - 复杂剧情跟进
+    - 文化背景学习
+
+    **特点：**
+    - 仅显示翻译字幕
+    - 确保内容理解
+    - 减少原文干扰
+
+  </Tab>
+
+  <Tab title="双语字幕">
+    **适用场景：**
+    - 初学者友好
+    - 对照学习方式
+    - 词汇积累
+
+    **特点：**
+    - 同时显示原文和译文
+    - 上下对照布局
+    - 完整的学习体验
+
+  </Tab>
+</Tabs>
+
+### 显示位置和样式
+
+#### 字幕覆盖层
+
+EchoPlayer 的字幕覆盖层提供最大的自定义自由度：
+
+<CardGroup cols={2}>
+  <Card title="位置控制" icon="move">
+    - 任意拖拽移动
+    - 智能边界检测
+    - 记住用户偏好
+    - 多屏幕适配
+  </Card>
+
+  <Card title="大小调整" icon="maximize-2">
+    - 右下角调整手柄
+    - 双击快速最大化
+    - 比例保持选项
+    - 最小/最大尺寸限制
+  </Card>
+</CardGroup>
+
+#### 背景样式选择
+
+根据视频内容和个人喜好选择合适的背景：
+
+<Tabs>
+  <Tab title="透明背景">
+    <img src="/images/subtitle-bg-transparent.png" alt="透明背景" />
+
+    - 完全透明，不遮挡画面
+    - 适合画面简洁的内容
+    - 需要良好的对比度
+    - 最小化视觉干扰
+
+  </Tab>
+
+  <Tab title="模糊背景">
+    <img src="/images/subtitle-bg-blur.png" alt="模糊毛玻璃背景" />
+
+    - 毛玻璃模糊效果
+    - 保持画面元素可见
+    - 提供良好的文字对比
+    - 现代化视觉效果
+
+  </Tab>
+
+  <Tab title="纯色背景">
+    <img src="/images/subtitle-bg-solid.png" alt="纯色背景" />
+
+    - 半透明纯色背景
+    - 最佳的文字可读性
+    - 可调节透明度
+    - 适合复杂画面内容
+
+  </Tab>
+</Tabs>
+
+## 字幕列表面板
+
+### 面板功能
+
+字幕列表面板是 EchoPlayer 的特色功能，提供完整的字幕浏览和导航体验：
+
+<img src="/images/subtitle-panel.gif" alt="字幕列表面板" />
+
+#### 核心功能
+
+<AccordionGroup>
+  <Accordion title="字幕浏览">
+    - **完整列表显示**：展示所有字幕条目
+    - **当前高亮**：正在播放的字幕高亮显示
+    - **自动滚动**：跟随播放进度自动滚动
+    - **时间戳显示**：精确的时间信息
+  </Accordion>
+
+  <Accordion title="快速导航">
+    - **点击跳转**：点击任意字幕直接跳转播放
+  </Accordion>
+
+  {/* <Accordion title="搜索和过滤">
+    - **文本搜索**：快速查找包含特定词汇的字幕
+    - **时间范围过滤**：按时间段筛选字幕
+    - **语言过滤**：在多语言字幕中筛选
+    - **高亮显示**：搜索结果高亮标记
+  </Accordion> */}
+</AccordionGroup>
+
+### 显示模式
+
+根据字幕文件和用户设置，面板支持多种显示模式：
+
+<Tabs>
+  <Tab title="单语言模式">
+    ```
+    [00:01:23] Hello, how are you today?
+    [00:01:26] I'm fine, thank you.
+    [00:01:30] What about you?
+    [00:01:33] I'm doing great!
+    ```
+
+    **特点：**
+    - 简洁清晰的单语言显示
+    - 适合单一字幕文件
+    - 节省屏幕空间
+
+  </Tab>
+
+  <Tab title="双语言模式">
+    ```
+    [00:01:23] Hello, how are you today?
+            你好，你今天怎么样？
+
+    [00:01:26] I'm fine, thank you.
+            我很好，谢谢你。
+
+    [00:01:30] What about you?
+            你呢？
+    ```
+
+    **特点：**
+    - 原文和译文对照显示
+    - 学习效果最佳
+    - 便于理解和记忆
+
+  </Tab>
+</Tabs>
+
+## 学习辅助功能
+
+### 文本选择和复制
+
+EchoPlayer 支持字幕文本的选择和复制，方便学习和记录：
+
+<Steps>
+  <Step title="选择文本">在字幕覆盖层或列表面板中拖拽选择文本</Step>
+  <Step title="复制内容">右键选择"复制"或使用 Ctrl+C 快捷键</Step>
+  {/* <Step title="格式选择">可选择复制纯文本或包含时间戳的格式</Step> */}
+  <Step title="外部使用">粘贴到笔记应用或学习工具中</Step>
+</Steps>
+
+{/* ### 字幕导出
+
+支持将字幕内容导出为多种格式：
+
+<CardGroup cols={2}>
+  <Card title="学习笔记格式" icon="book">
+    - 包含时间戳的文本
+    - 双语对照排版
+    - 适合复习和记忆
+    - 支持 Markdown 格式
+  </Card>
+
+  <Card title="标准字幕格式" icon="file-text">
+    - 导出为 SRT、VTT 格式
+    - 保持原始时间轴
+    - 兼容其他播放器
+    - 分享和备份
+  </Card>
+</CardGroup> */}
+
+{/* ### 学习进度标记
+
+<AccordionGroup>
+  <Accordion title="重点标记">
+    - 标记重要字幕片段
+    - 不同颜色分类
+    - 快速回顾功能
+    - 导出标记内容
+  </Accordion>
+
+<Accordion title="难点记录">
+  - 标记理解困难的句子
+  - 添加个人注释
+  - 重复练习提醒
+  - 学习统计分析
+</Accordion>
+
+  <Accordion title="熟练度追踪">
+    - 记录每句字幕的练习次数
+    - 评估理解熟练程度
+    - 智能推荐复习内容
+    - 学习进度可视化
+  </Accordion>
+</AccordionGroup> */}
+
+{/* ## 高级设置
+
+### 字幕同步调整
+
+当字幕与音频不同步时，可以进行精确调整：
+
+<Tabs>
+  <Tab title="整体偏移">
+    - 使用 `+` / `-` 按钮调整整体时间偏移
+    - 支持毫秒级精度调整
+    - 实时预览同步效果
+    - 保存调整设置
+  </Tab>
+
+  <Tab title="单句调整">
+    - 在字幕列表中右键单句字幕
+    - 精确编辑开始和结束时间
+    - 拖拽调整时间范围
+    - 多句批量调整
+  </Tab>
+
+  <Tab title="自动同步">
+    - 利用音频波形分析
+    - 自动检测语音边界
+    - 智能匹配字幕时间轴
+    - 一键同步优化
+  </Tab>
+</Tabs>
+
+### 显示效果优化
+
+<CardGroup cols={2}>
+  <Card title="字体设置" icon="type">
+    - 字体大小调节
+    - 字体系列选择
+    - 粗体和斜体选项
+    - 字符间距调整
+  </Card>
+
+<Card title="颜色和对比度" icon="palette">
+  - 文字颜色自定义 - 背景颜色调整 - 描边和阴影效果 - 对比度优化
+</Card>
+
+<Card title="动画效果" icon="zap">
+  - 字幕淡入淡出 - 平滑滚动动画 - 高亮显示效果 - 过渡时间调节
+</Card>
+
+  <Card title="布局选项" icon="layout">
+    - 字幕对齐方式
+    - 行高和段落间距
+    - 边距和内边距
+    - 多行显示模式
+  </Card>
+</CardGroup> */}
+
+{/* ## 实用技巧
+
+### 快捷操作
+
+<CardGroup cols={2}>
+  <Card title="快速切换" icon="zap">
+    - `S` 键循环切换字幕显示模式
+    - `Ctrl+S` 显示/隐藏字幕面板
+    - `Ctrl+F` 打开字幕搜索
+    - `Esc` 清除搜索结果
+  </Card>
+
+  <Card title="精确定位" icon="target">
+    - 在进度条上点击字幕标记直接跳转
+    - 使用字幕列表快速导航
+    - 利用搜索功能找到特定内容
+    - 键盘方向键精确移动
+  </Card>
+</CardGroup> */}
+
+### 学习建议
+
+<AccordionGroup>
+  <Accordion title="初学者">
+    - 建议使用双语字幕模式
+    - 开启字幕面板辅助理解
+    - 多使用单句循环功能
+    - 积极标记和复制重要内容
+  </Accordion>
+
+  <Accordion title="进阶学习者">
+    - 逐步切换到原文字幕模式
+    - 利用字幕列表提前预习
+    - 尝试隐藏字幕进行听力训练
+    {/* - 使用搜索功能复习特定词汇 */}
+  </Accordion>
+
+  {/* <Accordion title="高级用户">
+    - 自定义字幕显示效果
+    - 利用导出功能制作学习材料
+    - 结合其他学习工具使用
+    - 参与字幕制作和分享
+  </Accordion> */}
+</AccordionGroup>
+
+## 下一步
+
+掌握了字幕系统后，您可以继续学习其他播放器功能：
+
+<CardGroup cols={2}>
+  <Card
+    title="播放控制"
+    icon="play"
+    href="/player/playback-controls"
+  >
+    学习播放控制的高级功能和技巧
+  </Card>
+
+<Card title="语言学习功能" icon="graduation-cap" href="/player/language-learning">
+  深入了解专为语言学习设计的特色功能
+</Card>
+
+<Card title="高级设置" icon="settings" href="/advanced/settings">
+  探索更多个性化设置选项
+</Card>
+
+  <Card
+    title="快捷键大全"
+    icon="keyboard"
+    href="/advanced/shortcuts"
+  >
+    掌握所有快捷键提高使用效率
+  </Card>
+</CardGroup>

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "willow",
+  "name": "EchoPlayer",
+  "colors": {
+    "primary": "#007AFF",
+    "light": "#66B3FF",
+    "dark": "#0066CC"
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "用户指南",
+        "groups": [
+          {
+            "group": "快速入门",
+            "pages": ["index", "installation", "quickstart"]
+          },
+          {
+            "group": "播放器",
+            "pages": ["player/overview", "player/subtitle-system", "player/playback-controls"]
+          },
+          {
+            "group": "高级",
+            "pages": ["advanced/shortcuts", "advanced/media-server"]
+          }
+        ]
+      },
+      {
+        "tab": "更新日志",
+        "groups": [
+          {
+            "group": "更新日志",
+            "icon": "history",
+            "pages": ["changelog"]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/mkdir700/EchoPlayer",
+          "icon": "github"
+        },
+        {
+          "anchor": "官网",
+          "href": "https://www.echoplayer.cc",
+          "icon": "globe"
+        }
+      ]
+    }
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "反馈问题",
+        "href": "https://github.com/mkdir700/EchoPlayer/issues"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "下载",
+      "href": "https://github.com/mkdir700/EchoPlayer/releases"
+    }
+  },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp", "cursor", "vscode"]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/mkdir700/EchoPlayer"
+    }
+  }
+}

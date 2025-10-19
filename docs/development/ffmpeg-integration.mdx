@@ -1,0 +1,117 @@
+---
+title: 'FFmpeg 内置集成功能'
+description: 'EchoPlayer 内置 FFmpeg 集成方案的完整指南'
+icon: 'film'
+---
+
+EchoPlayer 现在内置了 FFmpeg，无需用户手动安装。
+
+## 功能特点
+
+- ✅ **内置集成**：应用包含完整的 FFmpeg 二进制文件
+- ✅ **跨平台支持**：Windows (x64, arm64), macOS (x64, arm64), Linux (x64, arm64)
+- ✅ **GPL 完整版**：包含所有编解码器，支持更多视频格式
+- ✅ **智能降级**：内置 FFmpeg 不可用时自动使用系统版本
+- ✅ **缓存机制**：避免重复下载，加速构建过程
+
+## 开发命令
+
+### FFmpeg 管理命令
+
+```bash
+# 下载当前平台的 FFmpeg
+pnpm run ffmpeg:download
+
+# 下载所有支持平台的 FFmpeg
+pnpm run ffmpeg:download-all
+
+# 清理下载缓存
+pnpm run ffmpeg:clean
+
+# 测试 FFmpeg 集成
+pnpm run ffmpeg:test
+```
+
+### 构建命令
+
+```bash
+# 正常构建（会自动下载 FFmpeg）
+pnpm run build
+
+# 手动下载后构建
+pnpm run ffmpeg:download && pnpm run build
+```
+
+## 技术实现
+
+### 1. 文件结构
+
+```
+resources/ffmpeg/
+  ├── darwin-x64/ffmpeg      # macOS Intel
+  ├── darwin-arm64/ffmpeg    # macOS Apple Silicon
+  ├── win32-x64/ffmpeg.exe   # Windows x64
+  ├── win32-arm64/ffmpeg.exe # Windows ARM64
+  ├── linux-x64/ffmpeg      # Linux x64
+  └── linux-arm64/ffmpeg    # Linux ARM64
+```
+
+### 2. 路径解析策略
+
+1. **内置优先**：优先使用应用内置的 FFmpeg
+2. **环境降级**：内置不可用时使用系统 FFmpeg
+3. **开发支持**：开发环境自动检测本地构建的 FFmpeg
+
+### 3. 构建集成
+
+- **预构建钩子**：`prebuild` 脚本自动下载 FFmpeg
+- **构建时复制**：Vite 插件自动复制文件到输出目录
+- **打包配置**：electron-builder 将 FFmpeg 包含在应用包中
+
+## FFmpeg 版本信息
+
+- **版本**：6.1 (GPL)
+- **许可证**：GPL v3（与项目开源协议兼容）
+- **包体积**：约 24MB 每平台
+- **功能完整**：支持所有主要编解码器
+
+## 常见问题
+
+### Q: 构建时下载失败怎么办？
+
+A:
+
+1. 检查网络连接
+2. 手动运行 `pnpm run ffmpeg:download`
+3. 必要时清理缓存：`pnpm run ffmpeg:clean`
+
+### Q: 如何验证 FFmpeg 是否正确集成？
+
+A: 运行测试命令：`pnpm run ffmpeg:test`
+
+### Q: 应用包会增加多少大小？
+
+A: 每个平台约增加 24MB，实际应用只包含目标平台的版本
+
+### Q: 如何指定下载特定平台？
+
+A:
+
+```bash
+# 下载指定平台
+tsx scripts/download-ffmpeg.ts platform win32 x64
+tsx scripts/download-ffmpeg.ts platform darwin arm64
+tsx scripts/download-ffmpeg.ts platform linux x64
+```
+
+## 许可证说明
+
+本项目使用的 FFmpeg 为 GPL 版本，这与 EchoPlayer 的开源许可证兼容。GPL 版本提供了完整的编解码器支持，确保最佳的视频处理能力。
+
+## 支持的格式
+
+内置的 GPL 版本 FFmpeg 支持：
+
+- 视频编解码器：H.264, H.265, VP8, VP9, AV1 等
+- 音频编解码器：AAC, MP3, Opus, Vorbis 等
+- 容器格式：MP4, MKV, AVI, MOV, WebM 等
