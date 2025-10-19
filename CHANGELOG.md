@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/mkdir700/EchoPlayer/compare/v1.2.0...v1.3.0) (2025-10-19)
+
+### Bug Fixes
+
+- Fix system theme toggle in Sidebar ([#224](https://github.com/mkdir700/EchoPlayer/issues/224)) ([2d2de6c](https://github.com/mkdir700/EchoPlayer/commit/2d2de6ce459f4118e981198849aba7e3bb39f611))
+
+### Features
+
+- **asr:** implement ASR subtitle generation features ([#223](https://github.com/mkdir700/EchoPlayer/issues/223)) ([d87a723](https://github.com/mkdir700/EchoPlayer/commit/d87a7230481a59d22e7c853f84dd8a650a5f4307))
+- **player:** enhance video interaction area and progress bar behavior ([20fbcc5](https://github.com/mkdir700/EchoPlayer/commit/20fbcc5468c481dd08a0cf37e76af4cfd655508c))
+- **player:** 优化进度条 seek 交互和性能 ([600734d](https://github.com/mkdir700/EchoPlayer/commit/600734d66e3a3c980ab1837362197d928f48c495))
+
 # [1.2.0](https://github.com/mkdir700/EchoPlayer/compare/v1.1.1...v1.2.0) (2025-10-17)
 
 ### Features
