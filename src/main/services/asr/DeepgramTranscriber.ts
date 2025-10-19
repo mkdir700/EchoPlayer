@@ -103,7 +103,6 @@ class DeepgramTranscriber {
 
           return {
             audioSegment: segment,
-            response: {} as DeepgramResponse,
             success: false,
             error: error instanceof Error ? error.message : String(error)
           } as TranscriptSegment

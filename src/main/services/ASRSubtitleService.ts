@@ -230,10 +230,16 @@ class ASRSubtitleService {
   /**
    * 从 Deepgram 响应中提取字幕
    */
-  private extractSubtitlesFromResponse(response: DeepgramResponse): ASRSubtitleItem[] {
+  private extractSubtitlesFromResponse(response?: DeepgramResponse): ASRSubtitleItem[] {
     const subtitles: ASRSubtitleItem[] = []
 
     try {
+      // 处理响应为空的情况
+      if (!response) {
+        logger.warn('Deepgram 响应为空，无法提取字幕')
+        return subtitles
+      }
+
       // 优先使用 utterances（句段）
       const channel = response.results?.channels?.[0]
       const utterances = channel?.utterances as DeepgramUtterance[] | undefined

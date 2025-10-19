@@ -190,7 +190,7 @@ export interface TranscriptSegment {
   /** 原始音频段信息 */
   audioSegment: AudioSegment
   /** Deepgram 响应 */
-  response: DeepgramResponse
+  response?: DeepgramResponse
   /** 是否成功 */
   success: boolean
   /** 错误信息 */
