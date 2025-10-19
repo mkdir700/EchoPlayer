@@ -30,7 +30,7 @@ const EstimatedText = styled.div`
 `
 
 const MessageText = styled.div`
-  font-size: 13px;
+  font-size: ${FONT_SIZES.XS}px;
   color: var(--ant-color-text-tertiary);
 `
 
