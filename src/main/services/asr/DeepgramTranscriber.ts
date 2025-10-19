@@ -322,19 +322,99 @@ class DeepgramTranscriber {
     try {
       logger.info('验证 Deepgram API Key')
 
-      // TODO: 实现实际的 API Key 验证
-      // 暂时返回简单验证（检查格式）
       if (!apiKey || apiKey.length < 10) {
         return { valid: false, error: 'API Key 格式无效' }
       }
 
-      return { valid: true }
+      // 调用 Deepgram 官方验证端点
+      const result = await this.makeValidationRequest(apiKey)
+      return result
     } catch (error) {
       return {
         valid: false,
         error: error instanceof Error ? error.message : 'API Key 验证失败'
       }
     }
+  }
+
+  /**
+   * 发送验证请求到 Deepgram API
+   */
+  private makeValidationRequest(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+    return new Promise((resolve) => {
+      const requestOptions = {
+        hostname: 'api.deepgram.com',
+        port: 443,
+        path: '/v1/auth/token',
+        method: 'GET',
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 8000 // 8秒超时
+      }
+
+      const req = https.request(requestOptions, (res) => {
+        let responseBody = ''
+
+        res.on('data', (chunk) => {
+          responseBody += chunk
+        })
+
+        res.on('end', () => {
+          // 根据状态码返回相应结果
+          if (res.statusCode === 200) {
+            logger.info('API Key 验证成功')
+            resolve({ valid: true })
+          } else if (res.statusCode === 401) {
+            try {
+              const errorData = JSON.parse(responseBody)
+              const errorCode = errorData.err_code || 'UNKNOWN'
+
+              if (errorCode === 'INVALID_AUTH') {
+                resolve({ valid: false, error: 'API Key 无效' })
+              } else if (errorCode === 'INSUFFICIENT_PERMISSIONS') {
+                resolve({ valid: false, error: 'API Key 权限不足' })
+              } else {
+                resolve({ valid: false, error: 'API Key 认证失败' })
+              }
+            } catch {
+              resolve({ valid: false, error: 'API Key 认证失败' })
+            }
+          } else if (res.statusCode === 403) {
+            resolve({ valid: false, error: 'API Key 权限不足或访问被拒绝' })
+          } else {
+            logger.warn('API Key 验证收到意外状态码', {
+              statusCode: res.statusCode,
+              body: responseBody
+            })
+            resolve({
+              valid: false,
+              error: `验证失败 (HTTP ${res.statusCode})`
+            })
+          }
+        })
+      })
+
+      req.on('error', (error) => {
+        logger.error('API Key 验证请求失败', { error: error.message })
+        resolve({
+          valid: false,
+          error: '网络连接失败，请检查网络设置'
+        })
+      })
+
+      req.on('timeout', () => {
+        req.destroy()
+        logger.error('API Key 验证请求超时')
+        resolve({
+          valid: false,
+          error: '验证请求超时，请稍后重试'
+        })
+      })
+
+      req.end()
+    })
   }
 
   /**
