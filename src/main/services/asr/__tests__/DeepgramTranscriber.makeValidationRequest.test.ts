@@ -111,7 +111,7 @@ describe('DeepgramTranscriber.makeValidationRequest', () => {
   it('返回验证失败当 Deepgram 返回 401 INVALID_AUTH', async () => {
     const apiKey = 'invalid-api-key'
 
-    requestSpy.mockImplementation((options: any, callback: any) => {
+    requestSpy.mockImplementation((_options: any, callback: any) => {
       const responseHandlers: HandlerMap = {}
       const response = {
         statusCode: 401,
@@ -141,7 +141,7 @@ describe('DeepgramTranscriber.makeValidationRequest', () => {
   it('返回验证失败当 Deepgram 返回 401 INSUFFICIENT_PERMISSIONS', async () => {
     const apiKey = 'insufficient-permissions-key'
 
-    requestSpy.mockImplementation((options: any, callback: any) => {
+    requestSpy.mockImplementation((_options: any, callback: any) => {
       const responseHandlers: HandlerMap = {}
       const response = {
         statusCode: 401,
@@ -171,7 +171,7 @@ describe('DeepgramTranscriber.makeValidationRequest', () => {
   it('返回验证失败当 Deepgram 返回 401 但响应体不是有效 JSON', async () => {
     const apiKey = 'invalid-api-key'
 
-    requestSpy.mockImplementation((options: any, callback: any) => {
+    requestSpy.mockImplementation((_options: any, callback: any) => {
       const responseHandlers: HandlerMap = {}
       const response = {
         statusCode: 401,
@@ -197,7 +197,7 @@ describe('DeepgramTranscriber.makeValidationRequest', () => {
   it('返回验证失败当 Deepgram 返回 403', async () => {
     const apiKey = 'forbidden-api-key'
 
-    requestSpy.mockImplementation((options: any, callback: any) => {
+    requestSpy.mockImplementation((_options: any, callback: any) => {
       const responseHandlers: HandlerMap = {}
       const response = {
         statusCode: 403,
@@ -223,7 +223,7 @@ describe('DeepgramTranscriber.makeValidationRequest', () => {
   it('返回验证失败当收到其他 HTTP 状态码', async () => {
     const apiKey = 'test-api-key'
 
-    requestSpy.mockImplementation((options: any, callback: any) => {
+    requestSpy.mockImplementation((_options: any, callback: any) => {
       const responseHandlers: HandlerMap = {}
       const response = {
         statusCode: 500,
@@ -253,7 +253,7 @@ describe('DeepgramTranscriber.makeValidationRequest', () => {
   it('返回验证失败当网络请求出错', async () => {
     const apiKey = 'test-api-key'
 
-    requestSpy.mockImplementation((options: any, callback: any) => {
+    requestSpy.mockImplementation((_options: any, callback: any) => {
       const responseHandlers: HandlerMap = {}
       const response = {
         statusCode: 200,
@@ -283,7 +283,7 @@ describe('DeepgramTranscriber.makeValidationRequest', () => {
   it('返回验证失败当请求超时', async () => {
     const apiKey = 'test-api-key'
 
-    requestSpy.mockImplementation((options: any, callback: any) => {
+    requestSpy.mockImplementation((_options: any, callback: any) => {
       const responseHandlers: HandlerMap = {}
       const response = {
         statusCode: 200,
