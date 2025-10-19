@@ -6,6 +6,7 @@
 import type { AudioSegment, DeepgramResponse, TranscriptSegment } from '@shared/types'
 import * as fs from 'fs'
 import { promises as fsPromises } from 'fs'
+import type { ClientRequest } from 'http'
 import https from 'https'
 import PQueue from 'p-queue'
 import * as path from 'path'
@@ -42,11 +43,23 @@ export interface TranscriptionProgress {
 
 class DeepgramTranscriber {
   private queue: PQueue
-  private activeRequests: Set<any> = new Set()
+  private activeRequests: Set<ClientRequest> = new Set()
+  private abortController: AbortController = new AbortController()
+  private currentRequestAbortController: AbortController | null = null
 
   constructor(concurrency: number = 3) {
     this.queue = new PQueue({ concurrency })
     logger.info('Deepgram 转写器初始化', { concurrency })
+  }
+
+  /**
+   * 重置取消状态（用于开始新的转写任务）
+   */
+  private resetCancellationState(): void {
+    if (this.abortController.signal.aborted) {
+      this.abortController = new AbortController()
+    }
+    this.currentRequestAbortController = null
   }
 
   /**
@@ -58,6 +71,9 @@ class DeepgramTranscriber {
     onProgress?: (progress: TranscriptionProgress) => void
   ): Promise<TranscriptSegment[]> {
     logger.info('开始批量转写', { segmentCount: segments.length })
+
+    // 重置取消状态，准备新的转写任务
+    this.resetCancellationState()
 
     const results: TranscriptSegment[] = []
     let completed = 0
@@ -151,8 +167,8 @@ class DeepgramTranscriber {
 
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
-        // 在重试前检查是否有活动请求被取消
-        if (this.activeRequests.size === 0 && attempt > 0) {
+        // 在重试前检查是否被取消
+        if (this.abortController.signal.aborted) {
           logger.debug('检测到请求被取消，停止重试')
           throw new Error('REQUEST_CANCELLED')
         }
@@ -164,7 +180,7 @@ class DeepgramTranscriber {
           await new Promise((resolve) => setTimeout(resolve, delay))
 
           // 等待后再次检查取消状态
-          if (this.activeRequests.size === 0) {
+          if (this.abortController.signal.aborted) {
             logger.debug('等待期间检测到取消，停止重试')
             throw new Error('REQUEST_CANCELLED')
           }
@@ -463,6 +479,14 @@ class DeepgramTranscriber {
    * 取消所有待处理的任务
    */
   public async cancelAll(): Promise<void> {
+    // 设置取消标志
+    this.abortController.abort()
+
+    // 如果有当前请求的控制器，也取消它
+    if (this.currentRequestAbortController) {
+      this.currentRequestAbortController.abort()
+    }
+
     // 清空队列，防止新任务开始
     this.queue.clear()
 
