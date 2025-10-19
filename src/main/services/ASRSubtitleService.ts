@@ -6,13 +6,13 @@
 import type {
   ASRGenerateOptions,
   ASRProgress,
-  ASRProgressStage,
   ASRResult,
   ASRSubtitleItem,
   DeepgramResponse,
   DeepgramUtterance,
   DeepgramWord
 } from '@shared/types'
+import { ASRProgressStage } from '@shared/types'
 import * as path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -74,10 +74,10 @@ class ASRSubtitleService {
       const outputFormat = options.outputFormat || 'srt'
 
       // 阶段 1: 初始化
-      this.reportProgress(taskId, 'initializing', 0, progressCallback)
+      this.reportProgress(taskId, ASRProgressStage.Initializing, 0, progressCallback)
 
       // 阶段 2: 提取音频
-      this.reportProgress(taskId, 'extracting_audio', 5, progressCallback)
+      this.reportProgress(taskId, ASRProgressStage.ExtractingAudio, 5, progressCallback)
       logger.info('开始提取音频')
 
       const extractResult = await this.audioPreprocessor.extractAudioTrack(
@@ -97,7 +97,7 @@ class ASRSubtitleService {
       logger.info('音频提取成功', { duration: audioDuration })
 
       // 阶段 3: 转写完整音频
-      this.reportProgress(taskId, 'transcribing', 15, progressCallback)
+      this.reportProgress(taskId, ASRProgressStage.Transcribing, 15, progressCallback)
       logger.info('开始转写音频')
 
       const transcriber = new DeepgramTranscriber(1)
@@ -120,7 +120,7 @@ class ASRSubtitleService {
       logger.info('音频转写完成')
 
       // 阶段 4: 提取字幕数据
-      this.reportProgress(taskId, 'formatting', 85, progressCallback)
+      this.reportProgress(taskId, ASRProgressStage.Formatting, 85, progressCallback)
       logger.info('开始格式化字幕')
 
       // 从 Deepgram 响应中提取字幕
@@ -133,7 +133,7 @@ class ASRSubtitleService {
       // })
 
       // 阶段 5: 导出文件
-      this.reportProgress(taskId, 'saving', 90, progressCallback)
+      this.reportProgress(taskId, ASRProgressStage.Saving, 90, progressCallback)
       logger.info('开始导出字幕文件')
 
       const outputPath = path.join(tempDir, `subtitles.${outputFormat}`)
@@ -144,7 +144,7 @@ class ASRSubtitleService {
       }
 
       // 阶段 6: 保存到数据库
-      this.reportProgress(taskId, 'saving', 95, progressCallback)
+      this.reportProgress(taskId, ASRProgressStage.Saving, 95, progressCallback)
       logger.info('开始保存字幕到数据库')
 
       // 转换 ASRSubtitleItem 到 SubtitleItem 格式
@@ -177,7 +177,7 @@ class ASRSubtitleService {
 
       // 完成
       const processingTime = (Date.now() - startTime) / 1000
-      this.reportProgress(taskId, 'complete', 100, progressCallback)
+      this.reportProgress(taskId, ASRProgressStage.Complete, 100, progressCallback)
 
       logger.info('ASR 字幕生成完成', {
         taskId,
@@ -207,7 +207,7 @@ class ASRSubtitleService {
         error: error instanceof Error ? error.message : String(error)
       })
 
-      this.reportProgress(taskId, 'failed', 0, progressCallback)
+      this.reportProgress(taskId, ASRProgressStage.Failed, 0, progressCallback)
       this.activeTasks.delete(taskId)
 
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -442,7 +442,7 @@ class ASRSubtitleService {
    */
   private reportProgress(
     taskId: string,
-    stage: ASRProgressStage | string,
+    stage: ASRProgressStage,
     percent: number,
     callback?: ASRProgressCallback,
     current?: number,
@@ -451,7 +451,7 @@ class ASRSubtitleService {
     if (callback) {
       callback({
         taskId,
-        stage: stage as ASRProgressStage,
+        stage,
         percent: Math.round(percent),
         current,
         total
