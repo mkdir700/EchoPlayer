@@ -54,3 +54,4 @@ resources/ffprobe/
 resources/media-server
 .ffmpeg-cache
 .ffprobe-cache
+.cursor
