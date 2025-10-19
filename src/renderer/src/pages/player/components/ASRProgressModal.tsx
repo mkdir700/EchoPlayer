@@ -35,7 +35,9 @@ const MessageText = styled.div`
 `
 
 const CancelButton = styled(Button)<{ $confirmMode: boolean }>`
-  transition: all ${ANIMATION_DURATION.SLOW} ease-in-out;
+  transition:
+    color ${ANIMATION_DURATION.SLOW} ease-in-out,
+    border-color ${ANIMATION_DURATION.SLOW} ease-in-out;
 
   ${(props) =>
     props.$confirmMode &&
@@ -67,6 +69,8 @@ const ASRProgressModal: FC<ASRProgressModalProps> = ({ open, progress, onCancel 
         return t('player.asr.progress.stages.saving')
       case ASRProgressStage.Complete:
         return t('player.asr.progress.stages.complete')
+      case ASRProgressStage.Failed:
+        return t('player.asr.progress.stages.failed')
       default:
         return ''
     }
@@ -108,7 +112,7 @@ const ASRProgressModal: FC<ASRProgressModalProps> = ({ open, progress, onCancel 
       maskClosable={false}
       centered
     >
-      <Flex vertical gap={24}>
+      <Flex vertical gap={SPACING.LG}>
         <Section>
           <StageTitle>{getStageText()}</StageTitle>
           <Progress percent={progress.percent} status="active" />

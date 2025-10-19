@@ -3,8 +3,8 @@
     "update_available": "有可用更新"
   },
   "common": {
-    "confirm": "确认",
     "cancel": "取消",
+    "confirm": "确认",
     "disabled": "已关闭",
     "enabled": "已开启",
     "favorites": "收藏",
@@ -46,46 +46,47 @@
   },
   "player": {
     "asr": {
-      "prompt": {
-        "title": "未检测到字幕",
-        "message": "是否使用 AI 自动生成字幕？",
-        "description": "使用 Deepgram 语音识别技术自动生成准确的字幕，支持多语言和词级时间戳。",
-        "language": "选择语言",
-        "estimatedTime": "预计需要 {{minutes}} 分钟",
-        "generate": "开始生成",
-        "later": "稍后",
-        "dontShowAgain": "不再提示",
-        "configureApiKey": "请先在设置中配置 Deepgram API Key"
-      },
-      "progress": {
-        "title": "正在生成字幕",
-        "cancel": "取消",
-        "confirmCancel": "确认取消",
-        "stages": {
-          "initializing": "初始化中...",
-          "extracting": "提取音频中...",
-          "transcribing": "转写中...",
-          "formatting": "格式化字幕中...",
-          "saving": "保存字幕中...",
-          "complete": "生成完成！"
-        },
-        "estimatedTime": "预计剩余时间：{{minutes}} 分钟",
-        "cancelConfirm": "确定要取消字幕生成吗？",
-        "cancelConfirmDescription": "取消后将清理所有临时文件，已生成的内容将不会保存。"
-      },
       "errors": {
-        "noApiKey": "请先在设置中配置 Deepgram API Key",
-        "invalidApiKey": "API Key 无效，请检查设置",
         "apiQuotaExceeded": "API 配额已用尽，请检查您的 Deepgram 账户",
-        "networkError": "网络错误，请检查连接后重试",
         "audioExtractionFailed": "音频提取失败，请检查视频文件",
+        "invalidApiKey": "API Key 无效，请检查设置",
+        "networkError": "网络错误，请检查连接后重试",
+        "noApiKey": "请先在设置中配置 Deepgram API Key",
         "transcriptionFailed": "转写失败，请重试",
         "unknown": "生成失败：{{message}}"
       },
+      "progress": {
+        "cancel": "取消",
+        "cancelConfirm": "确定要取消字幕生成吗？",
+        "cancelConfirmDescription": "取消后将清理所有临时文件，已生成的内容将不会保存。",
+        "confirmCancel": "确认取消",
+        "estimatedTime": "预计剩余时间：{{minutes}} 分钟",
+        "stages": {
+          "complete": "生成完成！",
+          "extracting": "提取音频中...",
+          "failed": "生成失败",
+          "formatting": "格式化字幕中...",
+          "initializing": "初始化中...",
+          "saving": "保存字幕中...",
+          "transcribing": "转写中..."
+        },
+        "title": "正在生成字幕"
+      },
+      "prompt": {
+        "configureApiKey": "请先在设置中配置 Deepgram API Key",
+        "description": "使用 Deepgram 语音识别技术自动生成准确的字幕，支持多语言和词级时间戳。",
+        "dontShowAgain": "不再提示",
+        "estimatedTime": "预计需要 {{minutes}} 分钟",
+        "generate": "开始生成",
+        "language": "选择语言",
+        "later": "稍后",
+        "message": "是否使用 AI 自动生成字幕？",
+        "title": "未检测到字幕"
+      },
       "success": {
-        "title": "字幕生成成功",
+        "autoLoaded": "字幕已自动加载",
         "message": "已成功生成 {{count}} 条字幕",
-        "autoLoaded": "字幕已自动加载"
+        "title": "字幕生成成功"
       }
     },
     "controls": {
@@ -253,50 +254,55 @@
       "subtitle": "检测到当前视频格式不受支持",
       "title": "视频格式不兼容"
     },
-    "subtitles": {
-      "hide": "隐藏字幕列表",
-      "search": "搜索字幕",
-      "show": "展开字幕列表"
-    },
     "subtitleList": {
       "empty": {
-        "title": "在视频文件同目录下未找到匹配的字幕文件",
         "description": "选择一种方式开始添加字幕",
         "options": {
+          "ai": {
+            "action": "即将推出",
+            "actionEnabled": "生成",
+            "description": "基于语音识别生成单词级字幕",
+            "title": "AI 生成字幕"
+          },
           "embedded": {
-            "title": "使用内嵌字幕",
+            "action": "选择",
             "description": "视频文件包含字幕轨道，可直接导入",
-            "action": "选择"
+            "title": "使用内嵌字幕"
           },
           "external": {
-            "title": "导入外挂字幕",
-            "description": "从本地文件导入 SRT、VTT 等格式字幕"
-          },
-          "ai": {
-            "title": "AI 生成字幕",
-            "description": "基于语音识别生成单词级字幕",
-            "action": "即将推出",
-            "actionEnabled": "生成"
+            "description": "从本地文件导入 SRT、VTT 等格式字幕",
+            "title": "导入外挂字幕"
           }
-        }
+        },
+        "title": "在视频文件同目录下未找到匹配的字幕文件"
       },
       "search": {
-        "placeholder": "搜索字幕...",
-        "pending": "搜索中...",
         "count": "找到 {{count}} 条字幕",
         "count_one": "找到 {{count}} 条字幕",
         "count_other": "找到 {{count}} 条字幕",
-        "none": "未找到匹配的字幕",
+        "emptySubtitle": "请尝试其他关键词",
         "emptyTitle": "未找到匹配结果",
-        "emptySubtitle": "请尝试其他关键词"
+        "none": "未找到匹配的字幕",
+        "pending": "搜索中...",
+        "placeholder": "搜索字幕..."
       }
     },
     "subtitleTrackSelector": {
-      "title": "导入内嵌字幕轨道",
+      "actions": {
+        "cancel": "取消",
+        "import": "导入"
+      },
       "empty": "未检测到字幕轨道",
+      "messages": {
+        "extractFailed": "提取字幕轨道 {{index}} 失败",
+        "importFailed": "字幕轨道提取失败，请重试",
+        "importMultipleSuccess": "已导入 {{tracks}} 个字幕轨道（共 {{count}} 条）",
+        "importSuccess": "已导入字幕：{{source}}（共 {{count}} 条）",
+        "selectAtLeastOne": "请选择至少一个字幕轨道"
+      },
       "sections": {
-        "text": "文本字幕轨道",
-        "image": "PGS 字幕轨（图像字幕）"
+        "image": "PGS 字幕轨（图像字幕）",
+        "text": "文本字幕轨道"
       },
       "stream": {
         "label": "Stream {{index}}",
@@ -306,20 +312,15 @@
           "unsupported": "暂不支持"
         }
       },
+      "title": "导入内嵌字幕轨道",
       "warning": {
         "pgs": "PGS 是图像格式字幕，需要 OCR 技术支持，暂不支持导入。"
-      },
-      "actions": {
-        "cancel": "取消",
-        "import": "导入"
-      },
-      "messages": {
-        "selectAtLeastOne": "请选择至少一个字幕轨道",
-        "extractFailed": "提取字幕轨道 {{index}} 失败",
-        "importFailed": "字幕轨道提取失败，请重试",
-        "importSuccess": "已导入字幕：{{source}}（共 {{count}} 条）",
-        "importMultipleSuccess": "已导入 {{tracks}} 个字幕轨道（共 {{count}} 条）"
       }
+    },
+    "subtitles": {
+      "hide": "隐藏字幕列表",
+      "search": "搜索字幕",
+      "show": "展开字幕列表"
     }
   },
   "search": {
@@ -329,43 +330,6 @@
     "searching": "搜索中..."
   },
   "settings": {
-    "asr": {
-      "title": "语音识别",
-      "description": "配置 AI 字幕自动生成功能，使用 Deepgram 语音识别技术为视频生成准确的字幕",
-      "apiKey": {
-        "label": "Deepgram API Key",
-        "placeholder": "输入您的 Deepgram API Key",
-        "description": "从 Deepgram 获取 API Key 以使用 AI 字幕生成功能",
-        "getKey": "获取 API Key",
-        "validate": "验证",
-        "validating": "验证中...",
-        "valid": "API Key 有效",
-        "invalid": "API Key 无效",
-        "saved": "API Key 已保存",
-        "saveFailed": "保存失败"
-      },
-      "defaultLanguage": {
-        "label": "默认语言",
-        "description": "自动生成字幕时使用的默认语言"
-      },
-      "model": {
-        "label": "转写模型",
-        "description": "选择 Deepgram 转写模型",
-        "nova2": "Nova 2（推荐）",
-        "nova3": "Nova 3（最新）"
-      },
-      "languages": {
-        "auto": "自动检测",
-        "en": "英语",
-        "zh": "中文",
-        "ja": "日语",
-        "es": "西班牙语",
-        "fr": "法语",
-        "de": "德语",
-        "ko": "韩语",
-        "ru": "俄语"
-      }
-    },
     "about": {
       "checkUpdate": {
         "available": "安装更新",
@@ -417,6 +381,43 @@
     },
     "appearance": {
       "title": "外观设置"
+    },
+    "asr": {
+      "apiKey": {
+        "description": "从 Deepgram 获取 API Key 以使用 AI 字幕生成功能",
+        "getKey": "获取 API Key",
+        "invalid": "API Key 无效",
+        "label": "Deepgram API Key",
+        "placeholder": "输入您的 Deepgram API Key",
+        "saveFailed": "保存失败",
+        "saved": "API Key 已保存",
+        "valid": "API Key 有效",
+        "validate": "验证",
+        "validating": "验证中..."
+      },
+      "defaultLanguage": {
+        "description": "自动生成字幕时使用的默认语言",
+        "label": "默认语言"
+      },
+      "description": "配置 AI 字幕自动生成功能，使用 Deepgram 语音识别技术为视频生成准确的字幕",
+      "languages": {
+        "auto": "自动检测",
+        "de": "德语",
+        "en": "英语",
+        "es": "西班牙语",
+        "fr": "法语",
+        "ja": "日语",
+        "ko": "韩语",
+        "ru": "俄语",
+        "zh": "中文"
+      },
+      "model": {
+        "description": "选择 Deepgram 转写模型",
+        "label": "转写模型",
+        "nova2": "Nova 2（推荐）",
+        "nova3": "Nova 3（最新）"
+      },
+      "title": "语音识别"
     },
     "developer": {
       "enable_developer_mode": "启用开发者模式",

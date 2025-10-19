@@ -25,13 +25,14 @@
       },
       "progress": {
         "cancel": "Cancel",
-        "confirmCancel": "Confirm Cancel",
         "cancelConfirm": "Are you sure you want to cancel subtitle generation?",
         "cancelConfirmDescription": "All temporary files will be cleaned up and generated content will not be saved.",
+        "confirmCancel": "Confirm Cancel",
         "estimatedTime": "Estimated remaining time: {{minutes}} minutes",
         "stages": {
           "complete": "Generation complete!",
           "extracting": "Extracting audio...",
+          "failed": "Generation failed",
           "formatting": "Formatting subtitles...",
           "initializing": "Initializing...",
           "saving": "Saving subtitles...",
