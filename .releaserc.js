@@ -13,20 +13,19 @@ module.exports = {
       {
         preset: 'angular',
         releaseRules: [
-          // 标准 semantic-release 规则
+          // 标准 semantic-release 规则 - 只有这些会触发版本发布
           { type: 'feat', release: 'minor' },
           { type: 'fix', release: 'patch' },
-          { type: 'perf', release: 'patch' },
+          { type: 'perf', release: 'patch' }
 
-          // 为预发布分支提供更积极的版本递增规则
-          // 这些规则确保任何有意义的提交都能触发版本递增
-          { type: 'refactor', release: 'patch' },
-          { type: 'style', release: 'patch' },
-          { type: 'docs', release: 'patch' },
-          { type: 'test', release: 'patch' },
-          { type: 'build', release: 'patch' },
-          { type: 'ci', release: 'patch' },
-          { type: 'chore', release: 'patch' }
+          // 以下类型不会触发版本发布，避免不必要的 release
+          // { type: 'refactor', release: 'patch' },
+          // { type: 'style', release: 'patch' },
+          // { type: 'docs', release: 'patch' },
+          // { type: 'test', release: 'patch' },
+          // { type: 'build', release: 'patch' },
+          // { type: 'ci', release: 'patch' },
+          // { type: 'chore', release: 'patch' }
         ]
       }
     ],
