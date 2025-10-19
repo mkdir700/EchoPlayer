@@ -67,8 +67,8 @@ vi.mock('antd', async () => {
           {children}
           {open && (
             <div role="tooltip" data-testid="dictionary-popover">
-              {title && <div>{title}</div>}
-              {content && <div>{content}</div>}
+              {title && <div data-testid="dictionary-popover-title">{title}</div>}
+              {content && <div data-testid="dictionary-popover-content-wrapper">{content}</div>}
             </div>
           )}
         </div>
@@ -85,6 +85,27 @@ vi.mock('antd', async () => {
 })
 
 describe('SubtitleOverlay dictionary lookup', () => {
+  // 辅助函数：等待弹窗显示并获取内容
+  const waitForPopover = async (timeout = 3000) => {
+    await waitFor(
+      () => {
+        const popover = screen.getByTestId('dictionary-popover')
+        expect(popover).toBeInTheDocument()
+      },
+      { timeout }
+    )
+
+    await waitFor(
+      () => {
+        const contentWrapper = screen.getByTestId('dictionary-popover-content-wrapper')
+        expect(contentWrapper).toBeInTheDocument()
+      },
+      { timeout }
+    )
+
+    return screen.getByTestId('dictionary-popover')
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
 
@@ -129,7 +150,9 @@ describe('SubtitleOverlay dictionary lookup', () => {
     fireEvent.click(word)
 
     await waitFor(() => expect(mockQuery).toHaveBeenCalledWith('hello'))
-    const popover = await screen.findByTestId('dictionary-popover')
+
+    // 使用辅助函数等待弹窗显示
+    const popover = await waitForPopover()
 
     // 检查单词标题
     expect(popover.textContent).toContain('hello')
@@ -167,12 +190,18 @@ describe('SubtitleOverlay dictionary lookup', () => {
     const word = screen.getByText('hello')
     fireEvent.click(word)
 
+    // 等待弹窗显示
+    await waitForPopover()
+
     // 等待数据加载完成后显示结果
-    await waitFor(() => {
-      const popoverContent = screen.getByTestId('dictionary-popover-content')
-      expect(popoverContent).toBeInTheDocument()
-      expect(popoverContent.textContent).toContain('你好')
-    })
+    await waitFor(
+      () => {
+        const popoverContent = screen.getByTestId('dictionary-popover-content')
+        expect(popoverContent).toBeInTheDocument()
+        expect(popoverContent.textContent).toContain('你好')
+      },
+      { timeout: 3000 }
+    )
   })
 
   it('shows error state when query fails', async () => {
@@ -190,9 +219,17 @@ describe('SubtitleOverlay dictionary lookup', () => {
 
     await waitFor(() => expect(mockQuery).toHaveBeenCalledWith('hello'))
 
-    // 检查错误状态
-    expect(screen.getByText('查询失败')).toBeInTheDocument()
-    expect(screen.getByText('网络错误')).toBeInTheDocument()
+    // 等待弹窗显示
+    await waitForPopover()
+
+    // 等待错误内容渲染完成
+    await waitFor(
+      () => {
+        expect(screen.getByText('查询失败')).toBeInTheDocument()
+        expect(screen.getByText('网络错误')).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
   })
 
   it('displays all definitions without limitation', async () => {
@@ -215,7 +252,9 @@ describe('SubtitleOverlay dictionary lookup', () => {
     fireEvent.click(word)
 
     await waitFor(() => expect(mockQuery).toHaveBeenCalledWith('hello'))
-    const popover = await screen.findByTestId('dictionary-popover')
+
+    // 使用辅助函数等待弹窗显示
+    const popover = await waitForPopover()
 
     // 检查显示所有释义
     expect(popover.textContent).toContain('释义 1')
