@@ -493,7 +493,11 @@ export default SubtitleContent
 
 // === 样式组件 ===
 const ContentContainer = styled.div`
-  display: inline-block;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   line-height: var(--subtitle-line-height, 1.6);
   user-select: text;
   -webkit-user-select: text;
@@ -511,14 +515,6 @@ const ContentContainer = styled.div`
     background: var(--subtitle-selection-bg, rgba(102, 126, 234, 0.3));
     color: inherit;
   }
-
-  /* 样式变量定义 */
-  --subtitle-text-color: #ffffff;
-  --subtitle-text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
-  --subtitle-line-height: 1.6;
-  --subtitle-selection-bg: rgba(102, 126, 234, 0.3);
-  --subtitle-transition-duration: 200ms;
 `
 
 const OriginalTextLine = styled.div<{ $fontSize?: string }>`
