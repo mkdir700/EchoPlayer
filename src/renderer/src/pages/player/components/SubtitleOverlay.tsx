@@ -22,7 +22,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
 
-import { useSubtitleOverlay, useSubtitleOverlayUI } from '../hooks'
+import { useContentWidth, useSubtitleOverlay, useSubtitleOverlayUI } from '../hooks'
 import { useContainerBounds } from '../hooks/useContainerBounds'
 import { useMaskViewport } from '../hooks/useMaskViewport'
 import { useSubtitleDrag } from '../hooks/useSubtitleDrag'
@@ -93,6 +93,11 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const hideToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 使用动态宽度计算 hook (YouTube 风格 - 纯 CSS 方案)
+  const { widthStyle, maxWidthStyle } = useContentWidth({
+    maxContainerWidthPercent: 95
+  })
 
   // === 遮罩视口管理 ===
   const { maskViewport } = useMaskViewport({
@@ -302,6 +307,8 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         $isMaskMode={isMaskMode}
         $backgroundType={effectiveBackgroundType}
         $opacity={backgroundStyle.opacity}
+        $width={isMaskMode ? 'none' : widthStyle}
+        $maxWidth={isMaskMode ? 'none' : maxWidthStyle}
         onMouseDown={handleDragMouseDown}
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
@@ -349,6 +356,8 @@ const OverlayContainer = styled.section<{
   $isMaskMode: boolean
   $backgroundType: SubtitleBackgroundType
   $opacity: number
+  $width: string
+  $maxWidth: string
 }>`
   /* 基础定位和尺寸 */
   position: absolute;
@@ -356,9 +365,9 @@ const OverlayContainer = styled.section<{
   left: ${(props) => (props.$isMaskMode ? `${props.$position.x}%` : '50%')};
   transform: ${(props) => (props.$isMaskMode ? 'none' : 'translateX(-50%)')};
   top: ${(props) => props.$position.y}%;
-  /* 非遮罩模式下宽度自适应内容 */
-  width: ${(props) => (props.$isMaskMode ? `${props.$size.width}%` : 'auto')};
-  max-width: ${(props) => (props.$isMaskMode ? 'none' : '95%')};
+  /* 非遮罩模式下使用 fit-content 让内容自然决定宽度 */
+  width: ${(props) => (props.$isMaskMode ? `${props.$size.width}%` : props.$width)};
+  max-width: ${(props) => (props.$isMaskMode ? 'none' : props.$maxWidth)};
   height: ${(props) => (props.$isMaskMode ? `${Math.max(props.$size.height, 1)}%` : 'auto')};
   min-height: ${(props) => (props.$isMaskMode ? '0' : '60px')};
   max-height: ${(props) => (props.$isMaskMode ? 'none' : '160px')};

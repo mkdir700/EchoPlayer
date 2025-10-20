@@ -1,4 +1,5 @@
 export { useContainerBounds } from './useContainerBounds'
+export { useContentWidth } from './useContentWidth'
 export { useMaskViewport } from './useMaskViewport'
 export { usePlayerEngine } from './usePlayerEngine'
 export { useSubtitleDrag } from './useSubtitleDrag'

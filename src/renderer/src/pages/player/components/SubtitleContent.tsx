@@ -498,21 +498,21 @@ const ContentContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  line-height: var(--subtitle-line-height, 1.6);
+  line-height: 1.6;
   user-select: text;
   -webkit-user-select: text;
-  color: var(--subtitle-text-color, #ffffff);
+  color: var(--color-white);
   text-align: center;
   padding: 0 12px;
 
   /* 文本选中样式 */
   ::selection {
-    background: var(--subtitle-selection-bg, rgba(102, 126, 234, 0.3));
+    background: rgba(102, 126, 234, 0.3);
     color: inherit;
   }
 
   ::-moz-selection {
-    background: var(--subtitle-selection-bg, rgba(102, 126, 234, 0.3));
+    background: rgba(102, 126, 234, 0.3);
     color: inherit;
   }
 `
@@ -523,7 +523,11 @@ const OriginalTextLine = styled.div<{ $fontSize?: string }>`
   text-shadow: var(--subtitle-text-shadow);
   transition: all var(--subtitle-transition-duration);
   margin: 4px;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-align: center;
+  width: 100%;
 `
 
 const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
@@ -533,7 +537,11 @@ const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
   text-shadow: var(--subtitle-text-shadow);
   transition: all var(--subtitle-transition-duration);
   margin: 4px;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-align: center;
+  width: 100%;
 `
 
 const EmptyState = styled.div<{ $fontSize?: string }>`
@@ -610,5 +618,7 @@ const TokenizedTextContainer = styled.div`
   display: inline;
   user-select: text;
   -webkit-user-select: text;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 `
