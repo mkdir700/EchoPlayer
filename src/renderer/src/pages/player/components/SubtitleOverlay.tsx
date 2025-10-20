@@ -330,9 +330,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
           />
         </ContentContainer>
 
-        {/* 只在遮罩模式下显示调整大小句柄 */}
+        {/* 只在遮罩模式下且悬停时显示调整大小句柄 */}
         <SubtitleResizeHandle
-          visible={isMaskMode}
+          visible={isMaskMode && isHovered}
           onMouseDown={handleResizeMouseDown}
           onDoubleClick={handleResizeDoubleClick}
         />
