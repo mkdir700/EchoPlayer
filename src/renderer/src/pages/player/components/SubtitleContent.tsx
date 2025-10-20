@@ -346,61 +346,68 @@ export const SubtitleContent = memo(function SubtitleContent({
   // === 渲染分词文本 ===
   const renderTokenizedText = useCallback(
     (tokens: WordToken[]) => {
-      return (
-        <TokenizedTextContainer>
-          {tokens.map((token) => {
-            const isClickable = isClickableToken(token)
-            const isSelected =
-              selectionState.startIndex !== null &&
-              selectionState.endIndex !== null &&
-              token.index >= Math.min(selectionState.startIndex, selectionState.endIndex) &&
-              token.index <= Math.max(selectionState.startIndex, selectionState.endIndex)
-            const isHovered = selectionState.hoveredIndex === token.index
-            const tokenKey = `${token.index}-${token.start}-${token.text}`
-            const dictionaryState = dictionaryStates[tokenKey] || {
-              visible: false,
-              loading: false,
-              data: null,
-              error: null
-            }
+      const elements: React.ReactNode[] = []
 
-            const wordTokenElement = (
-              <WordToken
-                key={`${token.index}-${token.start}`}
-                $isClickable={isClickable}
-                $isSelected={isSelected}
-                $isHovered={isHovered && !selectionState.isSelecting}
-                data-clickable={isClickable}
-                onClick={(e) => handleWordClick(token, e)}
-                onMouseDown={(e) => handleWordMouseDown(token, e)}
-                onMouseEnter={() => handleWordMouseEnter(token)}
-                onMouseLeave={handleWordMouseLeave}
-                onMouseUp={() => handleWordMouseUp(token)}
-              >
-                {token.text}
-              </WordToken>
-            )
+      tokens.forEach((token) => {
+        const isClickable = isClickableToken(token)
+        const isSelected =
+          isClickable &&
+          selectionState.startIndex !== null &&
+          selectionState.endIndex !== null &&
+          token.index >= Math.min(selectionState.startIndex, selectionState.endIndex) &&
+          token.index <= Math.max(selectionState.startIndex, selectionState.endIndex)
+        const isHovered = isClickable && selectionState.hoveredIndex === token.index
+        const tokenKey = `${token.index}-${token.start}-${token.text}`
+        const dictionaryState = dictionaryStates[tokenKey] || {
+          visible: false,
+          loading: false,
+          data: null,
+          error: null
+        }
 
-            // 只为可点击的词汇添加词典弹窗
-            if (isClickable) {
-              return (
-                <DictionaryPopover
-                  key={tokenKey}
-                  visible={dictionaryState.visible}
-                  data={dictionaryState.data}
-                  loading={dictionaryState.loading}
-                  error={dictionaryState.error}
-                  onClose={() => handleDictionaryClose(tokenKey)}
-                >
-                  {wordTokenElement}
-                </DictionaryPopover>
-              )
-            }
+        if (isClickable) {
+          // 可点击单词渲染为 WordToken 组件
+          const wordTokenElement = (
+            <WordToken
+              key={`${token.index}-${token.start}`}
+              $isClickable={true}
+              $isSelected={isSelected}
+              $isHovered={isHovered && !selectionState.isSelecting}
+              data-clickable={true}
+              onClick={(e) => handleWordClick(token, e)}
+              onMouseDown={(e) => handleWordMouseDown(token, e)}
+              onMouseEnter={() => handleWordMouseEnter(token)}
+              onMouseLeave={handleWordMouseLeave}
+              onMouseUp={() => handleWordMouseUp(token)}
+            >
+              {token.text}
+            </WordToken>
+          )
 
-            return wordTokenElement
-          })}
-        </TokenizedTextContainer>
-      )
+          // 为可点击词汇添加词典弹窗
+          elements.push(
+            <DictionaryPopover
+              key={tokenKey}
+              visible={dictionaryState.visible}
+              data={dictionaryState.data}
+              loading={dictionaryState.loading}
+              error={dictionaryState.error}
+              onClose={() => handleDictionaryClose(tokenKey)}
+            >
+              {wordTokenElement}
+            </DictionaryPopover>
+          )
+        } else {
+          // 空格和标点作为纯文本间隔，不渲染为组件
+          elements.push(
+            <span key={`spacer-${token.index}-${token.start}`} style={{ userSelect: 'text' }}>
+              {token.text}
+            </span>
+          )
+        }
+      })
+
+      return <TokenizedTextContainer>{elements}</TokenizedTextContainer>
     },
     [
       selectionState,
@@ -560,7 +567,7 @@ const WordToken = styled.span<{
   $isSelected: boolean
   $isHovered: boolean
 }>`
-  cursor: ${(props) => (props.$isClickable ? 'pointer' : 'inherit')};
+  cursor: pointer;
   user-select: none;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -569,21 +576,17 @@ const WordToken = styled.span<{
   margin: 0 1px;
   border-radius: 3px;
 
-  /* 可点击单词的基础样式 */
-  ${(props) =>
-    props.$isClickable &&
-    `
-    &:hover {
-      background: rgba(102, 126, 234, 0.25);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+  /* 基础悬停样式 */
+  &:hover {
+    background: rgba(102, 126, 234, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 
-    &:active {
-      transform: translateY(0);
-      background: rgba(102, 126, 234, 0.35);
-    }
-  `}
+  &:active {
+    transform: translateY(0);
+    background: rgba(102, 126, 234, 0.35);
+  }
 
   /* 选中状态样式 */
   ${(props) =>
@@ -605,13 +608,6 @@ const WordToken = styled.span<{
     transform: translateY(-1px);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   `}
-
-  /* 标点符号和空格的特殊处理 */
-  &:not([data-clickable="true"]) {
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-  }
 `
 
 const TokenizedTextContainer = styled.div`
