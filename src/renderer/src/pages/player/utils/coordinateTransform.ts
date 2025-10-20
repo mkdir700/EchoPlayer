@@ -120,22 +120,32 @@ export const calculateDragBounds = (
   const heightPercent = estimatedHeightPercent || MAX_ESTIMATED_HEIGHT_PERCENT
 
   if (isMaskMode && maskViewport) {
-    return {
+    const maskRight = maskViewport.position.x + maskViewport.size.width
+    const maskBottom = maskViewport.position.y + maskViewport.size.height
+
+    // 将相对于 mask 的尺寸转换为相对于容器的绝对尺寸
+    const relativeWidth = Math.max(MIN_SPAN_PERCENT, currentSize.width)
+    const relativeHeight = Math.max(MIN_SPAN_PERCENT, currentSize.height)
+
+    const absoluteWidth = (relativeWidth / 100) * maskViewport.size.width
+    const absoluteHeight = (relativeHeight / 100) * maskViewport.size.height
+
+    // 边界计算逻辑：
+    // 确保字幕组件完全在遮罩区域内
+    const bounds = {
       xMin: maskViewport.position.x,
       xMax: Math.max(
         maskViewport.position.x,
-        maskViewport.position.x +
-          maskViewport.size.width -
-          Math.max(MIN_SPAN_PERCENT, currentSize.width)
+        maskRight - absoluteWidth // 确保右边缘不超出遮罩区域
       ),
       yMin: maskViewport.position.y,
       yMax: Math.max(
         maskViewport.position.y,
-        maskViewport.position.y +
-          maskViewport.size.height -
-          Math.max(MIN_SPAN_PERCENT, currentSize.height)
+        maskBottom - absoluteHeight // 确保底部边缘不超出遮罩区域
       )
     }
+
+    return bounds
   }
 
   return {
