@@ -1,8 +1,11 @@
 name: Sync Release to GitCode
 
 on:
-  release:
-    types: [created, published, prereleased]
+  workflow_run:
+    workflows: ['Release']
+    types:
+      - completed
+    branches: [main, alpha, beta]
   workflow_dispatch:
     inputs:
       release_name:
@@ -118,8 +121,36 @@ jobs:
             echo "prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
             echo "draft=${{ github.event.inputs.draft }}" >> $GITHUB_OUTPUT
             echo "test_mode=${{ github.event.inputs.test_mode }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # Automatic trigger from workflow_run - get release info from API
+            echo "🚀 Workflow run trigger detected, fetching latest release from GitHub API"
+
+            # Get the latest release from GitHub API
+            latest_release=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+
+            if [ "$(echo "$latest_release" | jq -r '.message // empty')" = "Not Found" ]; then
+              echo "❌ No releases found in repository"
+              exit 1
+            fi
+
+            TAG_NAME=$(echo "$latest_release" | jq -r '.tag_name')
+            RELEASE_NAME=$(echo "$latest_release" | jq -r '.name')
+            RELEASE_BODY=$(echo "$latest_release" | jq -r '.body // ""')
+            PRERELEASE=$(echo "$latest_release" | jq -r '.prerelease')
+            DRAFT=$(echo "$latest_release" | jq -r '.draft')
+
+            echo "Found latest release: $TAG_NAME"
+            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
+            echo "release_body<<EOF" >> $GITHUB_OUTPUT
+            echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+            echo "draft=$DRAFT" >> $GITHUB_OUTPUT
+            echo "test_mode=false" >> $GITHUB_OUTPUT
           else
-            # Automatic trigger - use release event data
+            # Fallback - use release event data (for backward compatibility)
             echo "🚀 Release event detected, using release data"
             echo "tag_name=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
             echo "release_name=${{ github.event.release.name }}" >> $GITHUB_OUTPUT
@@ -205,22 +236,17 @@ jobs:
         run: |
           mkdir -p ./release-assets
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Manual trigger - fetch release data from GitHub API
-            echo "📦 Fetching release assets for tag: ${{ steps.release.outputs.tag_name }}"
+          # Always fetch release data from GitHub API using the tag name
+          echo "📦 Fetching release assets for tag: ${{ steps.release.outputs.tag_name }}"
 
-            release_response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ steps.release.outputs.tag_name }}")
+          release_response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ steps.release.outputs.tag_name }}")
 
-            if [ "$(echo "$release_response" | jq -r '.message // empty')" = "Not Found" ]; then
-              echo "⚠️ Release not found for tag: ${{ steps.release.outputs.tag_name }}"
-              assets_json='[]'
-            else
-              assets_json=$(echo "$release_response" | jq '.assets')
-            fi
+          if [ "$(echo "$release_response" | jq -r '.message // empty')" = "Not Found" ]; then
+            echo "⚠️ Release not found for tag: ${{ steps.release.outputs.tag_name }}"
+            assets_json='[]'
           else
-            # Automatic trigger - use event data
-            assets_json='${{ toJson(github.event.release.assets) }}'
+            assets_json=$(echo "$release_response" | jq '.assets')
           fi
 
           echo "Assets to download:"
@@ -470,7 +496,16 @@ jobs:
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          echo "**Trigger:** ${{ github.event_name == 'workflow_dispatch' && '🔧 Manual' || '🚀 Automatic' }}" >> $GITHUB_STEP_SUMMARY
+          # Determine trigger type
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TRIGGER_TYPE="🔧 Manual"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            TRIGGER_TYPE="🔄 Automatic (Workflow Run)"
+          else
+            TRIGGER_TYPE="🚀 Automatic"
+          fi
+
+          echo "**Trigger:** $TRIGGER_TYPE" >> $GITHUB_STEP_SUMMARY
           echo "**Release:** ${{ steps.release.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Name:** ${{ steps.release.outputs.release_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**GitCode Repository:** $GITCODE_OWNER/$GITCODE_REPO" >> $GITHUB_STEP_SUMMARY
