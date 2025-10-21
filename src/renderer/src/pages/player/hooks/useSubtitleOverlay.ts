@@ -1,7 +1,7 @@
 import { loggerService } from '@logger'
 import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSubtitleEngine } from './useSubtitleEngine'
 
@@ -117,6 +117,14 @@ export function useSubtitleOverlay(): SubtitleOverlay {
         return ''
     }
   }, [subtitleOverlayConfig, currentSubtitleData, shouldShow])
+
+  // === 字幕变化时清除选择的文本 ===
+  useEffect(() => {
+    if (selectedText) {
+      setSelectedText('')
+      logger.debug('字幕变化时清除选择的文本')
+    }
+  }, [currentSubtitleData?.index, selectedText, setSelectedText])
 
   // === 配置操作的包装器（添加 PlayerStore 同步） ===
   const setDisplayModeWithSync = useCallback(
