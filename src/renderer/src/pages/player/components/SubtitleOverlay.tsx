@@ -92,6 +92,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const overlayRef = useRef<HTMLDivElement>(null)
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState<'copy' | 'mask-onboarding' | null>(null)
   const hideToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // 使用动态宽度计算 hook (YouTube 风格 - 纯 CSS 方案)
@@ -211,8 +212,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   }, [overlayPosition, updateLatestPositionFromResize])
 
   // === Toast 消息管理 ===
-  const showToast = useCallback((message: string) => {
+  const showToast = useCallback((message: string, type: 'copy' | 'mask-onboarding' = 'copy') => {
     setToastMessage(message)
+    setToastType(type)
     setToastVisible(true)
 
     // 清除之前的定时器
@@ -223,6 +225,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     // 800ms 后自动隐藏
     hideToastTimerRef.current = setTimeout(() => {
       setToastVisible(false)
+      setToastType(null)
       hideToastTimerRef.current = null
     }, 800)
   }, [])
@@ -231,7 +234,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   useEffect(() => {
     const handleSubtitleCopied = (event: CustomEvent<{ message: string }>) => {
       const { message } = event.detail
-      showToast(message)
+      showToast(message, 'copy')
     }
 
     window.addEventListener('subtitle-copied', handleSubtitleCopied as EventListener)
@@ -253,11 +256,14 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         hideToastTimerRef.current = null
       }
       setToastMessage(t('player.controls.subtitle.mask-mode.onboarding'))
+      setToastType('mask-onboarding')
       setToastVisible(true)
-    } else if (!isMaskMode && toastVisible) {
+    } else if (!isMaskMode && toastVisible && toastType === 'mask-onboarding') {
+      // 只有在遮罩模式引导类型的 toast 时才隐藏
       setToastVisible(false)
+      setToastType(null)
     }
-  }, [isMaskMode, maskOnboardingComplete, t, toastVisible])
+  }, [isMaskMode, maskOnboardingComplete, t, toastVisible, toastType])
 
   // === 交互事件处理 ===
   const handleMouseEnter = useCallback(() => {
