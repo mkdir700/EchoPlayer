@@ -1,7 +1,7 @@
 import { loggerService } from '@logger'
 import { usePlayerStore } from '@renderer/state'
 import { SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSubtitleEngine } from './useSubtitleEngine'
 
@@ -20,6 +20,11 @@ export interface SubtitleOverlay {
   // 显示状态
   shouldShow: boolean
   displayText: string
+
+  /** 选中的文本（来自 PlayerStore） */
+  selectedText: string
+  /** 设置选中文本（来自 PlayerStore） */
+  setSelectedText: (text: string) => void
 
   // 配置操作（基于当前视频项目）
   isMaskMode: boolean
@@ -43,7 +48,8 @@ export function useSubtitleOverlay(): SubtitleOverlay {
 
   // 当前播放时间
   const currentTime = usePlayerStore((s) => s.currentTime)
-
+  const selectedText = usePlayerStore((s) => s.selectedText)
+  const setSelectedText = usePlayerStore((s) => s.setSelectedText)
   const subtitleOverlayConfig = usePlayerStore((s) => s.subtitleOverlay)
   const setSubtitleOverlay = usePlayerStore((s) => s.setSubtitleOverlay)
 
@@ -111,6 +117,14 @@ export function useSubtitleOverlay(): SubtitleOverlay {
         return ''
     }
   }, [subtitleOverlayConfig, currentSubtitleData, shouldShow])
+
+  // === 字幕变化时清除选择的文本 ===
+  useEffect(() => {
+    if (selectedText) {
+      setSelectedText('')
+      logger.debug('字幕变化时清除选择的文本')
+    }
+  }, [currentSubtitleData?.index, selectedText, setSelectedText])
 
   // === 配置操作的包装器（添加 PlayerStore 同步） ===
   const setDisplayModeWithSync = useCallback(
@@ -193,6 +207,8 @@ export function useSubtitleOverlay(): SubtitleOverlay {
     displayText,
     isMaskMode: subtitleOverlayConfig.isMaskMode,
     maskOnboardingComplete: subtitleOverlayConfig.maskOnboardingComplete,
+    selectedText,
+    setSelectedText,
     setDisplayMode: setDisplayModeWithSync,
     setBackgroundType: setBackgroundTypeHandler,
     setOpacity: setOpacityHandler,

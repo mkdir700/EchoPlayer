@@ -15,6 +15,7 @@ import { DictionaryResult, SubtitleDisplayMode } from '@types'
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
 
+import { useSubtitleOverlay } from '../hooks'
 import DictionaryPopover from './DictionaryPopover'
 
 const logger = loggerService.withContext('SubtitleContent')
@@ -27,8 +28,6 @@ export interface SubtitleContentProps {
   originalText: string
   /** 译文内容（可选） */
   translatedText?: string
-  /** 选中文本变化回调 */
-  onTextSelection?: (selectedText: string) => void
   /** 容器高度（用于响应式字体大小计算） */
   containerHeight?: number
   /** 自定义类名 */
@@ -42,12 +41,12 @@ export const SubtitleContent = memo(function SubtitleContent({
   displayMode,
   originalText,
   translatedText,
-  onTextSelection,
   containerHeight = 600, // 默认高度
   className,
   style
 }: SubtitleContentProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { setSelectedText } = useSubtitleOverlay()
 
   // === 响应式字体大小计算 ===
   const responsiveFontSizes = useMemo(() => {
@@ -253,6 +252,14 @@ export const SubtitleContent = memo(function SubtitleContent({
 
   const handleWordMouseUp = useCallback(
     (token: WordToken) => {
+      logger.debug('handleWordMouseUp 触发', {
+        isClickable: isClickableToken(token),
+        isSelecting: selectionState.isSelecting,
+        startIndex: selectionState.startIndex,
+        endIndex: selectionState.endIndex,
+        displayMode
+      })
+
       if (!isClickableToken(token) || !selectionState.isSelecting) return
 
       const { startIndex, endIndex } = selectionState
@@ -270,14 +277,27 @@ export const SubtitleContent = memo(function SubtitleContent({
           const selectedTokens = currentTokens.slice(minIndex, maxIndex + 1)
           const selectedText = selectedTokens.map((t) => t.text).join('')
 
-          if (selectedText.trim() && onTextSelection) {
-            onTextSelection(selectedText)
-            logger.debug('划词选中文本', {
+          logger.debug('准备设置选中文本', {
+            minIndex,
+            maxIndex,
+            selectedTokensCount: selectedTokens.length,
+            selectedText: `"${selectedText}"`
+          })
+
+          if (selectedText.trim()) {
+            setSelectedText(selectedText)
+            logger.info('划词选中文本', {
               selectedText: selectedText.substring(0, 50) + (selectedText.length > 50 ? '...' : ''),
               length: selectedText.length,
               tokenCount: selectedTokens.length
             })
+          } else {
+            logger.debug('未设置选中文本', {
+              selectedTextTrimmed: !!selectedText.trim()
+            })
           }
+        } else {
+          logger.debug('跳过选择：纯译文模式')
         }
       }
 
@@ -288,7 +308,7 @@ export const SubtitleContent = memo(function SubtitleContent({
         hoveredIndex: null
       }))
     },
-    [selectionState, displayMode, originalTokens, translatedText, onTextSelection]
+    [selectionState, displayMode, originalTokens, translatedText, setSelectedText]
   )
 
   // === 全局鼠标事件处理 ===
@@ -299,21 +319,51 @@ export const SubtitleContent = memo(function SubtitleContent({
   }, [selectionState.isSelecting])
 
   // 全局点击清除选中状态
-  const handleGlobalClick = useCallback((event: MouseEvent) => {
-    const target = event.target as HTMLElement
-    // 如果点击的不是字幕内容区域，清除选中状态
-    if (!containerRef.current?.contains(target)) {
-      setSelectionState((prev) => ({
-        ...prev,
-        startIndex: null,
-        endIndex: null,
-        hoveredIndex: null
-      }))
-    }
-  }, [])
+  const handleGlobalClick = useCallback(
+    (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      logger.debug('全局点击事件', {
+        target: target.tagName + (target.className ? '.' + target.className : ''),
+        isInsideContainer: containerRef.current?.contains(target),
+        willClearSelection: !containerRef.current?.contains(target)
+      })
+
+      // 如果点击的不是字幕内容区域，清除选中状态
+      if (!containerRef.current?.contains(target)) {
+        logger.debug('清除选中状态和选中文本')
+        setSelectionState((prev) => ({
+          ...prev,
+          startIndex: null,
+          endIndex: null,
+          hoveredIndex: null
+        }))
+        // 同时清除选中的文本
+        setSelectedText('')
+      }
+    },
+    [setSelectedText]
+  )
+
+  // React 事件适配器：鼠标离开时清除选中状态
+  const handleMouseLeave = useCallback(() => {
+    logger.debug('鼠标离开字幕区域，清除选中状态')
+    setSelectionState((prev) => ({
+      ...prev,
+      startIndex: null,
+      endIndex: null,
+      hoveredIndex: null
+    }))
+    // 同时清除选中的文本
+    setSelectedText('')
+  }, [setSelectedText])
 
   // 字幕切换时重置悬停状态和词典状态
   React.useEffect(() => {
+    logger.debug('字幕切换，重置状态', {
+      originalTextLength: originalText.length,
+      translatedTextLength: translatedText?.length || 0,
+      displayMode
+    })
     setSelectionState({
       isSelecting: false,
       startIndex: null,
@@ -322,7 +372,10 @@ export const SubtitleContent = memo(function SubtitleContent({
     })
     // 清空所有词典状态
     setDictionaryStates({})
-  }, [originalText, translatedText, displayMode])
+    // 同时清除选中的文本
+    logger.debug('字幕切换，清除选中文本')
+    setSelectedText('')
+  }, [originalText, translatedText, displayMode, setSelectedText])
 
   // 绑定全局鼠标事件
   React.useEffect(() => {
@@ -346,61 +399,68 @@ export const SubtitleContent = memo(function SubtitleContent({
   // === 渲染分词文本 ===
   const renderTokenizedText = useCallback(
     (tokens: WordToken[]) => {
-      return (
-        <TokenizedTextContainer>
-          {tokens.map((token) => {
-            const isClickable = isClickableToken(token)
-            const isSelected =
-              selectionState.startIndex !== null &&
-              selectionState.endIndex !== null &&
-              token.index >= Math.min(selectionState.startIndex, selectionState.endIndex) &&
-              token.index <= Math.max(selectionState.startIndex, selectionState.endIndex)
-            const isHovered = selectionState.hoveredIndex === token.index
-            const tokenKey = `${token.index}-${token.start}-${token.text}`
-            const dictionaryState = dictionaryStates[tokenKey] || {
-              visible: false,
-              loading: false,
-              data: null,
-              error: null
-            }
+      const elements: React.ReactNode[] = []
 
-            const wordTokenElement = (
-              <WordToken
-                key={`${token.index}-${token.start}`}
-                $isClickable={isClickable}
-                $isSelected={isSelected}
-                $isHovered={isHovered && !selectionState.isSelecting}
-                data-clickable={isClickable}
-                onClick={(e) => handleWordClick(token, e)}
-                onMouseDown={(e) => handleWordMouseDown(token, e)}
-                onMouseEnter={() => handleWordMouseEnter(token)}
-                onMouseLeave={handleWordMouseLeave}
-                onMouseUp={() => handleWordMouseUp(token)}
-              >
-                {token.text}
-              </WordToken>
-            )
+      tokens.forEach((token) => {
+        const isClickable = isClickableToken(token)
+        const isSelected =
+          isClickable &&
+          selectionState.startIndex !== null &&
+          selectionState.endIndex !== null &&
+          token.index >= Math.min(selectionState.startIndex, selectionState.endIndex) &&
+          token.index <= Math.max(selectionState.startIndex, selectionState.endIndex)
+        const isHovered = isClickable && selectionState.hoveredIndex === token.index
+        const tokenKey = `${token.index}-${token.start}-${token.text}`
+        const dictionaryState = dictionaryStates[tokenKey] || {
+          visible: false,
+          loading: false,
+          data: null,
+          error: null
+        }
 
-            // 只为可点击的词汇添加词典弹窗
-            if (isClickable) {
-              return (
-                <DictionaryPopover
-                  key={tokenKey}
-                  visible={dictionaryState.visible}
-                  data={dictionaryState.data}
-                  loading={dictionaryState.loading}
-                  error={dictionaryState.error}
-                  onClose={() => handleDictionaryClose(tokenKey)}
-                >
-                  {wordTokenElement}
-                </DictionaryPopover>
-              )
-            }
+        if (isClickable) {
+          // 可点击单词渲染为 WordToken 组件
+          const wordTokenElement = (
+            <WordToken
+              key={`${token.index}-${token.start}`}
+              $isClickable={true}
+              $isSelected={isSelected}
+              $isHovered={isHovered && !selectionState.isSelecting}
+              data-clickable={true}
+              onClick={(e) => handleWordClick(token, e)}
+              onMouseDown={(e) => handleWordMouseDown(token, e)}
+              onMouseEnter={() => handleWordMouseEnter(token)}
+              onMouseLeave={handleWordMouseLeave}
+              onMouseUp={() => handleWordMouseUp(token)}
+            >
+              {token.text}
+            </WordToken>
+          )
 
-            return wordTokenElement
-          })}
-        </TokenizedTextContainer>
-      )
+          // 为可点击词汇添加词典弹窗
+          elements.push(
+            <DictionaryPopover
+              key={tokenKey}
+              visible={dictionaryState.visible}
+              data={dictionaryState.data}
+              loading={dictionaryState.loading}
+              error={dictionaryState.error}
+              onClose={() => handleDictionaryClose(tokenKey)}
+            >
+              {wordTokenElement}
+            </DictionaryPopover>
+          )
+        } else {
+          // 空格和标点作为纯文本间隔，不渲染为组件
+          elements.push(
+            <span key={`spacer-${token.index}-${token.start}`} style={{ userSelect: 'text' }}>
+              {token.text}
+            </span>
+          )
+        }
+      })
+
+      return <TokenizedTextContainer>{elements}</TokenizedTextContainer>
     },
     [
       selectionState,
@@ -481,6 +541,7 @@ export const SubtitleContent = memo(function SubtitleContent({
       ref={containerRef}
       className={className}
       style={style}
+      onMouseLeave={handleMouseLeave}
       role="region"
       data-testid="subtitle-content"
     >
@@ -493,32 +554,28 @@ export default SubtitleContent
 
 // === 样式组件 ===
 const ContentContainer = styled.div`
-  display: inline-block;
-  line-height: var(--subtitle-line-height, 1.6);
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.6;
   user-select: text;
   -webkit-user-select: text;
-  color: var(--subtitle-text-color, #ffffff);
+  color: var(--color-white);
   text-align: center;
   padding: 0 12px;
 
   /* 文本选中样式 */
   ::selection {
-    background: var(--subtitle-selection-bg, rgba(102, 126, 234, 0.3));
+    background: rgba(102, 126, 234, 0.3);
     color: inherit;
   }
 
   ::-moz-selection {
-    background: var(--subtitle-selection-bg, rgba(102, 126, 234, 0.3));
+    background: rgba(102, 126, 234, 0.3);
     color: inherit;
   }
-
-  /* 样式变量定义 */
-  --subtitle-text-color: #ffffff;
-  --subtitle-text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
-  --subtitle-line-height: 1.6;
-  --subtitle-selection-bg: rgba(102, 126, 234, 0.3);
-  --subtitle-transition-duration: 200ms;
 `
 
 const OriginalTextLine = styled.div<{ $fontSize?: string }>`
@@ -527,7 +584,11 @@ const OriginalTextLine = styled.div<{ $fontSize?: string }>`
   text-shadow: var(--subtitle-text-shadow);
   transition: all var(--subtitle-transition-duration);
   margin: 4px;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-align: center;
+  width: 100%;
 `
 
 const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
@@ -537,7 +598,11 @@ const TranslatedTextLine = styled.div<{ $fontSize?: string }>`
   text-shadow: var(--subtitle-text-shadow);
   transition: all var(--subtitle-transition-duration);
   margin: 4px;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-align: center;
+  width: 100%;
 `
 
 const EmptyState = styled.div<{ $fontSize?: string }>`
@@ -556,7 +621,7 @@ const WordToken = styled.span<{
   $isSelected: boolean
   $isHovered: boolean
 }>`
-  cursor: ${(props) => (props.$isClickable ? 'pointer' : 'inherit')};
+  cursor: pointer;
   user-select: none;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -565,21 +630,17 @@ const WordToken = styled.span<{
   margin: 0 1px;
   border-radius: 3px;
 
-  /* 可点击单词的基础样式 */
-  ${(props) =>
-    props.$isClickable &&
-    `
-    &:hover {
-      background: rgba(102, 126, 234, 0.25);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+  /* 基础悬停样式 */
+  &:hover {
+    background: rgba(102, 126, 234, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 
-    &:active {
-      transform: translateY(0);
-      background: rgba(102, 126, 234, 0.35);
-    }
-  `}
+  &:active {
+    transform: translateY(0);
+    background: rgba(102, 126, 234, 0.35);
+  }
 
   /* 选中状态样式 */
   ${(props) =>
@@ -601,18 +662,13 @@ const WordToken = styled.span<{
     transform: translateY(-1px);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   `}
-
-  /* 标点符号和空格的特殊处理 */
-  &:not([data-clickable="true"]) {
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-  }
 `
 
 const TokenizedTextContainer = styled.div`
   display: inline;
   user-select: text;
   -webkit-user-select: text;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 `
