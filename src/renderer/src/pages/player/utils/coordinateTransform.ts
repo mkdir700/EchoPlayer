@@ -189,7 +189,7 @@ export const calculateResizeBounds = (
 
   return {
     widthLimit: MAX_OVERLAY_WIDTH_PERCENT,
-    heightLimit: MAX_OVERLAY_WIDTH_PERCENT,
+    heightLimit: MAX_OVERLAY_HEIGHT_PERCENT_NORMAL_MODE,
     maxHeightPercent: MAX_OVERLAY_HEIGHT_PERCENT_NORMAL_MODE
   }
 }
