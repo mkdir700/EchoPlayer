@@ -193,7 +193,7 @@ const AboutSettings: FC = () => {
       <SettingGroup theme={theme}>
         <SettingTitle>
           {t('settings.about.title')}
-          <HStack alignItems="center">
+          <HStack $alignItems="center">
             <Link to={APP_REPOSITORY}>
               <GithubOutlined
                 style={{ marginRight: 4, color: 'var(--color-text)', fontSize: 20 }}
