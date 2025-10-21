@@ -108,8 +108,7 @@ export function useSubtitleResize({
           const deltaY = moveEvent.clientY - startY
 
           // 计算尺寸调整边界
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { widthLimit, heightLimit, maxHeightPercent } = calculateResizeBounds(
+          const { widthLimit, maxHeightPercent } = calculateResizeBounds(
             isMaskMode,
             maskViewport,
             latestPositionRef.current
