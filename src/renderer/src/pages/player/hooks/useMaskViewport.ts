@@ -23,14 +23,6 @@ export interface UseMaskViewportOptions {
   containerRef?: React.RefObject<HTMLElement | null>
   isMaskMode: boolean
   containerBounds: { width: number; height: number }
-  onModeChange?: (
-    isMaskMode: boolean,
-    position: Position,
-    size: Size,
-    maskViewport: MaskLayout | null,
-    setPosition: (pos: Position) => void,
-    setSize: (size: Size) => void
-  ) => void
 }
 
 export interface UseMaskViewportReturn {
@@ -43,15 +35,13 @@ export interface UseMaskViewportReturn {
 export function useMaskViewport({
   containerRef,
   isMaskMode,
-  containerBounds,
-  onModeChange
+  containerBounds
 }: UseMaskViewportOptions): UseMaskViewportReturn {
   // === 状态管理 ===
   const [maskViewport, setMaskViewport] = useState<MaskLayout | null>(null)
   const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null)
 
   // === 引用管理 ===
-  const previousMaskModeRef = useRef(isMaskMode)
   const containerElementRef = useRef<HTMLElement | null>(null)
   const videoElementRef = useRef<HTMLVideoElement | null>(null)
 
@@ -240,25 +230,6 @@ export function useMaskViewport({
     isMaskMode,
     videoAspectRatio
   ])
-
-  // === 模式切换处理 ===
-  useEffect(() => {
-    if (!maskViewport || !onModeChange) {
-      return
-    }
-
-    if (isMaskMode && !previousMaskModeRef.current) {
-      previousMaskModeRef.current = true
-      return
-    }
-
-    if (!isMaskMode && previousMaskModeRef.current) {
-      previousMaskModeRef.current = false
-      return
-    }
-
-    previousMaskModeRef.current = isMaskMode
-  }, [isMaskMode, maskViewport, onModeChange])
 
   return {
     maskViewport,
