@@ -19,5 +19,3 @@ Use `@/openspec/AGENTS.md` to learn:
 Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
-
-> **注意**: 项目的详细技术规范、架构模式、代码风格等信息已迁移至 `@/openspec/project.md`，请参考该文件获取完整的项目上下文信息。
