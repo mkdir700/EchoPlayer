@@ -65,6 +65,11 @@ export function useSubtitleDrag({
     latestPositionRef.current = position
   }, [])
 
+  // === 更新最新尺寸引用 ===
+  const updateLatestSize = useCallback((size: Size) => {
+    latestSizeRef.current = size
+  }, [])
+
   // === 拖拽处理 ===
   const handleMouseDown = useCallback(
     (event: React.MouseEvent) => {
@@ -206,6 +211,7 @@ export function useSubtitleDrag({
 
   return {
     handleMouseDown,
-    updateLatestPosition
+    updateLatestPosition,
+    updateLatestSize
   }
 }

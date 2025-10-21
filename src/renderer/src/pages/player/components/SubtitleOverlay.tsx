@@ -157,7 +157,11 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   })
 
   // === 拖拽交互 ===
-  const { handleMouseDown: handleDragMouseDown, updateLatestPosition } = useSubtitleDrag({
+  const {
+    handleMouseDown: handleDragMouseDown,
+    updateLatestPosition,
+    updateLatestSize: updateLatestSizeFromDrag
+  } = useSubtitleDrag({
     overlayPosition,
     overlaySize,
     containerBounds,
@@ -213,6 +217,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   useEffect(() => {
     updateLatestSize(overlaySize)
   }, [overlaySize, updateLatestSize])
+
+  useEffect(() => {
+    updateLatestSizeFromDrag(overlaySize)
+  }, [overlaySize, updateLatestSizeFromDrag])
 
   useEffect(() => {
     updateLatestPositionFromResize(overlayPosition)
