@@ -22,7 +22,7 @@ export interface BoxProps {
   opacity?: string | number
   borderRadius?: PxValue
   border?: string
-  gap?: PxValue
+  $gap?: PxValue
   mt?: PxValue
   marginTop?: PxValue
   mb?: PxValue
@@ -46,9 +46,9 @@ export interface BoxProps {
 }
 
 export interface StackProps extends BoxProps {
-  justifyContent?: 'center' | 'flex-start' | 'flex-end' | 'space-between'
-  alignItems?: 'center' | 'flex-start' | 'flex-end' | 'space-between'
-  flexDirection?: 'row' | 'row-reverse' | 'column' | 'column-reverse'
+  $justifyContent?: 'center' | 'flex-start' | 'flex-end' | 'space-between'
+  $alignItems?: 'center' | 'flex-start' | 'flex-end' | 'space-between'
+  $flexDirection?: 'row' | 'row-reverse' | 'column' | 'column-reverse'
 }
 
 export interface ButtonProps extends StackProps {
@@ -90,12 +90,11 @@ export const Box = styled.div<BoxProps>`
   right: ${(props) => getElementValue(props.right) || 'auto'};
   bottom: ${(props) => getElementValue(props.bottom) || 'auto'};
   top: ${(props) => getElementValue(props.top) || 'auto'};
-  gap: ${(p) => (p.gap ? getElementValue(p.gap) : 0)};
+  gap: ${(p) => (p.$gap ? getElementValue(p.$gap) : 0)};
   opacity: ${(props) => props.opacity ?? 1};
   border-radius: ${(props) => getElementValue(props.borderRadius) || 0};
   box-sizing: border-box;
   border: ${(props) => props?.border || 'none'};
-  gap: ${(p) => (p.gap ? getElementValue(p.gap) : 0)};
   margin: ${(props) => (props.m || props.margin ? (props.m ?? props.margin) : 'none')};
   margin-top: ${(props) =>
     props.mt || props.marginTop ? getElementValue(props.mt || props.marginTop) : 'default'};
@@ -118,9 +117,9 @@ export const Box = styled.div<BoxProps>`
 
 export const Stack = styled(Box)<StackProps>`
   display: flex;
-  justify-content: ${(props) => props.justifyContent ?? 'flex-start'};
-  align-items: ${(props) => props.alignItems ?? 'flex-start'};
-  flex-direction: ${(props) => props.flexDirection ?? 'row'};
+  justify-content: ${(props) => props.$justifyContent ?? 'flex-start'};
+  align-items: ${(props) => props.$alignItems ?? 'flex-start'};
+  flex-direction: ${(props) => props.$flexDirection ?? 'row'};
 `
 
 export const Center = styled(Stack)<StackProps>`

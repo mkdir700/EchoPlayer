@@ -27,7 +27,7 @@ const ColorCircleWrapper = styled.div`
   justify-content: center;
 `
 
-const ColorCircle = styled.div<{ color: string; isActive?: boolean }>`
+const ColorCircle = styled.div<{ color: string; $isActive?: boolean }>`
   position: absolute;
   top: 50%;
   left: 50%;
@@ -37,7 +37,7 @@ const ColorCircle = styled.div<{ color: string; isActive?: boolean }>`
   background-color: ${(props) => props.color};
   cursor: pointer;
   transform: translate(-50%, -50%);
-  border: 2px solid ${(props) => (props.isActive ? 'var(--color-border)' : 'transparent')};
+  border: 2px solid ${(props) => (props.$isActive ? 'var(--color-border)' : 'transparent')};
   transition: opacity 0.2s;
 
   &:hover {
@@ -169,13 +169,13 @@ export function AppearanceSettings(): React.JSX.Element {
         <SettingDivider />
         <SettingRow>
           <SettingRowTitle>{t('settings.theme.color_primary')}</SettingRowTitle>
-          <HStack gap="12px" alignItems="center">
-            <HStack gap="12px">
+          <HStack $gap="12px" $alignItems="center">
+            <HStack $gap="12px">
               {THEME_COLOR_PRESETS.map((color) => (
                 <ColorCircleWrapper key={color}>
                   <ColorCircle
                     color={color}
-                    isActive={colorPrimary === color}
+                    $isActive={colorPrimary === color}
                     onClick={() => handleColorPrimaryChange(color)}
                   />
                 </ColorCircleWrapper>
