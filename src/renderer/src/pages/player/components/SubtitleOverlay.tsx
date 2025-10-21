@@ -54,7 +54,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
 
   // === 状态集成 ===
   const integration = useSubtitleOverlay()
-  const { setSelectedText } = useSubtitleOverlay()
 
   // === UI 状态和操作（来自新的 Hook） ===
   const {
@@ -104,10 +103,18 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   const { maskViewport } = useMaskViewport({
     containerRef,
     isMaskMode,
-    containerBounds,
-    onModeChange: (isMaskMode, position, size, maskViewport, setPosition, setSize) => {
-      if (!maskViewport) return
+    containerBounds
+  })
 
+  // === 模式切换坐标转换 ===
+  const previousMaskModeRef = useRef(isMaskMode)
+  useEffect(() => {
+    if (!maskViewport) return
+
+    const modeChanged = isMaskMode !== previousMaskModeRef.current
+    previousMaskModeRef.current = isMaskMode
+
+    if (modeChanged) {
       if (isMaskMode) {
         // 切换到遮罩模式：转换为相对坐标
         const relativePosition = toMaskRelativePosition(position, maskViewport)
@@ -122,7 +129,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
         setSize(absoluteSize)
       }
     }
-  })
+  }, [isMaskMode, maskViewport, position, size, setPosition, setSize])
 
   // === 计算覆盖层位置和尺寸 ===
   const overlayPosition = useMemo(() => {
@@ -276,13 +283,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     }
   }, [setHovered, isDragging, isResizing])
 
-  const handleTextSelection = useCallback(
-    (selectedText: string) => {
-      setSelectedText(selectedText)
-    },
-    [setSelectedText]
-  )
-
   const handleClick = useCallback((event: React.MouseEvent) => {
     // 阻止所有点击事件冒泡到VideoSurface，防止触发播放/暂停
     event.stopPropagation()
@@ -331,7 +331,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
             displayMode={displayMode}
             originalText={integration.currentSubtitle?.originalText || ''}
             translatedText={integration.currentSubtitle?.translatedText}
-            onTextSelection={handleTextSelection}
             containerHeight={containerBounds.height}
           />
         </ContentContainer>

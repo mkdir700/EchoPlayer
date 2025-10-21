@@ -28,8 +28,6 @@ export interface SubtitleContentProps {
   originalText: string
   /** 译文内容（可选） */
   translatedText?: string
-  /** 选中文本变化回调 */
-  onTextSelection?: (selectedText: string) => void
   /** 容器高度（用于响应式字体大小计算） */
   containerHeight?: number
   /** 自定义类名 */
@@ -43,7 +41,6 @@ export const SubtitleContent = memo(function SubtitleContent({
   displayMode,
   originalText,
   translatedText,
-  onTextSelection,
   containerHeight = 600, // 默认高度
   className,
   style
@@ -284,16 +281,11 @@ export const SubtitleContent = memo(function SubtitleContent({
             minIndex,
             maxIndex,
             selectedTokensCount: selectedTokens.length,
-            selectedText: `"${selectedText}"`,
-            hasOnTextSelection: !!onTextSelection
+            selectedText: `"${selectedText}"`
           })
 
           if (selectedText.trim()) {
             setSelectedText(selectedText)
-            // 仍然调用 onTextSelection 以保持向后兼容
-            if (onTextSelection) {
-              onTextSelection(selectedText)
-            }
             logger.info('划词选中文本', {
               selectedText: selectedText.substring(0, 50) + (selectedText.length > 50 ? '...' : ''),
               length: selectedText.length,
@@ -301,8 +293,7 @@ export const SubtitleContent = memo(function SubtitleContent({
             })
           } else {
             logger.debug('未设置选中文本', {
-              selectedTextTrimmed: !!selectedText.trim(),
-              hasOnTextSelection: !!onTextSelection
+              selectedTextTrimmed: !!selectedText.trim()
             })
           }
         } else {
@@ -317,7 +308,7 @@ export const SubtitleContent = memo(function SubtitleContent({
         hoveredIndex: null
       }))
     },
-    [selectionState, displayMode, originalTokens, translatedText, onTextSelection, setSelectedText]
+    [selectionState, displayMode, originalTokens, translatedText, setSelectedText]
   )
 
   // === 全局鼠标事件处理 ===
@@ -348,12 +339,9 @@ export const SubtitleContent = memo(function SubtitleContent({
         }))
         // 同时清除选中的文本
         setSelectedText('')
-        if (onTextSelection) {
-          onTextSelection('')
-        }
       }
     },
-    [onTextSelection, setSelectedText]
+    [setSelectedText]
   )
 
   // React 事件适配器：鼠标离开时清除选中状态
@@ -367,10 +355,7 @@ export const SubtitleContent = memo(function SubtitleContent({
     }))
     // 同时清除选中的文本
     setSelectedText('')
-    if (onTextSelection) {
-      onTextSelection('')
-    }
-  }, [onTextSelection, setSelectedText])
+  }, [setSelectedText])
 
   // 字幕切换时重置悬停状态和词典状态
   React.useEffect(() => {
@@ -390,10 +375,7 @@ export const SubtitleContent = memo(function SubtitleContent({
     // 同时清除选中的文本
     logger.debug('字幕切换，清除选中文本')
     setSelectedText('')
-    if (onTextSelection) {
-      onTextSelection('')
-    }
-  }, [originalText, translatedText, displayMode, onTextSelection, setSelectedText])
+  }, [originalText, translatedText, displayMode, setSelectedText])
 
   // 绑定全局鼠标事件
   React.useEffect(() => {
