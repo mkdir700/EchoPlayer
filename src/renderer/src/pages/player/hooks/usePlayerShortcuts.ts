@@ -32,7 +32,7 @@ const logger = loggerService.withContext('TransportBar')
 export function usePlayerShortcuts() {
   const { t } = useTranslation()
   const cmd = usePlayerCommands()
-  const { currentSubtitle } = useSubtitleOverlay()
+  const { currentSubtitle, selectedText } = useSubtitleOverlay()
   const { toggleSubtitlePanel, cycleFavoriteRateNext, cycleFavoriteRatePrev } = usePlayerStore()
   const displayMode = usePlayerStore((s) => s.subtitleOverlay.displayMode)
 
@@ -41,7 +41,13 @@ export function usePlayerShortcuts() {
     try {
       let textToCopy = ''
 
-      if (currentSubtitle) {
+      // 优先检查是否有自定义选中的文本
+      if (selectedText && selectedText.trim()) {
+        textToCopy = selectedText.trim()
+        logger.info('复制选中的文本', {
+          length: textToCopy.length
+        })
+      } else if (currentSubtitle) {
         // 根据显示模式复制相应的字幕内容
         switch (displayMode) {
           case SubtitleDisplayMode.ORIGINAL:
@@ -94,7 +100,7 @@ export function usePlayerShortcuts() {
         })
       )
     }
-  }, [currentSubtitle, displayMode, t])
+  }, [currentSubtitle, displayMode, selectedText, t])
 
   useShortcut('play_pause', () => {
     logger.debug('空格键快捷键触发', {

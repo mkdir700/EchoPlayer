@@ -21,6 +21,11 @@ export interface SubtitleOverlay {
   shouldShow: boolean
   displayText: string
 
+  /** 选中的文本（来自 PlayerStore） */
+  selectedText: string
+  /** 设置选中文本（来自 PlayerStore） */
+  setSelectedText: (text: string) => void
+
   // 配置操作（基于当前视频项目）
   isMaskMode: boolean
   maskOnboardingComplete?: boolean
@@ -43,7 +48,8 @@ export function useSubtitleOverlay(): SubtitleOverlay {
 
   // 当前播放时间
   const currentTime = usePlayerStore((s) => s.currentTime)
-
+  const selectedText = usePlayerStore((s) => s.selectedText)
+  const setSelectedText = usePlayerStore((s) => s.setSelectedText)
   const subtitleOverlayConfig = usePlayerStore((s) => s.subtitleOverlay)
   const setSubtitleOverlay = usePlayerStore((s) => s.setSubtitleOverlay)
 
@@ -193,6 +199,8 @@ export function useSubtitleOverlay(): SubtitleOverlay {
     displayText,
     isMaskMode: subtitleOverlayConfig.isMaskMode,
     maskOnboardingComplete: subtitleOverlayConfig.maskOnboardingComplete,
+    selectedText,
+    setSelectedText,
     setDisplayMode: setDisplayModeWithSync,
     setBackgroundType: setBackgroundTypeHandler,
     setOpacity: setOpacityHandler,

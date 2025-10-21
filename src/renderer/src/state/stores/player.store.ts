@@ -166,6 +166,9 @@ export function createPlayerState(options: PlayerStateOptions = {}): PlayerState
           : undefined
       }),
 
+    // === 字幕选择状态（运行时状态，不持久化） ===
+    selectedText: '',
+
     // === 转码状态管理（运行时状态，不持久化） ===
     hlsMode: persistedSettings.hlsMode ?? false,
     transcodeInfo: persistedSettings.transcodeInfo ?? createDefaultTranscodeInfo(),
@@ -279,6 +282,10 @@ export interface PlayerState {
 
   subtitleOverlay: SubtitleOverlayConfig
 
+  // === 字幕选择状态 ===
+  /** 当前选中的字幕文本（用于复制功能） */
+  selectedText: string
+
   // UI 短时态（与字幕设置面板联动）
   isFullscreen?: boolean
   isSettingsOpen?: boolean
@@ -352,6 +359,10 @@ export interface PlayerActions {
   // 引擎专用：播放源切换
   switchToHlsSource: (hlsSrc: string, transcodeInfo: Partial<TranscodeInfo>) => void
   switchToOriginalSource: () => void
+
+  // === 字幕选择控制 ===
+  // 组件可调用：设置选中的字幕文本
+  setSelectedText: (text: string) => void
 
   // === 视频加载状态控制 ===
   // 引擎专用：由媒体事件自动设置
@@ -658,6 +669,12 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
   setSubtitlePanelVisible: (visible: boolean) =>
     set((s: Draft<PlayerStore>) => {
       s.subtitlePanelVisible = !!visible
+    }),
+
+  // 字幕选择控制
+  setSelectedText: (text: string) =>
+    set((s: Draft<PlayerStore>) => {
+      s.selectedText = text
     }),
 
   // === 转码控制 ===

@@ -52,8 +52,9 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   // === i18n 翻译 ===
   const { t } = useTranslation()
 
-  // === 状态集成（重构版） ===
+  // === 状态集成 ===
   const integration = useSubtitleOverlay()
+  const { setSelectedText } = useSubtitleOverlay()
 
   // === UI 状态和操作（来自新的 Hook） ===
   const {
@@ -67,7 +68,6 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
     startResizing,
     stopResizing,
     setHovered,
-    setSelectedText,
     updateContainerBounds,
     adaptToContainerResize,
     avoidCollision

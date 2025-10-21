@@ -58,9 +58,6 @@ export interface SubtitleOverlayUIState {
   /** 是否显示控制按钮 */
   isControlsVisible: boolean
 
-  /** 选中的文本 */
-  selectedText: string
-
   /** 容器边界信息 */
   containerBounds: { width: number; height: number }
 }
@@ -84,9 +81,6 @@ export interface SubtitleOverlayUIActions {
 
   /** 设置悬停状态 */
   setHovered: (isHovered: boolean) => void
-
-  /** 设置选中文本 */
-  setSelectedText: (text: string) => void
 
   // === 响应式处理 ===
   /** 更新容器边界 */
@@ -113,13 +107,12 @@ const initialState: SubtitleOverlayUIState = {
   showBoundaries: false,
   isHovered: false,
   isControlsVisible: false,
-  selectedText: '',
   containerBounds: { width: 800, height: 600 }
 }
 
 /**
  * SubtitleOverlay UI Hook
- * 管理字幕覆盖层的UI交互状态，使用本地 React state
+ * 管理字幕覆盖层的UI交互状态，结合本地 React state 和 PlayerStore
  */
 export function useSubtitleOverlayUI(): SubtitleOverlayUI {
   // === 本地UI状态 ===
@@ -128,7 +121,6 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
   const [showBoundaries, setShowBoundaries] = useState(initialState.showBoundaries)
   const [isHovered, setIsHovered] = useState(initialState.isHovered)
   const [isControlsVisible, setIsControlsVisible] = useState(initialState.isControlsVisible)
-  const [selectedText, setSelectedText] = useState(initialState.selectedText)
   const [containerBounds, setContainerBounds] = useState(initialState.containerBounds)
 
   // === 配置数据访问（来自 PlayerStore） ===
@@ -166,10 +158,7 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
     // 这里我们单独管理控制按钮的可见性逻辑
   }, [])
 
-  const setSelectedTextHandler = useCallback((text: string) => {
-    setSelectedText(text)
-    logger.debug('设置选中文本', { textLength: text.length })
-  }, [])
+  // setSelectedText 现在直接来自 PlayerStore，无需额外的 wrapper 函数
 
   // === 控制按钮可见性逻辑 ===
   useEffect(() => {
@@ -337,7 +326,6 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
     showBoundaries,
     isHovered,
     isControlsVisible,
-    selectedText,
     containerBounds,
 
     // UI操作
@@ -346,7 +334,6 @@ export function useSubtitleOverlayUI(): SubtitleOverlayUI {
     startResizing,
     stopResizing,
     setHovered,
-    setSelectedText: setSelectedTextHandler,
     updateContainerBounds,
     adaptToContainerResize,
     avoidCollision

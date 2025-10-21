@@ -15,6 +15,7 @@ import { DictionaryResult, SubtitleDisplayMode } from '@types'
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
 
+import { useSubtitleOverlay } from '../hooks'
 import DictionaryPopover from './DictionaryPopover'
 
 const logger = loggerService.withContext('SubtitleContent')
@@ -48,6 +49,7 @@ export const SubtitleContent = memo(function SubtitleContent({
   style
 }: SubtitleContentProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { setSelectedText } = useSubtitleOverlay()
 
   // === 响应式字体大小计算 ===
   const responsiveFontSizes = useMemo(() => {
@@ -253,6 +255,14 @@ export const SubtitleContent = memo(function SubtitleContent({
 
   const handleWordMouseUp = useCallback(
     (token: WordToken) => {
+      logger.debug('handleWordMouseUp 触发', {
+        isClickable: isClickableToken(token),
+        isSelecting: selectionState.isSelecting,
+        startIndex: selectionState.startIndex,
+        endIndex: selectionState.endIndex,
+        displayMode
+      })
+
       if (!isClickableToken(token) || !selectionState.isSelecting) return
 
       const { startIndex, endIndex } = selectionState
@@ -270,14 +280,33 @@ export const SubtitleContent = memo(function SubtitleContent({
           const selectedTokens = currentTokens.slice(minIndex, maxIndex + 1)
           const selectedText = selectedTokens.map((t) => t.text).join('')
 
-          if (selectedText.trim() && onTextSelection) {
-            onTextSelection(selectedText)
-            logger.debug('划词选中文本', {
+          logger.debug('准备设置选中文本', {
+            minIndex,
+            maxIndex,
+            selectedTokensCount: selectedTokens.length,
+            selectedText: `"${selectedText}"`,
+            hasOnTextSelection: !!onTextSelection
+          })
+
+          if (selectedText.trim()) {
+            setSelectedText(selectedText)
+            // 仍然调用 onTextSelection 以保持向后兼容
+            if (onTextSelection) {
+              onTextSelection(selectedText)
+            }
+            logger.info('划词选中文本', {
               selectedText: selectedText.substring(0, 50) + (selectedText.length > 50 ? '...' : ''),
               length: selectedText.length,
               tokenCount: selectedTokens.length
             })
+          } else {
+            logger.debug('未设置选中文本', {
+              selectedTextTrimmed: !!selectedText.trim(),
+              hasOnTextSelection: !!onTextSelection
+            })
           }
+        } else {
+          logger.debug('跳过选择：纯译文模式')
         }
       }
 
@@ -288,7 +317,7 @@ export const SubtitleContent = memo(function SubtitleContent({
         hoveredIndex: null
       }))
     },
-    [selectionState, displayMode, originalTokens, translatedText, onTextSelection]
+    [selectionState, displayMode, originalTokens, translatedText, onTextSelection, setSelectedText]
   )
 
   // === 全局鼠标事件处理 ===
@@ -299,21 +328,57 @@ export const SubtitleContent = memo(function SubtitleContent({
   }, [selectionState.isSelecting])
 
   // 全局点击清除选中状态
-  const handleGlobalClick = useCallback((event: MouseEvent) => {
-    const target = event.target as HTMLElement
-    // 如果点击的不是字幕内容区域，清除选中状态
-    if (!containerRef.current?.contains(target)) {
-      setSelectionState((prev) => ({
-        ...prev,
-        startIndex: null,
-        endIndex: null,
-        hoveredIndex: null
-      }))
+  const handleGlobalClick = useCallback(
+    (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      logger.debug('全局点击事件', {
+        target: target.tagName + (target.className ? '.' + target.className : ''),
+        isInsideContainer: containerRef.current?.contains(target),
+        willClearSelection: !containerRef.current?.contains(target)
+      })
+
+      // 如果点击的不是字幕内容区域，清除选中状态
+      if (!containerRef.current?.contains(target)) {
+        logger.debug('清除选中状态和选中文本')
+        setSelectionState((prev) => ({
+          ...prev,
+          startIndex: null,
+          endIndex: null,
+          hoveredIndex: null
+        }))
+        // 同时清除选中的文本
+        setSelectedText('')
+        if (onTextSelection) {
+          onTextSelection('')
+        }
+      }
+    },
+    [onTextSelection, setSelectedText]
+  )
+
+  // React 事件适配器：鼠标离开时清除选中状态
+  const handleMouseLeave = useCallback(() => {
+    logger.debug('鼠标离开字幕区域，清除选中状态')
+    setSelectionState((prev) => ({
+      ...prev,
+      startIndex: null,
+      endIndex: null,
+      hoveredIndex: null
+    }))
+    // 同时清除选中的文本
+    setSelectedText('')
+    if (onTextSelection) {
+      onTextSelection('')
     }
-  }, [])
+  }, [onTextSelection, setSelectedText])
 
   // 字幕切换时重置悬停状态和词典状态
   React.useEffect(() => {
+    logger.debug('字幕切换，重置状态', {
+      originalTextLength: originalText.length,
+      translatedTextLength: translatedText?.length || 0,
+      displayMode
+    })
     setSelectionState({
       isSelecting: false,
       startIndex: null,
@@ -322,7 +387,13 @@ export const SubtitleContent = memo(function SubtitleContent({
     })
     // 清空所有词典状态
     setDictionaryStates({})
-  }, [originalText, translatedText, displayMode])
+    // 同时清除选中的文本
+    logger.debug('字幕切换，清除选中文本')
+    setSelectedText('')
+    if (onTextSelection) {
+      onTextSelection('')
+    }
+  }, [originalText, translatedText, displayMode, onTextSelection, setSelectedText])
 
   // 绑定全局鼠标事件
   React.useEffect(() => {
@@ -488,6 +559,7 @@ export const SubtitleContent = memo(function SubtitleContent({
       ref={containerRef}
       className={className}
       style={style}
+      onMouseLeave={handleMouseLeave}
       role="region"
       data-testid="subtitle-content"
     >
