@@ -1,3 +1,9 @@
+# [1.4.0](https://github.com/mkdir700/EchoPlayer/compare/v1.3.0...v1.4.0) (2025-10-21)
+
+### Features
+
+- **player/subtitle:** comprehensive subtitle overlay improvements ([#226](https://github.com/mkdir700/EchoPlayer/issues/226)) ([7b749a7](https://github.com/mkdir700/EchoPlayer/commit/7b749a77445ee8d44de33131e131ebfa390a2ea4))
+
 # [1.3.0](https://github.com/mkdir700/EchoPlayer/compare/v1.2.0...v1.3.0) (2025-10-19)
 
 ### Bug Fixes
