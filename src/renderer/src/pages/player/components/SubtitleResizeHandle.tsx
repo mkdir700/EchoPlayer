@@ -19,9 +19,9 @@ export interface SubtitleResizeHandleProps {
   /** 句柄是否可见 */
   visible: boolean
   /** 鼠标按下事件处理 */
-  onMouseDown: (event: React.MouseEvent) => void
+  onMouseDown: (event: React.MouseEvent<HTMLDivElement>) => void
   /** 双击事件处理 */
-  onDoubleClick: (event: React.MouseEvent) => void
+  onDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => void
   /** 自定义 className */
   className?: string
   /** 测试 ID */
