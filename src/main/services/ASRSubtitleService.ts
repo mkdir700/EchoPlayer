@@ -11,7 +11,8 @@ import type {
   ASRSubtitleItem,
   DeepgramResponse,
   DeepgramUtterance,
-  DeepgramWord
+  DeepgramWord,
+  TranslationOptions
 } from '@shared/types'
 import { ASRProgressStage } from '@shared/types'
 import { app } from 'electron'
@@ -574,7 +575,7 @@ class ASRSubtitleService {
     videoFilename: string
   ): Promise<void> {
     try {
-      const translationOptions = {
+      const translationOptions: TranslationOptions = {
         targetLanguage: 'zh-CN', // 当前版本仅支持翻译为中文
         batchSize: 15,
         maxConcurrency: 2,
