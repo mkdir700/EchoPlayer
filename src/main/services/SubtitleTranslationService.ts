@@ -157,7 +157,7 @@ class SubtitleTranslationService {
       return subtitles.map((subtitle, index) => ({
         originalText: subtitle.text,
         translatedText: translations[index] || '',
-        sourceLanguage: 'auto',
+        sourceLanguage: options.sourceLanguage || 'auto',
         targetLanguage: options.targetLanguage,
         success: true
       }))
@@ -203,7 +203,7 @@ class SubtitleTranslationService {
       return subtitles.map((subtitle) => ({
         originalText: subtitle.text,
         translatedText: '',
-        sourceLanguage: 'auto',
+        sourceLanguage: options.sourceLanguage || 'auto',
         targetLanguage: options.targetLanguage,
         success: false,
         error: errorMessage
@@ -428,9 +428,8 @@ class SubtitleTranslationService {
         temperature: 0.1
       })
 
-      const result = text.trim()
-
-      return (result && result.includes('成功')) || false
+      // 只要请求成功且返回了内容，就认为 API Key 有效
+      return !!text && text.trim().length > 0
     } catch (error) {
       logger.error('API Key 验证失败', { error })
       return false
