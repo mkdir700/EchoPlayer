@@ -41,7 +41,8 @@ vi.mock('../ConfigManager', () => ({
   configManager: {
     getDeepgramApiKey: vi.fn(() => 'mock-api-key'),
     getASRDefaultLanguage: vi.fn(() => 'en'),
-    getASRModel: vi.fn(() => 'nova-2')
+    getASRModel: vi.fn(() => 'nova-2'),
+    getZhipuApiKey: vi.fn(() => 'mock-zhipu-api-key')
   }
 }))
 

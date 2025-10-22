@@ -105,6 +105,7 @@ vi.mock('../services/LoggerService', () => ({
   loggerService: {
     withContext: vi.fn(() => ({
       info: vi.fn(),
+      debug: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
       getLogsDir: vi.fn(() => '/logs')
@@ -125,7 +126,8 @@ vi.mock('../services/ConfigManager', () => ({
     setTrayOnClose: vi.fn(),
     setLaunchToTray: vi.fn(),
     setAutoUpdate: vi.fn(),
-    setShortcuts: vi.fn()
+    setShortcuts: vi.fn(),
+    getZhipuApiKey: vi.fn(() => 'mock-zhipu-api-key')
   }
 }))
 
