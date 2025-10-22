@@ -2,6 +2,7 @@ import type { SubtitleItem as SubtitleItemType } from '@types'
 import { useCallback, useEffect, useRef } from 'react'
 
 import { usePlayerSubtitlesStore } from '../../../state/stores/player-subtitles.store'
+import { calculateMenuPosition } from '../utils/calculateMenuPosition'
 
 /**
  * 字幕交互管理 Hook
@@ -33,10 +34,16 @@ export function useSubtitleInteraction() {
     (event: MouseEvent | React.MouseEvent, subtitle: SubtitleItemType, subtitleIndex: number) => {
       event.preventDefault()
 
-      openContextMenu(subtitle.id, subtitleIndex, {
+      // 获取点击位置
+      const clickPosition = {
         x: (event as any).clientX,
         y: (event as any).clientY
-      })
+      }
+
+      // 计算菜单位置，确保光标对准第一个菜单项
+      const menuPosition = calculateMenuPosition(clickPosition)
+
+      openContextMenu(subtitle.id, subtitleIndex, menuPosition)
     },
     [openContextMenu]
   )

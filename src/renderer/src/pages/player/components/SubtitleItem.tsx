@@ -28,7 +28,8 @@ interface SubtitleItemProps {
   onActionClick?: (
     action: 'ai-ask' | 'translate' | 'edit' | 'more',
     subtitle: SubtitleItemType,
-    index: number
+    index: number,
+    event?: React.MouseEvent
   ) => void
 }
 

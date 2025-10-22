@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import styled from 'styled-components'
 
+import { calculateMenuPosition } from '../utils/calculateMenuPosition'
+
 interface SubtitleContextMenuProps {
   /** 是否显示菜单 */
   isOpen: boolean
@@ -95,50 +97,7 @@ function SubtitleContextMenu({
   // 计算菜单位置（确保不超出屏幕边界，让光标对准第一个菜单项）
   const menuPosition = useMemo(() => {
     if (!position) return position
-
-    const { innerWidth, innerHeight } = window
-    const menuTopPadding = SPACING.XS // 菜单顶部内边距 8px
-    const menuItemPaddingX = SPACING.SM // 菜单项水平内边距 12px
-    const menuItemPaddingY = SPACING.XS // 菜单项垂直内边距 8px
-    const iconSize = 16 // 图标尺寸 16px
-    const iconGap = SPACING.SM // 图标与文字间距 12px
-    const fontSize = 13 // 字体大小 13px
-    const lineHeight = 13 // 字体大小 13px，行高约 1.5 = 19.5px
-    const firstMenuItemHeight = Math.max(iconSize, lineHeight) + menuItemPaddingY * 2 // 第一个菜单项高度约 32px
-
-    // 计算第一个菜单项'向 AI 询问'的文本宽度 (估算)
-    const textWidth = '向 AI 询问'.length * fontSize * 0.8 // 估算文本宽度（中文字符约为字体大小的0.8倍）
-
-    // 计算第一个菜单项的中心位置
-    const offsetToCenterX = menuItemPaddingX + iconSize / 2 + iconGap / 2 + textWidth / 2 // 菜单项中心相对于左边缘的偏移
-
-    const offsetToCenterY = firstMenuItemHeight / 2 // 垂直偏移量，让光标对准第一个菜单项中心
-
-    let x = position.x - offsetToCenterX // 调整 X 坐标，让光标对准第一个菜单项水平中心
-    let y = position.y - menuTopPadding - offsetToCenterY // 调整 Y 坐标，让光标对准第一个菜单项中心
-
-    // 获取菜单实际尺寸进行边界检查
-    if (menuRef.current) {
-      const { width: menuWidth, height: menuHeight } = menuRef.current.getBoundingClientRect()
-
-      // 水平位置调整
-      if (x + menuWidth > innerWidth) {
-        x = innerWidth - menuWidth - 8
-      }
-      if (x < 8) {
-        x = 8
-      }
-
-      // 垂直位置调整
-      if (y + menuHeight > innerHeight) {
-        y = innerHeight - menuHeight - 8
-      }
-    }
-    if (y < 8) {
-      y = 8
-    }
-
-    return { x, y }
+    return calculateMenuPosition(position, menuRef.current)
   }, [position])
 
   // 处理菜单项点击

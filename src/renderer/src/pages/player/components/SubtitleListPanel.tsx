@@ -213,7 +213,12 @@ function SubtitleListPanel({
 
   // 操作处理函数
   const handleActionClick = useCallback(
-    (action: 'ai-ask' | 'translate' | 'edit' | 'more', subtitle: SubtitleItem, index: number) => {
+    (
+      action: 'ai-ask' | 'translate' | 'edit' | 'more',
+      subtitle: SubtitleItem,
+      index: number,
+      event?: React.MouseEvent
+    ) => {
       console.log(`Action ${action} clicked for subtitle ${subtitle.id} at index ${index}`)
 
       // TODO: 实现具体的操作逻辑
@@ -228,14 +233,27 @@ function SubtitleListPanel({
           // TODO: 开始编辑模式
           break
         case 'more': {
-          // 创建一个模拟的 contextmenu 事件 // 打开右键菜单
-          const contextMenuEvent = {
-            clientX: 0,
-            clientY: 0,
-            preventDefault: () => {},
-            stopPropagation: () => {}
-          } as any
-          handleContextMenu(contextMenuEvent, subtitle, index)
+          // 计算按钮位置并打开右键菜单
+          if (event && event.currentTarget) {
+            const buttonElement = event.currentTarget as HTMLElement
+            const rect = buttonElement.getBoundingClientRect()
+
+            // 使用按钮的中心位置作为点击位置
+            const clickPosition = {
+              x: rect.left + rect.width / 2,
+              y: rect.top + rect.height / 2
+            }
+
+            // 创建一个模拟的 contextmenu 事件，使用按钮中心位置
+            const contextMenuEvent = {
+              clientX: clickPosition.x,
+              clientY: clickPosition.y,
+              preventDefault: () => {},
+              stopPropagation: () => {}
+            } as any
+
+            handleContextMenu(contextMenuEvent, subtitle, index)
+          }
           break
         }
       }
@@ -513,7 +531,8 @@ interface SubtitleSearchResultsPanelProps {
   onActionClick?: (
     action: 'ai-ask' | 'translate' | 'edit' | 'more',
     subtitle: SubtitleItem,
-    index: number
+    index: number,
+    event?: React.MouseEvent
   ) => void
   onContextMenu?: (event: React.MouseEvent, subtitle: SubtitleItem, index: number) => void
 }

@@ -15,7 +15,8 @@ interface SubtitleActionButtonsProps {
   onClick: (
     action: 'ai-ask' | 'translate' | 'edit' | 'more',
     subtitle: SubtitleItemType,
-    index: number
+    index: number,
+    event?: React.MouseEvent
   ) => void
 }
 
@@ -32,7 +33,7 @@ function SubtitleActionButtons({ subtitle, index, visible, onClick }: SubtitleAc
   const handleActionClick = useCallback(
     (action: 'ai-ask' | 'translate' | 'edit' | 'more', event: React.MouseEvent) => {
       event.stopPropagation()
-      onClick(action, subtitle, index)
+      onClick(action, subtitle, index, event)
     },
     [onClick, subtitle, index]
   )
