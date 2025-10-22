@@ -32,6 +32,7 @@ import NotificationService from './services/NotificationService'
 import { pythonVenvService } from './services/PythonVenvService'
 import { registerShortcuts, unregisterAllShortcuts } from './services/ShortcutService'
 import SubtitleExtractorService from './services/SubtitleExtractorService'
+import { subtitleTranslationService } from './services/SubtitleTranslationService'
 import { themeService } from './services/ThemeService'
 import { uvBootstrapperService } from './services/UvBootstrapperService'
 import { calculateDirectorySize, getResourcePath } from './utils'
@@ -740,6 +741,12 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(IpcChannel.ASR_ValidateApiKey, async (_, apiKey: string) => {
     logger.info('验证 Deepgram API Key')
     return await asrSubtitleService.validateApiKey(apiKey)
+  })
+
+  // 翻译相关处理程序
+  ipcMain.handle(IpcChannel.Translation_ValidateApiKey, async (_, apiKey: string) => {
+    logger.info('验证 Zhipu API Key')
+    return await subtitleTranslationService.validateApiKey(apiKey)
   })
 
   // 文件系统相关 IPC 处理程序 / File system-related IPC handlers

@@ -283,6 +283,10 @@ const api = {
       }
     }
   },
+  translation: {
+    validateApiKey: (apiKey: string): Promise<boolean> =>
+      ipcRenderer.invoke(IpcChannel.Translation_ValidateApiKey, apiKey)
+  },
   uv: {
     checkInstallation: (): Promise<{
       exists: boolean
