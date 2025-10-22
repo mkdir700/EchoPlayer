@@ -303,6 +303,10 @@ export class SubtitleLibraryDAO extends BaseDAO<
       errors: [] as string[]
     }
 
+    // 跟踪每个 subtitleId 的处理状态
+    const processedSubtitleIds = new Set<string>()
+    const failedSubtitleIds = new Set<string>()
+
     try {
       // 获取所有字幕记录
       const allRecords = await this.findAll()
@@ -334,10 +338,26 @@ export class SubtitleLibraryDAO extends BaseDAO<
 
             if (matchingTranslations.length > 0) {
               translationsByRecord.set(record.id, matchingTranslations)
+              // 标记这些翻译项为已处理（无论成功失败）
+              matchingTranslations.forEach((translation) => {
+                processedSubtitleIds.add(translation.subtitleId)
+              })
             }
           } catch (error) {
             result.errors.push(`Failed to parse subtitles JSON for record ${record.id}: ${error}`)
-            result.failureCount++
+            // 计算该记录中受影响的翻译项数量
+            const affectedTranslations = translations.filter((translation) => {
+              try {
+                const subtitles = JSON.parse(record.subtitles!)
+                return subtitles.some((subtitle: any) => subtitle.id === translation.subtitleId)
+              } catch {
+                return false // 如果无法解析，无法确定具体哪些翻译项受影响
+              }
+            })
+            affectedTranslations.forEach((translation) => {
+              failedSubtitleIds.add(translation.subtitleId)
+              processedSubtitleIds.add(translation.subtitleId)
+            })
           }
         }
       }
@@ -357,11 +377,19 @@ export class SubtitleLibraryDAO extends BaseDAO<
 
             // 更新匹配的字幕翻译
             let updatedCount = 0
+            const recordFailedTranslations: string[] = []
+
             for (const translation of recordTranslations) {
               const subtitleIndex = subtitles.findIndex((sub) => sub.id === translation.subtitleId)
               if (subtitleIndex !== -1) {
                 subtitles[subtitleIndex].translatedText = translation.translatedText
                 updatedCount++
+                // 从失败列表中移除（如果之前因为JSON解析失败而被标记为失败）
+                failedSubtitleIds.delete(translation.subtitleId)
+              } else {
+                // 如果在记录中找不到对应的字幕，标记为失败
+                recordFailedTranslations.push(translation.subtitleId)
+                failedSubtitleIds.add(translation.subtitleId)
               }
             }
 
@@ -372,17 +400,49 @@ export class SubtitleLibraryDAO extends BaseDAO<
               })
               result.successCount += updatedCount
             }
+
+            // 记录找不到对应字幕的错误
+            if (recordFailedTranslations.length > 0) {
+              result.errors.push(
+                `Subtitle IDs not found in record ${recordId}: ${recordFailedTranslations.join(', ')}`
+              )
+            }
           }
         } catch (error) {
           result.errors.push(`Failed to update record ${recordId}: ${error}`)
-          result.failureCount++
+          // 将该记录的所有翻译项标记为失败
+          recordTranslations.forEach((translation) => {
+            failedSubtitleIds.add(translation.subtitleId)
+          })
         }
+      }
+
+      // 计算最终失败数量（基于失败的字幕ID而非记录数）
+      result.failureCount = failedSubtitleIds.size
+
+      // 检查是否有未被处理的翻译项（这些翻译对应的subtitleId在所有记录中都找不到）
+      const unprocessedTranslations = translations.filter(
+        (translation) => !processedSubtitleIds.has(translation.subtitleId)
+      )
+      if (unprocessedTranslations.length > 0) {
+        result.failureCount += unprocessedTranslations.length
+        result.errors.push(
+          `Subtitle IDs not found in any record: ${unprocessedTranslations.map((t) => t.subtitleId).join(', ')}`
+        )
       }
 
       return result
     } catch (error) {
       result.errors.push(`Batch update failed: ${error}`)
-      result.failureCount += translations.length
+      // 只有在完全没有处理任何翻译时才将全部计入失败
+      if (processedSubtitleIds.size === 0) {
+        result.failureCount = translations.length
+      } else {
+        // 否则保持当前的失败计数
+        result.failureCount =
+          failedSubtitleIds.size +
+          translations.filter((t) => !processedSubtitleIds.has(t.subtitleId)).length
+      }
       return result
     }
   }
