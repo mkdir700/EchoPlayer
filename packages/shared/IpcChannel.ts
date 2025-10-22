@@ -146,6 +146,9 @@ export enum IpcChannel {
   ASR_Cancel = 'asr:cancel',
   ASR_ValidateApiKey = 'asr:validate-api-key',
 
+  // 翻译相关 IPC 通道 / Translation related IPC channels
+  Translation_ValidateApiKey = 'translation:validate-api-key',
+
   // 文件系统相关 IPC 通道 / File system related IPC channels
   Fs_CheckFileExists = 'fs:check-file-exists',
   Fs_ReadFile = 'fs:read-file',

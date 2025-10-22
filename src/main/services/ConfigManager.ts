@@ -43,7 +43,9 @@ export enum ConfigKeys {
   // ASR 相关配置
   DeepgramApiKey = 'deepgramApiKey',
   ASRDefaultLanguage = 'asrDefaultLanguage',
-  ASRModel = 'asrModel'
+  ASRModel = 'asrModel',
+  // Zhipu 翻译配置
+  ZhipuApiKey = 'zhipuApiKey'
 }
 
 // 获取基于版本的动态默认值
@@ -64,7 +66,9 @@ const defaultValues: Record<ConfigKeys, any> = {
   // ASR 默认配置
   [ConfigKeys.DeepgramApiKey]: '',
   [ConfigKeys.ASRDefaultLanguage]: 'en',
-  [ConfigKeys.ASRModel]: 'nova-3'
+  [ConfigKeys.ASRModel]: 'nova-3',
+  // Zhipu 翻译默认配置
+  [ConfigKeys.ZhipuApiKey]: ''
 }
 
 export class ConfigManager {
@@ -240,6 +244,15 @@ export class ConfigManager {
 
   setASRModel(model: string) {
     this.setAndNotify(ConfigKeys.ASRModel, model)
+  }
+
+  // Zhipu 翻译相关配置方法
+  getZhipuApiKey(): string {
+    return this.get(ConfigKeys.ZhipuApiKey, '')
+  }
+
+  setZhipuApiKey(apiKey: string) {
+    this.setAndNotify(ConfigKeys.ZhipuApiKey, apiKey)
   }
 }
 

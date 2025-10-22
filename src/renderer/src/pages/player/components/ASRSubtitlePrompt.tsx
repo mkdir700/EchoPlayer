@@ -21,15 +21,15 @@ const ASRSubtitlePrompt: FC<ASRSubtitlePromptProps> = ({
   const [selectedLanguage, setSelectedLanguage] = useState<string>('auto')
 
   const languageOptions = [
-    { value: 'auto', label: t('settings.asr.languages.auto') },
-    { value: 'en', label: t('settings.asr.languages.en') },
-    { value: 'zh', label: t('settings.asr.languages.zh') },
-    { value: 'ja', label: t('settings.asr.languages.ja') },
-    { value: 'es', label: t('settings.asr.languages.es') },
-    { value: 'fr', label: t('settings.asr.languages.fr') },
-    { value: 'de', label: t('settings.asr.languages.de') },
-    { value: 'ko', label: t('settings.asr.languages.ko') },
-    { value: 'ru', label: t('settings.asr.languages.ru') }
+    { value: 'auto', label: t('settings.subtitleGeneration.speechRecognition.languages.auto') },
+    { value: 'en', label: t('settings.subtitleGeneration.speechRecognition.languages.en') },
+    { value: 'zh', label: t('settings.subtitleGeneration.speechRecognition.languages.zh') },
+    { value: 'ja', label: t('settings.subtitleGeneration.speechRecognition.languages.ja') },
+    { value: 'es', label: t('settings.subtitleGeneration.speechRecognition.languages.es') },
+    { value: 'fr', label: t('settings.subtitleGeneration.speechRecognition.languages.fr') },
+    { value: 'de', label: t('settings.subtitleGeneration.speechRecognition.languages.de') },
+    { value: 'ko', label: t('settings.subtitleGeneration.speechRecognition.languages.ko') },
+    { value: 'ru', label: t('settings.subtitleGeneration.speechRecognition.languages.ru') }
   ]
 
   const handleGenerate = () => {

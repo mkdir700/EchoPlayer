@@ -25,6 +25,7 @@ import SubtitleFormatter from './asr/SubtitleFormatter'
 import AudioPreprocessor from './audio/AudioPreprocessor'
 import { configManager } from './ConfigManager'
 import { loggerService } from './LoggerService'
+import { subtitleTranslationService } from './SubtitleTranslationService'
 
 const logger = loggerService.withContext('ASRSubtitleService')
 
@@ -223,6 +224,9 @@ class ASRSubtitleService {
         })
         subtitleLibraryId = result.id
         logger.info('字幕保存到数据库成功', { subtitleLibraryId })
+
+        // 启动后台翻译任务
+        this.startBackgroundTranslation(options.videoId, options.videoPath)
       } catch (error) {
         logger.error('保存字幕到数据库失败', {
           error: error instanceof Error ? error.message : String(error)
@@ -521,6 +525,89 @@ class ASRSubtitleService {
         current,
         total
       })
+    }
+  }
+
+  /**
+   * 启动后台翻译任务
+   */
+  private async startBackgroundTranslation(videoId: number, videoPath: string): Promise<void> {
+    try {
+      // 检查是否配置了 Zhipu API Key
+      const zhipuApiKey = configManager.getZhipuApiKey()
+      if (!zhipuApiKey) {
+        logger.debug('未配置 Zhipu API Key，跳过翻译任务')
+        return
+      }
+
+      // 检查翻译服务是否可用
+      if (!subtitleTranslationService.isServiceAvailable()) {
+        logger.warn('翻译服务不可用，跳过翻译任务')
+        return
+      }
+
+      // 提取视频文件名作为上下文
+      const videoFilename = path.basename(videoPath, path.extname(videoPath))
+
+      logger.info('启动后台翻译任务', { videoId, videoFilename })
+
+      // 异步启动翻译任务，不阻塞主流程
+      this.translateSubtitlesInBackground(videoId, videoFilename).catch((error) => {
+        logger.error('后台翻译任务失败', {
+          videoId,
+          error: error instanceof Error ? error.message : String(error)
+        })
+      })
+    } catch (error) {
+      logger.error('启动后台翻译任务失败', {
+        videoId,
+        error: error instanceof Error ? error.message : String(error)
+      })
+    }
+  }
+
+  /**
+   * 后台翻译字幕的具体实现
+   */
+  private async translateSubtitlesInBackground(
+    videoId: number,
+    videoFilename: string
+  ): Promise<void> {
+    try {
+      const translationOptions = {
+        targetLanguage: 'zh-CN', // 当前版本仅支持翻译为中文
+        batchSize: 15,
+        maxConcurrency: 2,
+        videoFilename
+      }
+
+      const result = await subtitleTranslationService.translateSubtitles(
+        videoId,
+        translationOptions
+      )
+
+      logger.info('后台翻译任务完成', {
+        videoId,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        processingTime: `${(result.processingTime / 1000).toFixed(2)}s`
+      })
+
+      // 如果有翻译失败的情况，记录详细信息
+      if (result.failureCount > 0) {
+        const failedTranslations = result.results.filter((r) => !r.success)
+        logger.warn('部分字幕翻译失败', {
+          videoId,
+          failureCount: result.failureCount,
+          errors: failedTranslations.map((r) => r.error).filter(Boolean)
+        })
+      }
+    } catch (error) {
+      logger.error('后台翻译任务执行失败', {
+        videoId,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      throw error
     }
   }
 

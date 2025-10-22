@@ -1,5 +1,5 @@
 import { Navbar, NavbarCenter } from '@renderer/components/app/Navbar'
-import { Command, Eye, Info, Mic, Monitor, PlayCircle, Settings2 } from 'lucide-react'
+import { Captions, Command, Eye, Info, Monitor, PlayCircle, Settings2 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
@@ -55,8 +55,8 @@ export function SettingsPage(): React.JSX.Element {
           </MenuItemLink>
           <MenuItemLink to="/settings/asr">
             <MenuItem className={isRoute('/settings/asr')}>
-              <Mic size={18} />
-              {t('settings.asr.title')}
+              <Captions size={18} />
+              {t('settings.subtitleGeneration.title')}
             </MenuItem>
           </MenuItemLink>
           <MenuItemLink to="/settings/plugins">

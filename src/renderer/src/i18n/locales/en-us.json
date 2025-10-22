@@ -7,7 +7,18 @@
     "language": "language",
     "selectedItems": "{{count}} items selected",
     "selectedItems_one": "{{count}} item selected",
-    "selectedItems_other": "{{count}} items selected"
+    "selectedItems_other": "{{count}} items selected",
+    "apiKey": {
+      "label": "API Key",
+      "placeholder": "Enter your API Key",
+      "invalid": "API Key is invalid",
+      "valid": "API Key is valid",
+      "saveFailed": "Failed to save",
+      "saved": "API Key saved",
+      "validate": "Validate",
+      "validating": "Validating...",
+      "getKey": "Get API Key"
+    }
   },
   "docs": {
     "title": "Documentation"
@@ -21,6 +32,11 @@
         "networkError": "Network error, please check your connection and retry",
         "noApiKey": "Please configure Deepgram API Key in settings first",
         "transcriptionFailed": "Transcription failed, please retry",
+        "translationApiKeyInvalid": "Invalid Zhipu API Key, please check settings",
+        "translationApiKeyMissing": "Please configure Zhipu API Key in settings first",
+        "translationFailed": "Translation failed, please retry",
+        "translationNetworkError": "Translation network error, please check your connection and retry",
+        "translationQuotaExceeded": "Translation API quota exceeded, please check your Zhipu account",
         "unknown": "Generation failed: {{message}}"
       },
       "progress": {
@@ -235,43 +251,6 @@
     "appearance": {
       "title": "Appearance Settings"
     },
-    "asr": {
-      "apiKey": {
-        "description": "Get an API Key from Deepgram to use AI subtitle generation features",
-        "getKey": "Get API Key",
-        "invalid": "API Key is invalid",
-        "label": "Deepgram API Key",
-        "placeholder": "Enter your Deepgram API Key",
-        "saveFailed": "Failed to save",
-        "saved": "API Key saved",
-        "valid": "API Key is valid",
-        "validate": "Validate",
-        "validating": "Validating..."
-      },
-      "defaultLanguage": {
-        "description": "Default language for automatic subtitle generation",
-        "label": "Default Language"
-      },
-      "description": "Configure AI subtitle auto-generation using Deepgram speech recognition technology to generate accurate subtitles for videos",
-      "languages": {
-        "auto": "Auto Detect",
-        "de": "German",
-        "en": "English",
-        "es": "Spanish",
-        "fr": "French",
-        "ja": "Japanese",
-        "ko": "Korean",
-        "ru": "Russian",
-        "zh": "Chinese"
-      },
-      "model": {
-        "description": "Select Deepgram transcription model",
-        "label": "Transcription Model",
-        "nova2": "Nova 2 (Recommended)",
-        "nova3": "Nova 3 (Latest)"
-      },
-      "title": "Speech Recognition"
-    },
     "developer": {
       "enable_developer_mode": "Enable developer mode",
       "title": "Developer mode"
@@ -451,6 +430,51 @@
       "zoom_in": "Zoom in interface",
       "zoom_out": "Minimize interface",
       "zoom_reset": "Reset zoom"
+    },
+    "subtitleGeneration": {
+      "description": "Configure AI subtitle generation features, supporting speech recognition and automatic translation",
+      "speechRecognition": {
+        "apiKey": {
+          "description": "Get an API Key from Deepgram to use AI subtitle generation features",
+          "getKey": "Get API Key",
+          "label": "API Key",
+          "placeholder": "Enter your Deepgram API Key"
+        },
+        "defaultLanguage": {
+          "description": "Default language for automatic subtitle generation",
+          "label": "Default Language"
+        },
+        "description": "Automatically generate accurate subtitles using Deepgram speech recognition technology, supporting multiple languages and word-level timestamps",
+        "languages": {
+          "auto": "Auto Detect",
+          "de": "German",
+          "en": "English",
+          "es": "Spanish",
+          "fr": "French",
+          "ja": "Japanese",
+          "ko": "Korean",
+          "ru": "Russian",
+          "zh": "Chinese"
+        },
+        "model": {
+          "description": "Select Deepgram transcription model",
+          "label": "Transcription Model",
+          "nova2": "Nova 2 (Recommended)",
+          "nova3": "Nova 3 (Latest)"
+        },
+        "title": "Speech Recognition"
+      },
+      "title": "Subtitle Generation",
+      "translation": {
+        "apiKey": {
+          "description": "Get an API Key from Zhipu AI to use subtitle translation features",
+          "getKey": "Get API Key",
+          "label": "Zhipu API Key",
+          "placeholder": "Enter your Zhipu API Key"
+        },
+        "description": "Automatically translate generated subtitles to Chinese using Zhipu AI, providing localized translation results",
+        "title": "Subtitle Translation"
+      }
     },
     "theme": {
       "color_primary": "Primary color",

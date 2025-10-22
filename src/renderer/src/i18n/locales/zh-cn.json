@@ -18,7 +18,18 @@
     "search": "搜索",
     "search_no_results": "暂无搜索结果",
     "search_placeholder": "搜索视频...",
-    "selectedItems": "已选择 {{count}} 项"
+    "selectedItems": "已选择 {{count}} 项",
+    "apiKey": {
+      "label": "API Key",
+      "placeholder": "输入您的 API Key",
+      "invalid": "API Key 无效",
+      "valid": "API Key 有效",
+      "saveFailed": "保存失败",
+      "saved": "API Key 已保存",
+      "validate": "验证",
+      "validating": "验证中...",
+      "getKey": "获取 API Key"
+    }
   },
   "docs": {
     "title": "帮助文档"
@@ -53,6 +64,11 @@
         "networkError": "网络错误，请检查连接后重试",
         "noApiKey": "请先在设置中配置 Deepgram API Key",
         "transcriptionFailed": "转写失败，请重试",
+        "translationApiKeyInvalid": "Zhipu API Key 无效，请检查设置",
+        "translationApiKeyMissing": "请先在设置中配置 Zhipu API Key",
+        "translationFailed": "翻译失败，请重试",
+        "translationNetworkError": "翻译网络错误，请检查连接后重试",
+        "translationQuotaExceeded": "翻译 API 配额已用尽，请检查您的 Zhipu 账户",
         "unknown": "生成失败：{{message}}"
       },
       "progress": {
@@ -382,43 +398,6 @@
     "appearance": {
       "title": "外观设置"
     },
-    "asr": {
-      "apiKey": {
-        "description": "从 Deepgram 获取 API Key 以使用 AI 字幕生成功能",
-        "getKey": "获取 API Key",
-        "invalid": "API Key 无效",
-        "label": "Deepgram API Key",
-        "placeholder": "输入您的 Deepgram API Key",
-        "saveFailed": "保存失败",
-        "saved": "API Key 已保存",
-        "valid": "API Key 有效",
-        "validate": "验证",
-        "validating": "验证中..."
-      },
-      "defaultLanguage": {
-        "description": "自动生成字幕时使用的默认语言",
-        "label": "默认语言"
-      },
-      "description": "配置 AI 字幕自动生成功能，使用 Deepgram 语音识别技术为视频生成准确的字幕",
-      "languages": {
-        "auto": "自动检测",
-        "de": "德语",
-        "en": "英语",
-        "es": "西班牙语",
-        "fr": "法语",
-        "ja": "日语",
-        "ko": "韩语",
-        "ru": "俄语",
-        "zh": "中文"
-      },
-      "model": {
-        "description": "选择 Deepgram 转写模型",
-        "label": "转写模型",
-        "nova2": "Nova 2（推荐）",
-        "nova3": "Nova 3（最新）"
-      },
-      "title": "语音识别"
-    },
     "developer": {
       "enable_developer_mode": "启用开发者模式",
       "title": "开发者模式"
@@ -646,6 +625,51 @@
       "zoom_in": "放大界面",
       "zoom_out": "缩小界面",
       "zoom_reset": "重置缩放"
+    },
+    "subtitleGeneration": {
+      "description": "配置 AI 字幕生成功能，支持语音识别和自动翻译",
+      "speechRecognition": {
+        "apiKey": {
+          "description": "从 Deepgram 获取 API Key 以使用 AI 字幕生成功能",
+          "getKey": "获取 API Key",
+          "label": "API Key",
+          "placeholder": "输入您的 Deepgram API Key"
+        },
+        "defaultLanguage": {
+          "description": "自动生成字幕时使用的默认语言",
+          "label": "默认语言"
+        },
+        "description": "使用 Deepgram 语音识别技术自动生成准确的字幕，支持多语言和词级时间戳",
+        "languages": {
+          "auto": "自动检测",
+          "de": "德语",
+          "en": "英语",
+          "es": "西班牙语",
+          "fr": "法语",
+          "ja": "日语",
+          "ko": "韩语",
+          "ru": "俄语",
+          "zh": "中文"
+        },
+        "model": {
+          "description": "选择 Deepgram 转写模型",
+          "label": "转写模型",
+          "nova2": "Nova 2（推荐）",
+          "nova3": "Nova 3（最新）"
+        },
+        "title": "语音识别"
+      },
+      "title": "字幕生成",
+      "translation": {
+        "apiKey": {
+          "description": "从智谱 AI 获取 API Key 以使用字幕翻译功能",
+          "getKey": "获取 API Key",
+          "label": "API Key",
+          "placeholder": "输入您的 Zhipu API Key"
+        },
+        "description": "使用智谱 AI 自动将生成的字幕翻译成中文，提供本土化翻译结果",
+        "title": "字幕翻译"
+      }
     },
     "theme": {
       "color_primary": "主题色",
