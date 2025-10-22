@@ -10,13 +10,15 @@ import styled from 'styled-components'
 
 import { usePlayerEngine, useSubtitleEngine } from '../hooks'
 import { usePlayerCommands } from '../hooks/usePlayerCommands'
+import { useSubtitleInteraction } from '../hooks/useSubtitleInteraction'
 import {
   SubtitleScrollState,
   useSubtitleScrollStateMachine
 } from '../hooks/useSubtitleScrollStateMachine'
 import { useSubtitles } from '../state/player-context'
 import { ImportSubtitleButton } from './'
-import HighlightedText from './SubtitleSearchHighlight'
+import SubtitleContextMenu from './SubtitleContextMenu'
+import SubtitleItemComponent from './SubtitleItem'
 
 interface EmptyAction {
   key?: string
@@ -80,6 +82,16 @@ function SubtitleListPanel({
   const { currentIndex } = useSubtitleEngine()
   const { seekToSubtitle } = usePlayerCommands()
   const { t } = useTranslation()
+
+  // 使用字幕交互 Hook
+  const {
+    contextMenuState,
+    isSubtitleHovered,
+    handleContextMenu,
+    closeContextMenu,
+    cancelCloseContextMenu,
+    scheduleCloseContextMenu
+  } = useSubtitleInteraction()
 
   // 从 store 读取搜索状态
   const isSearchVisible = usePlayerUIStore((s) => s.subtitleSearch.isSearchVisible)
@@ -198,6 +210,63 @@ function SubtitleListPanel({
 
     return () => clearTimeout(timeoutId)
   }, [hasSearchQuery, normalizedQuery])
+
+  // 操作处理函数
+  const handleActionClick = useCallback(
+    (action: 'ai-ask' | 'translate' | 'edit' | 'more', subtitle: SubtitleItem, index: number) => {
+      console.log(`Action ${action} clicked for subtitle ${subtitle.id} at index ${index}`)
+
+      // TODO: 实现具体的操作逻辑
+      switch (action) {
+        case 'ai-ask':
+          // TODO: 打开 AI 询问对话框
+          break
+        case 'translate':
+          // TODO: 执行翻译操作
+          break
+        case 'edit':
+          // TODO: 开始编辑模式
+          break
+        case 'more': {
+          // 创建一个模拟的 contextmenu 事件 // 打开右键菜单
+          const contextMenuEvent = {
+            clientX: 0,
+            clientY: 0,
+            preventDefault: () => {},
+            stopPropagation: () => {}
+          } as any
+          handleContextMenu(contextMenuEvent, subtitle, index)
+          break
+        }
+      }
+    },
+    [handleContextMenu]
+  )
+
+  // 右键菜单操作处理
+  const handleContextMenuAction = useCallback(
+    (action: string, subtitle: SubtitleItem, index: number) => {
+      console.log(`Context menu action ${action} for subtitle ${subtitle.id} at index ${index}`)
+
+      // TODO: 实现具体的菜单操作
+      switch (action) {
+        case 'ai-ask':
+          // TODO: 打开 AI 询问对话框
+          break
+        case 'translate':
+          // TODO: 执行翻译操作
+          break
+        case 'edit':
+          // TODO: 开始编辑模式
+          break
+        case 'copy':
+          // TODO: 复制字幕文本到剪贴板
+          navigator.clipboard.writeText(subtitle.originalText)
+          break
+      }
+    },
+    []
+  )
 
   // 初始化状态机（当字幕加载完成时）
   useEffect(() => {
@@ -343,6 +412,8 @@ function SubtitleListPanel({
             currentIndex={currentIndex}
             onSelect={handleItemClick}
             formatTime={formatTime}
+            onActionClick={handleActionClick}
+            onContextMenu={handleContextMenu}
           />
         ) : (
           <Virtuoso
@@ -357,19 +428,16 @@ function SubtitleListPanel({
             defaultItemHeight={avgItemHeightRef.current}
             initialTopMostItemIndex={initialTopMostItemIndex}
             itemContent={(index, subtitle: SubtitleItem) => (
-              <SubtitleItem
-                data-subtitle-item
-                data-index={index}
-                data-active={index === currentIndex}
-                $active={index === currentIndex}
-                onClick={() => handleItemClick(index)}
-              >
-                <TimesRow>
-                  <TimeStamp>{formatTime(subtitle.startTime)}</TimeStamp>
-                  <EndStamp>{formatTime(subtitle.endTime)}</EndStamp>
-                </TimesRow>
-                <TextContent>{subtitle.originalText}</TextContent>
-              </SubtitleItem>
+              <SubtitleItemComponent
+                subtitle={subtitle}
+                index={index}
+                isActive={index === currentIndex}
+                formatTime={formatTime}
+                onClick={handleItemClick}
+                isHovered={isSubtitleHovered(subtitle.id)}
+                onContextMenu={handleContextMenu}
+                onActionClick={handleActionClick}
+              />
             )}
             components={{}}
             alignToBottom
@@ -418,6 +486,18 @@ function SubtitleListPanel({
           />
         )}
       </ScrollContainer>
+
+      {/* 右键上下文菜单 */}
+      <SubtitleContextMenu
+        isOpen={contextMenuState.isOpen}
+        position={contextMenuState.position}
+        subtitle={subtitles.find((s) => s.id === contextMenuState.subtitleId)}
+        subtitleIndex={contextMenuState.subtitleIndex}
+        onActionClick={handleContextMenuAction}
+        onClose={closeContextMenu}
+        cancelCloseContextMenu={cancelCloseContextMenu}
+        scheduleCloseContextMenu={scheduleCloseContextMenu}
+      />
     </Container>
   )
 }
@@ -430,6 +510,12 @@ interface SubtitleSearchResultsPanelProps {
   onSelect: (subtitleIndex: number) => void
   currentIndex: number
   formatTime: (time: number) => string
+  onActionClick?: (
+    action: 'ai-ask' | 'translate' | 'edit' | 'more',
+    subtitle: SubtitleItem,
+    index: number
+  ) => void
+  onContextMenu?: (event: React.MouseEvent, subtitle: SubtitleItem, index: number) => void
 }
 
 function SubtitleSearchResultsPanel({
@@ -437,7 +523,9 @@ function SubtitleSearchResultsPanel({
   query,
   onSelect,
   currentIndex,
-  formatTime
+  formatTime,
+  onActionClick,
+  onContextMenu
 }: SubtitleSearchResultsPanelProps) {
   const { t } = useTranslation()
 
@@ -453,23 +541,17 @@ function SubtitleSearchResultsPanel({
   return (
     <SearchResultsList role="list" aria-label="subtitle-search-results">
       {results.map(({ subtitle, index }) => (
-        <SearchResultItem
+        <SubtitleItemComponent
           key={subtitle.id}
-          role="listitem"
-          data-subtitle-search-item
-          data-index={index}
-          data-active={index === currentIndex}
-          $active={index === currentIndex}
-          onClick={() => onSelect(index)}
-        >
-          <TimesRow>
-            <TimeStamp>{formatTime(subtitle.startTime)}</TimeStamp>
-            <EndStamp>{formatTime(subtitle.endTime)}</EndStamp>
-          </TimesRow>
-          <TextContent>
-            <HighlightedText text={subtitle.originalText} query={query} />
-          </TextContent>
-        </SearchResultItem>
+          subtitle={subtitle}
+          index={index}
+          isActive={index === currentIndex}
+          formatTime={formatTime}
+          onClick={onSelect}
+          searchQuery={query}
+          onActionClick={onActionClick}
+          onContextMenu={onContextMenu}
+        />
       ))}
     </SearchResultsList>
   )
@@ -515,22 +597,6 @@ const SearchResultsList = styled.div`
   flex-direction: column;
   padding: 4px 0;
   width: 100%;
-`
-
-const SearchResultItem = styled.div<{ $active: boolean }>`
-  display: block;
-  margin: 6px 8px;
-  padding: 10px 12px;
-  cursor: pointer;
-  border-radius: 12px;
-  background: ${(p) => (p.$active ? 'var(--color-primary-mute)' : 'transparent')};
-  box-shadow: ${(p) => (p.$active ? '0 1px 6px rgba(0,0,0,.25)' : 'none')};
-  transition: background 0.2s;
-
-  &:hover {
-    background: ${(p) =>
-      p.$active ? 'var(--color-primary-mute)' : 'var(--color-list-item-hover)'};
-  }
 `
 
 const SearchResultsEmpty = styled.div`
@@ -660,46 +726,6 @@ const ActionButton = styled(Button)`
   height: 40px;
   padding: 0 ${SPACING.MD}px;
   border-radius: ${BORDER_RADIUS.LG}px;
-`
-
-const SubtitleItem = styled.div<{ $active: boolean }>`
-  display: block;
-  margin: 6px 8px;
-  padding: 10px 12px;
-  cursor: pointer;
-  border-radius: 12px;
-  background: ${(p) => (p.$active ? 'var(--color-primary-mute)' : 'transparent')};
-  box-shadow: ${(p) => (p.$active ? '0 1px 6px rgba(0,0,0,.25)' : 'none')};
-  transition: background 0.2s;
-
-  &:hover {
-    background: ${(p) =>
-      p.$active ? 'var(--color-primary-mute)' : 'var(--color-list-item-hover)'};
-  }
-`
-
-const TimesRow = styled.div`
-  display: flex;
-  align-items: center;
-  margin-bottom: 4px;
-  font-size: 11px;
-  color: var(--color-text-3, #666);
-`
-
-const TimeStamp = styled.div`
-  font-family: monospace;
-`
-
-const EndStamp = styled.div`
-  margin-left: auto;
-  font-family: monospace;
-`
-
-const TextContent = styled.div`
-  font-size: 13px;
-  color: var(--color-text-1, #ddd);
-  line-height: 1.5;
-  word-break: break-word;
 `
 
 // 搜索相关样式组件

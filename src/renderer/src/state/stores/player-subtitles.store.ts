@@ -13,6 +13,18 @@ export interface PlayerSubtitlesState {
     language?: string
     name?: string
   }
+  // 交互状态管理
+  interactionState: {
+    hoveredSubtitleId?: string
+    editingSubtitleId?: string
+  }
+  // 右键菜单状态
+  contextMenuState: {
+    isOpen: boolean
+    subtitleId?: string
+    subtitleIndex?: number
+    position?: { x: number; y: number }
+  }
 }
 
 export interface PlayerSubtitlesActions {
@@ -24,6 +36,16 @@ export interface PlayerSubtitlesActions {
   setLoading: (loading: boolean) => void
   setError: (message?: string) => void
   setSource: (info?: PlayerSubtitlesState['source']) => void
+  // 交互状态 actions
+  setHoveredSubtitleId: (subtitleId?: string) => void
+  setEditingSubtitleId: (subtitleId?: string) => void
+  // 右键菜单 actions
+  openContextMenu: (
+    subtitleId: string,
+    subtitleIndex: number,
+    position: { x: number; y: number }
+  ) => void
+  closeContextMenu: () => void
 }
 
 export type PlayerSubtitlesStore = PlayerSubtitlesState & PlayerSubtitlesActions
@@ -32,7 +54,17 @@ const initialState: PlayerSubtitlesState = {
   subtitles: [],
   isLoading: false,
   error: undefined,
-  source: undefined
+  source: undefined,
+  interactionState: {
+    hoveredSubtitleId: undefined,
+    editingSubtitleId: undefined
+  },
+  contextMenuState: {
+    isOpen: false,
+    subtitleId: undefined,
+    subtitleIndex: undefined,
+    position: undefined
+  }
 }
 
 const createPlayerSubtitlesStore: StateCreator<
@@ -96,6 +128,44 @@ const createPlayerSubtitlesStore: StateCreator<
   setSource: (info?: PlayerSubtitlesState['source']) => {
     set((state: Draft<PlayerSubtitlesStore>) => {
       state.source = info
+    })
+  },
+
+  // 交互状态 actions
+  setHoveredSubtitleId: (subtitleId?: string) => {
+    set((state: Draft<PlayerSubtitlesStore>) => {
+      state.interactionState.hoveredSubtitleId = subtitleId
+    })
+  },
+
+  setEditingSubtitleId: (subtitleId?: string) => {
+    set((state: Draft<PlayerSubtitlesStore>) => {
+      state.interactionState.editingSubtitleId = subtitleId
+    })
+  },
+
+  // 右键菜单 actions
+  openContextMenu: (
+    subtitleId: string,
+    subtitleIndex: number,
+    position: { x: number; y: number }
+  ) => {
+    set((state: Draft<PlayerSubtitlesStore>) => {
+      state.contextMenuState = {
+        isOpen: true,
+        subtitleId,
+        subtitleIndex,
+        position
+      }
+    })
+  },
+
+  closeContextMenu: () => {
+    set((state: Draft<PlayerSubtitlesStore>) => {
+      state.contextMenuState.isOpen = false
+      state.contextMenuState.subtitleId = undefined
+      state.contextMenuState.subtitleIndex = undefined
+      state.contextMenuState.position = undefined
     })
   }
 })
