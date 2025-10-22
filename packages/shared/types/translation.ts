@@ -4,7 +4,7 @@
 
 export interface TranslationOptions {
   /** Target language for translation (currently only supports 'zh-CN') */
-  targetLanguage: string
+  targetLanguage: 'zh-CN'
   /** Source language (auto-detected if not specified) */
   sourceLanguage?: string
   /** Batch size for translation requests */
@@ -15,24 +15,35 @@ export interface TranslationOptions {
   videoFilename?: string
 }
 
-export interface TranslationResult {
-  /** Original text */
-  originalText: string
-  /** Translated text */
-  translatedText: string
-  /** Source language (detected) */
-  sourceLanguage?: string
-  /** Target language */
-  targetLanguage: string
-  /** Whether translation was successful */
-  success: boolean
-  /** Error message if translation failed */
-  error?: string
-}
+export type TranslationResult =
+  | {
+      /** Original text */
+      originalText: string
+      /** Translated text */
+      translatedText: string
+      /** Source language (detected) */
+      sourceLanguage?: string
+      /** Target language */
+      targetLanguage: string
+      /** Whether translation was successful */
+      success: true
+    }
+  | {
+      /** Original text */
+      originalText: string
+      /** Source language (detected) */
+      sourceLanguage?: string
+      /** Target language */
+      targetLanguage: string
+      /** Whether translation was successful */
+      success: false
+      /** Error message */
+      error: string
+    }
 
 export interface TranslationBatchResult {
   /** Array of translation results */
-  results: TranslationResult[]
+  readonly results: readonly TranslationResult[]
   /** Number of successful translations */
   successCount: number
   /** Number of failed translations */
