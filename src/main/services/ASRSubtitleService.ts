@@ -224,15 +224,15 @@ class ASRSubtitleService {
         })
         subtitleLibraryId = result.id
         logger.info('字幕保存到数据库成功', { subtitleLibraryId })
-
-        // 启动后台翻译任务
-        this.startBackgroundTranslation(options.videoId, options.videoPath)
       } catch (error) {
         logger.error('保存字幕到数据库失败', {
           error: error instanceof Error ? error.message : String(error)
         })
         // 不抛出错误，继续返回结果
       }
+
+      // 启动后台翻译任务
+      this.startBackgroundTranslation(options.videoId, options.videoPath)
 
       // 完成
       const processingTime = (Date.now() - startTime) / 1000
