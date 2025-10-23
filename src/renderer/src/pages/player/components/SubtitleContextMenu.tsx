@@ -1,6 +1,6 @@
 import { BORDER_RADIUS, SPACING } from '@renderer/infrastructure/styles/theme'
 import type { SubtitleItem as SubtitleItemType } from '@types'
-import { Copy, Edit3, HeartHandshake, Languages, MessageCircle } from 'lucide-react'
+import { Copy, Edit3, HeartHandshake, Languages, Loader2, MessageCircle } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import styled from 'styled-components'
@@ -16,6 +16,8 @@ interface SubtitleContextMenuProps {
   subtitle?: SubtitleItemType
   /** 字幕索引 */
   subtitleIndex?: number
+  /** 是否正在翻译当前字幕 */
+  isCurrentlyTranslating?: boolean
   /** 菜单项点击处理 */
   onActionClick: (action: string, subtitle: SubtitleItemType, index: number) => void
   /** 关闭菜单 */
@@ -33,6 +35,8 @@ type MenuItemType = {
   action: string
   danger?: boolean
   shortcut?: string
+  loading?: boolean
+  disabled?: boolean
 }
 
 /**
@@ -50,6 +54,7 @@ function SubtitleContextMenu({
   position,
   subtitle,
   subtitleIndex,
+  isCurrentlyTranslating = false,
   onActionClick,
   onClose,
   cancelCloseContextMenu,
@@ -74,9 +79,11 @@ function SubtitleContextMenu({
       },
       {
         key: 'translate',
-        label: '翻译字幕',
-        icon: <Languages size={16} />,
-        action: 'translate'
+        label: isCurrentlyTranslating ? '正在翻译中...' : '翻译字幕',
+        icon: isCurrentlyTranslating ? <LoadingSpinner size={16} /> : <Languages size={16} />,
+        action: 'translate',
+        loading: isCurrentlyTranslating,
+        disabled: isCurrentlyTranslating
       },
       {
         key: 'edit',
@@ -91,7 +98,7 @@ function SubtitleContextMenu({
         action: 'copy'
       }
     ],
-    []
+    [isCurrentlyTranslating]
   )
 
   // 计算菜单位置（确保不超出屏幕边界，让光标对准第一个菜单项）
@@ -158,8 +165,11 @@ function SubtitleContextMenu({
             key={item.key}
             onClick={() => handleMenuItemClick(item)}
             $danger={item.danger}
+            $disabled={item.disabled}
+            $loading={item.loading}
             role="menuitem"
-            tabIndex={0}
+            tabIndex={item.disabled ? -1 : 0}
+            disabled={item.disabled}
           >
             <MenuItemIcon>{item.icon}</MenuItemIcon>
             <MenuItemLabel>{item.label}</MenuItemLabel>
@@ -173,6 +183,19 @@ function SubtitleContextMenu({
 }
 
 export default SubtitleContextMenu
+
+const LoadingSpinner = styled(Loader2)`
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  animation: spin 1s linear infinite;
+`
 
 const Overlay = styled.div`
   position: fixed;
@@ -209,7 +232,7 @@ const Menu = styled.div`
   }
 `
 
-const MenuItem = styled.button<{ $danger?: boolean }>`
+const MenuItem = styled.button<{ $danger?: boolean; $disabled?: boolean; $loading?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${SPACING.SM}px;
@@ -217,23 +240,39 @@ const MenuItem = styled.button<{ $danger?: boolean }>`
   padding: ${SPACING.XS}px ${SPACING.SM}px;
   background: transparent;
   border: none;
-  color: ${(p) => (p.$danger ? 'var(--color-error)' : 'var(--color-text)')};
+  color: ${(p) => {
+    if (p.$loading) return 'var(--color-primary, #1890ff)'
+    if (p.$disabled) return 'var(--color-text-3, #666)'
+    return p.$danger ? 'var(--color-error)' : 'var(--color-text)'
+  }};
   font-size: 13px;
   text-align: left;
-  cursor: pointer;
+  cursor: ${(p) => (p.$disabled ? 'not-allowed' : 'pointer')};
   transition: all 0.15s ease;
 
-  &:hover {
-    background: ${(p) => (p.$danger ? 'rgba(244, 67, 54, 0.1)' : 'var(--color-list-item-hover)')};
+  &:hover:not(:disabled) {
+    background: ${(p) => {
+      if (p.$loading) return 'transparent'
+      if (p.$danger) return 'rgba(244, 67, 54, 0.1)'
+      return 'var(--color-list-item-hover)'
+    }};
   }
 
-  &:active {
-    background: ${(p) => (p.$danger ? 'rgba(244, 67, 54, 0.2)' : 'var(--color-list-item)')};
+  &:active:not(:disabled) {
+    background: ${(p) => {
+      if (p.$loading) return 'transparent'
+      if (p.$danger) return 'rgba(244, 67, 54, 0.2)'
+      return 'var(--color-list-item)'
+    }};
   }
 
   &:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: -2px;
+  }
+
+  &:disabled {
+    transform: none;
   }
 `
 

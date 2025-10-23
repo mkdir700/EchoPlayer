@@ -749,6 +749,30 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
     return await subtitleTranslationService.validateApiKey(apiKey)
   })
 
+  ipcMain.handle(
+    IpcChannel.Translation_TranslateSubtitle,
+    async (_, subtitleId: string, text: string, options: any) => {
+      logger.info('翻译单个字幕', { subtitleId })
+      try {
+        const result = await subtitleTranslationService.translateSingleSubtitle(
+          subtitleId,
+          text,
+          options
+        )
+        return { success: true, result }
+      } catch (error) {
+        logger.error('翻译单个字幕失败', {
+          subtitleId,
+          error: error instanceof Error ? error.message : String(error)
+        })
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error)
+        }
+      }
+    }
+  )
+
   // 文件系统相关 IPC 处理程序 / File system-related IPC handlers
   ipcMain.handle(IpcChannel.Fs_CheckFileExists, async (_, filePath: string) => {
     try {

@@ -412,6 +412,244 @@ class SubtitleTranslationService {
   }
 
   /**
+   * 翻译单个字幕
+   */
+  public async translateSingleSubtitle(
+    subtitleId: string,
+    text: string,
+    options: any
+  ): Promise<TranslationResult> {
+    if (!this.client) {
+      throw new Error('翻译服务不可用，请检查 Zhipu API Key 配置')
+    }
+
+    logger.info('开始翻译单个字幕', { subtitleId, text: text.substring(0, 50) })
+
+    try {
+      // 获取字幕的上下文信息
+      const contextSubtitles = await this.getSubtitleContext(subtitleId, options.videoId)
+
+      // 构建包含上下文的提示词
+      const contextualPrompt = this.buildContextualTranslationPrompt(
+        text,
+        contextSubtitles,
+        options.videoFilename
+      )
+
+      logger.debug('使用上下文进行翻译', {
+        subtitleId,
+        contextCount: contextSubtitles.contextSubtitles.length,
+        targetIndex: contextSubtitles.contextStartIndex
+      })
+
+      // 使用上下文提示词进行翻译
+      const translationResults = await this.translateWithContext(text, contextualPrompt, options)
+
+      if (translationResults.length === 0) {
+        throw new Error('翻译结果为空')
+      }
+
+      const result = translationResults[0]
+
+      // 如果翻译成功，立即更新数据库
+      if (result.success) {
+        try {
+          await db.subtitleLibrary.updateSubtitleTranslation(subtitleId, result.translatedText)
+          logger.info('单条字幕翻译并更新数据库成功', { subtitleId })
+        } catch (error) {
+          logger.error('更新字幕翻译到数据库失败', {
+            subtitleId,
+            error: error instanceof Error ? error.message : String(error)
+          })
+          throw new Error(
+            `翻译成功但更新数据库失败: ${error instanceof Error ? error.message : String(error)}`
+          )
+        }
+      }
+
+      return result
+    } catch (error) {
+      logger.error('翻译单个字幕失败', {
+        subtitleId,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      throw error
+    }
+  }
+
+  /**
+   * 获取字幕的上下文信息
+   */
+  private async getSubtitleContext(
+    subtitleId: string,
+    videoId?: number
+  ): Promise<{
+    contextSubtitles: Array<{ text: string; index: number }>
+    contextStartIndex: number
+  }> {
+    if (!videoId) {
+      return {
+        contextSubtitles: [],
+        contextStartIndex: 0
+      }
+    }
+
+    try {
+      const allSubtitles = await db.subtitleLibrary.getSubtitlesByVideoId(videoId)
+      const targetIndex = allSubtitles.findIndex((sub) => sub.id === subtitleId)
+
+      if (targetIndex === -1) {
+        logger.warn('未找到目标字幕', { subtitleId, videoId })
+        return {
+          contextSubtitles: [],
+          contextStartIndex: 0
+        }
+      }
+
+      // 获取前后各10句字幕作为上下文
+      const contextStart = Math.max(0, targetIndex - 10)
+      const contextEnd = Math.min(allSubtitles.length - 1, targetIndex + 10)
+
+      const contextSubtitles: Array<{ text: string; index: number }> = []
+
+      for (let i = contextStart; i <= contextEnd; i++) {
+        if (i !== targetIndex) {
+          contextSubtitles.push({
+            text: allSubtitles[i].text,
+            index: i
+          })
+        }
+      }
+
+      return {
+        contextSubtitles,
+        contextStartIndex: targetIndex
+      }
+    } catch (error) {
+      logger.error('获取字幕上下文失败', {
+        subtitleId,
+        videoId,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return {
+        contextSubtitles: [],
+        contextStartIndex: 0
+      }
+    }
+  }
+
+  /**
+   * 构建包含上下文的翻译提示词
+   */
+  private buildContextualTranslationPrompt(
+    targetText: string,
+    contextInfo: {
+      contextSubtitles: Array<{ text: string; index: number }>
+      contextStartIndex: number
+    },
+    videoFilename?: string
+  ): string {
+    let prompt = `请将以下字幕翻译成自然流畅的中文。\n\n`
+
+    // 添加视频文件名作为上下文
+    if (videoFilename) {
+      prompt += `视频文件：${videoFilename}\n\n`
+    }
+
+    // 添加上下文信息
+    if (contextInfo.contextSubtitles.length > 0) {
+      prompt += `上下文字幕（用于理解场景和语境）：\n`
+
+      const sortedContext = contextInfo.contextSubtitles.sort((a, b) => a.index - b.index)
+
+      sortedContext.forEach((subtitle, idx) => {
+        const position = subtitle.index < contextInfo.contextStartIndex ? '前文' : '后文'
+        prompt += `${position}${idx + 1}: ${subtitle.text}\n`
+      })
+
+      prompt += `\n`
+    }
+
+    // 目标字幕
+    prompt += `需要翻译的字幕：\n目标字幕: ${targetText}\n\n`
+
+    prompt += `请根据上述上下文信息，将目标字幕翻译成自然流畅的中文。\n\n`
+
+    prompt += `要求：\n`
+    prompt += `1. 翻译要准确、自然、符合中文表达习惯\n`
+    prompt += `2. 结合上下文理解场景，保持翻译的连贯性和一致性\n`
+    prompt += `3. 保留原文的情感色彩和语境\n`
+    prompt += `4. 如果有专业术语，请使用对应的中文专业词汇\n`
+    prompt += `5. 只返回翻译结果，不要包含其他内容\n\n`
+
+    prompt += `翻译：`
+
+    return prompt
+  }
+
+  /**
+   * 使用上下文进行翻译
+   */
+  private async translateWithContext(
+    text: string,
+    contextualPrompt: string,
+    options: any
+  ): Promise<TranslationResult[]> {
+    try {
+      if (!this.client) {
+        throw new Error('Zhipu 客户端未初始化')
+      }
+
+      logger.debug('开始使用上下文翻译字幕', {
+        text: text.substring(0, 50)
+      })
+
+      const { text: aiGeneratedText } = await generateText({
+        model: this.client.chat(this.model),
+        prompt: contextualPrompt,
+        temperature: 0.3
+      })
+
+      const responseText = aiGeneratedText.trim()
+      if (!responseText) {
+        throw new Error('翻译结果为空')
+      }
+
+      logger.debug('上下文翻译成功', {
+        original: text.substring(0, 30),
+        translated: responseText.substring(0, 30)
+      })
+
+      return [
+        {
+          originalText: text,
+          translatedText: responseText,
+          sourceLanguage: options.sourceLanguage || 'auto',
+          targetLanguage: options.targetLanguage,
+          success: true
+        }
+      ]
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      logger.error('上下文翻译失败', {
+        text: text.substring(0, 50),
+        error: errorMessage
+      })
+
+      return [
+        {
+          originalText: text,
+          sourceLanguage: options.sourceLanguage || 'auto',
+          targetLanguage: options.targetLanguage,
+          success: false,
+          error: errorMessage
+        }
+      ]
+    }
+  }
+
+  /**
    * 验证 API Key 是否有效
    */
   public async validateApiKey(apiKey: string): Promise<boolean> {

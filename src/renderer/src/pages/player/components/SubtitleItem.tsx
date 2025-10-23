@@ -31,6 +31,8 @@ interface SubtitleItemProps {
     index: number,
     event?: React.MouseEvent
   ) => void
+  /** 是否正在翻译当前字幕 */
+  isCurrentlyTranslating?: boolean
 }
 
 /**
@@ -53,7 +55,8 @@ function SubtitleItem({
   isHovered = false,
   onHoverChange,
   onContextMenu,
-  onActionClick
+  onActionClick,
+  isCurrentlyTranslating = false
 }: SubtitleItemProps) {
   const [isHovering, setIsHovering] = useState(false)
 
@@ -112,6 +115,7 @@ function SubtitleItem({
           subtitle={subtitle}
           index={index}
           visible={isHovering || isHovered}
+          isCurrentlyTranslating={isCurrentlyTranslating}
           onClick={onActionClick}
         />
       )}

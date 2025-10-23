@@ -15,6 +15,7 @@ import {
   SubtitleScrollState,
   useSubtitleScrollStateMachine
 } from '../hooks/useSubtitleScrollStateMachine'
+import { useSubtitleTranslation } from '../hooks/useSubtitleTranslation'
 import { useSubtitles } from '../state/player-context'
 import { ImportSubtitleButton } from './'
 import SubtitleContextMenu from './SubtitleContextMenu'
@@ -92,6 +93,9 @@ function SubtitleListPanel({
     cancelCloseContextMenu,
     scheduleCloseContextMenu
   } = useSubtitleInteraction()
+
+  // 使用字幕翻译 Hook
+  const { translationState, translateSubtitle } = useSubtitleTranslation()
 
   // 从 store 读取搜索状态
   const isSearchVisible = usePlayerUIStore((s) => s.subtitleSearch.isSearchVisible)
@@ -221,13 +225,13 @@ function SubtitleListPanel({
     ) => {
       console.log(`Action ${action} clicked for subtitle ${subtitle.id} at index ${index}`)
 
-      // TODO: 实现具体的操作逻辑
       switch (action) {
         case 'ai-ask':
           // TODO: 打开 AI 询问对话框
           break
         case 'translate':
-          // TODO: 执行翻译操作
+          // 执行翻译操作
+          translateSubtitle(subtitle.id, subtitle.originalText)
           break
         case 'edit':
           // TODO: 开始编辑模式
@@ -258,7 +262,7 @@ function SubtitleListPanel({
         }
       }
     },
-    [handleContextMenu]
+    [handleContextMenu, translateSubtitle]
   )
 
   // 右键菜单操作处理
@@ -266,24 +270,24 @@ function SubtitleListPanel({
     (action: string, subtitle: SubtitleItem, index: number) => {
       console.log(`Context menu action ${action} for subtitle ${subtitle.id} at index ${index}`)
 
-      // TODO: 实现具体的菜单操作
       switch (action) {
         case 'ai-ask':
           // TODO: 打开 AI 询问对话框
           break
         case 'translate':
-          // TODO: 执行翻译操作
+          // 执行翻译操作
+          translateSubtitle(subtitle.id, subtitle.originalText)
           break
         case 'edit':
           // TODO: 开始编辑模式
           break
         case 'copy':
-          // TODO: 复制字幕文本到剪贴板
+          // 复制字幕文本到剪贴板
           navigator.clipboard.writeText(subtitle.originalText)
           break
       }
     },
-    []
+    [translateSubtitle]
   )
 
   // 初始化状态机（当字幕加载完成时）
@@ -455,6 +459,7 @@ function SubtitleListPanel({
                 isHovered={isSubtitleHovered(subtitle.id)}
                 onContextMenu={handleContextMenu}
                 onActionClick={handleActionClick}
+                isCurrentlyTranslating={translationState.translatingId === subtitle.id}
               />
             )}
             components={{}}
@@ -511,6 +516,10 @@ function SubtitleListPanel({
         position={contextMenuState.position}
         subtitle={subtitles.find((s) => s.id === contextMenuState.subtitleId)}
         subtitleIndex={contextMenuState.subtitleIndex}
+        isCurrentlyTranslating={
+          translationState.isTranslating &&
+          translationState.translatingId === contextMenuState.subtitleId
+        }
         onActionClick={handleContextMenuAction}
         onClose={closeContextMenu}
         cancelCloseContextMenu={cancelCloseContextMenu}
