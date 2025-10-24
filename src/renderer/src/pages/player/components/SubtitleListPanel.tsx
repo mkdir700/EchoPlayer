@@ -1,3 +1,4 @@
+import { loggerService } from '@logger'
 import { BORDER_RADIUS, SPACING } from '@renderer/infrastructure/styles/theme'
 import { usePlayerUIStore } from '@renderer/state/stores/player-ui.store'
 import type { SubtitleItem } from '@types'
@@ -20,6 +21,8 @@ import { useSubtitles } from '../state/player-context'
 import { ImportSubtitleButton } from './'
 import SubtitleContextMenu from './SubtitleContextMenu'
 import SubtitleItemComponent from './SubtitleItem'
+
+const logger = loggerService.withContext('SubtitleListPannel')
 
 interface EmptyAction {
   key?: string
@@ -223,7 +226,7 @@ function SubtitleListPanel({
       index: number,
       event?: React.MouseEvent
     ) => {
-      console.log(`Action ${action} clicked for subtitle ${subtitle.id} at index ${index}`)
+      logger.info(`Action ${action} clicked for subtitle ${subtitle.id} at index ${index}`)
 
       switch (action) {
         case 'ai-ask':
@@ -268,7 +271,7 @@ function SubtitleListPanel({
   // 右键菜单操作处理
   const handleContextMenuAction = useCallback(
     (action: string, subtitle: SubtitleItem, index: number) => {
-      console.log(`Context menu action ${action} for subtitle ${subtitle.id} at index ${index}`)
+      logger.info(`Context menu action ${action} for subtitle ${subtitle.id} at index ${index}`)
 
       switch (action) {
         case 'ai-ask':
