@@ -143,7 +143,28 @@ export class SubtitleReader {
 
   private parseWithSubsrt(content: string, format: SubtitleFormat): SubtitleItem[] {
     const fmt = this.toSubsrtFormat(format)
-    const cues: any[] = subsrt.parse(content, { format: fmt })
+    let cues: any[] = subsrt.parse(content, { format: fmt })
+
+    // 检查subsrt解析结果是否存在中文字符丢失问题
+    if (cues.length > 0 && (format === SubtitleFormat.ASS || format === SubtitleFormat.SSA)) {
+      if (this.hasChineseCharacterLoss(content, cues)) {
+        loggerService.info('检测到中文字符丢失，切换到自定义ASS解析器', {
+          module: 'SubtitleReader'
+        })
+        cues = this.parseCustomAss(content)
+      }
+    }
+    // 如果subsrt完全失败，也使用自定义解析器
+    else if (
+      cues.length === 0 &&
+      (format === SubtitleFormat.ASS || format === SubtitleFormat.SSA)
+    ) {
+      loggerService.info('Subsrt解析失败，尝试使用自定义ASS解析器', {
+        module: 'SubtitleReader'
+      })
+      cues = this.parseCustomAss(content)
+    }
+
     const items = cues.map((c, i) => {
       let text = String(c.text ?? '')
       if (format === SubtitleFormat.ASS || format === SubtitleFormat.SSA) {
@@ -163,6 +184,124 @@ export class SubtitleReader {
       } as SubtitleItem
     })
     return items
+  }
+
+  private parseCustomAss(content: string): any[] {
+    const cues: any[] = []
+
+    // 按行分割内容
+    const lines = content.split('\n')
+    let inEventsSection = false
+
+    for (const line of lines) {
+      const trimmedLine = line.trim()
+
+      // 检查是否进入Events部分
+      if (trimmedLine === '[Events]') {
+        inEventsSection = true
+        continue
+      }
+
+      // 如果进入其他section，退出Events
+      if (trimmedLine.startsWith('[') && trimmedLine !== '[Events]') {
+        inEventsSection = false
+        continue
+      }
+
+      // 解析Dialogue行
+      if (inEventsSection && trimmedLine.startsWith('Dialogue:')) {
+        const dialogue = this.parseAssDialogue(trimmedLine)
+        if (dialogue) {
+          cues.push(dialogue)
+        }
+      }
+    }
+
+    return cues
+  }
+
+  private parseAssDialogue(line: string): any | null {
+    try {
+      // ASS Dialogue格式: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+      const parts = line.substring(9).split(',') // 去掉"Dialogue:"前缀
+
+      if (parts.length < 10) {
+        return null
+      }
+
+      const startTime = this.parseAssTime(parts[1].trim())
+      const endTime = this.parseAssTime(parts[2].trim())
+      const text = parts.slice(9).join(',').trim() // 处理文本中可能包含逗号的情况
+
+      if (isNaN(startTime) || isNaN(endTime)) {
+        return null
+      }
+
+      return {
+        start: Math.round(startTime * 1000), // 转换为毫秒
+        end: Math.round(endTime * 1000), // 转换为毫秒
+        text: text
+      }
+    } catch (error) {
+      loggerService.warn('解析ASS Dialogue行失败', { line, error, module: 'SubtitleReader' })
+      return null
+    }
+  }
+
+  private parseAssTime(timeStr: string): number {
+    // 解析ASS时间格式: H:MM:SS.CC
+    const match = timeStr.match(/^(\d+):(\d+):(\d+)\.(\d+)$/)
+    if (!match) {
+      return NaN
+    }
+
+    const [, hours, minutes, seconds, centiseconds] = match
+    const totalSeconds =
+      parseInt(hours) * 3600 +
+      parseInt(minutes) * 60 +
+      parseInt(seconds) +
+      parseInt(centiseconds) / 100
+
+    return totalSeconds
+  }
+
+  private hasChineseCharacterLoss(originalContent: string, subsrtCues: any[]): boolean {
+    try {
+      // 提取原始内容中的中文字符
+      const originalChinese = (originalContent.match(/[\u4e00-\u9fff]+/g) || []).join('')
+
+      // 如果原始内容没有中文字符，不存在丢失问题
+      if (!originalChinese) {
+        return false
+      }
+
+      // 提取subsrt解析结果中的中文字符
+      const parsedChinese =
+        subsrtCues
+          .map((cue: any) => String(cue.text || ''))
+          .join('')
+          .match(/[\u4e00-\u9fff]+/g) || [].join('')
+
+      // 如果解析结果中的中文字符明显少于原始内容，认为存在丢失
+      // 这里使用一个简单的长度比较，如果解析后的中文少于原始的80%，认为有问题
+      const lossThreshold = 0.8
+      const lossRatio = parsedChinese.length / originalChinese.length
+
+      if (lossRatio < lossThreshold) {
+        loggerService.info('检测到中文字符丢失', {
+          originalLength: originalChinese.length,
+          parsedLength: parsedChinese.length,
+          lossRatio: lossRatio,
+          module: 'SubtitleReader'
+        })
+        return true
+      }
+
+      return false
+    } catch (error) {
+      loggerService.warn('检查中文字符丢失时出错', { error, module: 'SubtitleReader' })
+      return false
+    }
   }
 
   private normalize(list: SubtitleItem[]): SubtitleItem[] {
@@ -449,17 +588,6 @@ export class SubtitleReader {
     return NaN
   }
 
-  private parseAssTime(s: string): number {
-    // h:mm:ss.cs  (centiseconds)
-    const m = s.match(/^(\d+):(\d{2}):(\d{2})[.,](\d{2})$/)
-    if (!m) return NaN
-    const h = Number(m[1])
-    const min = Number(m[2])
-    const sec = Number(m[3])
-    const cs = Number(m[4])
-    return h * 3600 + min * 60 + sec + cs / 100
-  }
-
   private stripTags(s: string): string {
     return s.replace(/<[^>]*>/g, '').trim()
   }
@@ -469,13 +597,14 @@ export class SubtitleReader {
     // {\3c&HFF8000&\fnKaiTi}{\an8} -> 空字符串
     // {\fnTahoma\fs12\3c&H400000&\b1\i1} -> 空字符串
     // 处理subsrt库可能部分处理后的残留标记，如：\3c&HFF8000&\fnKaiTi}
+    // 修复：先处理换行符，避免被错误地当作ASS标记
     return s
+      .replace(/\\N/g, '\n') // 先处理 \N 换行符，避免被错误匹配
+      .replace(/\\n/g, '\n') // 将 \n 转换为换行（小写）
+      .replace(/\\h/g, ' ') // 将 \h 转换为空格（硬空格）
       .replace(/\{[^}]*\}/g, '') // 去掉完整的 {...} 样式标记
       .replace(/\\[a-zA-Z0-9&]+[^}]*\}/g, '') // 去掉缺少开头括号的残留样式标记，如 \3c&HFF8000&\fnKaiTi}
       .replace(/\\[a-zA-Z]+\d*[&\w]*(?=[^}]|$)/g, '') // 去掉没有结束括号的ASS标记
-      .replace(/\\N/g, '\n') // 将 \N 转换为换行
-      .replace(/\\n/g, '\n') // 将 \n 转换为换行（小写）
-      .replace(/\\h/g, ' ') // 将 \h 转换为空格（硬空格）
       .trim()
   }
 }

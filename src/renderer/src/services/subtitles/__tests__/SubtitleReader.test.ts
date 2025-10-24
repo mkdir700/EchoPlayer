@@ -22,6 +22,28 @@ describe('SubtitleReader - ASS字幕解析修复测试', () => {
   })
 
   describe('ASS样式标记清理回归测试', () => {
+    it('应该修复包含\\N换行符的中文字符缺失问题', () => {
+      // 这是原始问题：今天感觉如何?\N{\fnCronos Pro Subhead\fs14\1c&H3CF1F3&}So how you doing today?
+      const stripASSTagsPrivate = (reader as any).stripAssTags.bind(reader)
+
+      const input =
+        '今天感觉如何?\\N{\\fnCronos Pro Subhead\\fs14\\1c&H3CF1F3&}So how you doing today?'
+      const result = stripASSTagsPrivate(input)
+
+      // 关键修复验证：确保中文字符不再丢失
+      expect(result).toContain('今天感觉如何?')
+      expect(result).toContain('So how you doing today?')
+      expect(result).not.toContain('\\fn')
+      expect(result).not.toContain('\\fs')
+      expect(result).not.toContain('\\1c')
+      expect(result).not.toContain('&H3CF1F3&')
+      expect(result).not.toContain('{')
+      expect(result).not.toContain('}')
+
+      // 验证换行符被正确处理
+      expect(result).toBe('今天感觉如何?\nSo how you doing today?')
+    })
+
     it('应该清理缺少开头大括号的样式标记（关键修复）', () => {
       // 这是导致问题的核心场景：\\3c&HFF8000&\\fnKaiTi}从侧面下的雨
       const stripASSTagsPrivate = (reader as any).stripAssTags.bind(reader)
