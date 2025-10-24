@@ -70,26 +70,36 @@ class SubtitleTranslationService {
   ): string {
     const count = subtitles.length
 
-    let prompt = `请将以下${count}条字幕翻译成自然流畅的中文，保持上下文的连贯性和一致性：\n\n`
+    let sceneContext = ''
 
     // 添加视频文件名作为上下文
     if (videoFilename) {
-      prompt += `视频文件：${videoFilename}\n\n`
+      sceneContext += `Video file: ${videoFilename}\n`
     }
 
-    prompt += `字幕列表：\n`
+    sceneContext += `Subtitle list:\n`
     subtitles.forEach((subtitle, index) => {
-      prompt += `${index + 1}. ${subtitle.text}\n`
+      sceneContext += `${index + 1}. ${subtitle.text}\n`
     })
 
-    prompt += `\n请以JSON格式返回翻译结果，格式如下：\n`
+    let prompt = `You are a professional subtitle translator.\n`
+    prompt += `Translate the following dialogue into natural Chinese that fits the character's tone,\n`
+    prompt += `context, and scene emotion. Keep brevity and timing in mind.\n\n`
+    prompt += `Input:\n${sceneContext}`
+
+    prompt += `\nPlease return the translation results in JSON format as follows:\n`
     if (count === 1) {
-      prompt += `{\n  "translations": [\n    "字幕的中文翻译"\n  ]\n}\n\n`
+      prompt += `{\n  "translations": [\n    "Chinese translation of the subtitle"\n  ]\n}\n\n`
     } else {
-      prompt += `{\n  "translations": [\n    "第1条字幕的中文翻译",\n    "第2条字幕的中文翻译",\n    "第3条字幕的中文翻译"\n  ]\n}\n\n`
+      prompt += `{\n  "translations": [\n    "Chinese translation of subtitle 1",\n    "Chinese translation of subtitle 2",\n    "Chinese translation of subtitle 3"\n  ]\n}\n\n`
     }
 
-    prompt += `要求：\n1. 翻译要准确、自然、符合中文表达习惯\n2. 保留原文的情感色彩和语境\n3. 保持整个序列的翻译风格一致\n4. 如果有专业术语，请使用对应的中文专业词汇\n5. 只返回JSON格式的翻译结果，不要包含其他内容`
+    prompt += `Requirements:\n`
+    prompt += `1. Translation should be accurate, natural, and conform to Chinese expression habits\n`
+    prompt += `2. Preserve the emotional tone and context of the original text\n`
+    prompt += `3. Maintain consistent translation style throughout the sequence\n`
+    prompt += `4. Use appropriate Chinese professional terminology for technical terms\n`
+    prompt += `5. Only return JSON format translation results, do not include other content`
 
     return prompt
   }
@@ -549,40 +559,41 @@ class SubtitleTranslationService {
     },
     videoFilename?: string
   ): string {
-    let prompt = `请将以下字幕翻译成自然流畅的中文。\n\n`
+    let sceneContext = ''
 
     // 添加视频文件名作为上下文
     if (videoFilename) {
-      prompt += `视频文件：${videoFilename}\n\n`
+      sceneContext += `Video file: ${videoFilename}\n`
     }
 
     // 添加上下文信息
     if (contextInfo.contextSubtitles.length > 0) {
-      prompt += `上下文字幕（用于理解场景和语境）：\n`
+      sceneContext += `Context subtitles (for understanding scene and context):\n`
 
       const sortedContext = contextInfo.contextSubtitles.sort((a, b) => a.index - b.index)
 
       sortedContext.forEach((subtitle, idx) => {
-        const position = subtitle.index < contextInfo.contextStartIndex ? '前文' : '后文'
-        prompt += `${position}${idx + 1}: ${subtitle.text}\n`
+        const position = subtitle.index < contextInfo.contextStartIndex ? 'Previous' : 'Following'
+        sceneContext += `${position} ${idx + 1}: ${subtitle.text}\n`
       })
 
-      prompt += `\n`
+      sceneContext += `\n`
     }
 
-    // 目标字幕
-    prompt += `需要翻译的字幕：\n目标字幕: ${targetText}\n\n`
+    let prompt = `You are a professional subtitle translator.\n`
+    prompt += `Translate the following dialogue into natural Chinese that fits the character's tone,\n`
+    prompt += `context, and scene emotion. Keep brevity and timing in mind.\n\n`
+    prompt += `Input:\n${sceneContext}`
+    prompt += `Current line: "${targetText}"\n\n`
 
-    prompt += `请根据上述上下文信息，将目标字幕翻译成自然流畅的中文。\n\n`
+    prompt += `Requirements:\n`
+    prompt += `1. Translation should be accurate, natural, and conform to Chinese expression habits\n`
+    prompt += `2. Combine context understanding to maintain translation coherence and consistency\n`
+    prompt += `3. Preserve the emotional tone and context of the original text\n`
+    prompt += `4. Use appropriate Chinese professional terminology for technical terms\n`
+    prompt += `5. Only return the translation result, do not include other content\n\n`
 
-    prompt += `要求：\n`
-    prompt += `1. 翻译要准确、自然、符合中文表达习惯\n`
-    prompt += `2. 结合上下文理解场景，保持翻译的连贯性和一致性\n`
-    prompt += `3. 保留原文的情感色彩和语境\n`
-    prompt += `4. 如果有专业术语，请使用对应的中文专业词汇\n`
-    prompt += `5. 只返回翻译结果，不要包含其他内容\n\n`
-
-    prompt += `翻译：`
+    prompt += `Output:`
 
     return prompt
   }
