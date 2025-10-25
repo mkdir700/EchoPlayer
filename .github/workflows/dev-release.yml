@@ -30,11 +30,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Print arch
-        run: |
-          node -p "process.platform + ' ' + process.arch"
-          uname -m
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -54,7 +49,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --include-optional && pnpm rebuild @swc/core
 
       - name: Set version
         if: ${{ inputs.version != '' }}
