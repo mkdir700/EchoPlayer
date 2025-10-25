@@ -162,7 +162,8 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "electron",
-      "esbuild"
+      "esbuild",
+      "@swc/core"
     ],
     "overrides": {
       "brace-expansion": "^2.0.1",

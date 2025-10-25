@@ -171,6 +171,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Rebuild native modules (macOS)
+        if: matrix.platform == 'mac'
+        shell: bash
+        run: |
+          echo "🔧 Rebuilding native modules for macOS"
+          pnpm rebuild @swc/core
+
       - name: Update package.json version
         shell: bash
         run: |
