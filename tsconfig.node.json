@@ -5,10 +5,10 @@
     "src/main/**/*",
     "src/preload/**/*",
     "src/main/env.d.ts",
-    "src/renderer/**/*",
     "packages/shared/**/*"
   ],
   "compilerOptions": {
+    "jsx": "react",
     "composite": true,
     "moduleResolution": "bundler",
     "types": [
