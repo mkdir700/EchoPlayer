@@ -1,3 +1,9 @@
+## [1.4.1](https://github.com/mkdir700/EchoPlayer/compare/v1.4.0...v1.4.1) (2025-10-25)
+
+### Bug Fixes
+
+- **subtitles:** implement comprehensive Chinese character loss detection and fallback for ASS subtitle parsing ([#229](https://github.com/mkdir700/EchoPlayer/issues/229)) ([77f9f97](https://github.com/mkdir700/EchoPlayer/commit/77f9f9796797eebae86888d0f1c5b44aeb02c999))
+
 # [1.4.0](https://github.com/mkdir700/EchoPlayer/compare/v1.3.0...v1.4.0) (2025-10-21)
 
 ### Features
