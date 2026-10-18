@@ -33,6 +33,17 @@
         "none": "未找到符合的字幕",
         "pending": "搜尋中...",
         "placeholder": "搜尋字幕..."
+      },
+      "tabs": {
+        "all": "字幕流",
+        "favorites": "收藏台詞",
+        "label": "字幕面板"
+      },
+      "favorites": {
+        "emptySubtitle": "點擊字幕旁的星號即可收藏，方便複習",
+        "emptyTitle": "還沒有收藏的台詞",
+        "favorite": "收藏這句字幕",
+        "unfavorite": "取消收藏"
       }
     },
     "subtitleTrackSelector": {

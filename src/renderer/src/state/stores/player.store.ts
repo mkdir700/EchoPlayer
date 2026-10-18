@@ -1,9 +1,59 @@
 import { PLAYBACK_RATE_PRESETS } from '@renderer/infrastructure'
-import { LoopMode, SubtitleBackgroundType, SubtitleDisplayMode } from '@types'
+import {
+  FavoriteSubtitle,
+  LoopMode,
+  SubtitleBackgroundType,
+  SubtitleDisplayMode,
+  SubtitleItem
+} from '@types'
 import { Draft } from 'immer'
 import { create, StateCreator } from 'zustand'
 
 import { MiddlewarePresets } from '../infrastructure'
+
+const FAVORITE_SUBTITLE_TIME_TOLERANCE = 0.05
+
+/** 判断两条字幕是否为同一收藏项（优先 id + 时间，其次时间容差） */
+export function isSameFavoriteSubtitle(
+  a: Pick<FavoriteSubtitle, 'id' | 'startTime'>,
+  b: Pick<FavoriteSubtitle, 'id' | 'startTime'>
+): boolean {
+  if (
+    a.id &&
+    b.id &&
+    a.id === b.id &&
+    Math.abs(a.startTime - b.startTime) <= FAVORITE_SUBTITLE_TIME_TOLERANCE
+  ) {
+    return true
+  }
+  return Math.abs(a.startTime - b.startTime) <= FAVORITE_SUBTITLE_TIME_TOLERANCE
+}
+
+/** 在当前字幕列表中解析收藏项对应的 index；找不到返回 -1 */
+export function resolveFavoriteSubtitleIndex(
+  favorite: FavoriteSubtitle,
+  subtitles: readonly SubtitleItem[]
+): number {
+  const byId = subtitles.findIndex(
+    (s) =>
+      s.id === favorite.id &&
+      Math.abs(s.startTime - favorite.startTime) <= FAVORITE_SUBTITLE_TIME_TOLERANCE
+  )
+  if (byId >= 0) return byId
+
+  return subtitles.findIndex(
+    (s) => Math.abs(s.startTime - favorite.startTime) <= FAVORITE_SUBTITLE_TIME_TOLERANCE
+  )
+}
+
+export function toFavoriteSubtitle(subtitle: SubtitleItem): FavoriteSubtitle {
+  return {
+    id: subtitle.id,
+    startTime: subtitle.startTime,
+    endTime: subtitle.endTime,
+    originalText: subtitle.originalText
+  }
+}
 
 /**
  * 字幕覆盖层配置接口
@@ -140,6 +190,9 @@ export function createPlayerState(options: PlayerStateOptions = {}): PlayerState
         return Math.max(0, rates.indexOf(speed))
       })(),
 
+    // === 收藏字幕（可持久化） ===
+    favoriteSubtitles: persistedSettings.favoriteSubtitles ?? [],
+
     // === 循环设置（可持久化） ===
     loopEnabled: persistedSettings.loopEnabled ?? false,
     loopMode: persistedSettings.loopMode ?? globalSettings.defaultLoopMode ?? LoopMode.SINGLE,
@@ -240,6 +293,9 @@ export interface PlayerState {
   /** 当前常用速度索引（用于循环切换） */
   currentFavoriteIndex: number
 
+  /** 收藏的字幕台词（当前视频独立保存） */
+  favoriteSubtitles: FavoriteSubtitle[]
+
   // === 转码状态管理 ===
   /** 是否启用 HLS 播放模式 */
   hlsMode: boolean
@@ -319,6 +375,11 @@ export interface PlayerActions {
   cycleFavoriteRateNext: () => void // 切换到下一个常用速度
   cycleFavoriteRatePrev: () => void // 切换到上一个常用速度
 
+  // === 字幕收藏控制 ===
+  toggleFavoriteSubtitle: (subtitle: SubtitleItem | FavoriteSubtitle) => void
+  removeFavoriteSubtitle: (favorite: FavoriteSubtitle) => void
+  setFavoriteSubtitles: (favorites: FavoriteSubtitle[]) => void
+
   // === 循环控制 ===
   // 组件可调用：用户设置
   toggleLoopEnabled: () => void
@@ -382,6 +443,7 @@ export type PlayerSettings = Pick<
   | 'muted'
   | 'playbackRate'
   | 'favoriteRates'
+  | 'favoriteSubtitles'
   | 'loopEnabled'
   | 'loopMode'
   | 'loopCount'
@@ -498,6 +560,29 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
       s.playbackRate = Number(favoriteRates[prevIndex])
     }),
 
+  // 字幕收藏控制
+  setFavoriteSubtitles: (favorites) =>
+    set((s: Draft<PlayerStore>) => {
+      s.favoriteSubtitles = favorites
+    }),
+  toggleFavoriteSubtitle: (subtitle) =>
+    set((s: Draft<PlayerStore>) => {
+      const existingIndex = s.favoriteSubtitles.findIndex((fav) =>
+        isSameFavoriteSubtitle(fav, subtitle)
+      )
+      if (existingIndex >= 0) {
+        s.favoriteSubtitles.splice(existingIndex, 1)
+      } else {
+        s.favoriteSubtitles.push(toFavoriteSubtitle(subtitle as SubtitleItem))
+      }
+    }),
+  removeFavoriteSubtitle: (favorite) =>
+    set((s: Draft<PlayerStore>) => {
+      s.favoriteSubtitles = s.favoriteSubtitles.filter(
+        (fav) => !isSameFavoriteSubtitle(fav, favorite)
+      )
+    }),
+
   // 循环控制
   toggleLoopEnabled: () =>
     set((s: Draft<PlayerStore>) => {
@@ -604,6 +689,9 @@ const createPlayerStore: StateCreator<PlayerStore, [['zustand/immer', never]], [
           (rate) => Math.abs(rate - s.playbackRate) < 1e-6
         )
         s.currentFavoriteIndex = Math.max(0, currentRateIndex)
+      }
+      if (settings.favoriteSubtitles !== undefined) {
+        s.favoriteSubtitles = settings.favoriteSubtitles
       }
       if (settings.loopEnabled !== undefined) {
         s.loopEnabled = settings.loopEnabled

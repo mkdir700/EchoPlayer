@@ -1,8 +1,13 @@
 import { BORDER_RADIUS, SPACING } from '@renderer/infrastructure/styles/theme'
+import {
+  isSameFavoriteSubtitle,
+  resolveFavoriteSubtitleIndex,
+  usePlayerStore
+} from '@renderer/state/stores/player.store'
 import { usePlayerUIStore } from '@renderer/state/stores/player-ui.store'
-import type { SubtitleItem } from '@types'
-import { Button } from 'antd'
-import { FileText, Loader2, Search, Sparkles, Video, X } from 'lucide-react'
+import type { FavoriteSubtitle, SubtitleItem } from '@types'
+import { Button, Tooltip } from 'antd'
+import { FileText, List, Loader2, Search, Sparkles, Star, Video, X } from 'lucide-react'
 import { ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
@@ -17,6 +22,8 @@ import {
 import { useSubtitles } from '../state/player-context'
 import { ImportSubtitleButton } from './'
 import HighlightedText from './SubtitleSearchHighlight'
+
+type SubtitlePanelTab = 'all' | 'favorites'
 
 interface EmptyAction {
   key?: string
@@ -69,7 +76,6 @@ function SubtitleListPanel({
   asrEnabled = false
 }: SubtitleListPannelProps) {
   const subtitles = useSubtitles()
-  usePlayerEngine()
   const virtuosoRef = useRef<VirtuosoHandle | null>(null)
   const scrollerElRef = useRef<HTMLElement | null>(null)
   const avgItemHeightRef = useRef<number>(56) // 初始估算单项高度
@@ -81,14 +87,46 @@ function SubtitleListPanel({
   const { seekToSubtitle } = usePlayerCommands()
   const { t } = useTranslation()
 
+  const favoriteSubtitles = usePlayerStore((s) => s.favoriteSubtitles)
+  const toggleFavoriteSubtitle = usePlayerStore((s) => s.toggleFavoriteSubtitle)
+
   // 从 store 读取搜索状态
   const isSearchVisible = usePlayerUIStore((s) => s.subtitleSearch.isSearchVisible)
   const hideSubtitleSearch = usePlayerUIStore((s) => s.hideSubtitleSearch)
 
-  // 搜索相关状态
+  // 面板 Tab / 搜索相关状态
+  const [activeTab, setActiveTab] = useState<SubtitlePanelTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const isFavoriteCue = useCallback(
+    (subtitle: SubtitleItem) => {
+      return favoriteSubtitles.some((fav) => isSameFavoriteSubtitle(fav, subtitle))
+    },
+    [favoriteSubtitles]
+  )
+
+  const handleToggleFavorite = useCallback(
+    (e: React.MouseEvent, subtitle: SubtitleItem) => {
+      e.stopPropagation()
+      e.preventDefault()
+      toggleFavoriteSubtitle(subtitle)
+    },
+    [toggleFavoriteSubtitle]
+  )
+
+  const handleFavoriteClick = useCallback(
+    (favorite: FavoriteSubtitle) => {
+      const index = resolveFavoriteSubtitleIndex(favorite, subtitles)
+      if (index >= 0) {
+        seekToSubtitle(index)
+        return
+      }
+      orchestrator?.requestUserSeek(favorite.startTime)
+    },
+    [subtitles, seekToSubtitle, orchestrator]
+  )
 
   const normalizedQuery = searchQuery.trim()
 
@@ -292,132 +330,195 @@ function SubtitleListPanel({
     )
   }
 
+  const showAllTab = activeTab === 'all' || isSearchVisible || hasSearchQuery
+
   return (
     <Container role="complementary" aria-label="caption-list">
-      {/* Control Bar - 搜索控制栏（仅在搜索激活时显示）*/}
-      {isSearchVisible && (
-        <ControlBar>
-          <SearchInputContainer>
-            <SearchIconWrapper>
-              {isSearching ? <Loader2 size={14} className="spin" /> : <Search size={14} />}
-            </SearchIconWrapper>
-            <SearchInput
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onKeyDown={handleSearchKeyDown}
-              placeholder={t('player.subtitleList.search.placeholder')}
-              autoComplete="off"
-            />
-            {searchQuery && (
-              <ClearButton onClick={handleSearchClear}>
-                <X size={14} />
-              </ClearButton>
-            )}
-            <CloseButton onClick={handleSearchClose}>
-              <X size={16} />
-            </CloseButton>
-          </SearchInputContainer>
-        </ControlBar>
-      )}
+      <PanelLayout>
+        <SideTabs role="tablist" aria-label={t('player.subtitleList.tabs.label')}>
+          <Tooltip
+            title={t('player.subtitleList.tabs.all')}
+            placement="right"
+            mouseEnterDelay={0.5}
+          >
+            <SideTabButton
+              type="button"
+              role="tab"
+              aria-selected={showAllTab}
+              $active={showAllTab}
+              onClick={() => setActiveTab('all')}
+            >
+              <List size={16} />
+            </SideTabButton>
+          </Tooltip>
+          <Tooltip
+            title={t('player.subtitleList.tabs.favorites')}
+            placement="right"
+            mouseEnterDelay={0.5}
+          >
+            <SideTabButton
+              type="button"
+              role="tab"
+              aria-selected={!showAllTab}
+              $active={!showAllTab}
+              onClick={() => setActiveTab('favorites')}
+            >
+              <Star size={16} fill={favoriteSubtitles.length > 0 ? 'currentColor' : 'none'} />
+            </SideTabButton>
+          </Tooltip>
+        </SideTabs>
 
-      {/* 搜索结果提示 */}
-      {hasSearchQuery && (
-        <SearchResultsHeader>
-          {isSearching ? (
-            <span>{t('player.subtitleList.search.pending')}</span>
-          ) : searchResults.length > 0 ? (
-            <span>{t('player.subtitleList.search.count', { count: searchResults.length })}</span>
+        <PanelBody>
+          {showAllTab ? (
+            <>
+              {isSearchVisible && (
+                <ControlBar>
+                  <SearchInputContainer>
+                    <SearchIconWrapper>
+                      {isSearching ? <Loader2 size={14} className="spin" /> : <Search size={14} />}
+                    </SearchIconWrapper>
+                    <SearchInput
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      onKeyDown={handleSearchKeyDown}
+                      placeholder={t('player.subtitleList.search.placeholder')}
+                      autoComplete="off"
+                    />
+                    {searchQuery && (
+                      <ClearButton onClick={handleSearchClear}>
+                        <X size={14} />
+                      </ClearButton>
+                    )}
+                    <CloseButton onClick={handleSearchClose}>
+                      <X size={16} />
+                    </CloseButton>
+                  </SearchInputContainer>
+                </ControlBar>
+              )}
+
+              {hasSearchQuery && (
+                <SearchResultsHeader>
+                  {isSearching ? (
+                    <span>{t('player.subtitleList.search.pending')}</span>
+                  ) : searchResults.length > 0 ? (
+                    <span>
+                      {t('player.subtitleList.search.count', { count: searchResults.length })}
+                    </span>
+                  ) : (
+                    <span>{t('player.subtitleList.search.none')}</span>
+                  )}
+                </SearchResultsHeader>
+              )}
+
+              <ScrollContainer>
+                {hasSearchQuery ? (
+                  <SubtitleSearchResultsPanel
+                    results={searchResults}
+                    query={normalizedQuery}
+                    currentIndex={currentIndex}
+                    onSelect={handleItemClick}
+                    formatTime={formatTime}
+                    isFavoriteCue={isFavoriteCue}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                ) : (
+                  <Virtuoso
+                    key={
+                      initialTopMostItemIndex !== undefined
+                        ? `virt-${initialTopMostItemIndex}-${subtitles.length}`
+                        : `virt-empty-${subtitles.length}`
+                    }
+                    ref={virtuosoRef as any}
+                    data={subtitles}
+                    totalCount={subtitles.length}
+                    defaultItemHeight={avgItemHeightRef.current}
+                    initialTopMostItemIndex={initialTopMostItemIndex}
+                    itemContent={(index, subtitle: SubtitleItem) => {
+                      const favorited = isFavoriteCue(subtitle)
+                      return (
+                        <SubtitleItemRow
+                          data-subtitle-item
+                          data-index={index}
+                          data-active={index === currentIndex}
+                          $active={index === currentIndex}
+                          onClick={() => handleItemClick(index)}
+                        >
+                          <TimesRow>
+                            <TimeStamp>{formatTime(subtitle.startTime)}</TimeStamp>
+                            <EndStamp>{formatTime(subtitle.endTime)}</EndStamp>
+                            <FavoriteButton
+                              type="button"
+                              $active={favorited}
+                              aria-label={
+                                favorited
+                                  ? t('player.subtitleList.favorites.unfavorite')
+                                  : t('player.subtitleList.favorites.favorite')
+                              }
+                              onClick={(e) => handleToggleFavorite(e, subtitle)}
+                            >
+                              <Star size={14} fill={favorited ? 'currentColor' : 'none'} />
+                            </FavoriteButton>
+                          </TimesRow>
+                          <TextContent>{subtitle.originalText}</TextContent>
+                        </SubtitleItemRow>
+                      )
+                    }}
+                    components={{}}
+                    alignToBottom
+                    increaseViewportBy={{ top: 160, bottom: 160 }}
+                    computeItemKey={(index, s: SubtitleItem) => s.id ?? index}
+                    atTopThreshold={24}
+                    atBottomThreshold={24}
+                    atTopStateChange={() => {}}
+                    atBottomStateChange={() => {}}
+                    scrollerRef={(ref) => {
+                      const el = (ref as HTMLElement) ?? null
+                      scrollerElRef.current = el
+                    }}
+                    rangeChanged={({ startIndex, endIndex }) => {
+                      const scroller = scrollerElRef.current
+                      if (scroller) {
+                        avgItemHeightRef.current = Math.max(
+                          56,
+                          scroller.clientHeight / Math.max(1, endIndex - startIndex + 1)
+                        )
+                      }
+
+                      if (
+                        !initialCenterAppliedRef.current &&
+                        initialIndexRef.current !== null &&
+                        initialIndexRef.current >= 0 &&
+                        virtuosoRef.current
+                      ) {
+                        initialCenterAppliedRef.current = true
+                        virtuosoRef.current.scrollToIndex({
+                          index: initialIndexRef.current,
+                          align: 'center',
+                          behavior: 'auto'
+                        })
+                        return
+                      }
+
+                      handleRangeChanged({ startIndex, endIndex })
+                    }}
+                  />
+                )}
+              </ScrollContainer>
+            </>
           ) : (
-            <span>{t('player.subtitleList.search.none')}</span>
+            <FavoriteSubtitlesPanel
+              favorites={favoriteSubtitles}
+              currentIndex={currentIndex}
+              subtitles={subtitles}
+              formatTime={formatTime}
+              onSelect={handleFavoriteClick}
+              onToggleFavorite={handleToggleFavorite}
+            />
           )}
-        </SearchResultsHeader>
-      )}
-
-      <ScrollContainer>
-        {hasSearchQuery ? (
-          <SubtitleSearchResultsPanel
-            results={searchResults}
-            query={normalizedQuery}
-            currentIndex={currentIndex}
-            onSelect={handleItemClick}
-            formatTime={formatTime}
-          />
-        ) : (
-          <Virtuoso
-            key={
-              initialTopMostItemIndex !== undefined
-                ? `virt-${initialTopMostItemIndex}-${subtitles.length}`
-                : `virt-empty-${subtitles.length}`
-            }
-            ref={virtuosoRef as any}
-            data={subtitles}
-            totalCount={subtitles.length}
-            defaultItemHeight={avgItemHeightRef.current}
-            initialTopMostItemIndex={initialTopMostItemIndex}
-            itemContent={(index, subtitle: SubtitleItem) => (
-              <SubtitleItem
-                data-subtitle-item
-                data-index={index}
-                data-active={index === currentIndex}
-                $active={index === currentIndex}
-                onClick={() => handleItemClick(index)}
-              >
-                <TimesRow>
-                  <TimeStamp>{formatTime(subtitle.startTime)}</TimeStamp>
-                  <EndStamp>{formatTime(subtitle.endTime)}</EndStamp>
-                </TimesRow>
-                <TextContent>{subtitle.originalText}</TextContent>
-              </SubtitleItem>
-            )}
-            components={{}}
-            alignToBottom
-            increaseViewportBy={{ top: 160, bottom: 160 }}
-            computeItemKey={(index, s: SubtitleItem) => s.id ?? index}
-            atTopThreshold={24}
-            atBottomThreshold={24}
-            atTopStateChange={() => {
-              // 状态由状态机管理，这里暂时保留但不执行任何操作
-            }}
-            atBottomStateChange={() => {
-              // 状态由状态机管理，这里暂时保留但不执行任何操作
-            }}
-            scrollerRef={(ref) => {
-              const el = (ref as HTMLElement) ?? null
-              scrollerElRef.current = el
-            }}
-            rangeChanged={({ startIndex, endIndex }) => {
-              const scroller = scrollerElRef.current
-              if (scroller) {
-                avgItemHeightRef.current = Math.max(
-                  56,
-                  scroller.clientHeight / Math.max(1, endIndex - startIndex + 1)
-                )
-              }
-
-              // 初次挂载后，将初始索引项滚动到垂直居中（只执行一次）
-              if (
-                !initialCenterAppliedRef.current &&
-                initialIndexRef.current !== null &&
-                initialIndexRef.current >= 0 &&
-                virtuosoRef.current
-              ) {
-                initialCenterAppliedRef.current = true
-                virtuosoRef.current.scrollToIndex({
-                  index: initialIndexRef.current,
-                  align: 'center',
-                  behavior: 'auto'
-                })
-                return
-              }
-
-              // 使用新的状态机处理范围变化
-              handleRangeChanged({ startIndex, endIndex })
-            }}
-          />
-        )}
-      </ScrollContainer>
+        </PanelBody>
+      </PanelLayout>
     </Container>
   )
 }
@@ -430,6 +531,8 @@ interface SubtitleSearchResultsPanelProps {
   onSelect: (subtitleIndex: number) => void
   currentIndex: number
   formatTime: (time: number) => string
+  isFavoriteCue: (subtitle: SubtitleItem) => boolean
+  onToggleFavorite: (e: React.MouseEvent, subtitle: SubtitleItem) => void
 }
 
 function SubtitleSearchResultsPanel({
@@ -437,7 +540,9 @@ function SubtitleSearchResultsPanel({
   query,
   onSelect,
   currentIndex,
-  formatTime
+  formatTime,
+  isFavoriteCue,
+  onToggleFavorite
 }: SubtitleSearchResultsPanelProps) {
   const { t } = useTranslation()
 
@@ -452,25 +557,104 @@ function SubtitleSearchResultsPanel({
 
   return (
     <SearchResultsList role="list" aria-label="subtitle-search-results">
-      {results.map(({ subtitle, index }) => (
-        <SearchResultItem
-          key={subtitle.id}
-          role="listitem"
-          data-subtitle-search-item
-          data-index={index}
-          data-active={index === currentIndex}
-          $active={index === currentIndex}
-          onClick={() => onSelect(index)}
-        >
-          <TimesRow>
-            <TimeStamp>{formatTime(subtitle.startTime)}</TimeStamp>
-            <EndStamp>{formatTime(subtitle.endTime)}</EndStamp>
-          </TimesRow>
-          <TextContent>
-            <HighlightedText text={subtitle.originalText} query={query} />
-          </TextContent>
-        </SearchResultItem>
-      ))}
+      {results.map(({ subtitle, index }) => {
+        const favorited = isFavoriteCue(subtitle)
+        return (
+          <SearchResultItem
+            key={subtitle.id}
+            role="listitem"
+            data-subtitle-search-item
+            data-index={index}
+            data-active={index === currentIndex}
+            $active={index === currentIndex}
+            onClick={() => onSelect(index)}
+          >
+            <TimesRow>
+              <TimeStamp>{formatTime(subtitle.startTime)}</TimeStamp>
+              <EndStamp>{formatTime(subtitle.endTime)}</EndStamp>
+              <FavoriteButton
+                type="button"
+                $active={favorited}
+                aria-label={
+                  favorited
+                    ? t('player.subtitleList.favorites.unfavorite')
+                    : t('player.subtitleList.favorites.favorite')
+                }
+                onClick={(e) => onToggleFavorite(e, subtitle)}
+              >
+                <Star size={14} fill={favorited ? 'currentColor' : 'none'} />
+              </FavoriteButton>
+            </TimesRow>
+            <TextContent>
+              <HighlightedText text={subtitle.originalText} query={query} />
+            </TextContent>
+          </SearchResultItem>
+        )
+      })}
+    </SearchResultsList>
+  )
+}
+
+interface FavoriteSubtitlesPanelProps {
+  favorites: FavoriteSubtitle[]
+  currentIndex: number
+  subtitles: SubtitleItem[]
+  formatTime: (time: number) => string
+  onSelect: (favorite: FavoriteSubtitle) => void
+  onToggleFavorite: (e: React.MouseEvent, subtitle: SubtitleItem) => void
+}
+
+function FavoriteSubtitlesPanel({
+  favorites,
+  currentIndex,
+  subtitles,
+  formatTime,
+  onSelect,
+  onToggleFavorite
+}: FavoriteSubtitlesPanelProps) {
+  const { t } = useTranslation()
+
+  if (favorites.length === 0) {
+    return (
+      <SearchResultsEmpty role="status">
+        <Star size={20} />
+        <span>{t('player.subtitleList.favorites.emptyTitle')}</span>
+        <span>{t('player.subtitleList.favorites.emptySubtitle')}</span>
+      </SearchResultsEmpty>
+    )
+  }
+
+  return (
+    <SearchResultsList role="list" aria-label={t('player.subtitleList.tabs.favorites')}>
+      {favorites.map((favorite) => {
+        const matchedIndex = resolveFavoriteSubtitleIndex(favorite, subtitles)
+        const active = matchedIndex >= 0 && matchedIndex === currentIndex
+        return (
+          <SearchResultItem
+            key={`${favorite.id}-${favorite.startTime}`}
+            role="listitem"
+            data-subtitle-favorite-item
+            data-index={matchedIndex}
+            data-active={active}
+            $active={active}
+            onClick={() => onSelect(favorite)}
+          >
+            <TimesRow>
+              <TimeStamp>{formatTime(favorite.startTime)}</TimeStamp>
+              <EndStamp>{formatTime(favorite.endTime)}</EndStamp>
+              <FavoriteButton
+                type="button"
+                $active
+                aria-label={t('player.subtitleList.favorites.unfavorite')}
+                onClick={(e) => onToggleFavorite(e, favorite)}
+              >
+                <Star size={14} fill="currentColor" />
+              </FavoriteButton>
+            </TimesRow>
+            <TextContent>{favorite.originalText}</TextContent>
+          </SearchResultItem>
+        )
+      })}
     </SearchResultsList>
   )
 }
@@ -484,6 +668,50 @@ const Container = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
+`
+
+const PanelLayout = styled.div`
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+`
+
+const SideTabs = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${SPACING.XXS}px;
+  width: 40px;
+  flex-shrink: 0;
+  padding: ${SPACING.SM}px ${SPACING.XXS}px;
+  border-right: 1px solid var(--color-border-soft, rgba(255, 255, 255, 0.06));
+`
+
+const SideTabButton = styled.button<{ $active: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: ${BORDER_RADIUS.SM}px;
+  cursor: pointer;
+  color: ${(p) => (p.$active ? 'var(--ant-color-primary, #1890ff)' : 'var(--color-text-3, #888)')};
+  background: ${(p) =>
+    p.$active ? 'var(--color-primary-mute, rgba(24, 144, 255, 0.12))' : 'transparent'};
+
+  &:hover {
+    background: var(--color-list-item-hover, rgba(255, 255, 255, 0.06));
+  }
+`
+
+const PanelBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 `
 
 const ScrollContainer = styled.div`
@@ -662,7 +890,7 @@ const ActionButton = styled(Button)`
   border-radius: ${BORDER_RADIUS.LG}px;
 `
 
-const SubtitleItem = styled.div<{ $active: boolean }>`
+const SubtitleItemRow = styled.div<{ $active: boolean }>`
   display: block;
   margin: 6px 8px;
   padding: 10px 12px;
@@ -675,6 +903,26 @@ const SubtitleItem = styled.div<{ $active: boolean }>`
   &:hover {
     background: ${(p) =>
       p.$active ? 'var(--color-primary-mute)' : 'var(--color-list-item-hover)'};
+  }
+`
+
+const FavoriteButton = styled.button<{ $active: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: ${SPACING.XS}px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: ${BORDER_RADIUS.SM}px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: ${(p) => (p.$active ? 'var(--ant-color-warning, #faad14)' : 'var(--color-text-3, #666)')};
+
+  &:hover {
+    background: var(--color-fill-3, rgba(255, 255, 255, 0.08));
+    color: var(--ant-color-warning, #faad14);
   }
 `
 

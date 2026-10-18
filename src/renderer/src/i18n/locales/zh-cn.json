@@ -285,6 +285,17 @@
         "none": "未找到匹配的字幕",
         "pending": "搜索中...",
         "placeholder": "搜索字幕..."
+      },
+      "tabs": {
+        "all": "字幕流",
+        "favorites": "收藏台词",
+        "label": "字幕面板"
+      },
+      "favorites": {
+        "emptySubtitle": "点击字幕旁的星号即可收藏，方便复习",
+        "emptyTitle": "还没有收藏的台词",
+        "favorite": "收藏这句字幕",
+        "unfavorite": "取消收藏"
       }
     },
     "subtitleTrackSelector": {

@@ -163,6 +163,17 @@
         "none": "No subtitles match your search",
         "pending": "Searching...",
         "placeholder": "Search subtitles..."
+      },
+      "tabs": {
+        "all": "Subtitles",
+        "favorites": "Saved lines",
+        "label": "Subtitle panel"
+      },
+      "favorites": {
+        "emptySubtitle": "Click the star next to a line to save it for review",
+        "emptyTitle": "No saved lines yet",
+        "favorite": "Save this line",
+        "unfavorite": "Remove from saved"
       }
     },
     "subtitleTrackSelector": {

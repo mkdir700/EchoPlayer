@@ -80,6 +80,8 @@ export interface PlayerSettingsTable {
   playbackRate: number
   /** 收藏的播放速度 JSON 数组字符串 */
   favoriteRates: string
+  /** 收藏的字幕台词 JSON 数组字符串 */
+  favoriteSubtitles: string
   /** 音量 (0-1) */
   volume: number
   /** 是否静音 */

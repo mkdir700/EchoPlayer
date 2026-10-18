@@ -25,6 +25,14 @@ export interface SubtitleItem {
   readonly words?: WordTimestamp[]
 }
 
+/** 收藏字幕快照（按视频持久化） */
+export interface FavoriteSubtitle {
+  readonly id: string
+  readonly startTime: number
+  readonly endTime: number
+  readonly originalText: string
+}
+
 // 字幕格式枚举 / Subtitle Format Enum
 export enum SubtitleFormat {
   SRT = 'srt',

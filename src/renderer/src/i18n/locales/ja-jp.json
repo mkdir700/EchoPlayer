@@ -36,6 +36,17 @@
         "none": "一致する字幕が見つかりません",
         "pending": "検索中...",
         "placeholder": "字幕を検索..."
+      },
+      "tabs": {
+        "all": "字幕",
+        "favorites": "お気に入り",
+        "label": "字幕パネル"
+      },
+      "favorites": {
+        "emptySubtitle": "字幕横の星をクリックすると復習用に保存できます",
+        "emptyTitle": "保存した台詞はまだありません",
+        "favorite": "この台詞を保存",
+        "unfavorite": "保存を解除"
       }
     },
     "subtitleTrackSelector": {

@@ -123,6 +123,9 @@ export class PlayerSettingsService {
     // 解析常用播放速度
     const favoriteRates = parseJsonField(dbData.favoriteRates, globalSettings.defaultFavoriteRates)
 
+    // 解析收藏字幕
+    const favoriteSubtitles = parseJsonField(dbData.favoriteSubtitles, [])
+
     // 使用工厂函数创建 PlayerState，并用数据库数据覆盖
     return createPlayerState({
       globalSettings,
@@ -132,6 +135,7 @@ export class PlayerSettingsService {
         playbackRate: dbData.playbackRate,
         favoriteRates,
         currentFavoriteIndex: Math.max(0, favoriteRates.indexOf(dbData.playbackRate)),
+        favoriteSubtitles,
         loopEnabled: loopSettings.loopEnabled,
         loopMode: loopSettings.loopMode,
         loopCount: loopSettings.loopCount,
@@ -175,6 +179,7 @@ export class PlayerSettingsService {
       volume: state.volume,
       muted: state.muted,
       favoriteRates: JSON.stringify(state.favoriteRates),
+      favoriteSubtitles: JSON.stringify(state.favoriteSubtitles),
       // currentFavoriteIndex 是运行时状态，不需要持久化
       loopSettings: JSON.stringify(loopSettings),
       autoPauseSettings: JSON.stringify(autoPauseSettings),

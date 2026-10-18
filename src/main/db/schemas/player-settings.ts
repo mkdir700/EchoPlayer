@@ -27,6 +27,7 @@ export const PlayerSettingsInsertSchema = z.object({
   videoId: PositiveIntegerSchema,
   playbackRate: PlaybackRateSchema.default(1.0),
   favoriteRates: JsonStringSchema.default(JSON.stringify([])),
+  favoriteSubtitles: JsonStringSchema.default(JSON.stringify([])),
   volume: VolumeSchema.default(1.0),
   muted: BooleanToSqlSchema.default(false),
   loopSettings: JsonStringSchema.optional(),
@@ -40,6 +41,7 @@ export const PlayerSettingsInsertSchema = z.object({
 export const PlayerSettingsUpdateSchema = z.object({
   playbackRate: PlaybackRateSchema.optional(),
   favoriteRates: JsonStringSchema.optional(),
+  favoriteSubtitles: JsonStringSchema.optional(),
   volume: VolumeSchema.optional(),
   muted: BooleanToSqlSchema.optional(),
   loopSettings: JsonStringSchema.optional(),
@@ -57,6 +59,7 @@ export const PlayerSettingsSelectSchema = z.object({
   videoId: PositiveIntegerSchema,
   playbackRate: PlaybackRateSchema,
   favoriteRates: JsonStringSchema,
+  favoriteSubtitles: JsonStringSchema,
   volume: VolumeSchema,
   muted: SqlBooleanSchema,
   loopSettings: z.string().nullable(),
